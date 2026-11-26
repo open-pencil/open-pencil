@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { getNodeEditCapability } from '@open-pencil/core'
-import { isGeneratedFrame, layerResizes } from '@open-pencil/scene-graph/generated'
+import { getNodeEditCapability, resolveEditorProfile } from '@open-pencil/core'
+import { isGeneratedFrame, layerMoves, layerResizes } from '@open-pencil/scene-graph/generated'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
@@ -56,6 +56,7 @@ import TextContentControl from './properties/text-content/TextContentControl.vue
 import TextContentSection from './properties/text-content/TextContentSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
+import SlideSizeSection from './slides/SlideSizeSection.vue'
 
 const store = useEditorStore()
 const libraryService = useLibraryService()
@@ -100,6 +101,8 @@ const supportsLayoutGuides = useSceneComputed(() => {
 const freeStyle = useSceneComputed(() =>
   store.getSelectedNodes().every((selected) => !isGeneratedFrame(selected))
 )
+const filmstrip = computed(() => resolveEditorProfile(store.state).filmstrip)
+const selectionMoves = useSceneComputed(() => store.getSelectedNodes().every(layerMoves))
 const panels = useMessages('panels')
 </script>
 
@@ -128,9 +131,12 @@ const panels = useMessages('panels')
     </PanelHeader>
     <StatusSection />
     <ComponentPropertiesSection />
-    <PositionSection />
-    <ConstraintsSection />
-    <SelectionLayoutSection />
+    <!-- A deck places and sizes its slides. -->
+    <template v-if="selectionMoves">
+      <PositionSection />
+      <ConstraintsSection />
+      <SelectionLayoutSection />
+    </template>
     <ScaleSection v-if="activeTool === 'SCALE'" />
     <template v-if="freeStyle">
       <AppearanceSection />
@@ -231,8 +237,8 @@ const panels = useMessages('panels')
       <StickySection />
       <ShapeWithTextSection />
       <ConnectorSection />
-      <!-- A connector is placed and shaped by its ends, and styled by its line. -->
-      <template v-if="node.type !== 'CONNECTOR'">
+      <!-- A connector is placed and shaped by its ends, and styled by its line; a deck places its slides. -->
+      <template v-if="node.type !== 'CONNECTOR' && layerMoves(node)">
         <PositionSection />
         <ConstraintsSection />
         <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
@@ -260,6 +266,7 @@ const panels = useMessages('panels')
     class="flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PageSection />
+    <SlideSizeSection v-if="filmstrip" />
     <VariablesSection @open-dialog="openVariablesDialog(store)" />
     <StatusesSection />
     <DocumentSection />

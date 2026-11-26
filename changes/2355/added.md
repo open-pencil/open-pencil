@@ -1,0 +1,1 @@
+- Edit Figma Slides decks: a filmstrip with sections, Slide and Grid views, slides you add with Shift+S, duplicate, skip, and drag into place or into new sections, speaker notes under the slide, one slide size for the deck, and PDF and PowerPoint export in the deck's order. New slides start a deck from Home.

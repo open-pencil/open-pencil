@@ -37,6 +37,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     nodeEditState: null,
     cursorCanvasX: null,
     cursorCanvasY: null,
+    focusedSlideId: null,
     canvasView: { id: 'edit' }
   }
 }
