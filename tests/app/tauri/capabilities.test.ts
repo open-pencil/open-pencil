@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
@@ -71,30 +71,37 @@ describe('desktop capabilities on window', () => {
   })
 })
 
-describe('host process permissions', () => {
+describe('desktop capability files', () => {
   const Capability = v.object({
     identifier: v.string(),
+    windows: v.optional(v.array(v.string())),
     permissions: v.array(v.union([v.string(), v.object({ identifier: v.string() })]))
   })
-  const Config = v.object({
-    app: v.object({ security: v.object({ capabilities: v.array(v.string()) }) })
-  })
+  const CAPABILITIES = 'desktop/capabilities'
 
-  function readJSON<T extends v.GenericSchema>(path: string, schema: T): v.InferOutput<T> {
-    return v.parse(v.pipe(v.string(), v.parseJson(), schema), readFileSync(repoPath(path), 'utf8'))
+  function readCapability(file: string): v.InferOutput<typeof Capability> {
+    return v.parse(
+      v.pipe(v.string(), v.parseJson(), Capability),
+      readFileSync(repoPath(`${CAPABILITIES}/${file}`), 'utf8')
+    )
   }
 
-  // The shell grants host-processes at startup only when allowed; a shell permission in a
-  // capability that is always enabled would let a sandboxed package spawn anyway.
-  test('are granted by no capability that is always enabled', () => {
-    const enabled = readJSON('desktop/tauri.conf.json', Config).app.security.capabilities
-    expect(enabled).not.toContain('host-processes')
-    for (const identifier of enabled) {
-      const capability = readJSON(`desktop/capabilities/${identifier}.json`, Capability)
-      const shell = capability.permissions
-        .map((permission) => (typeof permission === 'string' ? permission : permission.identifier))
+  // The desktop app starts host programs itself; a page given the shell plugin could start any.
+  test('grant no window the shell plugin', () => {
+    const files = readdirSync(repoPath(CAPABILITIES)).filter((file) => file.endsWith('.json'))
+    expect(files.length).toBeGreaterThan(0)
+    for (const file of files) {
+      const shell = readCapability(file)
+        .permissions.map((permission) =>
+          typeof permission === 'string' ? permission : permission.identifier
+        )
         .filter((permission) => permission.startsWith('shell:'))
-      expect(shell).toEqual([])
+      expect({ file, shell }).toEqual({ file, shell: [] })
     }
+  })
+
+  // Agents' questions are answered there, so the editor's windows must not share its grants.
+  test('give the permission window’s capability to that window alone', () => {
+    expect(readCapability('permission.json').windows).toEqual(['permission'])
   })
 })

@@ -12,7 +12,13 @@ import {
   spawnMCPIfNeeded
 } from '@/app/automation/mcp/spawn'
 
-import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri/mocks'
+import {
+  clearTauriMocks,
+  hostStart,
+  installTauriMockWindow,
+  mockTauriIPC,
+  type HostStart
+} from '#tests/helpers/tauri/mocks'
 
 const DISCOVERY_PATH = '/mock/home/.openpencil/mcp.json'
 const DISCOVERY_JSON = JSON.stringify({
@@ -87,17 +93,11 @@ describe('Tauri MCP spawning', () => {
         return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'plugin:shell|spawn') {
-        const onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent
-          .onmessage
+      if (cmd === 'host_start') {
+        const { emit } = hostStart(args)
         queueMicrotask(() => {
-          onEvent({
-            event: 'Stderr',
-            payload: Array.from(
-              new TextEncoder().encode('El sistema no puede encontrar el archivo especificado.')
-            )
-          })
-          onEvent({ event: 'Terminated', payload: { code: 1, signal: null } })
+          emit({ type: 'stderr', data: 'El sistema no puede encontrar el archivo especificado.' })
+          emit({ type: 'close', code: 1, signal: null })
         })
         return 88
       }
@@ -126,12 +126,12 @@ describe('Tauri MCP spawning', () => {
         return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'plugin:shell|spawn') throw new Error('shell permission denied')
+      if (cmd === 'host_start') throw new Error('host permission denied')
       return null
     })
 
     expect(await spawnMCPIfNeeded()).toBeNull()
-    expect(getAutomationAuthToken()).rejects.toThrow('shell permission denied')
+    expect(getAutomationAuthToken()).rejects.toThrow('host permission denied')
     expect(getAutomationStartupFailure()).toMatchObject({ code: 'permission-denied' })
   })
 
@@ -217,7 +217,7 @@ describe('Tauri MCP spawning', () => {
     expect(String(error)).toContain('npm i -g @open-pencil/mcp@0.0.0-test')
   })
 
-  test('spawns MCP server with shell plugin when health check is missing', async () => {
+  test('starts the MCP server through the desktop app when health check is missing', async () => {
     installTauriMockWindow()
     Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
     Object.defineProperty(globalThis, 'navigator', {
@@ -243,31 +243,22 @@ describe('Tauri MCP spawning', () => {
       })
     )
 
-    const spawned: { onEvent: ((event: unknown) => void) | null } = { onEvent: null }
+    const spawned: { emit: HostStart['emit'] | null } = { emit: null }
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
       if (cmd === 'mcp_lookup')
         return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
-      if (cmd === 'plugin:shell|spawn') {
-        expect(args).toMatchObject({
-          program: 'openpencil-mcp-http',
-          args: [],
-          options: {
-            env: {
-              PORT: '7600',
-              OPENPENCIL_MCP_AUTH_TOKEN: expect.any(String),
-              OPENPENCIL_MCP_CORS_ORIGIN: 'tauri://localhost',
-              OPENPENCIL_MCP_TCP: '1',
-              OPENPENCIL_MCP_ROOT: '/mock/home',
-              OPENPENCIL_MCP_APP_TIMEOUT_MS: '30000',
-              OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1'
-            }
-          }
+      if (cmd === 'host_start') {
+        const start = hostStart(args)
+        expect(start.program).toEqual({
+          kind: 'mcpServer',
+          authToken: expect.any(String),
+          root: '/mock/home',
+          disabledTools: expect.any(Array),
+          scope: expect.stringMatching(/^(document|selection)$/)
         })
-        spawned.onEvent = (
-          args as { onEvent: { onmessage: (event: unknown) => void } }
-        ).onEvent.onmessage
+        spawned.emit = start.emit
         return 77
       }
       const pathArg = (args as { path?: string })?.path
@@ -290,12 +281,12 @@ describe('Tauri MCP spawning', () => {
     await expect(getAutomationAuthToken()).resolves.toBe('discovery-token')
     // An agent gets the client token derived from the server's, never the server's own.
     await expect(getMCPClientToken()).resolves.toBe(await mcpClientToken('discovery-token'))
-    spawned.onEvent?.({ event: 'Stderr', payload: [119, 97, 114, 110] })
+    spawned.emit?.({ type: 'stderr', data: 'warn' })
     handle?.disconnect()
     await Promise.resolve()
 
     expect(handle?.authToken).toBe('discovery-token')
-    expect(calls.some((c) => c.cmd === 'plugin:shell|spawn')).toBe(true)
+    expect(calls.some((c) => c.cmd === 'host_start')).toBe(true)
     expect(
       calls.some(
         (c) =>
@@ -303,7 +294,7 @@ describe('Tauri MCP spawning', () => {
           (c.args as { path?: string })?.path === DISCOVERY_PATH
       )
     ).toBe(true)
-    expect(calls.at(-1)).toEqual({ cmd: 'plugin:shell|kill', args: { cmd: 'killChild', pid: 77 } })
+    expect(calls.at(-1)).toEqual({ cmd: 'host_kill', args: { id: 77 } })
   })
 
   test('keeps waiting for a server that is slow to answer while its child runs', async () => {
@@ -335,7 +326,7 @@ describe('Tauri MCP spawning', () => {
     await mockTauriIPC((cmd, args) => {
       if (cmd === 'mcp_lookup')
         return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
-      if (cmd === 'plugin:shell|spawn') return 77
+      if (cmd === 'host_start') return 77
       const pathArg = (args as { path?: string })?.path
       if (cmd === 'plugin:fs|exists') return pathArg === DISCOVERY_PATH
       if (cmd === 'plugin:fs|read_text_file')
@@ -367,11 +358,10 @@ describe('Tauri MCP spawning', () => {
         return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'plugin:shell|spawn') {
-        const onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent
-          .onmessage
+      if (cmd === 'host_start') {
+        const { emit } = hostStart(args)
         // Past the early-exit window, before the deadline.
-        setTimeout(() => onEvent({ event: 'Terminated', payload: { code: 3, signal: null } }), 40)
+        setTimeout(() => emit({ type: 'close', code: 3, signal: null }), 40)
         return 88
       }
       return null

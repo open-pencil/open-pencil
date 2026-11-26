@@ -17,7 +17,6 @@ import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { AgentChoices, AgentModelChoices } from '@/app/ai/agents/acp/options'
-import { AGENT_SESSION_META } from '@/app/ai/agents/acp/tools'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 
 import { agentPipes } from './fake-acp-agent'
@@ -62,8 +61,6 @@ export interface FakeAgentOptions {
   startupOptions?: SessionConfigOption[]
   /** True to keep option changes waiting until `answerChoices`, as a slow agent does. */
   choicesWait?: boolean
-  /** True for a turn that first asks permission for a tool and waits for the answer. */
-  asksPermission?: boolean
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -78,11 +75,8 @@ export function fakeAgents({
   updates = [],
   configOptions,
   startupOptions,
-  choicesWait = false,
-  asksPermission = false
+  choicesWait = false
 }: FakeAgentOptions = {}) {
-  /** What the person answered the turn's permission request, or `cancelled`. */
-  const permission = createDeferred<string>()
   const choices = createDeferred<undefined>()
   let notifyLatest: ((update: SessionUpdate) => Promise<void>) | null = null
   const startupNoted = createDeferred<undefined>()
@@ -98,15 +92,14 @@ export function fakeAgents({
   const killed = createDeferred<undefined>()
   let kills = 0
   let spawns = 0
-  const searchPaths: (string | null | undefined)[] = []
   const defersTools: boolean[] = []
-  const cwds: (string | undefined)[] = []
+  /** Whether each start refuses every tool call, as the desktop app is asked to. */
+  const refusals: boolean[] = []
   let crashLatest: (() => void) | null = null
 
   const spawn: ACPStartup['spawn'] = async (options) => {
     spawns++
-    searchPaths.push(options.searchPath)
-    cwds.push(options.cwd)
+    refusals.push(options.refusesTools ?? false)
     const { toAgent, toClient, output, stop } = agentPipes()
     acpAgent()
       .onRequest(methods.agent.initialize, ({ params }) => {
@@ -155,14 +148,6 @@ export function fakeAgents({
           client.notify(methods.client.session.update, { sessionId: session, update })
         await report({ sessionUpdate: 'available_commands_update', availableCommands: [] })
         if (turn === 'refused') throw new Error('The prompt never reached the model')
-        if (asksPermission) {
-          const { outcome } = await client.request(methods.client.session.requestPermission, {
-            sessionId,
-            toolCall: { toolCallId: 'tool-1', title: 'Approve Plan' },
-            options: [{ optionId: 'allow', name: 'Allow', kind: 'allow_once' }]
-          })
-          permission.resolve(outcome.outcome === 'selected' ? outcome.optionId : outcome.outcome)
-        }
         for (const { session, update } of updates) await report(update, session)
         if (turn === 'cut-off') {
           await report({
@@ -206,7 +191,6 @@ export function fakeAgents({
       return {
         chat: 'chat',
         mcpServers: [],
-        meta: AGENT_SESSION_META,
         noteUpdate: (update) => {
           if (update.sessionUpdate === 'config_option_update') startupNoted.resolve(undefined)
         },
@@ -234,10 +218,8 @@ export function fakeAgents({
     killed: killed.promise,
     kills: () => kills,
     spawns: () => spawns,
-    searchPaths,
-    cwds,
+    refusals,
     defersTools,
-    permissionAnswer: permission.promise,
     finishLookup: () => lookup.resolve(undefined),
     answerChoices: () => choices.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()

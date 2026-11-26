@@ -1,13 +1,11 @@
 import { expect, test } from 'bun:test'
 
 import type { SessionConfigOption, SessionUpdate } from '@agentclientprotocol/sdk/unstable'
-import { until } from '@vueuse/core'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { AgentChoices } from '@/app/ai/agents/acp/options'
-import { permissionQueue } from '@/app/ai/agents/acp/permission'
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { restAgents, withSubagent } from '@/app/automation/agents'
@@ -37,12 +35,11 @@ test('a new session gets the instructions once and is reported once the agent an
   await chat.destroy()
 })
 
-test('the agent starts in its workspace with the PATH its lookup searched', async () => {
+test('a chat’s agent may run tools, and its session opens in the given folder', async () => {
   const agents = fakeAgents()
   const { transport: chat } = transport(agents, { cwd: '/agent-workspace' })
   await send(chat, 'first')
-  expect(agents.searchPaths).toEqual(['/lookup/bin'])
-  expect(agents.cwds).toEqual(['/agent-workspace'])
+  expect(agents.refusals).toEqual([false])
   expect(agents.created[0]?.cwd).toBe('/agent-workspace')
   await chat.destroy()
 })
@@ -433,19 +430,6 @@ test('the chat hears of a mode the agent left on its own, but not of one it aske
   choices = { collaboration_mode: 'plan' }
   await send(chat, 'second', later)
   expect(agentChose).toEqual([{ collaboration_mode: 'default' }])
-  await chat.destroy()
-})
-
-test('stopping a reply takes the agent’s waiting permission request off the dialog', async () => {
-  const agents = fakeAgents({ asksPermission: true })
-  const { transport: chat } = transport(agents)
-  const stop = new AbortController()
-  const reply = send(chat, 'first', [], stop.signal)
-  await until(permissionQueue).toMatch((queue) => queue.length === 1)
-  stop.abort()
-  await reply
-  expect(permissionQueue.value).toEqual([])
-  expect(await agents.permissionAnswer).toBe('cancelled')
   await chat.destroy()
 })
 

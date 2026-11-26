@@ -74,7 +74,8 @@ export function fakeOneOffAgent({
   const optionsRead: SessionOptionsRequest[] = []
   const configured: SetSessionConfigOptionRequest[] = []
   const prompts: ContentBlock[][] = []
-  const cwds: (string | undefined)[] = []
+  /** Whether each start refuses every tool call, as the desktop app is asked to. */
+  const refusals: boolean[] = []
   const sessionRequested = createDeferred<undefined>()
   const promptRequested = createDeferred<undefined>()
   let kills = 0
@@ -84,7 +85,7 @@ export function fakeOneOffAgent({
     resolveTarget: async (agent) => ({ command: agent.command, searchPath: '/lookup/bin' }),
     spawn: async (options) => {
       spawns++
-      cwds.push(options.cwd)
+      refusals.push(options.refusesTools ?? false)
       const { toAgent, toClient, output, stop } = agentPipes()
       const stall = async (on: NonNullable<typeof stalls>['on']) => {
         if (stalls?.on !== on) return
@@ -151,7 +152,7 @@ export function fakeOneOffAgent({
     optionsRead,
     configured,
     prompts,
-    cwds,
+    refusals,
     sessionRequested: sessionRequested.promise,
     promptRequested: promptRequested.promise,
     kills: () => kills,

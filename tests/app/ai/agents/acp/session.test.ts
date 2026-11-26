@@ -21,7 +21,6 @@ import {
   openAgentSession,
   resumingAgent
 } from '@/app/ai/agents/acp/session'
-import { AGENT_SESSION_META } from '@/app/ai/agents/acp/tools'
 
 import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
 
@@ -46,7 +45,7 @@ const resumes: InitializeResponse = {
   protocolVersion: 1,
   agentCapabilities: { sessionCapabilities: { resume: {} } }
 }
-const request = { cwd: '/workspace', mcpServers: [], meta: AGENT_SESSION_META }
+const request = { cwd: '/workspace', mcpServers: [] }
 
 interface FakeConnectionOptions {
   resumeError?: unknown
@@ -148,7 +147,7 @@ test('a chat without a saved session starts a new one', async () => {
     choices: {},
     resumed: false
   })
-  expect(fake.created).toEqual([{ cwd: '/workspace', mcpServers: [], _meta: AGENT_SESSION_META }])
+  expect(fake.created).toEqual([{ cwd: '/workspace', mcpServers: [] }])
   expect(fake.resumed).toEqual([])
 })
 
@@ -156,9 +155,7 @@ test('a saved session resumes with the same folder and OpenPencil tools', async 
   const fake = connection()
   const opened = await openAgentSession(fake, resuming, resumes, { ...request, resume: 'saved' })
   expect(opened).toEqual({ sessionId: 'saved', model: 'sonnet', choices: {}, resumed: true })
-  expect(fake.resumed).toEqual([
-    { sessionId: 'saved', cwd: '/workspace', mcpServers: [], _meta: AGENT_SESSION_META }
-  ])
+  expect(fake.resumed).toEqual([{ sessionId: 'saved', cwd: '/workspace', mcpServers: [] }])
   expect(fake.created).toEqual([])
 })
 
