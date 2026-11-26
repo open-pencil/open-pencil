@@ -327,7 +327,7 @@ function nodeLayerBounds(
 
 /**
  * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
- * node-edit mode, or left to a live island while the canvas previews.
+ * node-edit mode, left to a live island while the canvas previews, or not yet on its slide.
  */
 function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays): boolean {
   if (
@@ -337,7 +337,19 @@ function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays)
     fontManager.isNodeBlocked(graph, node.id)
   )
     return false
-  return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
+  return (
+    overlays.nodeEditState?.nodeId !== node.id &&
+    !overlays.playIslands?.has(node.id) &&
+    overlays.layerMotion?.get(node.id)?.opacity !== 0
+  )
+}
+
+/** Moves the canvas to where a presentation draws an animating layer; gives its opacity. */
+function applyLayerMotion(canvas: Canvas, node: SceneNode, overlays: RenderOverlays): number {
+  const motion = overlays.layerMotion?.get(node.id)
+  if (!motion) return node.opacity
+  canvas.translate(motion.x, motion.y)
+  return node.opacity * motion.opacity
 }
 
 /**
@@ -371,8 +383,8 @@ export function renderNode(
 
   canvas.save()
   canvas.translate(node.x, node.y)
-
-  const needsNodeLayer = node.opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
+  const opacity = applyLayerMotion(canvas, node, overlays)
+  const needsNodeLayer = opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
   const layerBlur = visibleLayerBlur(node)
   const layerBounds =
     needsNodeLayer || layerBlur
@@ -385,7 +397,7 @@ export function renderNode(
         )
       : null
   if (needsNodeLayer) {
-    r.opacityPaint.setAlphaf(node.opacity)
+    r.opacityPaint.setAlphaf(opacity)
     setPaintBlendMode(r, r.opacityPaint, node.blendMode)
     canvas.saveLayer(r.opacityPaint, layerBounds)
   }
