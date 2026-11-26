@@ -12,6 +12,8 @@
   "createInstance": "Utwórz instancję",
   "detachInstance": "Odłącz instancję",
   "detachIcon": "Odłącz ikonę",
+  "setAsThumbnail": "Ustaw jako miniaturę",
+  "restoreDefaultThumbnail": "Przywróć domyślną miniaturę",
   "goToMainComponent": "Przejdź do komponentu",
   "addAutoLayout": "Dodaj auto-layout",
   "bringToFront": "Przenieś na wierzch",

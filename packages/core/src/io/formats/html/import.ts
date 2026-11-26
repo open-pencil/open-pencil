@@ -1,13 +1,17 @@
 import {
+  compileTailwindCSS,
   htmlToDesignDocument,
-  tailwindHTMLToDesignDocument,
   type DesignDocument,
   type DesignResource,
   type DesignResourceFetch,
   type DesignViewport,
   type HTMLToDesignDocumentOptions
 } from '@open-pencil/dom-css'
-import { designDocumentToLayers } from '@open-pencil/dom-css/scene-graph'
+import {
+  designDocumentToLayers,
+  type HTMLTheme,
+  type ThemeMode
+} from '@open-pencil/dom-css/scene-graph'
 import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -20,6 +24,7 @@ import {
 } from '#core/io/remote'
 import type { IOFormatAdapter } from '#core/io/types'
 
+import { createMarkedComponents } from './components'
 import {
   registerFallbackFont,
   registerLayerFonts,
@@ -50,7 +55,27 @@ export interface ReadHTMLOptions {
    * opened as a document shows; see `sceneGraphFromStyledHTML`.
    */
   framed?: boolean
+  /** Imports the page's custom properties as variables, and binds the layers that use them. */
+  variables?: ReadHTMLVariables
+  /** Makes components of the layers the page marks; see `createMarkedComponents`. */
+  components?: boolean
 }
+
+/** A way to style the page: the attributes its root element has then, such as a theme's class. */
+export interface ReadHTMLMode {
+  name: string
+  rootAttributes?: Record<string, string>
+}
+
+export interface ReadHTMLVariables {
+  /** The name of the variables' collection. */
+  collection?: string
+  /** The page is imported as the first mode shows it; without any, in one mode as it is. */
+  modes?: readonly ReadHTMLMode[]
+}
+
+const DEFAULT_COLLECTION = 'Theme'
+const DEFAULT_MODES: readonly ReadHTMLMode[] = [{ name: 'Default' }]
 
 export interface ReadHTMLResult {
   /** The styled DOM the layers were built from. */
@@ -151,21 +176,46 @@ export async function readHTMLDocument(
     compute: { layout: true, viewport: options.viewport ?? HTML_IMPORT_VIEWPORT },
     importLinkedStylesheets: true
   }
+  const cssText = options.tailwind
+    ? await compileTailwindCSS(options.tailwind, { css: options.cssText })
+    : options.cssText
+  const modes = options.variables?.modes?.length ? options.variables.modes : DEFAULT_MODES
+  const [first, ...others] = modes
   const style = async () => {
-    const styled = options.tailwind
-      ? await tailwindHTMLToDesignDocument(html, options.tailwind, {
-          ...styleOptions,
-          css: options.cssText
-        })
-      : await htmlToDesignDocument(html, { ...styleOptions, cssText: options.cssText })
+    const styled = await htmlToDesignDocument(html, {
+      ...styleOptions,
+      cssText,
+      compute: {
+        ...styleOptions.compute,
+        rootAttributes: first.rootAttributes,
+        references: options.variables !== undefined,
+        // Every mode styles the same elements, so each records what it computes to in them.
+        modes: options.variables ? others.map((mode) => mode.rootAttributes ?? {}) : undefined
+      }
+    })
     await resolvePageFontFamilies(styled, pageFamilies)
     return styled
   }
   let styled = await style()
-  if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) styled = await style()
+  if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) {
+    styled = await style()
+  }
+  const theme = (collection = DEFAULT_COLLECTION): HTMLTheme => {
+    const properties = [
+      styled.customProperties,
+      ...(styled.modes ?? []).map((mode) => mode.customProperties)
+    ]
+    const themed: ThemeMode[] = modes.map(({ name }, index) => ({
+      name,
+      customProperties: properties[index]
+    }))
+    return { collection, modes: themed }
+  }
   const graph = await sceneGraphFromStyledHTML(styled, {
     pageName: options.pageName,
     matchIcon: options.matchIcon,
+    theme: options.variables && theme(options.variables.collection),
+    createComponents: options.components ? createMarkedComponents : undefined,
     pageWindow: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
   })
   return { styled, graph }

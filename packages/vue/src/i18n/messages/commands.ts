@@ -16,6 +16,8 @@ export const commandMessageDefaults = {
   createInstance: 'Create instance',
   detachInstance: 'Detach instance',
   detachIcon: 'Detach icon',
+  setAsThumbnail: 'Set as thumbnail',
+  restoreDefaultThumbnail: 'Restore default thumbnail',
   goToMainComponent: 'Go to main component',
   addAutoLayout: 'Add auto layout',
   useAsMask: 'Use as mask',

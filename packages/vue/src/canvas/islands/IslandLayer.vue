@@ -84,7 +84,7 @@ function forwardWheel(event: WheelEvent) {
         :root-id="island.id"
         :revision="live.revision"
         :tokens="tokens"
-        class="pointer-events-auto absolute"
+        class="pointer-events-auto absolute w-max"
         :style="{ left: `${island.position.x}px`, top: `${island.position.y}px` }"
       />
     </div>

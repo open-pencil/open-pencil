@@ -12,6 +12,8 @@
   "createInstance": "Создать экземпляр",
   "detachInstance": "Отвязать экземпляр",
   "detachIcon": "Отсоединить иконку",
+  "setAsThumbnail": "Сделать миниатюрой",
+  "restoreDefaultThumbnail": "Вернуть миниатюру по умолчанию",
   "goToMainComponent": "Перейти к компоненту",
   "addAutoLayout": "Добавить авто-раскладку",
   "bringToFront": "На передний план",

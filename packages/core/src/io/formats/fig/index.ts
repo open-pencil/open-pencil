@@ -7,7 +7,11 @@ export {
   type FigCanvasParts,
   type FigFileExtrasOptions
 } from './write'
-export { figThumbnailPageId } from './thumbnail-page'
+export {
+  documentThumbnailSubject,
+  figThumbnailPageId,
+  type ThumbnailSubject
+} from './thumbnail-page'
 export {
   isReaderPagePending as isFigPagePending,
   pendingReaderPageOfNode as pendingFigPageOfNode,
