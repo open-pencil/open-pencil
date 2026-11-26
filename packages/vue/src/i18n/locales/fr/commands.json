@@ -12,6 +12,8 @@
   "createInstance": "Créer une instance",
   "detachInstance": "Détacher l'instance",
   "detachIcon": "Détacher l'icône",
+  "setAsThumbnail": "Définir comme miniature",
+  "restoreDefaultThumbnail": "Rétablir la miniature par défaut",
   "goToMainComponent": "Aller au composant principal",
   "addAutoLayout": "Ajouter un auto-layout",
   "bringToFront": "Mettre au premier plan",

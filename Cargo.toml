@@ -1,13 +1,16 @@
-# Every Rust crate in the repository: the desktop app, and the crates npm packages build to
-# WebAssembly, each in its package's `crate/`. One lockfile, one toolchain (`rust-toolchain.toml`),
-# and one `target/`.
+# Every Rust crate in the repository: the desktop app, the crates npm packages build to
+# WebAssembly, each in its package's `crate/`, and `crates/open-pencil`, which gathers the crates
+# published to crates.io. One lockfile, one toolchain (`rust-toolchain.toml`), and one `target/`.
 [workspace]
 resolver = "3"
-members = ["desktop", "packages/html-engine/crate"]
+members = ["crates/open-pencil", "desktop", "packages/fig/crate", "packages/html-engine/crate"]
 
+# Crates publish only where their manifest says so.
 [workspace.package]
 edition = "2024"
 license = "MIT"
+repository = "https://github.com/open-pencil/open-pencil"
+homepage = "https://openpencil.dev"
 publish = false
 
 # WebAssembly modules build for size with `--profile wasm`; the desktop app keeps the release
@@ -24,4 +27,4 @@ panic = "abort"
 # fixes that wait on upstream (its OPENPENCIL.md), so HTML import and auto layout, which runs on
 # that branch's release in packages/taffy, share one Taffy. Move `rev` with packages/taffy's pin.
 [patch."https://github.com/DioxusLabs/taffy"]
-taffy = { git = "https://github.com/open-pencil/taffy", rev = "eeb0e4e7e94a825ed5f4e88d4238c3d31ede21c7" }
+taffy = { git = "https://github.com/open-pencil/taffy", rev = "e20c1cf14fe0df3172f295784e623702084be030" }

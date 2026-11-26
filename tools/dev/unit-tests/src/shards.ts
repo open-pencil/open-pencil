@@ -62,7 +62,8 @@ export const HEAVY_UNIT_TEST_PATTERNS = [
   'packages/core/tests/io/formats/fig/export/worker.test.ts',
   'packages/core/tests/io/formats/fig/import/group-reclassify.test.ts',
   'packages/core/tests/layout/auto-layout/text/measurement.test.ts',
-  'packages/core/tests/canvas/cache.test.ts'
+  'packages/core/tests/canvas/cache.test.ts',
+  'packages/fig/tests/crate/heavy/'
 ] as const
 
 export function unitTestGroupNames(): UnitTestGroup[] {
