@@ -1,27 +1,24 @@
 import { RELAY_CLOSE, relayServerMessages, type RelayServerFrame } from '#cloud/contract'
-import * as Y from 'yjs'
 
-import {
-  COLLAB_ACTIONS,
-  decodeRoomUpdate,
-  encodeSyncReply,
-  RELAY_SERVER_PEER
-} from '@open-pencil/collab'
+import { COLLAB_ACTIONS, decodeRoomUpdate, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 import type { RelayPeer, RelaySocket } from './connection'
 import type { RoomLog } from './log'
+import type { RoomState } from './state'
 
 /**
- * A room's document and the log its saves go to, loaded when a message first needs them, with an
- * upper bound on the document's size: what was saved plus every update since. The bound is
- * measured again only once it reaches `maximumRoomBytes` after something was deleted, since only
- * a deletion can leave the document smaller than the bound.
+ * A room's document, held encoded (`RoomState`), and the log its saves go to, loaded when a
+ * message first needs them.
  */
 export type RoomContent = {
-  document: Y.Doc
+  state: RoomState
   log: RoomLog
-  bytes: number
-  deletedSinceMeasure: boolean
+  /** The room's size when it was loaded or last compacted, which its growth is measured from. */
+  compactedBytes: number
+  /** The editor asked for its copy of the document to compact the room with, until it answers. */
+  compaction: string | null
+  /** Sync requests the relay sent each editor whose answers are edits to take, not a compaction. */
+  asked: Map<string, number>
 }
 
 export type Room = {
@@ -63,38 +60,11 @@ export function needsDocument(namespace: string, target: string | null): boolean
   return target === RELAY_SERVER_PEER && namespace === COLLAB_ACTIONS.syncStep1
 }
 
-/** Whether `update` adds nothing and deletes only content `document` already holds. */
-function deletesOnlyKnown(document: Y.Doc, update: Uint8Array): boolean {
-  const { from, to } = Y.parseUpdateMetaV2(update)
-  if (![...to].every(([client, clock]) => from.get(client) === clock)) return false
-  const { ds } = Y.decodeUpdateV2(update)
-  for (const [client, deletions] of ds.clients) {
-    const held = Y.getState(document.store, client)
-    if (deletions.some((deletion) => deletion.clock + deletion.len > held)) return false
-  }
-  return true
-}
-
-/**
- * Whether the room's document stays within `limit` after `update`. An update that only deletes
- * what the room holds shrinks it, so it always fits; one that deletes what the room has not
- * received waits in the document, so it counts like any other. Otherwise the bound grows by the
- * update; past the limit, the document is measured only if a deletion may have shrunk it since
- * the last measure, so edits near the limit never encode the whole document each time.
- */
-function fits(content: RoomContent, update: Uint8Array, limit: number): boolean {
-  if (deletesOnlyKnown(content.document, update)) return true
-  if (content.bytes + update.byteLength <= limit) return true
-  if (!content.deletedSinceMeasure) return false
-  content.bytes = Y.encodeStateAsUpdateV2(content.document).byteLength
-  content.deletedSinceMeasure = false
-  return content.bytes + update.byteLength <= limit
-}
-
 /**
  * Applies a peer's V2 update to the room, inflated first for a sync reply, closing the peer's
- * socket when it is malformed or would grow the document past `limit`. Rooms are saved as V1
- * updates; only what peers exchange is V2.
+ * socket when it is malformed or would grow the room past `limit`. An update that only deletes
+ * always fits, so a full room can still be cleared; what it deletes is let go once the room is
+ * compacted. Whether the room took it.
  */
 export function applyToRoom(
   content: RoomContent,
@@ -103,28 +73,58 @@ export function applyToRoom(
   payload: Uint8Array,
   limit: number
 ): boolean {
-  const { document } = content
-  try {
-    const update = decodeRoomUpdate(payload, {
-      limit,
-      compressed: namespace === COLLAB_ACTIONS.syncReply
-    })
-    if (!update || !fits(content, update, limit)) {
-      peer.socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration update is too large')
-      return false
-    }
-    Y.applyUpdateV2(document, update, peer.id)
-    content.bytes += update.byteLength
-    return true
-  } catch {
-    peer.socket.close(RELAY_CLOSE.protocol, 'Malformed document update')
+  const update = readPeerUpdate(content.state, peer, namespace, payload, limit)
+  if (!update) return false
+  if (update.adds && !fits(content.state, update.data, limit)) {
+    peer.socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration update is too large')
     return false
   }
+  content.log.add(update.data)
+  return true
 }
 
 /**
- * Handles a message addressed to the relay's own peer: a sync request is answered from the
- * room's document, and a sync reply is applied to it.
+ * Whether `update` leaves the room within `limit`. The room counts each update whole until it
+ * merges them, which shares their bookkeeping, so a room past its limit by that count is merged
+ * and measured before an update is turned away.
+ */
+function fits(state: RoomState, update: Uint8Array, limit: number): boolean {
+  if (state.bytes + update.byteLength <= limit) return true
+  state.encode()
+  return state.bytes + update.byteLength <= limit
+}
+
+/** A peer's update as the relay reads it, or null once the peer's socket was closed for it. */
+function readPeerUpdate(
+  state: RoomState,
+  peer: RelayPeer,
+  namespace: string,
+  payload: Uint8Array,
+  limit: number
+): { data: Uint8Array; adds: boolean } | null {
+  let data: Uint8Array | null
+  try {
+    data = decodeRoomUpdate(payload, { limit, compressed: namespace === COLLAB_ACTIONS.syncReply })
+  } catch {
+    peer.socket.close(RELAY_CLOSE.protocol, 'Malformed document update')
+    return null
+  }
+  if (!data) {
+    peer.socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration update is too large')
+    return null
+  }
+  const read = state.read(data)
+  if (!read) {
+    peer.socket.close(RELAY_CLOSE.protocol, 'Malformed document update')
+    return null
+  }
+  return { data, adds: read.adds }
+}
+
+/**
+ * Handles a message addressed to the relay's own peer: a sync request is answered from the room,
+ * and a sync reply is taken into it, or, from the editor asked for its whole copy, compacts it.
+ * Whether the room changed.
  */
 export function answerAsServer(
   content: RoomContent,
@@ -132,14 +132,14 @@ export function answerAsServer(
   namespace: string,
   payload: Uint8Array,
   limit: number
-) {
+): boolean {
   if (namespace === COLLAB_ACTIONS.syncStep1) {
     let reply: Uint8Array
     try {
-      reply = encodeSyncReply(content.document, payload)
+      reply = content.state.syncReply(payload)
     } catch {
       peer.socket.close(RELAY_CLOSE.protocol, 'Malformed state vector')
-      return
+      return false
     }
     send(peer.socket, {
       type: 'message',
@@ -147,7 +147,32 @@ export function answerAsServer(
       from: RELAY_SERVER_PEER,
       payload: reply
     })
-  } else if (namespace === COLLAB_ACTIONS.syncReply) {
-    applyToRoom(content, peer, namespace, payload, limit)
+    return false
+  }
+  if (namespace !== COLLAB_ACTIONS.syncReply) return false
+  const asked = content.asked.get(peer.id) ?? 0
+  if (asked > 0 || content.compaction !== peer.id) {
+    if (asked > 1) content.asked.set(peer.id, asked - 1)
+    else content.asked.delete(peer.id)
+    return applyToRoom(content, peer, namespace, payload, limit)
+  }
+  content.compaction = null
+  const compacted = compactWithCopy(content, payload, limit)
+  // A copy that did not shrink the room counts too, so the relay asks again only once it grew.
+  content.compactedBytes = content.state.bytes
+  return compacted
+}
+
+/**
+ * Compacts the room with an editor's compressed copy of the document. The relay asked for it, so
+ * a copy it cannot read, or one past the room's limit, is dropped rather than held against the
+ * editor; the room stays as it was.
+ */
+function compactWithCopy(content: RoomContent, payload: Uint8Array, limit: number): boolean {
+  try {
+    const copy = decodeRoomUpdate(payload, { limit, compressed: true })
+    return copy !== null && content.log.compactWith(copy)
+  } catch {
+    return false
   }
 }
