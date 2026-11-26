@@ -15,7 +15,8 @@ import type { DesignElement, DesignNode } from '#dom-css/types'
 import { sortBy } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
-import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { emptyBehaviour, readBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { easingPreset } from '@open-pencil/scene-graph/variables'
 import { cssRules } from '@open-pencil/test-support/dom-css'
 
 import {
@@ -214,7 +215,40 @@ test('has no state styles when no variant shows the rest state', () => {
   expect(stateStyles(graph, set)).toBeNull()
 })
 
+/** The button set with a transition whose duration follows a TIMING variable and easing is its own. */
+function transitionedButton() {
+  const fixture = buttonSet()
+  const motion = fixture.graph.createCollection('Motion')
+  const fast = fixture.graph.createVariable('Fast', 'TIMING', motion.id, 0.15)
+  const behaviour = readBehaviour(fixture.set)
+  if (!behaviour) throw new Error('No behaviour')
+  fixture.graph.updateNode(fixture.set.id, {
+    pluginData: withBehaviour(fixture.set, {
+      ...behaviour,
+      transition: { duration: 0.15, easing: easingPreset('OUT_CUBIC'), durationVariableId: fast.id }
+    })
+  })
+  return fixture
+}
+
 describe('state stylesheet', () => {
+  test('eases the layers a state changes with the transition, its variable as a token', async () => {
+    const rules = cssRules((await stateStylesToCSS(styles(transitionedButton()))).css)
+    expect(rules.get('.button')).toMatchObject({
+      'transition-property': 'all',
+      'transition-duration': 'var(--fast, 150ms)',
+      'transition-timing-function': 'ease-out'
+    })
+  })
+
+  test('Tailwind writes the transition as utilities', () => {
+    const root = stateStylesToTailwind(styles(transitionedButton())).children[0]
+    const classes = root?.type === 'element' ? (root.attrs.class ?? '') : ''
+    expect(classes.split(' ')).toEqual(
+      expect.arrayContaining(['transition-all', 'duration-[var(--fast,_150ms)]', 'ease-out'])
+    )
+  })
+
   test('writes readable classes and state selectors on the root', async () => {
     const { document, css } = await stateStylesToCSS(styles(switchSet()))
     expect(
