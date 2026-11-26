@@ -1,0 +1,1 @@
+- SVG export keeps the opacity of gradient and image fills (#2377).
