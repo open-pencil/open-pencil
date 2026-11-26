@@ -19,6 +19,8 @@ export interface PlayerScene {
   slides: { id: string; frame: SlideFrame }[]
   /** Where the animated layers of those slides are drawn, by ID. */
   layers: Map<string, LayerFrame>
+  /** Layers live islands show in place of the canvas, which leaves them out. */
+  islands?: ReadonlySet<string>
 }
 
 /** A step's layers with when each starts and how long it plays, in seconds from the step's start. */

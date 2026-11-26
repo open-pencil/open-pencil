@@ -94,6 +94,8 @@ export interface PresentationStatus {
   /** How many steps of its build have played, of how many. */
   played: number
   steps: number
+  /** Whether a transition or a step is moving, as live islands wait for it to end. */
+  moving: boolean
   /** When it started, in milliseconds since the epoch, for the presenter's timer. */
   startedAt: number
 }

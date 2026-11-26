@@ -39,7 +39,7 @@ export function drawPresentation(r: SkiaRenderer, graph: SceneGraph, scene: Play
   graph.clearAbsPosCache()
   const canvas = r.surface.getCanvas()
   canvas.clear(r.ck.BLACK)
-  const overlays = { playing: true, layerMotion: scene.layers }
+  const overlays = { playing: true, layerMotion: scene.layers, playIslands: scene.islands }
   for (const { id, frame } of scene.slides) {
     const slide = graph.getNode(id)
     if (!slide || frame.opacity <= 0) continue

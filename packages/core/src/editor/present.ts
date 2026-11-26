@@ -42,7 +42,8 @@ export function createPresentActions(ctx: EditorContext) {
       ...ctx.state.presentation,
       index: player.index,
       played: player.played,
-      steps: player.steps
+      steps: player.steps,
+      moving: player.moving(seconds())
     }
   }
 
@@ -58,7 +59,16 @@ export function createPresentActions(ctx: EditorContext) {
     if (current.moving(seconds())) {
       cancelFrame = nextFrame(() => {
         cancelFrame = null
-        if (current.tick(seconds())) report()
+        current.tick(seconds())
+        // Reported each frame only when it changes: the end of a move, or a timed move on.
+        const status = ctx.state.presentation
+        if (
+          status &&
+          (status.moving !== current.moving(seconds()) ||
+            status.index !== current.index ||
+            status.played !== current.played)
+        )
+          report()
         schedule()
       })
       return
@@ -97,6 +107,7 @@ export function createPresentActions(ctx: EditorContext) {
       index: player.index,
       played: player.played,
       steps: player.steps,
+      moving: player.moving(seconds()),
       startedAt: Date.now()
     }
     schedule()

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { useEventListener, useFullscreen } from '@vueuse/core'
+import { useElementSize, useEventListener, useFullscreen } from '@vueuse/core'
 import { noop } from 'es-toolkit/function'
 import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
 
-import type { CanvasView, EditorState } from '@open-pencil/core'
+import { slideIslandRoots, type CanvasView, type EditorState } from '@open-pencil/core'
+import { placeSlide } from '@open-pencil/core/present'
+import { SlideIslands } from '@open-pencil/vue/canvas'
 import { useCanvas } from '@open-pencil/vue/canvas/surface'
 import { useMessages } from '@open-pencil/vue/i18n'
 
@@ -20,7 +22,39 @@ const messages = useMessages('slides')
 const root = useTemplateRef<HTMLElement>('root')
 const canvasRef = useTemplateRef<HTMLCanvasElement>('canvas')
 
-const view: CanvasView = { id: 'present', scene: () => store.presentationScene() }
+const status = computed(() => store.state.presentation)
+const { width, height } = useElementSize(root)
+
+/**
+ * The slide on show's layers that hold controls, run as live islands while nothing moves; a layer
+ * its build has not brought on yet stays hidden. While a step or a transition moves, the canvas
+ * draws them, so they move with the rest.
+ */
+const islands = computed(() => {
+  const current = status.value
+  const slideId = current?.slideIds[current.index]
+  if (!current || current.moving || !slideId) return []
+  void current.played
+  const resting = store.presentationScene().layers
+  return slideIslandRoots(store.graph, slideId).flatMap((id) => {
+    const node = store.graph.getNode(id)
+    if (!node || resting.get(id)?.opacity === 0) return []
+    return [{ id, x: node.x, y: node.y }]
+  })
+})
+const islandIds = computed(() => new Set(islands.value.map((island) => island.id)))
+const placement = computed(() => {
+  const current = status.value
+  const slide = current && store.graph.getNode(current.slideIds[current.index] ?? '')
+  return slide
+    ? placeSlide(slide.width, slide.height, width.value, height.value)
+    : { x: 0, y: 0, scale: 1 }
+})
+
+const view: CanvasView = {
+  id: 'present',
+  scene: () => ({ ...store.presentationScene(), islands: islandIds.value })
+}
 /** The editor's state with this canvas's view; its pan and zoom go unused. */
 const getRenderState = (): EditorState => ({ ...store.state, canvasView: view })
 
@@ -29,7 +63,6 @@ usePresenterLink(store)
 // The canvas sizes only itself: the editor's own viewport stays as it was.
 useCanvas(canvasRef, store, { showRulers: false, getRenderState, onViewportResize: noop })
 
-const status = computed(() => store.state.presentation)
 const counter = computed(() =>
   status.value
     ? messages.value.presentedSlide({
@@ -85,6 +118,7 @@ function onPointerDown(event: PointerEvent) {
   <div
     ref="root"
     tabindex="-1"
+    dir="ltr"
     role="application"
     :aria-label="counter"
     data-test-id="slides-presentation"
@@ -93,6 +127,13 @@ function onPointerDown(event: PointerEvent) {
     @contextmenu.prevent
   >
     <canvas ref="canvas" class="block size-full" />
+    <SlideIslands
+      v-if="islands.length > 0"
+      :islands="islands"
+      :placement="placement"
+      :revision="0"
+      @pointerdown.stop
+    />
     <button
       type="button"
       :aria-label="messages.exitPresentation"
