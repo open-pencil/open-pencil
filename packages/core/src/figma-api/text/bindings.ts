@@ -11,8 +11,9 @@ import {
   type Variable
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
+import { scaledTextStyleLengths } from '@open-pencil/scene-graph/scaling'
 import { findSharedStyle, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
-import { textStyleBoundVariables } from '@open-pencil/scene-graph/variables'
+import { boundNumberValue, textStyleBoundVariables } from '@open-pencil/scene-graph/variables'
 
 import { parseFigma } from '#core/figma-api/validation'
 import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
@@ -65,9 +66,13 @@ export function sharedStyleRangePatcher(
   }
   const bound = styleBoundVariables(graph, style)
   if (bound.length === 0) {
-    return () => ({ ...textPatch })
+    return (node) => ({ ...scaledTextStyleLengths(textPatch, node.componentScale) })
   }
-  return (node) => ({ ...textPatch, ...boundValues(graph, node, bound) })
+  return (node) =>
+    scaledTextStyleLengths(
+      { ...textPatch, ...boundValues(graph, node, bound) },
+      node.componentScale
+    )
 }
 
 function isTextBindableField(field: string): field is TextBindableField {
@@ -140,7 +145,7 @@ function boundValue(
   }
   const value = graph.resolveNumberVariableForNode(node.id, variable.id)
   if (value === undefined || !Number.isFinite(value) || isParagraphField(field)) return {}
-  return { [field]: value }
+  return { [field]: boundNumberValue(field, value) }
 }
 
 /**
@@ -158,7 +163,9 @@ export function rangeBindingChanges(
 ): { styleRuns: StyleRun[]; paragraphValue: number | null } {
   const bound =
     variable === null ? null : boundVariable(graph, 'setRangeBoundVariable', field, variable)
-  const value = bound ? boundValue(graph, node, field, bound) : {}
+  const value = bound
+    ? scaledTextStyleLengths(boundValue(graph, node, field, bound), node.componentScale)
+    : {}
   let styleRuns = node.styleRuns
   // Characters bound apart keep their other bindings.
   for (const segment of getStyledTextSegments(node, ['boundVariables'], start, end)) {

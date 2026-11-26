@@ -2,7 +2,7 @@ import { isEmptyObject } from 'es-toolkit/predicate'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
-  createTextStyleLookup,
+  createStyleBindingLookup,
   inheritedTextStyleBindings,
   resolvedTextStyleBindings,
   type TextStyleLookup
@@ -38,7 +38,7 @@ export function applyDocumentTextStyleBindings(
   graph: SceneGraph,
   materialized: readonly SceneNode[]
 ): void {
-  const styles = createTextStyleLookup(graph)
+  const styles = createStyleBindingLookup(graph)
   for (const node of materialized) {
     const updates = resolvedTextStyleBindings(graph, node, styles)
     if (!isEmptyObject(updates)) {

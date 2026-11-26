@@ -23,7 +23,7 @@ export function textStyleBoundVariables(style: SceneNode): VariableBindings {
   return bound ?? NO_BINDINGS
 }
 
-export function createTextStyleLookup(graph: SceneGraph): TextStyleLookup {
+export function createStyleBindingLookup(graph: SceneGraph): TextStyleLookup {
   const boundByStyle = new Map<string, VariableBindings>()
   return (styleId) => {
     let bound = boundByStyle.get(styleId)
@@ -64,8 +64,10 @@ function bindingsInheritedFrom(
   return notOverridden(styles(styleId), own)
 }
 
+type StyledLayer = Pick<SceneNode, 'type' | 'textStyleId' | 'boundVariables'>
+
 export function inheritedTextStyleBindings(
-  node: SceneNode,
+  node: StyledLayer,
   styles: TextStyleLookup
 ): VariableBindings {
   if (node.type !== 'TEXT') {
@@ -90,7 +92,7 @@ function withInherited(own: VariableBindings, inherited: VariableBindings): Vari
 }
 
 export function effectiveBoundVariables(
-  node: SceneNode,
+  node: StyledLayer,
   styles: TextStyleLookup
 ): VariableBindings {
   return withInherited(node.boundVariables, inheritedTextStyleBindings(node, styles))

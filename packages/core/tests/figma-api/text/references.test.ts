@@ -3,7 +3,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 import { graphOf } from '#core/figma-api/graph'
@@ -340,5 +342,105 @@ describe('bound variable ranges', () => {
     expect(() => text.setRangeBoundVariable(0, 5, 'fontSize', { ...size, id: 'missing' })).toThrow(
       'in setRangeBoundVariable: Variable not found'
     )
+  })
+})
+
+describe('style ranges with bound lengths', () => {
+  function boundStyle(api: FigmaAPI) {
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const roomy = graph.createMode(collection.id, 'Roomy') ?? ''
+    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 14)
+    size.valuesByMode[roomy] = 20
+    const leading = graph.createVariable('Body leading', 'FLOAT', collection.id, 18)
+    leading.valuesByMode[roomy] = 26
+    textStyle(api, '1:20', {
+      fontSize: 14,
+      lineHeight: { value: 18, unit: 'PIXELS' },
+      boundVariables: { fontSize: size.id, lineHeight: leading.id }
+    })
+    return { graph, collection, roomy, size, leading }
+  }
+
+  test('give a range the line height a style binds as a length', () => {
+    const { api, text } = styledText()
+    boundStyle(api)
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 18, unit: 'PIXELS' })
+  })
+
+  test('give a range the line height it binds itself as a length', () => {
+    const { api, text } = styledText()
+    const { leading } = boundStyle(api)
+
+    text.setRangeBoundVariable(0, 5, 'lineHeight', api.variables.getVariableById(leading.id))
+
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 18, unit: 'PIXELS' })
+  })
+
+  test('give a range in a scaled instance the style it takes at the instance scale', () => {
+    const { api } = styledText()
+    const { graph } = boundStyle(api)
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { width: 40, height: 20 })
+    graph.createNode('TEXT', component.id, { text: 'Hello world', fontSize: 14 })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    rescaleNodeTree(graph, instance.id, 3)
+    const text = api.getNodeById(graph.getChildren(instance.id)[0].id)
+    if (text?.type !== 'TEXT') {
+      throw new Error('Expected the instance to hold a text')
+    }
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+    const applied = text.getRangeFontSize(0, 5)
+    reconcileVariableBindings(graph, { subtrees: [text.id] })
+
+    expect([applied, text.getRangeFontSize(0, 5)]).toEqual([42, 42])
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 54, unit: 'PIXELS' })
+  })
+
+  test('give a range in a scaled instance the size it binds itself at the instance scale', () => {
+    const { api } = styledText()
+    const { graph, size } = boundStyle(api)
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { width: 40, height: 20 })
+    graph.createNode('TEXT', component.id, { text: 'Hello world', fontSize: 14 })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    rescaleNodeTree(graph, instance.id, 3)
+    const text = api.getNodeById(graph.getChildren(instance.id)[0].id)
+    if (text?.type !== 'TEXT') {
+      throw new Error('Expected the instance to hold a text')
+    }
+
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(size.id))
+
+    expect(text.getRangeFontSize(0, 5)).toBe(42)
+  })
+
+  test('give a range in a scaled instance a style binding nothing at the instance scale', () => {
+    const { api } = styledText()
+    const graph = graphOf(api)
+    textStyle(api, '1:30', {
+      fontSize: 7,
+      lineHeight: { value: 9, unit: 'PIXELS' },
+      letterSpacing: { value: 5, unit: 'PERCENT' }
+    })
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { width: 40, height: 20 })
+    graph.createNode('TEXT', component.id, { text: 'Hello world', fontSize: 14 })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    rescaleNodeTree(graph, instance.id, 3)
+    const text = api.getNodeById(graph.getChildren(instance.id)[0].id)
+    if (text?.type !== 'TEXT') {
+      throw new Error('Expected the instance to hold a text')
+    }
+
+    text.setRangeTextStyleId(0, 5, '1:30')
+
+    expect(text.getRangeFontSize(0, 5)).toBe(21)
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 27, unit: 'PIXELS' })
+    expect(text.getRangeLetterSpacing(0, 5)).toEqual({ value: 5, unit: 'PERCENT' })
   })
 })

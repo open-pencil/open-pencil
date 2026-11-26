@@ -6,6 +6,7 @@ import { BLACK } from './constants'
 import { copyEffects, copyFills, copyLayoutGrids } from './copy'
 import type { SceneGraph } from './graph'
 import { newStrokeGeometry } from './node-defaults'
+import { scaledTextStyleLengths } from './scaling/node'
 import { STROKE_LINE_KEYS } from './strokes'
 import { styleRunReferences } from './text/references'
 import type {
@@ -225,7 +226,10 @@ export function sharedStylePatch(
   else if (kind === 'stroke') patch.strokes = strokesFromStyle(target, style)
   else if (kind === 'effect') patch.effects = copyEffects(style.effects)
   else if (kind === 'grid') patch.layoutGrids = copyLayoutGrids(style.layoutGrids)
-  else Object.assign(patch, structuredClone(pick(style, SHARED_STYLE_FIELDS.text)))
+  else {
+    const fields = structuredClone(pick(style, SHARED_STYLE_FIELDS.text))
+    Object.assign(patch, scaledTextStyleLengths(fields, target.componentScale))
+  }
   return patch
 }
 

@@ -1,9 +1,11 @@
 import { uniq } from 'es-toolkit/array'
+import { pick } from 'es-toolkit/object'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
 import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
+import { isTextStyleLength, scaledTextStyleLengths } from '../scaling/node'
 import { pixelLength } from '../text/lengths'
 import type { CharacterStyleOverride, Effect, SceneNode, StyleRun, TextLength } from '../types'
 import {
@@ -16,7 +18,7 @@ import {
 import { refreshBoundPaints } from './paints'
 import { collectionsResolving } from './resolution'
 import {
-  createTextStyleLookup,
+  createStyleBindingLookup,
   effectiveBoundVariables,
   effectiveRunBoundVariables,
   inheritedRunStyleBindings,
@@ -76,6 +78,17 @@ function overriddenInInstance(graph: SceneGraph, nodeId: string, field: string):
   return !!instance && hasInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
 }
 
+function lengthScale(field: string, componentScale: number): number {
+  return isTextStyleLength(field) ? componentScale : 1
+}
+
+function bindingScale(node: SceneNode, field: string): number {
+  if (field in node.boundVariables) {
+    return node.variableBindingScales[field] ?? 1
+  }
+  return lengthScale(field, node.componentScale)
+}
+
 /** A bound number as the field stores it. */
 export function boundNumberValue(field: string, value: number): number | TextLength {
   return TEXT_LENGTH_FIELDS.has(field) ? pixelLength(value) : value
@@ -88,7 +101,7 @@ export function boundNumberValue(field: string, value: number): number | TextLen
 export function resolvedNumericBindings(
   graph: SceneGraph,
   node: SceneNode,
-  styles: TextStyleLookup = createTextStyleLookup(graph)
+  styles: TextStyleLookup = createStyleBindingLookup(graph)
 ): Partial<SceneNode> {
   return resolvedNumbers(graph, node, effectiveBoundVariables(node, styles))
 }
@@ -105,8 +118,7 @@ function resolvedNumbers(
       continue
     const value = graph.resolveNumberVariableForNode(node.id, variableId)
     if (value === undefined || !Number.isFinite(value)) continue
-    const scale = node.variableBindingScales[field] ?? 1
-    const effective = value * scale
+    const effective = value * bindingScale(node, field)
     if (!Number.isFinite(effective)) continue
     const next = boundNumberValue(
       field,
@@ -142,21 +154,23 @@ export function resolvedValueBindings(graph: SceneGraph, node: SceneNode): Parti
 /** Fields of a range of characters a bound number gives its value; the rest need fonts loaded. */
 const NUMERIC_RUN_FIELDS = ['fontSize', 'fontWeight', 'letterSpacing', 'lineHeight'] as const
 
+type RunHolder = Pick<SceneNode, 'id' | 'styleRuns' | 'componentScale'>
+
 /**
  * The runs a text's character bindings resolve to in its mode, when a bound number differs from
  * what its characters hold. Bound font families and styles are left as stored, as the text's own.
  */
 export function resolvedRunBindings(
   graph: SceneGraph,
-  node: SceneNode,
-  styles: TextStyleLookup = createTextStyleLookup(graph)
+  node: RunHolder,
+  styles: TextStyleLookup = createStyleBindingLookup(graph)
 ): Pick<Partial<SceneNode>, 'styleRuns'> {
   return resolvedRuns(graph, node, (run) => effectiveRunBoundVariables(run, styles))
 }
 
 function resolvedRuns(
   graph: SceneGraph,
-  node: SceneNode,
+  node: RunHolder,
   runBindings: (run: StyleRun) => VariableBindings
 ): Pick<Partial<SceneNode>, 'styleRuns'> {
   const styleRuns = node.styleRuns.map((run): StyleRun => {
@@ -167,7 +181,7 @@ function resolvedRuns(
       if (!variableId) continue
       const value = graph.resolveNumberVariableForNode(node.id, variableId)
       if (value === undefined || !Number.isFinite(value)) continue
-      const next = boundNumberValue(field, value)
+      const next = boundNumberValue(field, value * lengthScale(field, node.componentScale))
       if (isEqual(style[field], next)) continue
       style = { ...style, [field]: next }
     }
@@ -279,7 +293,7 @@ export function variablesResolvingThrough(graph: SceneGraph, ids: Iterable<strin
  * those the bound variables alias, so a mode set on the subtrees can change what they show.
  */
 export function collectionsBoundIn(graph: SceneGraph, roots: Iterable<string>): Set<string> {
-  const styles = createTextStyleLookup(graph)
+  const styles = createStyleBindingLookup(graph)
   return collectionsResolving(
     graph,
     subtreeNodes(graph, roots).flatMap((node) => boundVariableIds(node, styles))
@@ -293,7 +307,7 @@ export function collectionsBoundIn(graph: SceneGraph, roots: Iterable<string>): 
 export function layersUsingVariables(
   graph: SceneGraph,
   ids: Iterable<string>,
-  styles: TextStyleLookup = createTextStyleLookup(graph)
+  styles: TextStyleLookup = createStyleBindingLookup(graph)
 ): SceneNode[] {
   const variables = variablesResolvingThrough(graph, ids)
   return [...graph.getAllNodes()].filter((node) =>
@@ -317,7 +331,7 @@ export function layersResolvingCollections(
     graph,
     inCollections.map((variable) => variable.id)
   )
-  const styles = createTextStyleLookup(graph)
+  const styles = createStyleBindingLookup(graph)
   return subtreeNodes(graph, roots).filter((node) =>
     boundVariableIds(node, styles).some((id) => variables.has(id))
   )
@@ -360,14 +374,14 @@ function withTextStyleConsumers(graph: SceneGraph, nodes: SceneNode[]): ScopedLa
 type NumericTextValues = Pick<CharacterStyleOverride, (typeof NUMERIC_RUN_FIELDS)[number]>
 
 function unboundStyleValues(
-  style: SceneNode,
+  styleValues: NumericTextValues,
   current: NumericTextValues,
   bound: VariableBindings
 ): NumericTextValues | undefined {
   let values: NumericTextValues | undefined
   for (const field of NUMERIC_RUN_FIELDS) {
-    if (!(field in bound) && !isEqual(current[field], style[field])) {
-      values = { ...values, [field]: style[field] }
+    if (!(field in bound) && !isEqual(current[field], styleValues[field])) {
+      values = { ...values, [field]: styleValues[field] }
     }
   }
   return values
@@ -375,6 +389,7 @@ function unboundStyleValues(
 
 function restyledValues(
   graph: SceneGraph,
+  node: SceneNode,
   styleId: string | null | undefined,
   current: NumericTextValues,
   bound: VariableBindings,
@@ -384,7 +399,11 @@ function restyledValues(
     return undefined
   }
   const style = graph.getSharedStyleNode(styleId, 'TEXT')
-  return style ? unboundStyleValues(style, current, bound) : undefined
+  if (!style) {
+    return undefined
+  }
+  const styleValues = scaledTextStyleLengths(pick(style, NUMERIC_RUN_FIELDS), node.componentScale)
+  return unboundStyleValues(styleValues, current, bound)
 }
 
 function restyledRuns(
@@ -395,7 +414,7 @@ function restyledRuns(
 ): Pick<Partial<SceneNode>, 'styleRuns'> {
   const styleRuns = node.styleRuns.map((run): StyleRun => {
     const bound = effectiveRunBoundVariables(run, styles)
-    const values = restyledValues(graph, run.style.textStyleId, run.style, bound, restyled)
+    const values = restyledValues(graph, node, run.style.textStyleId, run.style, bound, restyled)
     return values ? { ...run, style: { ...run.style, ...values } } : run
   })
   const changed = styleRuns.some((run, index) => run !== node.styleRuns[index])
@@ -413,7 +432,7 @@ function styleOwnValues(
   }
   const bound = effectiveBoundVariables(node, styles)
   return {
-    ...restyledValues(graph, node.textStyleId, node, bound, restyled),
+    ...restyledValues(graph, node, node.textStyleId, node, bound, restyled),
     ...restyledRuns(graph, node, restyled, styles)
   }
 }
@@ -475,7 +494,7 @@ export function reconcileVariableBindingUpdates(
   scope?: BindingScope
 ): Map<string, Partial<SceneNode>> {
   const relaid = new Map<string, Partial<SceneNode>>()
-  const styles = createTextStyleLookup(graph)
+  const styles = createStyleBindingLookup(graph)
   const { nodes: scoped, restyled } = scopedLayers(graph, scope, styles)
   const nodes = [...scoped]
   for (const node of nodes) refreshBoundPaints(graph, node)
