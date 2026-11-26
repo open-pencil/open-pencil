@@ -73,17 +73,24 @@ export function exportBounds(
   if (!useAbsoluteBounds) {
     for (const id of nodeIds) {
       const node = graph.getNode(id)
-      if (node) bounds = unionVisualBounds(bounds, absoluteRenderBounds(graph, node))
+      // Null for a layer that draws nothing, hidden or transparent itself or in what holds it.
+      const drawn = node ? absoluteRenderBounds(graph, node) : null
+      if (!node || !drawn) continue
+      // A slide is its own page: the shadows that set it apart in the grid fall outside it.
+      bounds = unionVisualBounds(bounds, node.type === 'SLIDE' ? boxBounds(graph, node) : drawn)
     }
     return bounds
   }
   for (const id of nodeIds) {
     const node = graph.getNode(id)
-    if (!node?.visible) continue
-    const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
-    bounds = unionVisualBounds(bounds, { minX: x, minY: y, maxX: x + width, maxY: y + height })
+    if (node?.visible) bounds = unionVisualBounds(bounds, boxBounds(graph, node))
   }
   return bounds
+}
+
+function boxBounds(graph: SceneGraph, node: SceneNode): VisualBounds {
+  const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
+  return { minX: x, minY: y, maxX: x + width, maxY: y + height }
 }
 
 /** The scale at which these layers' export bounds fit a square of `size` pixels. */

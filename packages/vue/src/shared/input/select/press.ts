@@ -1,4 +1,5 @@
 import {
+  canvasRootId,
   editedBlurRamp,
   editedGradient,
   resolveEditorProfile,
@@ -22,6 +23,7 @@ import {
   selectionIsLocked
 } from '#vue/shared/input/select/move'
 import { tryStartShapeHandleDrag } from '#vue/shared/input/shape-handles'
+import { createSlidesDrag, selectionIsSlides } from '#vue/shared/input/slides/drag'
 import { tryStartStickyScale } from '#vue/shared/input/sticky/scale'
 import type { DragState } from '#vue/shared/input/types'
 import { handleNodeEditDown } from '#vue/shared/input/vector'
@@ -42,7 +44,11 @@ function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragS
   const selectsSection = editor.state.selectedIds.size === 0
   editor.exitContainers()
   editor.clearSelection()
-  const container = editor.graph.hitTestOpenContainer(cx, cy, editor.state.currentPageId)
+  const container = editor.graph.hitTestOpenContainer(
+    cx,
+    cy,
+    canvasRootId(editor.graph, editor.state)
+  )
   setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id, selectsSection })
 }
 
@@ -165,6 +171,12 @@ function pressLayers(
     if (shiftPressedSelectedId) {
       editor.select([shiftPressedSelectedId], true)
     }
+    return
+  }
+
+  // Slides keep the deck's layout, so dragging them picks a new place in it.
+  if (selectionIsSlides(editor)) {
+    setDrag(createSlidesDrag(editor, sx, sy, shiftPressedSelectedId))
     return
   }
 
