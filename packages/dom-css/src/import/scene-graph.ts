@@ -35,7 +35,8 @@ import {
   hiddenByVisibility,
   hiddenPart,
   splitOutOfFlow,
-  textAlignOf,
+  isRightToLeft,
+  textLayerAlign,
   type FlowKind,
   type ParentFlow
 } from './flow'
@@ -195,10 +196,9 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const effects = cssShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
-  const textAlign = textAlignOf(style)?.toUpperCase()
-  if (textAlign === 'CENTER' || textAlign === 'RIGHT' || textAlign === 'JUSTIFIED') {
-    node.textAlignHorizontal = textAlign
-  }
+  if (isRightToLeft(style)) node.textDirection = 'RTL'
+  const align = textLayerAlign(style)
+  if (align) node.textAlignHorizontal = align
 
   // Lays out as one line through its sizing; the line limit is for truncating it, as an
   // export writes it back as `nowrap`.

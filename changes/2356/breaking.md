@@ -1,0 +1,1 @@
+- `isLogicalTextAlignStart` and `isLogicalTextAlignEnd` are removed from `@open-pencil/scene-graph/text/direction`.
