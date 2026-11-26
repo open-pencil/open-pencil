@@ -106,7 +106,7 @@ export function addWrappedLines(style: DesignStyleDeclaration, node: SceneNode):
 }
 
 /** The direction a frame lays its row out in: its own, or the nearest one it inherits. */
-function flowDirection(graph: SceneGraph, frame: SceneNode): 'LTR' | 'RTL' {
+export function flowDirection(graph: SceneGraph, frame: SceneNode): 'LTR' | 'RTL' {
   let node: SceneNode | undefined = frame
   while (node) {
     if (node.layoutDirection === 'LTR' || node.layoutDirection === 'RTL')

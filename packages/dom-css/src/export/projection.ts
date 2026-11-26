@@ -29,7 +29,14 @@ import {
   type FieldCSS
 } from './paint-style'
 import { addPositioning, constraintSizes, placement } from './position'
-import { addFlexGap, addOverlapMargin, addPadding, addWrappedLines, paddingExtra } from './spacing'
+import {
+  addFlexGap,
+  addOverlapMargin,
+  addPadding,
+  addWrappedLines,
+  flowDirection,
+  paddingExtra
+} from './spacing'
 import { addTextLines, textCaseToCSS, textElementContent, uniformLetterSpacing } from './text'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
@@ -302,7 +309,10 @@ function styleFromSceneNode(
   if (alignSelf) style['align-self'] = alignSelf
 
   addLayoutChild(style, graph, node, parent)
+  // CSS inherits direction, so a left-to-right frame in a right-to-left one says so.
   if (node.layoutDirection === 'RTL') style.direction = 'rtl'
+  else if (node.layoutDirection === 'LTR' && parent && flowDirection(graph, parent) === 'RTL')
+    style.direction = 'ltr'
 
   const extra = paddingExtra(graph, node, metrics !== undefined, shadows !== undefined)
   if (node.layoutMode === 'GRID') {

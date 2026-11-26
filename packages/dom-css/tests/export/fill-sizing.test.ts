@@ -163,6 +163,12 @@ describe('auto layout as the canvas lays it out, in DOM/CSS export', () => {
     const inherited = sceneNodeToDesignDocument(graph, outer.id).children
     expect(styleOf(inherited, 'A')).toMatchObject({ 'margin-left': '-10px' })
     expect(styleOf(inherited, 'Inner')).toMatchObject({ 'padding-left': '10px' })
+    // A row set left to right in a right-to-left one says so, and ends on its right.
+    graph.updateNode(inner.id, { layoutDirection: 'LTR' })
+    const explicit = sceneNodeToDesignDocument(graph, outer.id).children
+    expect(styleOf(explicit, 'Inner')).toMatchObject({ direction: 'ltr', 'padding-right': '14px' })
+    expect(styleOf(explicit, 'A')).toMatchObject({ 'margin-right': '-10px' })
+    expect(styleOf(exportParent(layout, []), 'Parent')).not.toHaveProperty('direction')
     const alone = exportParent(layout, [{ name: 'A', ...box }])
     expect(styleOf(alone, 'A')).not.toHaveProperty('margin-right')
   })
