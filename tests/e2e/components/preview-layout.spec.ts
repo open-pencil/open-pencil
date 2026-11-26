@@ -36,3 +36,14 @@ test('a stroke left out of layout and an automatic line height measure in previe
     .toMatchObject({ width: card.boxes.Fill.width })
   await expect.poll(() => previewHeight(editor.page, card.id)).toBe(card.height)
 })
+
+test('a row aligned by baseline places text and boxes on the canvas as preview does', async () => {
+  const row = await scenes.build('createBaselineRow')
+  // Text aligns by its first baseline, the box by its bottom edge.
+  expect(row.boxes.Small.y).toBeGreaterThan(row.boxes.Box.y)
+  await startPreview()
+  for (const [name, box] of Object.entries(row.boxes))
+    await expect
+      .poll(() => previewBox(editor.page, row.id, name))
+      .toMatchObject({ y: Math.round(box.y) })
+})

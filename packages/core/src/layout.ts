@@ -35,8 +35,11 @@ export {
   estimateTextSize,
   autoLineHeight,
   getTextMeasurer,
+  installTextBaselineMeasurer,
   installTextMeasurer,
   setTextMeasurer,
+  withTextBaselineMeasurer,
+  type TextBaselineMeasurer,
   type TextMeasurer
 } from './layout/text-measurement'
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
