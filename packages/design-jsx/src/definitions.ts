@@ -208,6 +208,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'invalid',
   'filled',
   'states',
+  'transition',
   'min',
   'max',
   'step',

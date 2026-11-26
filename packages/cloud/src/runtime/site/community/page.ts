@@ -102,37 +102,53 @@ export async function communityPage(
   }
 }
 
-/** What the page is, as schema.org data for search engines. */
+/**
+ * What the page is, as a schema.org graph for search engines: the page, and the file it shows or
+ * the gallery's list as its main entity, each named by the page's address. Fields left undefined
+ * drop out when the graph is written.
+ */
 function structuredData({ meta, origin, documents, document }: CommunityPage) {
-  if (document) {
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'CreativeWork',
-      name: document.name,
-      description: meta.description,
-      url: meta.url,
-      image: meta.image,
-      dateModified: document.updatedAt,
-      ...(document.versions[0] ? { version: document.versions[0].name } : {}),
-      isAccessibleForFree: true
-    }
-  }
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
+  const page = {
+    '@id': `${meta.url}#webpage`,
     name: meta.title,
     description: meta.description,
     url: meta.url,
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: documents.map((entry, index) => ({
-        '@type': 'ListItem',
-        position: index + 1,
-        name: entry.name,
-        url: new URL(cloudCommunityPagePath(entry.id), origin).href
-      }))
-    }
+    mainEntity: { '@id': `${meta.url}#main-entity` }
   }
+  const nodes = document
+    ? [
+        {
+          ...page,
+          '@type': 'WebPage',
+          dateModified: document.updatedAt,
+          primaryImageOfPage: meta.image
+        },
+        {
+          '@id': page.mainEntity['@id'],
+          '@type': 'CreativeWork',
+          name: document.name,
+          description: meta.description,
+          url: meta.url,
+          image: meta.image,
+          dateModified: document.updatedAt,
+          version: document.versions[0]?.name,
+          isAccessibleForFree: true
+        }
+      ]
+    : [
+        { ...page, '@type': 'CollectionPage' },
+        {
+          '@id': page.mainEntity['@id'],
+          '@type': 'ItemList',
+          itemListElement: documents.map((entry, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: entry.name,
+            url: new URL(cloudCommunityPagePath(entry.id), origin).href
+          }))
+        }
+      ]
+  return { '@context': 'https://schema.org', '@graph': nodes }
 }
 
 const APP_ROOT = '<div id="app"></div>'
@@ -143,7 +159,11 @@ const APP_ROOT = '<div id="app"></div>'
  * root. The app replaces that content when it mounts; it is there for crawlers and link previews,
  * which read the page as served rather than as its script draws it.
  */
-export async function renderCommunityPage(html: string, page: CommunityPage): Promise<string> {
+export async function renderCommunityPage(
+  html: string,
+  page: CommunityPage,
+  scriptNonce: string
+): Promise<string> {
   const { meta } = page
   const head = createHead()
   head.push({
@@ -162,7 +182,14 @@ export async function renderCommunityPage(html: string, page: CommunityPage): Pr
         : [])
     ],
     link: [{ rel: 'canonical', href: meta.url }],
-    script: [{ type: 'application/ld+json', textContent: structuredData(page) }]
+    // The policy lets this response's nonce alone run inline, so the graph's block carries it.
+    script: [
+      {
+        type: 'application/ld+json',
+        nonce: scriptNonce,
+        textContent: structuredData(page)
+      }
+    ]
   })
   // Vue's server renderer escapes every value it writes; a function replacement keeps `$`
   // patterns in names as they are.

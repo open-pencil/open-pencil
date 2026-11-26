@@ -704,6 +704,7 @@ fr:panels.colorProfileSRGB
 fr:panels.colorProfileDisplayP3
 fr:variables/easing.iosWeb
 fr:variables/easing.android
+fr:panels/behaviours.transition
 it:panels.iconSetNeedsNewerMacOS
 it:panels.colorProfileSRGB
 it:panels.colorProfileDisplayP3
@@ -733,6 +734,7 @@ it:variables/easing.easeOut
 it:variables/easing.iosWeb
 it:variables/easing.android
 it:variables/types.easing
+it:panels/behaviours.transitionEasing
 ja:cloud/portal.methodProvider
 ja:variables/easing.iosWeb
 ja:variables/easing.android
@@ -757,6 +759,7 @@ de:variables/easing.iosWeb
 de:variables/easing.android
 de:variables/types.easing
 de:variables/types.timing
+de:panels/behaviours.transitionEasing
 pl:settings.importing
 pl:panels.gradient
 pl:files.openURLSizeTablet
