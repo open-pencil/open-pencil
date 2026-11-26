@@ -12,6 +12,7 @@ import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
 import { provideEditorStore, useFollowingEditorStore } from '@/app/editor/active-store'
 import { offerCrashReports } from '@/app/reports/crash'
+import { commitFocusedField } from '@/app/shell/menu/save-actions'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { useRestartApprovals } from '@/app/shell/updater/approvals'
@@ -50,6 +51,8 @@ useRestartApprovals()
 useWebUpdates()
 startRecoverySession()
 useEventListener(window, 'pagehide', () => {
+  // A field still being typed in, such as a slide's notes, writes what it shows first.
+  commitFocusedField()
   void prepareForReload()
   endRecoverySession()
 })

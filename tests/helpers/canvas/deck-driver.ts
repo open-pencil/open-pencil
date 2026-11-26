@@ -98,9 +98,11 @@ export function deckDriver(page: () => Page) {
       return page().evaluate(() => {
         const store = window.openPencil?.getStore?.()
         if (!store) return []
-        return [...store.graph.nodes.values()]
-          .filter((node) => node.type === 'SLIDE_ROW')
-          .map((row) => [...row.childIds])
+        const grid = store.graph
+          .getChildren(store.state.currentPageId)
+          .find((node) => node.type === 'SLIDE_GRID')
+        if (!grid) return []
+        return store.graph.getChildren(grid.id).map((row) => [...row.childIds])
       })
     },
 

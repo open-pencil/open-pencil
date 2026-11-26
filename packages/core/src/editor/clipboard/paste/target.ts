@@ -22,7 +22,10 @@ function pasteTargetCandidate(ctx: Pick<EditorContext, 'graph' | 'state'>): stri
   const ids = [...ctx.state.selectedIds]
   if (ids.length !== 1) return root
   const node = ctx.graph.getNode(ids[0])
-  if (!node) return root
+  // A layer selected off the slide on the stage is hidden there, so the paste stays on the stage.
+  const offStage =
+    root !== ctx.state.currentPageId && node?.id !== root && !ctx.graph.isDescendant(ids[0], root)
+  if (!node || offStage) return root
   if (CONTAINER_TYPES.has(node.type) && node.type !== 'CANVAS') return node.id
   return node.parentId ?? root
 }

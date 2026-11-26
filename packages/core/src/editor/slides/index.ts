@@ -58,11 +58,11 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     return slideOrder().filter((id) => named.has(id))
   }
 
-  /** Names slides by their numbers, as Figma does. */
-  function renumber(): void {
-    const gridId = grid()?.id
-    if (!gridId) return
-    for (const [id, number] of slideNumbers(ctx.graph, ctx.state.currentPageId)) {
+  /** Names slides by their numbers, as Figma does, on the page that holds `gridId`. */
+  function renumber(gridId: string | undefined = grid()?.id): void {
+    const pageId = gridId ? ctx.graph.getNode(gridId)?.parentId : undefined
+    if (!gridId || !pageId) return
+    for (const [id, number] of slideNumbers(ctx.graph, pageId)) {
       const name = number === null ? '-' : String(number)
       if (ctx.graph.getNode(id)?.name !== name) ctx.graph.updateNode(id, { name })
     }
@@ -126,7 +126,8 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
       if (row && !keep.has(id) && row.childIds.length === 0)
         drop(id, snapshotSubtree(ctx.graph, id))
     }
-    renumber()
+    // Undo may replay an edit made on another page: its own deck is renumbered.
+    renumber(gridId)
   }
 
   /** Runs a change of the deck's order as one undo step, selecting `select`'s slides after it. */
@@ -148,6 +149,7 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
       ctx.setSelectedIds(new Set(ids))
       ctx.state.enteredContainerId = null
       if (staged) setFocus(focus)
+      else if (ctx.state.focusedSlideId !== null) setFocus(null)
     }
     const changed = target.filter((section) => !prior.some(({ id }) => id === section.id))
     // The slides the edit adds, removes, or moves, and the sections it adds or empties.
@@ -319,13 +321,14 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
       return settings && settings.skipped !== skipped ? [{ id, settings }] : []
     })
     if (before.length === 0) return
+    const gridId = grid()?.id
     const write = (value: (settings: (typeof before)[number]['settings']) => boolean) => {
       for (const { id, settings } of before) {
         const current = ctx.graph.getNode(id)
         const kept = current ? slideSettings(current) : null
         if (kept) ctx.graph.updateNode(id, { slide: { ...kept, skipped: value(settings) } })
       }
-      renumber()
+      renumber(gridId)
     }
     const forward = () => write(() => skipped)
     forward()

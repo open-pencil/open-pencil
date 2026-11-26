@@ -11,7 +11,7 @@ import {
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { canvasRootId, createEditor } from '#core/editor'
-import { sourcePasteTarget } from '#core/editor/clipboard/paste/target'
+import { resolvePasteTarget, sourcePasteTarget } from '#core/editor/clipboard/paste/target'
 import { createDocumentGraph } from '#core/editor/document-settings'
 
 const opened: Editor[] = []
@@ -335,4 +335,33 @@ test('a paste with nothing selected goes back to its frame only while that frame
   expect(sourcePasteTarget(editor, [frame])).toBe(frame)
   editor.focusSlide(b)
   expect(sourcePasteTarget(editor, [frame])).toBeNull()
+})
+
+test('undoing an edit made in Grid view comes back to Grid view', () => {
+  const { editor, a } = setup()
+  editor.focusSlide(null)
+  editor.addSlide(a)
+  editor.focusSlide(a)
+  editor.undo.undo()
+  expect(editor.state.focusedSlideId).toBeNull()
+})
+
+test('undoing a deck edit from another page renumbers the deck it changed', async () => {
+  const { editor, a, b } = setup()
+  editor.setSlidesSkipped([a], true)
+  expect(names(editor)).toEqual(['-', '1', '2'])
+  const deckPage = editor.state.currentPageId
+  await editor.switchPage(editor.graph.addPage('Notes').id)
+  editor.undo.undo()
+  await editor.switchPage(deckPage)
+  expect(names(editor)).toEqual(['1', '2', '3'])
+  expect(slideSettings(expectDefined(editor.graph.getNode(a)))?.skipped).toBe(false)
+  expect(editor.graph.getNode(b)?.name).toBe('2')
+})
+
+test('a paste with a slide selected off the stage goes onto the slide on the stage', () => {
+  const { editor, a, b } = setup()
+  editor.focusSlide(a)
+  editor.select([b])
+  expect(resolvePasteTarget(editor)).toBe(a)
 })

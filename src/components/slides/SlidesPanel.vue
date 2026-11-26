@@ -143,7 +143,11 @@ function step(event: KeyboardEvent, by: 1 | -1) {
   event.stopPropagation()
   // The arrows pass over the slides a folded section hides, as a tree's rows do.
   const shown = rows.value.flatMap((row) => row.filter((slide, column) => !folded(slide, column)))
-  const index = shown.findIndex((slide) => store.state.selectedIds.has(slide.id))
+  // From the row with focus, which may be the staged slide while a layer on it is selected.
+  const from = event.target instanceof HTMLElement ? event.target.dataset.slideId : undefined
+  const index = shown.findIndex((slide) =>
+    from ? slide.id === from : store.state.selectedIds.has(slide.id)
+  )
   const next = shown.at(Math.max(0, index + by))
   if (!next) return
   store.select([next.id])
