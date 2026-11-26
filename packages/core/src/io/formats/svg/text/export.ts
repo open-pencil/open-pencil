@@ -50,6 +50,9 @@ function styleOverrideToTspanAttrs(
       const alpha = round(visibleFill.color.a * visibleFill.opacity)
       if (colors.to === 'display-p3') {
         attrs.fill = formatColor({ ...visibleFill.color, a: 1 }, alpha, colors)
+        if (parentFillOpacity !== undefined) {
+          attrs['fill-opacity'] = 1
+        }
       } else {
         attrs.fill = formatColor(visibleFill.color, 1, colors)
         if (alpha < 1) attrs['fill-opacity'] = alpha

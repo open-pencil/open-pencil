@@ -370,7 +370,9 @@ function exportedFill(
   ctx: SVGExportContext
 ): { color: string | null; opacity: number | undefined } {
   const color = fill ? resolveFill(fill, node, ctx) : null
-  if (!fill || color === null) return { color: null, opacity: undefined }
+  if (!fill || color === null) {
+    return { color: null, opacity: undefined }
+  }
   return { color, opacity: paintFillOpacity(fill, ctx.colors) }
 }
 

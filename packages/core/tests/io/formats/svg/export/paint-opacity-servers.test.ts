@@ -85,7 +85,7 @@ describe('gradient and image paint opacity exported to SVG', () => {
     ])
   })
 
-  test('fades a gradient stroke by its opacity and leaves the fill alone', () => {
+  test('writes a gradient stroke opacity as stroke-opacity and leaves the fill alone', () => {
     const stroke: Stroke = { ...gradient('GRADIENT_LINEAR', 0.5), weight: 2, align: 'CENTER' }
     expect(rects(svgOf(rectangleWith([solid(0, 0, 0, 1, 1)], [stroke])))).toEqual([
       '<rect width="40" height="40" fill="#000000" stroke="#000000" stroke-width="2" stroke-opacity="0.5"/>'
@@ -102,6 +102,25 @@ describe('gradient and image paint opacity exported to SVG', () => {
       }).id
     ])
     expect(svg).toContain('fill="url(#grad0)" fill-opacity="0.5"')
+  })
+
+  test('keeps a translucent Display P3 run at its own alpha under a translucent text fill', () => {
+    const svg = svgOf(
+      (graph, pageId) => [
+        graph.createNode('TEXT', pageId, {
+          text: 'Ab',
+          width: 40,
+          height: 20,
+          fills: [gradient('GRADIENT_LINEAR', 0.5)],
+          styleRuns: [
+            { start: 0, length: 1, style: {} },
+            { start: 1, length: 1, style: { fills: [solid(0, 0, 0, 1, 0.5)] } }
+          ]
+        }).id
+      ],
+      { colorSpace: 'display-p3' }
+    )
+    expect(svg).toContain('<tspan fill="color(display-p3 0 0 0 / 0.5)" fill-opacity="1">b</tspan>')
   })
 
   test("fades each painted region's gradient by its opacity", () => {

@@ -107,7 +107,9 @@ export function paintFillOpacity(
   colors: SVGColorProfiles,
   separate = false
 ): number | undefined {
-  if (fill.type === 'SOLID' && colors.to === 'display-p3' && !separate) return undefined
+  if (fill.type === 'SOLID' && colors.to === 'display-p3' && !separate) {
+    return undefined
+  }
   const alpha = round(fill.opacity)
   return alpha < 1 ? alpha : undefined
 }
