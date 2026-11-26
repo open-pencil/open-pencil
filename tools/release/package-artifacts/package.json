@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./tarball": "./src/tarball.ts",
     "./workspace": "./src/workspace/root.ts",
-    "./tsdown": "./src/tsdown.ts"
+    "./tsdown": "./src/tsdown.ts",
+    "./wasm": "./src/wasm.ts"
   },
   "scripts": {
     "test": "bun test tests"
