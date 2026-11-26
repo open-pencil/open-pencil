@@ -1,0 +1,1 @@
+- Texts follow the variables their text style binds, in every mode and at an instance's scale (#2362).
