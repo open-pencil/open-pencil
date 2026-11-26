@@ -166,7 +166,8 @@ describe('renderNodesToSVG()', () => {
     expect(result).toContain('>Hello World</text>')
   })
 
-  test('rtl text node exports direction and logical anchor', () => {
+  // An anchor's end is where right-to-left text ends reading: its left edge.
+  test('rtl text node aligned left ends at the left edge', () => {
     const graph = makeSceneGraph('Page 1')
     const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 180,
@@ -180,7 +181,7 @@ describe('renderNodesToSVG()', () => {
     const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('direction="rtl"')
     expect(result).toContain('text-anchor="end"')
-    expect(result).toContain('x="180"')
+    expect(result).toContain('x="0"')
   })
 
   test('text with style runs', () => {

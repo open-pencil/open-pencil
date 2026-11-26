@@ -3,6 +3,7 @@ import { groupBy } from 'es-toolkit/array'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
 import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
+import type { IconPaint } from '@open-pencil/scene-graph/icons'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
@@ -35,6 +36,8 @@ export interface SVGImportOptions {
   y?: number
   /** Keep the frame of an SVG that draws nothing, as `figma.createNodeFromSvg` does. */
   keepEmpty?: boolean
+  /** Told each vector whose fill or stroke `currentColor` painted, in `defaultColor`. */
+  onTint?: (nodeId: string, tint: readonly IconPaint[]) => void
 }
 
 /** The layers SVG markup draws, or null when it does not parse as SVG. */
@@ -101,7 +104,12 @@ interface Drawable {
 }
 
 /** Paths and texts in drawing order: each text goes before the path it preceded. */
-function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string>): Drawable[] {
+function drawables(
+  graph: SceneGraph,
+  data: SVGImportData,
+  parentIds: Set<string>,
+  onTint: SVGImportOptions['onTint']
+): Drawable[] {
   const pathDrawable = (path: VectorizedPath): Drawable => ({
     elements: path.elements,
     clips: path.clips,
@@ -113,6 +121,7 @@ function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string
         ...vectorizedPathPaints(path)
       })
       if (vector) parentIds.add(parentId)
+      if (vector && path.tint.length > 0) onTint?.(vector.id, path.tint)
     }
   })
   const textDrawable = (text: VectorizedText): Drawable => ({
@@ -140,10 +149,15 @@ function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string
  * per text, each named by its `id`, and a clip group around anything clipped. Groups are fitted
  * to their layers last.
  */
-function createSVGLayers(graph: SceneGraph, rootId: string, data: SVGImportData): void {
+function createSVGLayers(
+  graph: SceneGraph,
+  rootId: string,
+  data: SVGImportData,
+  onTint: SVGImportOptions['onTint']
+): void {
   const open: Array<{ key: number; parentId: string }> = []
   const parentIds = new Set<string>()
-  for (const drawable of drawables(graph, data, parentIds)) {
+  for (const drawable of drawables(graph, data, parentIds, onTint)) {
     const groups = drawable.elements.slice(0, -1)
     const shape = drawable.elements.at(-1)
     if (!shape) continue
@@ -191,7 +205,7 @@ export function createSVGNodesFromImport(
       })
 
   try {
-    createSVGLayers(graph, root.id, data)
+    createSVGLayers(graph, root.id, data, options.onTint)
     const created = graph.getNode(root.id)
     if (created && (options.keepEmpty || graph.getChildren(root.id).length > 0)) return created
     if (created) graph.deleteNode(root.id)

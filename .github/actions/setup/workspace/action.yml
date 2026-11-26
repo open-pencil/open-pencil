@@ -81,13 +81,19 @@ runs:
         path: ~/.bun/install/cache
         key: ${{ steps.dependencies.outputs.cache-primary-key }}
 
-    # The HTML engine's WebAssembly module, by the sources it builds from. Its build script skips
-    # Cargo when the module and its stamp match them, so only a change to the crate compiles Rust;
-    # the job that builds it saves it when it ends.
+    # The WebAssembly modules packages build from their crates, by the sources each builds from.
+    # Their build scripts skip Cargo when a module and its stamp match them, so only a change to a
+    # crate compiles Rust; the job that builds one saves it when it ends.
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: packages/html-engine/wasm
         key: html-engine-wasm-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'packages/html-engine/crate/**') }}
+        enableCrossOsArchive: true
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: packages/fig/wasm
+        key: fig-wasm-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'packages/fig/crate/**') }}
         enableCrossOsArchive: true
 
     - name: Build the workspace packages

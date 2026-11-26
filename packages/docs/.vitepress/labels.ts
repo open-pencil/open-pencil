@@ -20,6 +20,7 @@ export interface SidebarLabels {
   variables: string
   checkingDesigns: string
   files: string
+  componentLibraries: string
   cloudStorage: string
   overview: string
   gettingStarted: string
@@ -218,6 +219,7 @@ export const EN: SidebarLabels = {
   variables: 'Variables',
   checkingDesigns: 'Checking Designs',
   files: 'Opening and Saving',
+  componentLibraries: 'Component Libraries',
   cloudStorage: 'Cloud Storage',
   icons: 'Icons',
   photos: 'Photos',
@@ -250,6 +252,7 @@ export const DE: SidebarLabels = {
   variables: 'Variablen',
   checkingDesigns: 'Designs prüfen',
   files: 'Öffnen und speichern',
+  componentLibraries: 'Komponentenbibliotheken',
   cloudStorage: 'Cloud-Speicher',
   icons: 'Symbole',
   photos: 'Fotos',
@@ -282,6 +285,7 @@ export const IT: SidebarLabels = {
   variables: 'Variabili',
   checkingDesigns: 'Verificare i design',
   files: 'Aprire e salvare',
+  componentLibraries: 'Librerie di componenti',
   cloudStorage: 'Archiviazione cloud',
   icons: 'Icone',
   photos: 'Foto',
@@ -314,6 +318,7 @@ export const FR: SidebarLabels = {
   variables: 'Variables',
   checkingDesigns: 'Vérifier les designs',
   files: 'Ouvrir et enregistrer',
+  componentLibraries: 'Bibliothèques de composants',
   cloudStorage: 'Stockage cloud',
   icons: 'Icônes',
   photos: 'Photos',
@@ -346,6 +351,7 @@ export const ES: SidebarLabels = {
   variables: 'Variables',
   checkingDesigns: 'Revisar diseños',
   files: 'Abrir y guardar',
+  componentLibraries: 'Bibliotecas de componentes',
   cloudStorage: 'Almacenamiento en la nube',
   icons: 'Iconos',
   photos: 'Fotos',
@@ -378,6 +384,7 @@ export const PL: SidebarLabels = {
   variables: 'Zmienne',
   checkingDesigns: 'Sprawdzanie projektów',
   files: 'Otwieranie i zapisywanie',
+  componentLibraries: 'Biblioteki komponentów',
   cloudStorage: 'Przechowywanie w chmurze',
   icons: 'Ikony',
   photos: 'Zdjęcia',
@@ -410,6 +417,7 @@ export const RU: SidebarLabels = {
   variables: 'Переменные',
   checkingDesigns: 'Проверка дизайна',
   files: 'Открытие и сохранение',
+  componentLibraries: 'Библиотеки компонентов',
   cloudStorage: 'Облачное хранилище',
   icons: 'Иконки',
   photos: 'Фото',

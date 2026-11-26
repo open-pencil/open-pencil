@@ -55,6 +55,8 @@ export const EDITOR_COMMAND_METADATA = {
   'selection.goToMainComponent': {},
   'selection.createInstance': {},
   'selection.createSlot': { contextTestId: 'context-create-slot' },
+  'selection.setAsThumbnail': { contextTestId: 'context-set-as-thumbnail' },
+  'selection.restoreDefaultThumbnail': { contextTestId: 'context-restore-default-thumbnail' },
   'selection.wrapInAutoLayout': { shortcut: 'Shift+A' },
   'selection.toggleMask': {
     shortcut: 'Mod+Alt+M',

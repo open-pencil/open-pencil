@@ -21,7 +21,7 @@ import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { insertAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
-import type { HTMLEngine } from './engine'
+import type { HTMLEngine, HTMLEngineLayout } from './engine'
 import { loadHTMLEngine } from './load'
 import type { HTMLEngineCapture, HTMLEngineLine, HTMLEngineNode } from './schema'
 
@@ -261,6 +261,36 @@ function ownTexts(capture: HTMLEngineCapture): Map<number, string> {
   return texts
 }
 
+/** A captured node's computed styles, every property's value filled in. */
+function capturedStyle(capture: HTMLEngineCapture, node: HTMLEngineNode): DesignStyleDeclaration {
+  return withShorthands({ ...capture.initial, ...node.style, ...node.computed })
+}
+
+/** What a node is in each further mode the layout captured, by its engine id. */
+class ModeCaptures {
+  readonly #captures: readonly HTMLEngineCapture[]
+  readonly #nodes: Map<number, HTMLEngineNode>[]
+
+  constructor(captures: readonly HTMLEngineCapture[]) {
+    this.#captures = captures
+    this.#nodes = captures.map((capture) => new Map(capture.nodes.map((node) => [node.id, node])))
+  }
+
+  /** Writes the node's styles in each mode on its element, or clears them without modes. */
+  apply(element: DesignElement, node: HTMLEngineNode): void {
+    if (this.#captures.length === 0) {
+      delete element.modes
+      return
+    }
+    element.modes = this.#nodes.map((nodes, index) => {
+      const same = nodes.get(node.id)
+      return same
+        ? { computedStyle: capturedStyle(this.#captures[index], same), references: same.references }
+        : {}
+    })
+  }
+}
+
 /**
  * Shows each element's `::before` and `::after` as elements of their own, first and last among its
  * children, with the style, box, and text the engine generated for them, so they are imported as
@@ -269,7 +299,8 @@ function ownTexts(capture: HTMLEngineCapture): Map<number, string> {
 function showGeneratedContent(
   capture: HTMLEngineCapture,
   pairs: readonly [DesignElement, HTMLEngineNode][],
-  layout: boolean
+  layout: boolean,
+  modes: ModeCaptures
 ): DesignElement[] {
   const made: DesignElement[] = []
   const indexes = new Map(capture.nodes.map((node, index) => [node, index]))
@@ -285,13 +316,11 @@ function showGeneratedContent(
         tagName: captured.tag ?? '::before',
         attrs: {},
         children: text ? [{ type: 'text', text }] : [],
-        computedStyle: withShorthands({
-          ...capture.initial,
-          ...captured.style,
-          ...captured.computed
-        })
+        computedStyle: capturedStyle(capture, captured)
       }
       if (layout) child.layout = layoutOf(captured)
+      if (captured.references) child.references = captured.references
+      modes.apply(child, captured)
       if (captured.tag === '::after') element.children.push(child)
       else element.children.unshift(child)
       made.push(child)
@@ -305,12 +334,41 @@ function showGeneratedContent(
  * body's when the root has none.
  */
 function canvasBackground(capture: HTMLEngineCapture): string | undefined {
-  const background = (tag: string) => {
+  return canvasNode(capture)?.style?.['background-color']
+}
+
+/** The root element, or the body when the root has no background, whose background CSS paints. */
+function canvasNode(capture: HTMLEngineCapture): HTMLEngineNode | undefined {
+  const painting = (tag: string) => {
     const node = capture.nodes.find((candidate) => candidate.tag === tag)
     const color = node?.style?.['background-color']
-    return color && parseCSSColor(color) ? color : undefined
+    return color && parseCSSColor(color) ? node : undefined
   }
-  return background('html') ?? background('body')
+  return painting('html') ?? painting('body')
+}
+
+/**
+ * The element whose background is the page's canvas, with its styles in every mode, each mode
+ * picking its own as CSS does: the root's where it paints one, otherwise the body's. A mode where
+ * neither paints takes the root's transparent background. None when no mode paints the canvas.
+ */
+function canvasElement(capture: HTMLEngineLayout): DesignElement | undefined {
+  const captures = [capture, ...capture.modes]
+  if (!captures.some((each) => canvasNode(each))) return undefined
+  const [base, ...modes] = captures.map((each) => {
+    const node = canvasNode(each) ?? each.nodes.find((candidate) => candidate.tag === 'html')
+    return node && { computedStyle: capturedStyle(each, node), references: node.references }
+  })
+  const element: DesignElement = {
+    type: 'element',
+    tagName: 'html',
+    attrs: {},
+    children: [],
+    computedStyle: base?.computedStyle
+  }
+  if (base?.references) element.references = base.references
+  if (modes.length > 0) element.modes = modes.map((mode) => mode ?? {})
+  return element
 }
 
 /** A fetch that also keeps what it answered, by the URL asked for and the one it came from. */
@@ -360,11 +418,17 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       // they become show them without fetching them again.
       const answered = new Map<string, DesignResource>()
       const fetch = keepingFetch(options.fetch, answered)
-      const capture = await laidOut.layout(documentHTML(serializeHTML(document), cssText), {
+      const body = serializeHTML(document)
+      const pageFetch = fontFaceFetch(laidOut, cssText, { ...options, fetch })
+      const capture = await laidOut.layout(documentHTML(body, cssText), {
+        rootAttributes: compute.rootAttributes,
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: fontFaceFetch(laidOut, cssText, { ...options, fetch })
+        fetch: pageFetch,
+        references: compute.references,
+        modes: compute.modes
       })
+      const modes = new ModeCaptures(capture.modes)
       const styled = structuredClone(document)
       const pairs = pairElements(styled, capture)
       for (const [element, node] of pairs) {
@@ -372,16 +436,14 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         // sizes and line heights as the page set them rather than as layout resolved them, so the
         // importer tells a size the page fixed from one that fills or hugs and keeps a line height
         // that scales with the font; the boxes layout gave stay in `layout`.
-        element.computedStyle = withShorthands({
-          ...capture.initial,
-          ...node.style,
-          ...node.computed
-        })
+        element.computedStyle = capturedStyle(capture, node)
         if (compute.layout) element.layout = layoutOf(node)
+        element.references = node.references
+        modes.apply(element, node)
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
-      const generated = showGeneratedContent(capture, pairs, compute.layout === true)
+      const generated = showGeneratedContent(capture, pairs, compute.layout === true, modes)
       // Background pictures the engine loaded are kept; any it did not are read as images are.
       // Generated content draws them too.
       const backgrounds = [...pairs.map(([element]) => element), ...generated].filter(
@@ -389,6 +451,13 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       )
       await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
       styled.background = canvasBackground(capture)
+      styled.canvas = canvasElement(capture)
+      styled.customProperties = capture.variables
+      if (capture.modes.length > 0) {
+        styled.modes = capture.modes.map((other) => ({ customProperties: other.variables }))
+      } else {
+        delete styled.modes
+      }
       return styled
     }
   }

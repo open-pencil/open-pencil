@@ -5,7 +5,7 @@ import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { Editor } from '@open-pencil/core'
-import { figThumbnailPageId } from '@open-pencil/core/io/formats/fig'
+import { documentThumbnailSubject } from '@open-pencil/core/io/formats/fig'
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -77,15 +77,27 @@ export async function cacheRecentFileThumbnail(path: string, bytes: Uint8Array):
  */
 const RECENT_FILE_COVER = { width: 800, height: 450 }
 
-/** Draws `graph`'s cover page as a Home card shows it; null when there is no page to draw. */
+/**
+ * Draws `graph`'s thumbnail as a Home card shows it: the layer chosen with Set as thumbnail, or
+ * else its cover page. Null when there is nothing to draw.
+ */
 export function drawHomeCardCover(
   graph: SceneGraph,
   renderer: NonNullable<Editor['renderer']>
 ): Uint8Array | null {
-  const pageId = figThumbnailPageId(graph.getPages())
-  if (!pageId) return null
+  const subject = documentThumbnailSubject(graph)
+  if (!subject) return null
   const { width, height } = RECENT_FILE_COVER
-  return renderThumbnail(renderer.ck, renderer, graph, pageId, width, height, 'letterbox')
+  return renderThumbnail(
+    renderer.ck,
+    renderer,
+    graph,
+    subject.pageId,
+    width,
+    height,
+    'letterbox',
+    subject.nodeIds
+  )
 }
 
 /** Cover writes still running, by file, so each file's covers are cached in the order drawn. */

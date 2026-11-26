@@ -58,8 +58,10 @@ export const userGuideSidebar = (
     items: [
       // English only until translated; locales link to the canonical page.
       { text: labels.autoLayout, link: '/user-guide/auto-layout' },
-      { text: labels.components, link: `${prefix}/user-guide/components` },
-      { text: labels.variables, link: `${prefix}/user-guide/variables` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.components, link: '/user-guide/components' },
+      { text: labels.componentLibraries, link: '/user-guide/component-libraries' },
+      { text: labels.variables, link: '/user-guide/variables' },
       // English only until translated; locales link to the canonical page.
       { text: labels.checkingDesigns, link: '/user-guide/checking-designs' }
     ]

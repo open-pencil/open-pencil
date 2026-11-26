@@ -98,4 +98,4 @@ Odmiana może zostać utworzona na podstawie innej załadowanej odmiany tej same
 - Lista czcionek jest ładowana podczas uruchamiania, dlatego panel otwiera się bez opóźnienia.
 - Obsługiwane jest wprowadzanie przez IME dla języka chińskiego, japońskiego i koreańskiego.
 - Formatowanie jest zachowywane podczas otwierania i zapisywania `.fig`.
-- Zastępowanie tekstu w egzemplarzach komponentów opisano na stronie [Komponenty](./components).
+- Zastępowanie tekstu w egzemplarzach komponentów opisano na stronie [Komponenty](/user-guide/components).

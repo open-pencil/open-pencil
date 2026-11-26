@@ -54,20 +54,20 @@ export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ell
   return opts
 }
 
-function getParagraphTextAlign(
-  ck: CanvasKit,
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-) {
-  const direction = resolveNodeTextDirection(node)
+/**
+ * Alignment names a side of the box whatever the direction, as Figma aligns; the last line of
+ * justified text starts where its paragraph reads from.
+ */
+function getParagraphTextAlign(ck: CanvasKit, node: Pick<SceneNode, 'textAlignHorizontal'>) {
   switch (node.textAlignHorizontal) {
     case 'CENTER':
       return ck.TextAlign.Center
     case 'RIGHT':
-      return direction === 'RTL' ? ck.TextAlign.Left : ck.TextAlign.Right
+      return ck.TextAlign.Right
     case 'JUSTIFIED':
       return ck.TextAlign.Justify
     default:
-      return direction === 'RTL' ? ck.TextAlign.Right : ck.TextAlign.Left
+      return ck.TextAlign.Left
   }
 }
 

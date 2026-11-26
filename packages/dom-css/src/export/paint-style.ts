@@ -3,7 +3,13 @@ import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import type { DesignStyleDeclaration } from '../types'
-import { fillToCSS, gradientToCSS, strokeColorToCSS } from './css'
+import {
+  borderWidths,
+  fillToCSS,
+  gradientToCSS,
+  strokeColorToCSS,
+  strokeDrawsAsShadows
+} from './css'
 
 /** A field's CSS: its token reference where one is faithful, otherwise the literal value. */
 export type FieldCSS = (field: string, literal: string) => string
@@ -35,6 +41,66 @@ export function addStroke(
   style['border-bottom-width'] = css('borderBottomWeight', px(node.borderBottomWeight))
   style['border-left-width'] = css('borderLeftWeight', px(node.borderLeftWeight))
 }
+
+/** How much of a stroke lies inside the layer's edge, by where the stroke is aligned. */
+const INSIDE_SHARE = { INSIDE: 1, CENTER: 0.5, OUTSIDE: 0 } as const
+
+/**
+ * A layer's first stroke as box shadows, as preview draws it: inside, centred on or outside the
+ * edge as the canvas draws it, and taking no room. On the canvas only an inside stroke included in
+ * layout takes room, and the padding gives it that. A dashed stroke has no shadow form.
+ */
+export function strokeShadows(
+  node: SceneNode,
+  css: FieldCSS,
+  profile: ColorProfile
+): string[] | undefined {
+  const stroke = node.strokes.at(0)
+  const literalColor = strokeColorToCSS(stroke, profile)
+  if (!literalColor || !stroke || !strokeDrawsAsShadows(node)) return undefined
+  const color = css('strokes/0/color', literalColor)
+  const inside = INSIDE_SHARE[stroke.align]
+  if (!node.independentStrokeWeights) {
+    const literal = px(stroke.weight)
+    const weight = css('strokeWeight', literal)
+    const part = (share: number) => {
+      if (share === 1) return weight
+      return weight === literal ? px(stroke.weight * share) : `calc(${weight} * ${share})`
+    }
+    return [
+      ...(inside > 0 ? [`inset 0 0 0 ${part(inside)} ${color}`] : []),
+      ...(inside < 1 ? [`0 0 0 ${part(1 - inside)} ${color}`] : [])
+    ]
+  }
+  // A band along each side: a shadow moved off the box by the band's width, inside or out.
+  const widths = borderWidths(node)
+  return SIDE_BANDS.flatMap(({ side, field, dx, dy }) => {
+    const literal = px(widths[side])
+    const weight = css(field, literal)
+    // The weight times `share`, which carries the direction the shadow moves in.
+    const scaled = (share: number) => {
+      if (weight === literal) return px(widths[side] * share)
+      if (share === 0) return '0px'
+      return share === 1 ? weight : `calc(${weight} * ${share})`
+    }
+    const band = (inset: boolean, share: number) => {
+      const toward = inset ? -share : share
+      return `${inset ? 'inset ' : ''}${scaled(dx * toward)} ${scaled(dy * toward)} 0 0 ${color}`
+    }
+    return [
+      ...(widths[side] > 0 && inside > 0 ? [band(true, inside)] : []),
+      ...(widths[side] > 0 && inside < 1 ? [band(false, 1 - inside)] : [])
+    ]
+  })
+}
+
+/** Each side's weight field, and the way a shadow moves to show a band along that side. */
+const SIDE_BANDS = [
+  { side: 'top', field: 'borderTopWeight', dx: 0, dy: -1 },
+  { side: 'right', field: 'borderRightWeight', dx: 1, dy: 0 },
+  { side: 'bottom', field: 'borderBottomWeight', dx: 0, dy: 1 },
+  { side: 'left', field: 'borderLeftWeight', dx: -1, dy: 0 }
+] as const
 
 /**
  * The layer's visible fills, painted bottom to top: its lowest solid fill as `background-color`,
