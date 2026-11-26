@@ -3,7 +3,7 @@
 # and one `target/`.
 [workspace]
 resolver = "3"
-members = ["desktop", "packages/html-engine/crate"]
+members = ["desktop", "packages/fig/crate", "packages/html-engine/crate"]
 
 [workspace.package]
 edition = "2024"
