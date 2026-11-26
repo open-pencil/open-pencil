@@ -20,7 +20,8 @@ function createInternalProcedures(service: InternalService) {
       const seats = await service.accountSeats(input.params.userId)
       if (seats === null) throw errors.not_found()
       return { seats }
-    })
+    }),
+    dailyUsage: routes.dailyUsage.handler(({ input }) => service.dailyUsage(input.query))
   })
 }
 

@@ -209,3 +209,162 @@ describe('internal entitlements API', () => {
     }
   })
 })
+
+describe('internal usage API', () => {
+  const usage = (
+    context: Awaited<ReturnType<typeof testApp>>,
+    query: string,
+    token = SERVICE_TOKEN
+  ) =>
+    context.app.request(`/api/internal/usage/daily?${query}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+  test('counts each UTC day of the range, quiet days as zeros, and the totals now', async () => {
+    const context = await testApp()
+    try {
+      const { database } = context.runtime
+      // The owner from `testApp` signed up today, outside the range.
+      const early = crypto.randomUUID()
+      const late = crypto.randomUUID()
+      await database
+        .insertInto('user')
+        .values([
+          {
+            id: early,
+            name: 'Early',
+            email: 'early@example.com',
+            emailVerified: true,
+            createdAt: '2026-11-01T00:00:00.000Z'
+          },
+          {
+            id: late,
+            name: 'Late',
+            email: 'late@example.com',
+            emailVerified: true,
+            createdAt: '2026-11-03T23:59:59.000Z'
+          }
+        ])
+        .execute()
+      const workspaceId = crypto.randomUUID()
+      await database
+        .insertInto('workspace')
+        .values({ id: workspaceId, name: 'W', slug: 'w', createdBy: early, ownerId: early })
+        .execute()
+      const documentId = crypto.randomUUID()
+      const trashedId = crypto.randomUUID()
+      await database
+        .insertInto('document')
+        .values([
+          {
+            id: documentId,
+            workspaceId,
+            name: 'Kept',
+            currentRevisionId: null,
+            createdBy: early,
+            createdAt: '2026-11-01T10:00:00.000Z'
+          },
+          {
+            id: trashedId,
+            workspaceId,
+            name: 'Trashed',
+            currentRevisionId: null,
+            createdBy: early,
+            createdAt: '2026-11-03T10:00:00.000Z',
+            deletedAt: '2026-11-04T10:00:00.000Z'
+          }
+        ])
+        .execute()
+      const objectId = crypto.randomUUID()
+      await database
+        .insertInto('storageObject')
+        .values({
+          id: objectId,
+          objectKey: 'k',
+          checksum: 'c',
+          byteSize: 10,
+          contentType: 'application/octet-stream'
+        })
+        .execute()
+      const revision = (createdBy: string, createdAt: string) => ({
+        id: crypto.randomUUID(),
+        documentId,
+        parentRevisionId: null,
+        storageObjectId: objectId,
+        createdBy,
+        createdAt
+      })
+      await database
+        .insertInto('documentRevision')
+        .values([
+          revision(early, '2026-11-01T11:00:00.000Z'),
+          revision(early, '2026-11-01T12:00:00.000Z'),
+          revision(late, '2026-11-03T23:59:59.000Z')
+        ])
+        .execute()
+      // Early signs in on the day they also save: still one active account that day.
+      await database
+        .insertInto('signIn')
+        .values([
+          {
+            id: crypto.randomUUID(),
+            userId: early,
+            method: 'password',
+            createdAt: '2026-11-01T09:00:00.000Z'
+          },
+          {
+            id: crypto.randomUUID(),
+            userId: late,
+            method: 'password',
+            createdAt: '2026-11-01T09:00:00.000Z'
+          }
+        ])
+        .execute()
+      await database
+        .insertInto('workspaceStorageUsage')
+        .values({ workspaceId, committedBytes: 1234 })
+        .execute()
+
+      const response = await usage(context, 'start=2026-11-01&end=2026-11-03')
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({
+        days: [
+          {
+            day: '2026-11-01',
+            signUps: 1,
+            activeAccounts: 2,
+            documentsCreated: 1,
+            revisions: 2
+          },
+          { day: '2026-11-02', signUps: 0, activeAccounts: 0, documentsCreated: 0, revisions: 0 },
+          { day: '2026-11-03', signUps: 1, activeAccounts: 1, documentsCreated: 1, revisions: 1 }
+        ],
+        totals: { accounts: 3, documents: 1, workspaces: 1, storageBytes: 1234 }
+      })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('refuses callers without the service token, and ranges it cannot answer', async () => {
+    const context = await testApp()
+    try {
+      expect((await usage(context, 'start=2026-11-01&end=2026-11-01', 'x'.repeat(48))).status).toBe(
+        401
+      )
+      for (const query of [
+        'start=2026-11-03&end=2026-11-01',
+        'start=2026-02-30&end=2026-03-01',
+        'start=2025-01-01&end=2026-11-01',
+        'start=yesterday&end=2026-11-01',
+        'end=2026-11-01'
+      ]) {
+        const response = await usage(context, query)
+        expect({ query, status: response.status }).toEqual({ query, status: 400 })
+      }
+      expect((await usage(context, 'start=2026-11-01&end=2026-11-01')).status).toBe(200)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+})

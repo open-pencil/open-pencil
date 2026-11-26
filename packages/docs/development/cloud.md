@@ -596,7 +596,9 @@ Services that decide entitlements, such as billing, write them through the inter
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
 `PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
 private transport of their own, and read an account's seats at
-`GET /api/internal/accounts/:userId/seats`. Every write carries an
+`GET /api/internal/accounts/:userId/seats`. The operator's dashboard reads the deployment's use at
+`GET /api/internal/usage/daily?start=&end=`: per UTC day, sign-ups, active accounts (signed in or
+saved a revision), documents created, and revisions, with today's totals, as counts only. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.
