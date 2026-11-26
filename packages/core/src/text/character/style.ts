@@ -170,23 +170,18 @@ function detachedStyles(
   const styled = { ...node, ...current }
   const changes = pick(style, [...TEXT_STYLE_KEYS, 'fills', 'textStyleId', 'fillStyleId'])
   const detached = styleDetachmentChanges(styled, changes)
-  const left = pick(
+  return pick(
     detached,
     (['textStyleId', 'fillStyleId', 'fontStyle'] as const).filter(
       (key) => !Object.hasOwn(changes, key) && Object.hasOwn(detached, key)
     )
   )
-  // Characters starting to use a text style let go of their own bindings of its fields.
-  const bound = current.boundVariables
-  const restyled = style.textStyleId && style.textStyleId !== current.textStyleId
-  if (!restyled || !bound || !Object.keys(bound).some(isTextStyleField)) return left
-  return { ...left, boundVariables: omitBy(bound, (_value, field) => isTextStyleField(field)) }
 }
 
-const STYLE_BINDABLE_FIELDS = TEXT_BINDABLE_FIELDS.filter((field) =>
-  (SHARED_TEXT_STYLE_FIELDS as readonly string[]).includes(field)
-)
-
+/**
+ * Characters that start using a text style let go of their own bindings of its fields, paragraph
+ * fields included, as in Figma.
+ */
 function withoutBindingsStyleTakesOver(
   node: SceneNode,
   before: CharacterStyleOverride,
@@ -198,7 +193,7 @@ function withoutBindingsStyleTakesOver(
   if (!own || !tookStyle) {
     return after
   }
-  const kept = omit(own, STYLE_BINDABLE_FIELDS)
+  const kept = omitBy(own, (_value, field) => isTextStyleField(field))
   return isEmptyObject(kept) ? omit(after, ['boundVariables']) : { ...after, boundVariables: kept }
 }
 

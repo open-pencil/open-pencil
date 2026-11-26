@@ -247,40 +247,26 @@ describe('style ranges', () => {
     expect(graph.getNode(text.id)?.boundVariables.fontSize).toBe(caption.id)
   })
 
-  test('let a range starting to use a style drop its own bindings of the style fields', () => {
-    const { api, text } = styledText()
-    const graph = graphOf(api)
-    const collection = graph.createCollection('Type scale')
-    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 16)
-    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
-    const spacing = graph.createVariable('Spacing', 'FLOAT', collection.id, 4)
-    textStyle(api, '1:20', { fontSize: 14, boundVariables: { fontSize: size.id } })
-    text.setRangeBoundVariable(0, 5, 'fontSize', caption)
-    text.setRangeBoundVariable(0, 11, 'letterSpacing', spacing)
-
-    text.setRangeTextStyleId(0, 5, '1:20')
-    reconcileVariableBindings(graph, { subtrees: [text.id] })
-
-    const styled = graph.getNode(text.id)?.styleRuns.find((run) => run.start === 0)
-    expect(text.getRangeFontSize(0, 5)).toBe(16)
-    expect(styled?.style.boundVariables ?? {}).toEqual({})
-    expect(text.getRangeBoundVariable(6, 11, 'letterSpacing')).toEqual({
-      type: 'VARIABLE_ALIAS',
-      id: spacing.id
-    })
-  })
-
   test('drop the bindings a range holds itself for the fields of a style it takes', () => {
     const { api, text } = styledText()
     const graph = graphOf(api)
     const collection = graph.createCollection('Type scale')
     const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    const spacing = graph.createVariable('Spacing', 'FLOAT', collection.id, 4)
     textStyle(api, '1:20', { fontSize: 20 })
     text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(caption.id))
+    text.setRangeBoundVariable(0, 11, 'letterSpacing', api.variables.getVariableById(spacing.id))
+    text.setRangeBoundVariable(0, 11, 'paragraphSpacing', api.variables.getVariableById(spacing.id))
 
     text.setRangeTextStyleId(0, 5, '1:20')
 
     expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toBeNull()
+    expect(text.getRangeBoundVariable(0, 5, 'letterSpacing')).toBeNull()
+    expect(text.getRangeBoundVariable(0, 5, 'paragraphSpacing')).toBeNull()
+    expect(text.getRangeBoundVariable(6, 11, 'letterSpacing')).toEqual({
+      type: 'VARIABLE_ALIAS',
+      id: spacing.id
+    })
     expect(text.getRangeFontSize(0, 5)).toBe(20)
   })
 
