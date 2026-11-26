@@ -1,8 +1,10 @@
 import type { DesignElement, DesignNode, VectorElementRenderer } from '@open-pencil/dom-css/export'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { isIconModified, readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
 
 import { iconColor } from '#core/icons/render'
+import type { SVGBooleanOutlines } from '#core/io/formats/svg/boolean/outline'
 import { renderNodeSVGElement } from '#core/io/formats/svg/export'
 import type { SVGNode } from '#core/io/formats/svg/node'
 
@@ -33,13 +35,28 @@ function idPart(id: string): string {
  * were edited. Def ids start with the layer's id, so several SVGs on one page never pick up each
  * other's gradients or filters.
  */
-export const vectorElement: VectorElementRenderer = (graph, node) => {
+export const vectorElement: VectorElementRenderer = vectorElementWith()
+
+/**
+ * `vectorElement` with boolean operations drawn as `booleanOutlines` combines them, as an export
+ * that can start a renderer draws them (`withBooleanOutlines`).
+ */
+export function vectorElementWith(booleanOutlines?: SVGBooleanOutlines): VectorElementRenderer {
+  return (graph, node) => vectorSVG(graph, node, booleanOutlines)
+}
+
+function vectorSVG(
+  graph: SceneGraph,
+  node: SceneNode,
+  booleanOutlines: SVGBooleanOutlines | undefined
+): DesignElement | null {
   const idPrefix = `${idPart(node.id)}-`
   const icon = readIcon(node)
   const drawn = renderNodeSVGElement(graph, node, {
     idPrefix,
     colorSpace: graph.documentColorSpace,
-    tint: icon ? readIconTint : undefined
+    tint: icon ? readIconTint : undefined,
+    booleanOutlines
   })
   const element = drawn && designNode(drawn)
   if (element?.type !== 'element') return null

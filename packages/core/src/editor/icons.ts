@@ -18,6 +18,8 @@ import { parseIconName } from '#core/icons/provider'
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import type { IconData } from '#core/icons/types'
 
+import { canvasRootId } from './views'
+
 /** The size a picked icon is placed at, as Iconify sets draw them. */
 const ICON_SIZE = 24
 
@@ -63,7 +65,7 @@ export function createIconActions(ctx: EditorContext) {
     // Opening another document while the icon loaded leaves nothing to insert it into.
     if (ctx.graph !== graph) return null
     const { width, height } = ctx.getViewportSize()
-    const parentId = ctx.state.enteredContainerId ?? ctx.state.currentPageId
+    const parentId = ctx.state.enteredContainerId ?? canvasRootId(ctx.graph, ctx.state)
     const origin =
       parentId === ctx.state.currentPageId
         ? { x: 0, y: 0 }

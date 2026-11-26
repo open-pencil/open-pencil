@@ -4,8 +4,10 @@ import type { EditorContext } from '#core/editor/types'
 import { renderNodesToLaidOutSVG } from '#core/io/formats/svg/text/layout'
 
 export function createClipboardExportActions(ctx: EditorContext) {
-  function copySelectionAsText(ids: string[]): string {
-    return ids.map((id) => ctx.graph.getNode(id)?.name ?? id).join('\n')
+  /** The characters of one selected text layer, as Figma copies them; anything else copies nothing. */
+  function copySelectionAsText(ids: string[]): string | null {
+    const node = ids.length === 1 ? ctx.graph.getNode(ids[0]) : undefined
+    return node?.type === 'TEXT' ? node.text : null
   }
 
   function copySelectionAsSVG(ids: string[]): Promise<string | null> {

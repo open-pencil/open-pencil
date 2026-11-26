@@ -4,19 +4,18 @@ import { isEqual } from 'es-toolkit/predicate'
 import type { Paragraph } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { styleRunAt, textLengthPixels } from '@open-pencil/scene-graph/text'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
+import {
+  resolveNodeTextDirection,
+  resolveTextDirection
+} from '@open-pencil/scene-graph/text/direction'
 import { appendAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
+import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import { shownSourceIndices } from '#core/text/case'
 import { candidateSources, fontAt, type StyleRun } from '#core/text/character/face'
 import { ELLIPSIS } from '#core/text/ellipsis'
-import {
-  glyphOutlineSourceSync,
-  type GlyphOutlineSource,
-  type RunShaping,
-  type ShapedGlyph
-} from '#core/text/font/glyphs'
+import { type GlyphOutlineSource, type RunShaping, type ShapedGlyph } from '#core/text/font/glyphs'
 import type { ShapingFeature } from '#core/text/font/harfbuzz'
 import { laidOutText } from '#core/text/keycap'
 import { utf16IndicesByUtf8 } from '#core/text/utf8'
@@ -51,7 +50,7 @@ export interface LaidOutGlyph {
  * style runs only where one ends.
  */
 function styleRunsOver(
-  node: SceneNode,
+  node: ParagraphNode,
   start: number,
   end: number,
   sourceAt: (index: number) => number
@@ -68,7 +67,7 @@ function styleRunsOver(
 }
 
 /** The letter spacing a style run sets after each of its characters, in pixels. */
-function letterSpacingOf(node: SceneNode, run: StyleRun | undefined): number {
+function letterSpacingOf(node: ParagraphNode, run: StyleRun | undefined): number {
   return textLengthPixels(
     run?.style.letterSpacing ?? node.letterSpacing,
     run?.style.fontSize ?? node.fontSize
@@ -76,7 +75,7 @@ function letterSpacingOf(node: SceneNode, run: StyleRun | undefined): number {
 }
 
 /** The features a style run shapes its characters with, as CanvasKit is given them. */
-function featuresOf(node: SceneNode, run: StyleRun | undefined): ShapingFeature[] {
+function featuresOf(node: ParagraphNode, run: StyleRun | undefined): ShapingFeature[] {
   return (run?.style.fontFeatures ?? node.fontFeatures).map((feature) => ({
     tag: feature.tag.toLowerCase(),
     value: feature.enabled ? 1 : 0
@@ -166,7 +165,7 @@ type RunOutline =
  * The paragraph asks each family for a face it has loaded, so CanvasKit never fakes one.
  */
 function runOutline(
-  node: SceneNode,
+  node: ParagraphNode,
   shaped: string,
   run: GlyphRun,
   indices: RunIndices
@@ -218,7 +217,7 @@ function runOutline(
  * their characters, the paragraph's for one glyph; and in its style's language.
  */
 function runShaping(
-  node: SceneNode,
+  node: ParagraphNode,
   run: GlyphRun,
   offsets: readonly number[],
   styles: ReadonlyArray<StyleRun | undefined>
@@ -305,6 +304,24 @@ function lineRunBoundaries(
 }
 
 /**
+ * The run at the end of the last line, where truncation adds its ellipsis: runs come in visual
+ * order, so it is the leftmost of a paragraph that reads right to left. Paragraphs laid out apart
+ * each read in the direction of their own text.
+ */
+function endRun(
+  node: SceneNode,
+  layout: TextLayout,
+  text: string,
+  line: ShapedLine
+): GlyphRun | undefined {
+  const block = layout.blocks.findLast(({ visible }) => visible)
+  if (!block) return undefined
+  const paragraph = text.slice(block.start, block.start + block.length)
+  const rtl = resolveTextDirection(node.textDirection, paragraph) === 'RTL'
+  return line.runs.at(rtl ? 0 : -1)
+}
+
+/**
  * The outline of a run of a line, and whether the run is the ellipsis that ends truncated text.
  * The last run of truncated text that no font confirms may be an ellipsis, which keeps its glyph
  * unoutlined: shaping it again would save the characters its offsets point at instead.
@@ -380,32 +397,63 @@ function reshapedGlyphs(
   })
 }
 
+interface RunPlace {
+  /** Where the run's line starts, and the baseline its glyphs are saved on. */
+  lineLeft: number
+  y: number
+  /** The line's baseline as its runs place glyphs on it. */
+  runBaseline: number
+}
+
+/** A run's glyphs: the shaper's, or the ones HarfBuzz shaped when they stand for other characters. */
+function runGlyphs(
+  run: GlyphRun,
+  outline: RunOutline | null,
+  characterAt: (offset: number) => number,
+  { lineLeft, y, runBaseline }: RunPlace
+): LaidOutGlyph[] {
+  if (outline?.glyphs && !sameClusters(run, outline, characterAt))
+    return reshapedGlyphs(run, outline, lineLeft, y)
+  return Array.from(run.glyphs, (glyph, index) => {
+    const x = run.positions[index * 2]
+    return {
+      id: outline?.glyphs?.[index].id ?? glyph,
+      x,
+      y,
+      markShift: run.positions[index * 2 + 1] - runBaseline,
+      fontSize: run.size,
+      firstCharacter: characterAt(run.offsets[index]),
+      advance: run.positions[(index + 1) * 2] - x,
+      lineLeft,
+      source: outline?.source ?? null
+    }
+  })
+}
+
 /**
  * A list marker's glyphs as Figma saves them: placed beside their item and drawing no
  * character of the text.
  */
 function markerGlyphs(marker: TextLayoutMarker, offsetY: number): LaidOutGlyph[] {
-  const source = glyphOutlineSourceSync(marker.face.family, marker.face.style)
-  const baseline = marker.paragraph.getLineMetrics().at(0)?.baseline ?? 0
-  const glyphs: LaidOutGlyph[] = []
-  for (const line of marker.paragraph.getShapedLines()) {
-    for (const run of line.runs) {
-      for (let index = 0; index < run.glyphs.length; index++) {
-        const x = run.positions[index * 2]
-        glyphs.push({
-          id: run.glyphs[index],
-          x: marker.x + x,
-          y: marker.y + baseline + offsetY,
-          markShift: 0,
-          fontSize: run.size,
-          advance: run.positions[(index + 1) * 2] - x,
+  const { node, paragraph } = marker
+  const characterAt = utf16IndicesByUtf8(node.text)
+  const baseline = paragraph.getLineMetrics().at(0)?.baseline ?? 0
+  const y = marker.y + baseline + offsetY
+  return paragraph.getShapedLines().flatMap((line) => {
+    const lineBoundaries = lineRunBoundaries(line, node.text.length, characterAt)
+    const indices = { characterAt, sourceAt: (index: number) => index, lineBoundaries }
+    const place = { lineLeft: 0, y, runBaseline: line.baseline }
+    return line.runs.flatMap((run) =>
+      runGlyphs(run, runOutline(node, node.text, run, indices), characterAt, place).map(
+        (glyph) => ({
+          ...glyph,
+          x: marker.x + glyph.x,
           lineLeft: marker.x,
-          source
+          firstCharacter: undefined
         })
-      }
-    }
-  }
-  return glyphs
+      )
+    )
+  })
 }
 
 /**
@@ -433,36 +481,22 @@ export function laidOutGlyphs(
     if (marker) appendAll(glyphs, markerGlyphs(marker, offsetY))
     const { left, baseline, endIndex } = metrics[lineIndex]
     const lineBoundaries = lineRunBoundaries(line, endIndex, characterAt)
-    const lastLine = lineIndex === lines.length - 1
-    for (const [runIndex, run] of line.runs.entries()) {
-      const endsTruncated =
-        lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
+    const ending = lineIndex === lines.length - 1 ? endRun(node, layout, text, line) : undefined
+    // Run positions round the baseline to whole pixels; line metrics keep it exact.
+    const place = { lineLeft: left, y: baseline + offsetY, runBaseline: line.baseline }
+    for (const run of line.runs) {
+      const endsTruncated = run === ending && layout.didExceedMaxLines()
       const { outline, ellipsis } = lineRunOutline(node, shaped, run, endsTruncated, {
         characterAt,
         sourceAt,
         lineBoundaries
       })
-      // Run positions round the baseline to whole pixels; line metrics keep it exact.
-      const y = baseline + offsetY
-      if (outline?.glyphs && !sameClusters(run, outline, characterAt)) {
-        appendAll(glyphs, reshapedGlyphs(run, outline, left, y))
-        continue
-      }
-      for (let index = 0; index < run.glyphs.length; index++) {
-        const x = run.positions[index * 2]
-        glyphs.push({
-          id: outline?.glyphs?.[index].id ?? run.glyphs[index],
-          x,
-          y,
-          markShift: run.positions[index * 2 + 1] - line.baseline,
-          fontSize: run.size,
-          // The ellipsis truncation adds draws no character, as Figma saves it.
-          firstCharacter: ellipsis ? undefined : characterAt(run.offsets[index]),
-          advance: run.positions[(index + 1) * 2] - x,
-          lineLeft: left,
-          source: outline?.source ?? null
-        })
-      }
+      const drawn = runGlyphs(run, outline, characterAt, place)
+      // The ellipsis truncation adds draws no character, as Figma saves it.
+      appendAll(
+        glyphs,
+        ellipsis ? drawn.map((glyph) => ({ ...glyph, firstCharacter: undefined })) : drawn
+      )
     }
   }
   return glyphs

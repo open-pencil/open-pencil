@@ -757,7 +757,9 @@ function withFiniteNumbers(nc: NodeChange): NodeChange {
     typeof value === 'number' &&
     !Number.isFinite(value) &&
     !(Number.isNaN(value) && MEANINGFUL_NAN_FIELDS.has(key))
-  if (!Object.entries(nc).some(([key, value]) => dropped(value, key))) return nc
+  // Nearly every record is finite, so look before copying: this runs once per layer.
+  const fields: Readonly<Record<string, unknown>> = nc
+  if (!Object.keys(fields).some((key) => dropped(fields[key], key))) return nc
   return omitBy(nc, dropped)
 }
 

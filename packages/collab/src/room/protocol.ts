@@ -35,6 +35,14 @@ export function encodeSyncReply(document: Y.Doc, stateVector: Uint8Array): Uint8
 }
 
 /**
+ * The sync reply for a peer with `stateVector`, from a document held as one encoded V2 update
+ * rather than a `Y.Doc`, as the Cloud relay holds rooms.
+ */
+export function encodeSyncReplyFromUpdate(update: Uint8Array, stateVector: Uint8Array): Uint8Array {
+  return deflateSync(Y.diffUpdateV2(update, stateVector))
+}
+
+/**
  * Compressed input is inflated this much at a time, so a reply stops within a step of passing
  * the limit: deflate expands at most about 1,032 times, so a step can overshoot by about 16 MB.
  */

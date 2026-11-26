@@ -13,7 +13,7 @@ export const localeThemeConfig = (
   // to the locale home instead of inventing a corresponding URL that may 404.
   i18nRouting: false,
   nav: [
-    { text: nav.docs, link: `${prefix}/getting-started`, activeMatch: sectionMatch(prefix).docs },
+    { text: nav.docs, link: '/getting-started', activeMatch: sectionMatch(prefix).docs },
     {
       text: nav.developers,
       link: `${prefix}/developers/`,

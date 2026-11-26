@@ -1,3 +1,5 @@
+import type { BehaviourSpec } from '@open-pencil/scene-graph/behaviours'
+
 import { node, type BaseProps, type TreeNode } from '../tree'
 import { REKA_ELEMENTS, type BindingProp, type RekaNamespaces } from './index'
 
@@ -14,6 +16,11 @@ export interface RekaProps extends BaseProps {
    * form control, invalid.
    */
   states?: string
+  /**
+   * How state changes ease, in preview and code: the duration in seconds or `{ variable }`
+   * naming a TIMING variable, and a CSS easing, an easing name, or `{ variable }`.
+   */
+  transition?: BehaviourSpec['transition']
   min?: number
   max?: number
   step?: number

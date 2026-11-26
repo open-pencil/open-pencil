@@ -335,6 +335,57 @@ describe('text shaping for saved glyphs', () => {
     expect(shown.every((glyph) => (glyph.firstCharacter ?? Infinity) < SENTENCE.length)).toBe(true)
   })
 
+  test('saves truncated right-to-left text with its ellipsis at the left', async () => {
+    const fallbacks = fontManager.getArabicFallbackFamilies()
+    const previous = fallbacks.splice(0)
+    try {
+      const arabic = await Bun.file(testFont('NotoNaskhArabic-Regular.ttf')).arrayBuffer()
+      await fontManager.markLoaded('Shape Test Arabic', 'Regular', arabic)
+      fontManager.setArabicFallbackFamily('Shape Test Arabic')
+      for (const text of ['الطاولة محجوزة لك', 'مـــرحبا ﷺ ﷲ بكم', 'שלום עולם 12']) {
+        const shaped = expectDefined(
+          await shape({ text, width: 50, height: 16, textTruncation: 'ENDING', maxLines: 1 }),
+          'shaped text'
+        )
+        const ellipsis = shaped.glyphs.filter((glyph) => glyph.firstCharacter === undefined)
+
+        expect(shaped.glyphs.every((glyph) => glyph.commands !== null)).toBe(true)
+        expect(ellipsis).toHaveLength(1)
+        expect(ellipsis[0].x).toBe(minOf(shaped.glyphs.map((glyph) => glyph.x)))
+      }
+    } finally {
+      fallbacks.length = 0
+      appendAll(fallbacks, previous)
+    }
+  })
+
+  test.each([
+    { text: 'שלום\nHello world Hello world', end: 'right' },
+    { text: 'Hello\nשלום עולם שלום עולם', end: 'left' }
+  ])(
+    'saves the ellipsis at the $end of a last paragraph in its own direction',
+    async ({ text, end }) => {
+      const shaped = expectDefined(
+        await shape({
+          text,
+          width: 60,
+          height: 50,
+          textTruncation: 'ENDING',
+          maxLines: 2,
+          paragraphSpacing: 4
+        }),
+        'shaped text'
+      )
+      const lastY = maxOf(shaped.glyphs.map((glyph) => glyph.y))
+      const line = shaped.glyphs.filter((glyph) => glyph.y === lastY)
+      const ellipsis = line.filter((glyph) => glyph.firstCharacter === undefined)
+      const xs = line.map((glyph) => glyph.x)
+
+      expect(shaped.glyphs.every((glyph) => glyph.commands !== null)).toBe(true)
+      expect(ellipsis.map((glyph) => glyph.x)).toEqual([end === 'left' ? minOf(xs) : maxOf(xs)])
+    }
+  )
+
   test('outlines characters a fallback font draws from that font', async () => {
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
     const originalFallbacks = [...fallbackFamilies]

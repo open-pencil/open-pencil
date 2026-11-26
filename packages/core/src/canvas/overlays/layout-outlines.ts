@@ -7,8 +7,12 @@ import { type RotationPreview } from '#core/geometry'
 
 import { dashEffect } from './outline'
 
+/** A deck's grid and rows lay out its slides; the deck, not the person, arranges them. */
+const DECK_LAYOUTS = new Set<SceneNode['type']>(['SLIDE_GRID', 'SLIDE_ROW'])
+
 function isFlowLayout(node: SceneNode | undefined): node is SceneNode {
-  return node?.layoutMode === 'HORIZONTAL' || node?.layoutMode === 'VERTICAL'
+  if (!node || DECK_LAYOUTS.has(node.type)) return false
+  return node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL'
 }
 
 function visibleChildren(graph: SceneGraph, container: SceneNode) {

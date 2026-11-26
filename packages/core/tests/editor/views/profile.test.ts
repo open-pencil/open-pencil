@@ -32,6 +32,7 @@ describe('canvas view profiles', () => {
       sectionTitles: 'fill',
       lint: true,
       rulers: true,
+      filmstrip: false,
       panelsOpen: true
     })
   })
@@ -58,6 +59,7 @@ describe('canvas view profiles', () => {
       sectionTitles: 'fill',
       lint: true,
       rulers: true,
+      filmstrip: false,
       panelsOpen: true
     })
   })

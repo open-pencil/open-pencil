@@ -45,6 +45,11 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   I: 'EYEDROPPER'
 }
 
+/** A deck's tool keys: a design's, but Shift+S adds a slide, as in Figma Slides. */
+export const DECK_TOOL_SHORTCUTS: Partial<Record<string, Tool>> = Object.fromEntries(
+  Object.entries(TOOL_SHORTCUTS).filter(([key]) => key !== 'Shift+S')
+)
+
 /**
  * The tools a board offers, as FigJam's toolbar does: moving and panning, sticky notes, shapes,
  * connectors, sections, text, and comments, without Figma Design's drawing tools.

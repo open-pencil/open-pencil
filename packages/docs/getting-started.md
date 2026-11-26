@@ -1,136 +1,70 @@
+---
+pageClass: guide
+title: Getting Started
+description: Open OpenPencil in your browser or on your computer, find your way around, and make a first design.
+---
+
 # Getting Started
 
-## Try Online
+OpenPencil is a design editor for screens, from one button to a whole app. It opens and saves Figma files, and runs in your browser or as a desktop app.
 
-OpenPencil runs in the browser — no installation required. Open [cloud.openpencil.dev](https://cloud.openpencil.dev) to start designing.
+## Open OpenPencil
+
+- **In your browser:** go to [cloud.openpencil.dev](https://cloud.openpencil.dev). There is nothing to install.
+- **On your computer:** get the app for macOS, Windows, or Linux from the [download page](/download). On a Mac, you can also install it with Homebrew: `brew install --cask openpencil`.
 
 ::: tip Moved from app.openpencil.dev
-The web app moved from app.openpencil.dev to cloud.openpencil.dev. Files you kept in your browser there stay at [app.openpencil.dev](https://app.openpencil.dev) until that address starts redirecting here: open it to save them to Cloud or download them.
+The web app moved to cloud.openpencil.dev. Files you kept in your browser at [app.openpencil.dev](https://app.openpencil.dev) stay there until that address starts redirecting: open it to save them to Cloud or download them.
 :::
-
-If you want to build on top of it instead of only using the default app, see the [Programmable](/developers/) section and the [Vue SDK](/developers/sdk/).
-
-## Download Desktop App
-
-Pre-built binaries for macOS, Windows, and Linux are available on the [download page](/download).
-
-| Platform | Download |
-| --------------------- | -------------------- |
-| macOS (Apple Silicon) | `.dmg` (aarch64) |
-| macOS (Intel) | `.dmg` (x64) |
-| Windows (x64) | `.msi` / `.exe` |
-| Windows (ARM) | `.msi` / `.exe` |
-| Linux (x64) | `.AppImage` / `.deb` |
 
 ## System Requirements
 
-OpenPencil renders with CanvasKit on WebGL and relies on current web platform features, so it needs a recent browser engine. The web app supports Chrome 111, Edge 111, Firefox 128, and Safari 16.4 or later; Chromium-based browsers such as Brave and Opera follow their Chrome version. The desktop app renders in the system WebView, so its floor is the operating system's engine:
+In a browser, OpenPencil needs Chrome or Edge 111, Firefox 128, or Safari 16.4 or later. Browsers built on Chrome, such as Brave and Opera, work from the same versions.
 
-| Platform | Requirement |
-| -------- | ----------- |
-| macOS | macOS 13 Ventura or later with the current Safari updates installed (Safari 16.4 shipped with macOS 13.3). |
-| Windows | Windows 10 or later with the Microsoft Edge WebView2 Evergreen runtime, which updates itself. |
-| Linux | WebKitGTK 2.40 or later (`webkit2gtk-4.1`). |
+The desktop app needs:
 
-When the engine is too old, OpenPencil shows what to update instead of a blank window. If you see that notice on a system that meets the requirements, use its "Report a problem" link, which prefills the browser and engine details.
+- **macOS** 13 Ventura or later, with its Safari updates installed.
+- **Windows** 10 or later, with the Microsoft Edge WebView2 runtime, which Windows keeps up to date.
+- **Linux** with WebKitGTK 2.40 or later (`webkit2gtk-4.1`).
 
-## macOS via Homebrew
+If your browser or system is too old, OpenPencil says what to update. If you see that on a system that meets these requirements, click **Report a problem** in the message.
 
-```sh
-brew install --cask openpencil
-```
+## Find Your Way Around
 
-This installs the signed macOS app (Apple Silicon and Intel) from the [official Homebrew cask](https://formulae.brew.sh/cask/openpencil). Homebrew updates are reviewed upstream and may lag behind GitHub releases. For a release not yet available through Homebrew, use the [direct download](https://github.com/open-pencil/open-pencil/releases/latest).
+<GuideImage name="getting-started/editor" alt="The editor with eight numbered areas" />
 
-The desktop cask does not install the CLI; install it separately with `npm install -g @open-pencil/cli`.
+1. **Menus.** File, Edit, View, and the rest, under the file's name.
+2. **Pages.** Each page is a separate canvas in the same file.
+3. **Layers.** Everything on the page, in the order it's drawn.
+4. **Canvas.** Where you design.
+5. **Toolbar.** Tools for frames, shapes, the pen, and text.
+6. **Design panel.** Settings for what you selected. The tabs beside **Design** show it as code, open the AI chat, and check your design for problems.
+7. **Zoom.** Click the percentage for zoom options.
+8. **Share and Preview.** Invite people to the file, or try your design as a prototype.
 
-If you used the archived custom tap, migrate with:
+## Make a First Design
 
-```sh
-brew uninstall open-pencil/tap/open-pencil
-brew install --cask openpencil
-```
+1. Press <Keys mac="F" other="F" /> and drag on the canvas to draw a frame. Frames hold the rest of your design, like a screen or a card.
+2. Press <Keys mac="R" other="R" /> and drag inside the frame to draw a rectangle.
+3. Press <Keys mac="T" other="T" />, click inside the frame, and type.
+4. Press <Keys mac="Esc" other="Esc" /> to finish typing. The Design panel now shows the text's font and size.
+5. Press <Keys mac="⌘ S" other="Ctrl S" /> to save.
 
-## Building from Source
+[Opening and Saving](./user-guide/files) explains where your file goes.
 
-### Prerequisites
+## Find a Command
 
-- [Bun](https://bun.sh/) (package manager and runtime)
-- [Rust](https://rustup.rs/) (for desktop app only)
+Press <Keys mac="⌘ K" other="Ctrl K" /> and type what you want to do, such as "align left" or "export". Choose a result to run it. You can also type a page's name to go to that page.
 
-## Installation
+## Use a Phone or Tablet
 
-```sh
-git clone https://github.com/open-pencil/open-pencil.git
-cd open-pencil
-bun install
-```
+On a small screen, the panels move into a drawer at the bottom. Its buttons open the layers, the Design panel, the code, and the AI chat.
 
-## Development Server
+## Next Steps
 
-```sh
-bun run dev
-```
+- [Canvas Navigation](./user-guide/canvas-navigation): move around and zoom.
+- [Selection & Manipulation](./user-guide/selection-and-manipulation): select, move, and resize layers.
+- [Layers & Pages](./user-guide/layers-and-pages): organize what's in your file.
+- [Auto Layout](./user-guide/auto-layout): build frames that resize with their content.
 
-Opens the editor at `http://localhost:1420`.
-
-## Available Scripts
-
-| Command | Description |
-| ------------------------------- | --------------------------------------------------- |
-| `bun run dev` | Dev server with HMR |
-| `bun run build` | Production build |
-| `bun run check` | Lint (oxlint) + typecheck (TypeScript 7) |
-| `bun run test` | E2E visual regression (Playwright) |
-| `bun run test:update` | Regenerate screenshot baselines |
-| `bun run test:unit` | Unit tests (bun:test) |
-| `bun run docs:dev` | Documentation dev server |
-| `bun run docs:build` | Build documentation locally (fast validation build) |
-| `bun run docs:build:production` | Build deployable documentation, including LLM files |
-
-## Desktop App (Tauri)
-
-The desktop app requires Rust and platform-specific prerequisites.
-
-### macOS
-
-```sh
-xcode-select --install
-cargo install tauri-cli --version "^2"
-bun run tauri dev
-```
-
-### Windows
-
-1. Install [Rust](https://rustup.rs/) with `stable-msvc` toolchain:
-   ```sh
-   rustup default stable-msvc
-   ```
-2. Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with "Desktop development with C++" workload
-3. WebView2 is pre-installed on Windows 10 (1803+) and Windows 11
-4. Run:
-   ```sh
-   bun run tauri dev
-   ```
-
-### Linux
-
-Install system dependencies (Debian/Ubuntu):
-
-```sh
-sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
-  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
-```
-
-Then:
-
-```sh
-bun run tauri dev
-```
-
-### Build for Distribution
-
-```sh
-bun run tauri build                                    # Current platform
-bun run tauri build --target universal-apple-darwin    # macOS universal
-```
+Want to build OpenPencil yourself? See [Contributing](/development/contributing#build-from-source).

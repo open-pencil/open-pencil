@@ -1,0 +1,1 @@
+- A shape's corner radius handles show as soon as it is drawn or resized at any zoom, not only at 100%.

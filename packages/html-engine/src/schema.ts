@@ -53,6 +53,11 @@ const capturedNodeSchema = v.object({
    * percentages to pixels, such as `auto`, `50%`, or `390px`, and `line-height`, such as `1.5`.
    */
   computed: v.optional(v.record(v.string(), v.string())),
+  /**
+   * Properties whose values come from the root's custom properties, as the winning declaration
+   * writes them, such as `var(--primary)`; custom properties set elsewhere are expanded.
+   */
+  references: v.optional(v.record(v.string(), v.string())),
   /** An inline element's box on each line it spans, in page pixels. */
   fragments: v.optional(v.array(rectSchema)),
   /** The lines of the inline formatting context the element holds, in page pixels. */
@@ -65,6 +70,21 @@ export const captureSchema = v.object({
   viewport: v.tuple([v.number(), v.number()]),
   /** The initial values of the properties nodes leave out of `style` when they hold them. */
   initial: v.record(v.string(), v.string()),
+  /**
+   * The root element's custom properties, as declared and as a color, a length in pixels, or a
+   * number where they compute to one, when the capture reports references.
+   */
+  variables: v.optional(
+    v.record(
+      v.string(),
+      v.object({
+        declared: v.string(),
+        color: v.optional(v.string()),
+        length: v.optional(v.number()),
+        number: v.optional(v.number())
+      })
+    )
+  ),
   nodes: v.array(capturedNodeSchema)
 })
 

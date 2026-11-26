@@ -1,96 +1,51 @@
 ---
+pageClass: guide
 title: Layers & Pages
-description: Managing layers, pages, and the properties panel in OpenPencil.
+description: Find, rename, reorder, hide, and lock layers, and split a file into pages.
 ---
 
 # Layers & Pages
 
-The editor interface has three main panels: layers (left), canvas (center), and properties (right). All panels are resizable by dragging the dividers.
-## Layers Panel
+Everything you draw is a layer: frames, shapes, text, and images. The panel on the left lists the layers on the current page, and the pages in your file above them.
 
-The layers panel on the left displays the document hierarchy as a tree.
+## Find a Layer
 
-### Tree View
+<GuideLegend>
 
-Nodes are shown in a collapsible tree. Click the chevron next to a frame, group, or component to expand or collapse its children.
+<GuideImage name="layers-and-pages/panel" alt="The Pages and Layers lists with four numbered parts" />
 
-### Drag Reorder
+1. **Pages** in the file. Click one to open it, or **+** to add a page.
+2. Click the **arrow** to show the layers inside a frame.
+3. The **icon** shows what a layer is: a frame, an auto layout frame, text, or a shape.
+4. Point at a layer to see its **lock** and **hide** buttons.
 
-Drag layers to reorder them. Nodes higher in the list render on top.
+</GuideLegend>
 
-### Visibility Toggle
+Click a layer in the list to select it on the canvas. Selecting on the canvas highlights the layer in the list, and opens the frames around it.
 
-Click the eye icon next to any layer to hide or show it on the canvas. Hidden nodes remain in the tree.
+## Rename a Layer
 
-### Rename
+Double-click its name, type, and press <Keys mac="Enter" other="Enter" />. Press <Keys mac="Esc" other="Esc" /> to keep the old name.
 
-Double-click a layer name to rename it inline. Press <kbd>Enter</kbd> or click away to commit, <kbd>Escape</kbd> to cancel.
+To rename several layers at once, select them and press <Keys mac="⌘ R" other="Ctrl R" />.
 
-### Selection Sync
+## Reorder Layers
 
-Clicking a layer in the panel selects the corresponding node on the canvas, and vice versa.
+Drag a layer up or down the list. Layers higher in the list cover the ones below them on the canvas. Drop a layer onto a frame to put it inside.
 
-## Pages Panel
+## Hide or Lock a Layer
 
-The pages panel shows all pages in the document.
+Point at the layer and click the eye to hide it, or the lock to lock it. Click again to undo it.
 
-- **Switch page** — click a page tab to make it active. The canvas switches to that page and restores its viewport position.
-- **Add page** — click the add button to create a new page
-- **Delete page** — remove the current page
-- **Rename page** — double-click the page name for inline editing. Pressing <kbd>Enter</kbd> or <kbd>Escape</kbd>, or clicking away, commits the rename.
+A hidden layer isn't drawn, and a locked one can't be selected or moved on the canvas. Both stay in the list.
 
-Each page has its own canvas and viewport state.
+## Work With Pages
 
-## Documents and Recovery
+Use pages to keep different parts of a project apart, such as screens, components, and ideas.
 
-The Home workspace lists recent local documents and documents from configured storage providers. Use grid or list view, or open multiple selected files into separate editor tabs.
+- **Add a page** with **+** beside **Pages**.
+- **Rename a page** by double-clicking its name, or right-clicking it and choosing **Rename**.
+- **Delete a page** by right-clicking it and choosing **Delete**.
+- **Move layers to another page**: right-click them on the canvas and choose **Move to page**.
 
-In **Settings → General → Recovery**, **Automatically preserve unsaved work** controls local recovery copies. With recovery enabled, unsaved documents without a file path remain recoverable even after their tabs close. When OpenPencil offers **Recover unsaved work**, choose **Restore** to reopen a document or **Discard** to remove its recovery copy.
-
-Disabling recovery stops automatic preservation and removes recovery copies owned by currently open documents. It does not bulk-delete snapshots from previously closed documents. Recovery is local to this installation/browser profile; it is not a replacement for saving a file, cloud synchronization, or a backup.
-
-## Properties Panel
-
-The properties panel on the right has three tabs:
-
-### Design Tab
-
-Shows the properties of the selected node(s), organized in sections:
-
-- **Appearance** — opacity, corner radius (with independent corner toggle), visibility
-- **Fill** — solid color, gradients (linear, radial, angular, diamond), image fills, variable bindings
-- **Stroke** — color, width, cap, join, dash pattern
-- **Effects** — drop shadow, inner shadow, layer blur, background blur, foreground blur
-- **Typography** — font family, size, weight, B/I/U/S formatting buttons (visible for text nodes)
-- **Layout** — [auto layout](./auto-layout) controls (visible for auto-layout frames)
-- **Export** — scale, format, and export button (see [Exporting](./exporting))
-
-When no nodes are selected, the Design tab shows page-level properties including the canvas background color.
-
-### Code Tab
-
-Displays the selected node as code with syntax highlighting, line numbers, and a copy button. A format toggle lets you switch between two output modes:
-
-- **OpenPencil JSX** — custom component tree compatible with `renderJSX()` for programmatic round-trip
-- **Tailwind CSS v4** — HTML with utility classes (`<div className="flex gap-4 p-3">`) ready to paste into React/Vue projects
-
-### AI Tab
-
-An [AI chat interface](./ai-chat) (also toggled with <kbd>⌘</kbd><kbd>J</kbd>) that can create and modify design elements via natural language. Configure reusable models and provider connections in Settings, and browse locally saved conversations.
-
-## Keyboard Shortcuts
-
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Toggle AI chat | <kbd>⌘</kbd><kbd>J</kbd> | <kbd>Ctrl</kbd> + <kbd>J</kbd> |
-
-## Mobile Layout
-
-On mobile and small screens, the side panels are replaced by a swipeable bottom drawer. Tabs at the top of the drawer switch between Layers, Properties, Design, and Code views. The toolbar collapses to a compact horizontal strip with category switching.
-
-## Tips
-
-- Panel widths are saved automatically — they persist across reloads.
-- Use the layers panel to find overlapping nodes that are hard to click on the canvas.
-- The [context menu](./context-menu) provides additional actions for selected nodes.
-- See [Selection & Manipulation](./selection-and-manipulation) for z-order shortcuts (]/[) and visibility/lock toggles.
+Each page remembers where you were the last time you saw it. To open a page by name, press <Keys mac="⌘ K" other="Ctrl K" /> and type it.

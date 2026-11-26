@@ -1,5 +1,11 @@
-import type { TokenUnit, Variable, VariableScope } from '@open-pencil/scene-graph'
-import { tokenNumberInUnit } from '@open-pencil/scene-graph/variables'
+import type { Easing, Spring, TokenUnit, Variable, VariableScope } from '@open-pencil/scene-graph'
+import {
+  easingBezier,
+  easingSpring,
+  springPosition,
+  springSettleTime,
+  tokenNumberInUnit
+} from '@open-pencil/scene-graph/variables'
 
 import { variableNamespace } from './names'
 
@@ -41,4 +47,51 @@ export function tokenNumberToCSS(value: number, unit: TokenUnit): string {
   const number = trimNumber(tokenNumberInUnit(value, unit))
   if (unit === 'none' || number === '0') return number
   return `${number}${unit}`
+}
+
+/**
+ * A timing, which is held in seconds, in milliseconds as Figma shows it: 0.25 is `250ms`. Files
+ * keep 32-bit floats, so 0.2 comes back as 0.200000003; a hundredth of a millisecond is as fine
+ * as a timing goes. CSS takes no time without its unit, so 0 is `0ms`.
+ */
+export function timingToCSS(seconds: number): string {
+  return `${Number((seconds * 1000).toFixed(2))}ms`
+}
+
+/** The curves CSS has a keyword for, by their numbers. */
+const EASING_KEYWORDS: Record<string, string> = {
+  '0,0,1,1': 'linear',
+  '0.42,0,1,1': 'ease-in',
+  '0,0,0.58,1': 'ease-out',
+  '0.42,0,0.58,1': 'ease-in-out'
+}
+
+/** How many points a spring's `linear()` has: enough that its bounce reads smoothly. */
+const SPRING_POINTS = 40
+
+/**
+ * A spring as CSS `linear()`: its position at evenly spaced moments of the time it takes to
+ * settle, ending on 1. `linear()` needs Chrome 113, Firefox 112 or Safari 17.2; an older browser
+ * drops it and eases with `ease`.
+ */
+export function springToCSS(spring: Spring): string {
+  const duration = springSettleTime(spring)
+  const points = Array.from({ length: SPRING_POINTS }, (_, index) =>
+    String(Number(springPosition(spring, (index / SPRING_POINTS) * duration).toFixed(3)))
+  )
+  return `linear(${[...points, '1'].join(', ')})`
+}
+
+/**
+ * An easing as a CSS timing function: a keyword where CSS has one, else `cubic-bezier()`, a hold
+ * as `step-end`, and a spring as `linear()`.
+ */
+export function easingToCSS(easing: Easing): string {
+  if (easing.easing === 'HOLD') return 'step-end'
+  const spring = easingSpring(easing)
+  if (spring) return springToCSS(spring)
+  const bezier = easingBezier(easing)
+  if (!bezier) return 'linear'
+  const numbers = [bezier.x1, bezier.y1, bezier.x2, bezier.y2].map(trimNumber).join(', ')
+  return EASING_KEYWORDS[numbers.replaceAll(' ', '')] ?? `cubic-bezier(${numbers})`
 }

@@ -11,6 +11,16 @@ Published VitePress site. `bun run docs:dev`, `bun run docs:build` for fast chec
 - Generated authoring-reference copies under this site are checked, not edited; run `bun run generate:authoring-reference` (`packages/core/AGENTS.md`, Tools).
 - CI runs documentation integrity and the docs build for docs-only changes, not engine, browser, Storybook, or native suites (`tools/AGENTS.md`).
 
+## Guide pages
+
+Rewritten guide pages (`pageClass: guide`) are for people learning the app; `user-guide/auto-layout.md` is the model.
+
+- One page answers one need, with a section per task named by its verb, numbered steps for anything with an order, and paragraphs of at most three sentences. Leave out internals, and describe what the app shows today, tried in the running app.
+- Pictures come from the app through `bun run generate:guide-images` (`tools/generate/guide-images`), never by hand, sit at `public/guide/<page>/<picture>/{light,dark}.webp`, and go in with `GuideImage name="<page>/<picture>"`: `GuideLegend` sets one beside the list that explains it, and `GuidePair` shows a before and after. `check:docs` fails on a picture without alt text or a file for each theme.
+- Read a changed page in both themes and at a phone's width before calling it done: `bun run preview:guide-pages <route>` saves the screenshots and fails on broken pictures or sideways scrolling.
+- Write shortcuts with `<Keys mac="⇧ A" other="Shift A" />`, which shows the reader's own keyboard; the choice is at the end of the sidebar (`theme/site/ShortcutsSetting.vue`).
+- A rewritten page drops its stale translations: remove them, link the locales to the English page, and redirect the old addresses in `public/_redirects`.
+
 ## Landing
 
 - The landing page (`.vitepress/theme/landing/`) mounts the app's own components, so the site takes the app's aliases, icon plugins, and build constants from `appSourceConfig()` in `@open-pencil/vite-config` (`vite/`) and its design tokens from `packages/theme/src/tokens.css`. CanvasKit and core's bundled fonts are served by the `openPencil()` plugin `appSourceConfig()` includes and set up by the app's `@/app/editor/canvas/canvaskit` module, which `landing/stage/engine-assets.ts` imports; do not copy them into `public/`. Server-rendered sections must not import from `landing/stage/`; they reach it through the client-only `ui/StageFrame.vue`, whose imports are guarded by `import.meta.env.SSR` so the server build never compiles the editor.
