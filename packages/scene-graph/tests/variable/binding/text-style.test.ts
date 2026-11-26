@@ -70,6 +70,28 @@ describe('text style bindings', () => {
     expect(text.boundVariables.fontSize).toBe(own.id)
   })
 
+  test("a text's own binding waits under a style that sets the field without a variable", () => {
+    const { graph, collection, roomy, frame } = styledText()
+    graph.createNodeWithId('style:plain', 'TEXT', graph.getPages()[0].id, {
+      sharedStyleType: 'TEXT',
+      internalOnly: true,
+      fontSize: 16,
+      source: { ...createDefaultSourceMetadata(), id: 'style:plain' }
+    })
+    const own = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    own.valuesByMode[roomy] = 12
+    const text = graph.createNode('TEXT', frame.id, {
+      text: 'Hi',
+      fontSize: 16,
+      textStyleId: 'style:plain',
+      boundVariables: { fontSize: own.id }
+    })
+
+    reconcileVariableBindings(graph, { subtrees: [text.id] })
+
+    expect(text.fontSize).toBe(16)
+  })
+
   test('a text that starts using a style lets go of its own bindings of the style fields', () => {
     const { graph, collection, style, text } = styledText()
     const own = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)

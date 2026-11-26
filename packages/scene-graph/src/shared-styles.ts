@@ -216,19 +216,24 @@ export function sharedStylePatch(
   else {
     const fields = structuredClone(pick(style, SHARED_STYLE_FIELDS.text))
     Object.assign(patch, scaledTextStyleLengths(fields, target.componentScale))
-    if (target.textStyleId !== styleId) Object.assign(patch, ownTextBindingsDropped(target))
+    // A text starting to use a text style lets go of its own bindings of the style's fields.
+    const dropped =
+      target.textStyleId === styleId
+        ? []
+        : Object.keys(target.boundVariables).filter(isTextStyleField)
+    if (dropped.length > 0) {
+      patch.boundVariables = omit(target.boundVariables, dropped)
+      patch.variableBindingScales = omit(target.variableBindingScales, dropped)
+    }
   }
   return patch
 }
 
-/** A text that starts using a text style lets go of its own bindings of the style's fields. */
-function ownTextBindingsDropped(target: SceneNode): Partial<SceneNode> {
-  const fields = SHARED_STYLE_FIELDS.text.filter((field) => field in target.boundVariables)
-  if (fields.length === 0) return {}
-  return {
-    boundVariables: omit(target.boundVariables, fields),
-    variableBindingScales: omit(target.variableBindingScales, fields)
-  }
+const TEXT_STYLE_FIELD_SET: ReadonlySet<string> = new Set(SHARED_STYLE_FIELDS.text)
+
+/** Whether a text style sets `field`, so a text or range starting to use it lets its binding go. */
+export function isTextStyleField(field: string): boolean {
+  return TEXT_STYLE_FIELD_SET.has(field)
 }
 
 /** A layer leaving a shared style: it keeps the style's values, without the reference. */

@@ -2,12 +2,13 @@ import { omit } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import type { SceneGraph } from '../graph'
-import { SHARED_TEXT_STYLE_FIELDS } from '../shared-styles'
+import { isTextStyleField, SHARED_TEXT_STYLE_FIELDS } from '../shared-styles'
 import type { SceneNode, StyleRun } from '../types'
 
 export type VariableBindings = Readonly<Record<string, string>>
 
-export type TextStyleLookup = (styleId: string) => VariableBindings
+/** What the text style with an ID binds, or undefined when the document does not hold it. */
+export type TextStyleLookup = (styleId: string) => VariableBindings | undefined
 
 const TEXT_STYLE_FIELDS: ReadonlySet<string> = new Set(SHARED_TEXT_STYLE_FIELDS)
 
@@ -25,47 +26,52 @@ export function textStyleBoundVariables(style: SceneNode): VariableBindings {
 }
 
 export function createStyleBindingLookup(graph: SceneGraph): TextStyleLookup {
-  const boundByStyle = new Map<string, VariableBindings>()
+  const boundByStyle = new Map<string, VariableBindings | undefined>()
   return (styleId) => {
-    let bound = boundByStyle.get(styleId)
-    if (!bound) {
+    if (!boundByStyle.has(styleId)) {
       const style = graph.getSharedStyleNode(styleId, 'TEXT')
-      bound = style ? textStyleBoundVariables(style) : NO_BINDINGS
-      boundByStyle.set(styleId, bound)
+      boundByStyle.set(styleId, style && textStyleBoundVariables(style))
     }
-    return bound
+    return boundByStyle.get(styleId)
   }
 }
 
 /**
- * The layer's own bindings its text style does not take over. While the style is attached, a
- * field the style binds follows the style's variable, as in Figma; the layer keeps its own
- * binding stored, so a document saves it back unchanged.
+ * The bindings a text or range holds itself that are in effect. While it uses a text style the
+ * document holds, its own bindings of the style's fields wait, as in Figma, which draws the
+ * style's values and saves those bindings back unchanged.
  */
-export function bindingsNotTakenOver(
+function ownBindingsInEffect(
   own: VariableBindings,
-  styleBound: VariableBindings
+  styleId: string | null | undefined,
+  styles: TextStyleLookup
 ): VariableBindings {
-  if (styleBound === NO_BINDINGS) {
-    return own
-  }
-  let takenOver = false
-  for (const field in own) {
-    if (field in styleBound) {
-      takenOver = true
-      break
-    }
-  }
-  return takenOver ? omit(own, Object.keys(styleBound)) : own
+  const waiting = styleId && styles(styleId) ? Object.keys(own).filter(isTextStyleField) : []
+  return waiting.length === 0 ? own : omit(own, waiting)
 }
 
 function bindingsOf(styleId: string | null | undefined, styles: TextStyleLookup): VariableBindings {
-  return styleId ? styles(styleId) : NO_BINDINGS
+  return (styleId && styles(styleId)) || NO_BINDINGS
 }
 
 type StyledLayer = Pick<SceneNode, 'type' | 'textStyleId' | 'boundVariables'>
 
-/** What a text's style binds, which wins over the text's own bindings of the same fields. */
+/** A layer's own bindings in effect: all but a styled text's bindings of its style's fields. */
+export function layerBindingsInEffect(
+  node: StyledLayer,
+  styles: TextStyleLookup
+): VariableBindings {
+  return node.type === 'TEXT'
+    ? ownBindingsInEffect(node.boundVariables, node.textStyleId, styles)
+    : node.boundVariables
+}
+
+function runBindingsInEffect(run: StyleRun, styles: TextStyleLookup): VariableBindings {
+  const own = run.style.boundVariables ?? NO_BINDINGS
+  return ownBindingsInEffect(own, run.style.textStyleId, styles)
+}
+
+/** What a text's style binds. */
 export function inheritedTextStyleBindings(
   node: StyledLayer,
   styles: TextStyleLookup
@@ -76,7 +82,7 @@ export function inheritedTextStyleBindings(
   return bindingsOf(node.textStyleId, styles)
 }
 
-/** What the style of a range of characters binds, which wins over the range's own bindings. */
+/** What the style of a range of characters binds. */
 export function inheritedRunStyleBindings(
   run: StyleRun,
   styles: TextStyleLookup
@@ -91,19 +97,23 @@ function withInherited(own: VariableBindings, inherited: VariableBindings): Vari
   return isEmptyObject(own) ? inherited : { ...own, ...inherited }
 }
 
+/** The bindings a layer follows: its own in effect and those of its text style. */
 export function effectiveBoundVariables(
   node: StyledLayer,
   styles: TextStyleLookup
 ): VariableBindings {
-  return withInherited(node.boundVariables, inheritedTextStyleBindings(node, styles))
+  return withInherited(
+    layerBindingsInEffect(node, styles),
+    inheritedTextStyleBindings(node, styles)
+  )
 }
 
+/** The bindings a range of characters follows: its own in effect and those of its style. */
 export function effectiveRunBoundVariables(
   run: StyleRun,
   styles: TextStyleLookup
 ): VariableBindings {
-  const own = run.style.boundVariables ?? NO_BINDINGS
-  return withInherited(own, inheritedRunStyleBindings(run, styles))
+  return withInherited(runBindingsInEffect(run, styles), inheritedRunStyleBindings(run, styles))
 }
 
 function usesTextStyleOf(node: SceneNode, styleIds: ReadonlySet<string>): boolean {
