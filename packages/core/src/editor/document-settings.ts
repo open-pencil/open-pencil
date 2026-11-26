@@ -19,7 +19,8 @@ export function createDocumentGraph(kind: DocumentKind, theme: InterfaceTheme): 
   const [page] = graph.getPages()
   if (kind === 'slides') {
     const row = createSlideRow(graph, createSlideGrid(graph, page.id).id)
-    createSlide(graph, row.id)
+    // Slides are named by their numbers, as the deck renumbers them after every change.
+    graph.updateNode(createSlide(graph, row.id).id, { name: '1' })
   }
   if (kind !== 'board') {
     setDefaultPageBackground(graph, page, theme)

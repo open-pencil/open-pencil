@@ -68,6 +68,11 @@ export const DECK_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'SLIDE_GRID'
 ])
 
+/** Whether a layer is placed by its X and Y: any but a deck's slides, rows, and grid. */
+export function layerMoves(node: Pick<SceneNode, 'type'>): boolean {
+  return !DECK_TYPES.has(node.type)
+}
+
 /** Whether a layer turns: any layer but a generated frame that stays upright, or a deck's slides. */
 export function layerRotates(node: Pick<SceneNode, 'type'>): boolean {
   return !DECK_TYPES.has(node.type) && (generatedFrameKind(node)?.rotates ?? true)
