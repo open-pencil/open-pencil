@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
-import { useClipboard } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -26,6 +25,7 @@ import { cloudVersions } from '@/components/cloud/versions/ui'
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import documentEntryTheme from '@/theme/home/document-entry'
@@ -48,7 +48,6 @@ const dates = useDateFormat()
 const versions = cloudVersions()
 const { state, reload } = useCommunityDocuments(portal.discovery)
 const origin = globalThis.location.origin
-const { copy, copied } = useClipboard({ legacy: true })
 
 const documents = computed(() => (state.value.status === 'ready' ? state.value.documents : []))
 const document = computed(
@@ -184,9 +183,6 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
         </div>
         <aside class="flex flex-col gap-6 text-xs">
           <section class="max-sm:hidden">
-            <h2 class="mb-3 text-sm font-semibold">
-              {{ communityMessages.communityOpenInDesktop }}
-            </h2>
             <AppButton
               variant="outline"
               size="md"
@@ -198,13 +194,15 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
           </section>
           <section>
             <h2 class="mb-3 text-sm font-semibold">{{ cloud.share }}</h2>
-            <AppButton variant="outline" size="md" @click="copy(pageURL)">
-              <template #leading>
-                <icon-lucide-check v-if="copied" />
-                <icon-lucide-link v-else />
-              </template>
-              {{ copied ? cloud.shareLinkCopied : cloud.shareCopyLink }}
-            </AppButton>
+            <AppCopyButton
+              :value="pageURL"
+              :label="cloud.shareCopyLink"
+              :copied-label="cloud.shareLinkCopied"
+              size="md"
+              variant="outline"
+            >
+              <template #icon><icon-lucide-link /></template>
+            </AppCopyButton>
           </section>
           <p class="border-t border-border pt-6 text-muted">
             {{ communityMessages.communityOpenNote }}
