@@ -1,0 +1,1 @@
+- `.pen` components that are themselves instances of another component render with their children, such as a tab bar built on a tabs component.
