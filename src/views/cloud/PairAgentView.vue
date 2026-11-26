@@ -41,11 +41,17 @@ onMounted(async () => {
 const {
   busy,
   error,
+  fail,
   run: decide
 } = usePortalAction(async (decision: 'allow' | 'deny') => {
   const token = newPairingToken()
   // Opened by the click itself, before anything is waited for, or the browser blocks it.
   const editor = decision === 'allow' ? globalThis.open('', '_blank') : null
+  // The editor serves the agent's calls, so the agent waits until one can open.
+  if (decision === 'allow' && !editor) {
+    fail(appMessages.value.pairBlocked)
+    return
+  }
   try {
     const { redirect } = await portal.api.decideAgentPairing(
       decision === 'allow' ? { decision, query, token } : { decision, query }

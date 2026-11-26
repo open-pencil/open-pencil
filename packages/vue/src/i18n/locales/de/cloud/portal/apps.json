@@ -31,5 +31,6 @@
   "pairDescription": "Es möchte in OpenPencil in diesem Browser gestalten, ohne Konto.",
   "pairAccess": "Die in OpenPencil in diesem Browser geöffneten Designs sehen und ändern",
   "pairReturns": "Kehrt zu {host} zurück",
-  "pairWarning": "Eine App wählt ihren Namen selbst. Sie kann jedes geöffnete Design ändern, bis du sie unter Einstellungen → MCP trennst."
+  "pairWarning": "Eine App wählt ihren Namen selbst. Sie kann jedes geöffnete Design ändern, bis du sie unter Einstellungen → MCP trennst.",
+  "pairBlocked": "Dein Browser hat das OpenPencil-Fenster blockiert. Erlaube Pop-ups für diese Website und versuche es erneut."
 }

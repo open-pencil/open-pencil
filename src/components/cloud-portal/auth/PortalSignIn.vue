@@ -142,6 +142,7 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
       variant="outline"
       class="w-full"
       data-test-id="sign-in-without-account"
+      :disabled="submitting"
       @click="emit('withoutAccount')"
     >
       {{ messages.useWithoutAccount }}

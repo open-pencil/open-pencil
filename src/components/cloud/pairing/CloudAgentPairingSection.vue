@@ -19,7 +19,7 @@ import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 
 /**
  * Pairs this window with a coding agent through the Cloud server that serves the editor, without
- * an account, where that server does: the setup the person gives their agent, whether it is at work, and Disconnect.
+ * an account, where that server does, or one made earlier: the setup the person gives their agent, whether it is at work, and Disconnect.
  */
 const automation = useMessages('automation')
 const common = useMessages('common')
@@ -34,11 +34,13 @@ const setup = computed(() =>
 const active = computed(
   () => state.value.status === 'paired' || state.value.status === 'connecting'
 )
+// A pairing made through another server still shows, so it can be disconnected.
+const shown = computed(() => agentPairingServer.value !== null || active.value)
 const working = computed(() => state.value.status === 'paired' && state.value.lastCallAt !== null)
 </script>
 
 <template>
-  <SettingsSection v-if="agentPairingServer" data-test-id="settings-agent-pairing">
+  <SettingsSection v-if="shown" data-test-id="settings-agent-pairing">
     <template #title>{{ automation.agentPairing }}</template>
     <template #description>{{ automation.agentPairingDescription }}</template>
     <template #actions>
@@ -50,7 +52,7 @@ const working = computed(() => state.value.status === 'paired' && state.value.la
         >{{ automation.agentPairingDisconnect }}</AppButton
       >
       <AppButton
-        v-else
+        v-else-if="agentPairingServer"
         color="primary"
         variant="solid"
         data-test-id="settings-agent-pairing-connect"

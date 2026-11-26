@@ -60,7 +60,7 @@
   "agentPairingInstructions": "Pégalo en tu agente",
   "agentPairingClaudeCode": "O ejecútalo en una terminal, para Claude Code",
   "agentPairingConfig": "O añádelo a una configuración MCP, como en Cursor",
-  "agentPairingNote": "Cualquiera con esta conexión puede cambiar los diseños abiertos en este navegador. Se pausa mientras OpenPencil está cerrado y termina cuando te desconectas; los diseños se quedan en este dispositivo hasta que los guardes.",
+  "agentPairingNote": "Cualquiera con esta conexión puede cambiar los diseños abiertos en este navegador. Se pausa mientras OpenPencil está cerrado y termina cuando te desconectas. Los cambios en diseños locales se quedan en este dispositivo hasta que los guardes; los cambios en documentos de Cloud llegan al instante a todos los que están en ellos.",
   "webmcpDescription": "Permite a los agentes del navegador usar este documento directamente, sin servidor MCP local ni token de portador. La configuración del servidor local no se aplica aquí.",
   "webmcpFailed": "WebMCP no pudo iniciarse",
   "browserAccess": "Acceso de agentes del navegador",

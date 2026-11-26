@@ -36,6 +36,8 @@ export const appPortalMessageDefaults = {
   pairReturns: params('Goes back to {host}'),
   pairWarning:
     'An app chooses its own name. It can change any design you have open until you disconnect it in Settings → MCP.',
+  pairBlocked:
+    'Your browser blocked the OpenPencil window. Allow pop-ups for this site and try again.',
   authorizeExpiredTitle: 'This request has expired',
   authorizeExpiredDescription: 'Go back to the app and connect it again.'
 }

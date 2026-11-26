@@ -31,5 +31,6 @@
   "pairDescription": "Ele pede para criar no OpenPencil neste navegador, sem conta.",
   "pairAccess": "Ver e alterar os designs abertos no OpenPencil neste navegador",
   "pairReturns": "Volta para {host}",
-  "pairWarning": "Um aplicativo escolhe o próprio nome. Ele pode alterar qualquer design aberto até você desconectá-lo em Configurações → MCP."
+  "pairWarning": "Um aplicativo escolhe o próprio nome. Ele pode alterar qualquer design aberto até você desconectá-lo em Configurações → MCP.",
+  "pairBlocked": "Seu navegador bloqueou a janela do OpenPencil. Permita pop-ups para este site e tente de novo."
 }

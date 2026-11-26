@@ -31,5 +31,6 @@
   "pairDescription": "Chce projektować w OpenPencil w tej przeglądarce, bez konta.",
   "pairAccess": "Wyświetlanie i zmienianie projektów otwartych w OpenPencil w tej przeglądarce",
   "pairReturns": "Wraca do {host}",
-  "pairWarning": "Aplikacja sama wybiera swoją nazwę. Może zmieniać każdy otwarty projekt, dopóki jej nie rozłączysz w Ustawienia → MCP."
+  "pairWarning": "Aplikacja sama wybiera swoją nazwę. Może zmieniać każdy otwarty projekt, dopóki jej nie rozłączysz w Ustawienia → MCP.",
+  "pairBlocked": "Przeglądarka zablokowała okno OpenPencil. Zezwól na wyskakujące okna dla tej witryny i spróbuj ponownie."
 }

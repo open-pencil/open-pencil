@@ -60,7 +60,7 @@
   "agentPairingInstructions": "Wklej do swojego agenta",
   "agentPairingClaudeCode": "Albo uruchom w terminalu, dla Claude Code",
   "agentPairingConfig": "Albo dodaj do konfiguracji MCP, np. w Cursorze",
-  "agentPairingNote": "Każdy, kto ma to połączenie, może zmieniać projekty otwarte w tej przeglądarce. Wstrzymuje się, gdy OpenPencil jest zamknięty, i kończy się, gdy się rozłączysz; projekty zostają na tym urządzeniu, dopóki ich nie zapiszesz.",
+  "agentPairingNote": "Każdy, kto ma to połączenie, może zmieniać projekty otwarte w tej przeglądarce. Wstrzymuje się, gdy OpenPencil jest zamknięty, i kończy się, gdy się rozłączysz. Zmiany w lokalnych projektach zostają na tym urządzeniu, dopóki ich nie zapiszesz; zmiany w dokumentach Cloud od razu widzą wszyscy, którzy w nich pracują.",
   "webmcpDescription": "Pozwól agentom przeglądarki korzystać z tego dokumentu bezpośrednio, bez lokalnego serwera MCP ani tokena Bearer. Ustawienia serwera lokalnego nie mają tu zastosowania.",
   "webmcpFailed": "Nie udało się uruchomić WebMCP",
   "browserAccess": "Dostęp agentów przeglądarki",

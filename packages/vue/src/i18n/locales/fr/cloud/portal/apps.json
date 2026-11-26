@@ -31,5 +31,6 @@
   "pairDescription": "Elle demande à concevoir dans OpenPencil dans ce navigateur, sans compte.",
   "pairAccess": "Voir et modifier les designs ouverts dans OpenPencil dans ce navigateur",
   "pairReturns": "Revient à {host}",
-  "pairWarning": "Une application choisit son propre nom. Elle peut modifier tout design ouvert jusqu’à ce que vous la déconnectiez dans Réglages → MCP."
+  "pairWarning": "Une application choisit son propre nom. Elle peut modifier tout design ouvert jusqu’à ce que vous la déconnectiez dans Réglages → MCP.",
+  "pairBlocked": "Votre navigateur a bloqué la fenêtre d’OpenPencil. Autorisez les fenêtres pop-up pour ce site et réessayez."
 }
