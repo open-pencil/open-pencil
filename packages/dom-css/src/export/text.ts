@@ -469,3 +469,23 @@ export function textElementContent(
   }
   return { tagName: 'div', style, children: blockContent(projection) }
 }
+
+/**
+ * How a text's lines wrap and end. A text that truncates shows at most its line limit and ends
+ * the last line it shows with an ellipsis, as on the canvas. A one-line limit without truncation
+ * keeps the text on one line, which is how an import reads `nowrap`. A text trimmed to its cap
+ * height starts at the top of its capitals and ends at the baseline.
+ */
+export function addTextLines(style: DesignStyleDeclaration, node: SceneNode): void {
+  const limit = node.maxLines ?? 0
+  if (node.textTruncation === 'ENDING' && limit > 0) {
+    style.display = '-webkit-box'
+    style['-webkit-box-orient'] = 'vertical'
+    style['-webkit-line-clamp'] = String(limit)
+    style.overflow = 'hidden'
+    style['white-space'] = 'pre-wrap'
+  } else {
+    style['white-space'] = limit === 1 ? 'nowrap' : 'pre-wrap'
+  }
+  if (node.leadingTrim === 'CAP_HEIGHT') style['text-box'] = 'trim-both cap alphabetic'
+}

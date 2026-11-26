@@ -110,6 +110,89 @@ describe('auto layout sizes in DOM/CSS export', () => {
   })
 })
 
+describe('auto layout as the canvas lays it out, in DOM/CSS export', () => {
+  const box = { width: 40, height: 40 }
+  const frameStyle = (layout: Partial<SceneNode>, children: Partial<SceneNode>[] = []) =>
+    styleOf(exportParent(layout, children), 'Parent')
+
+  it('keeps the size of a hugging frame with nothing to hug', () => {
+    const hugs = {
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG'
+    } as const
+    expect(frameStyle(hugs)).toMatchObject({ width: '300px', height: '200px' })
+    expect(frameStyle(hugs, [{ name: 'A', ...box }])).not.toHaveProperty('width')
+  })
+
+  it('packs wrapped lines where the frame aligns its children, or spreads them apart', () => {
+    const wraps = { layoutMode: 'HORIZONTAL', layoutWrap: 'WRAP' } as const
+    expect(frameStyle(wraps)).toMatchObject({ 'align-content': 'flex-start' })
+    expect(frameStyle({ ...wraps, counterAxisAlign: 'CENTER' })).toMatchObject({
+      'align-content': 'center'
+    })
+    expect(frameStyle({ ...wraps, counterAxisAlignContent: 'SPACE_BETWEEN' })).toMatchObject({
+      'align-content': 'space-between'
+    })
+    expect(frameStyle({ layoutMode: 'HORIZONTAL' })).not.toHaveProperty('align-content')
+  })
+
+  it('overlaps children by a negative gap, which the frame takes back at its end', () => {
+    const layout = { layoutMode: 'HORIZONTAL', itemSpacing: -10, paddingRight: 4 } as const
+    const doc = exportParent(layout, [
+      { name: 'A', ...box },
+      { name: 'B', ...box }
+    ])
+    expect(styleOf(doc, 'A')).toMatchObject({ 'margin-right': '-10px' })
+    expect(styleOf(doc, 'B')).toMatchObject({ 'margin-right': '-10px' })
+    expect(styleOf(doc, 'Parent')).toMatchObject({ 'padding-right': '14px' })
+    const column = exportParent({ ...layout, layoutMode: 'VERTICAL' }, [
+      { name: 'A', ...box },
+      { name: 'B', ...box }
+    ])
+    expect(styleOf(column, 'A')).toMatchObject({ 'margin-bottom': '-10px' })
+    const alone = exportParent(layout, [{ name: 'A', ...box }])
+    expect(styleOf(alone, 'A')).not.toHaveProperty('margin-right')
+  })
+})
+
+describe('text lines in DOM/CSS export', () => {
+  function textStyle(over: Partial<SceneNode>) {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+      name: 'Text',
+      text: 'Hi',
+      ...over
+    })
+    return styleOf(sceneNodeToDesignDocument(graph, text.id).children, 'Text')
+  }
+
+  it('keeps a text within its min and max widths', () => {
+    expect(textStyle({ minWidth: 100, maxWidth: 200 })).toMatchObject({
+      'min-width': '100px',
+      'max-width': '200px'
+    })
+  })
+
+  it('shows a truncating text up to its line limit, ending with an ellipsis', () => {
+    expect(textStyle({ textTruncation: 'ENDING', maxLines: 2 })).toMatchObject({
+      display: '-webkit-box',
+      '-webkit-line-clamp': '2',
+      overflow: 'hidden',
+      'white-space': 'pre-wrap'
+    })
+    expect(textStyle({ maxLines: 2 })).not.toHaveProperty('-webkit-line-clamp')
+    expect(textStyle({ maxLines: 1 })).toMatchObject({ 'white-space': 'nowrap' })
+  })
+
+  it('trims a text to its cap height', () => {
+    expect(textStyle({ leadingTrim: 'CAP_HEIGHT' })).toMatchObject({
+      'text-box': 'trim-both cap alphabetic'
+    })
+    expect(textStyle({})).not.toHaveProperty('text-box')
+  })
+})
+
 describe('canvas metrics, as preview projects', () => {
   const stroke = {
     type: 'SOLID',
@@ -135,15 +218,39 @@ describe('canvas metrics, as preview projects', () => {
     return styleOf(sceneNodeToDesignDocument(graph, frame.id, { canvasMetrics }).children, 'Frame')
   }
 
-  it('takes the room of a stroke the layout leaves out from the padding, down to none', () => {
+  it('draws a stroke as shadows that take room only where the layout gives an inside stroke room', () => {
     const style = padding({})
-    expect(style).toMatchObject({ 'padding-inline': '22px' })
-    expect(style).not.toHaveProperty('padding-block')
+    expect(style).toMatchObject({ 'padding-block': '1px', 'padding-inline': '24px' })
+    expect(style).not.toHaveProperty('border')
+    expect(style?.['box-shadow']).toBe('inset 0 0 0 2px #000000')
     expect(padding({ strokesIncludedInLayout: true })).toMatchObject({
+      'padding-block': '3px',
+      'padding-inline': '26px'
+    })
+    const outside = padding({
+      strokes: [{ ...stroke, align: 'OUTSIDE' }],
+      strokesIncludedInLayout: true
+    })
+    expect(outside).toMatchObject({
+      'padding-block': '1px',
+      'box-shadow': '0 0 0 2px #000000'
+    })
+    const centred = padding({ strokes: [{ ...stroke, align: 'CENTER' }] })
+    expect(centred?.['box-shadow']).toBe('inset 0 0 0 1px #000000, 0 0 0 1px #000000')
+  })
+
+  it('keeps a dashed stroke a border whose room the padding gives back, down to none', () => {
+    const dashed = padding({ strokes: [{ ...stroke, dashPattern: [4, 2] }] })
+    expect(dashed).toMatchObject({ 'padding-inline': '22px', 'border-style': 'dashed' })
+    expect(dashed).not.toHaveProperty('padding-block')
+  })
+
+  it('keeps the border and its room in exported code', () => {
+    expect(padding({}, false)).toMatchObject({
+      border: '2px solid #000000',
       'padding-block': '1px',
       'padding-inline': '24px'
     })
-    expect(padding({}, false)).toMatchObject({ 'padding-block': '1px', 'padding-inline': '24px' })
   })
 
   it('writes the measured line height of text with an automatic one, and only then', () => {

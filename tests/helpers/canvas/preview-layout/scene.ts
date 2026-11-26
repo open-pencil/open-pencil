@@ -5,9 +5,10 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { solid } from '../paints'
 
-/** The frame to preview, with its height and its layers' boxes in their parents by name. */
+/** The frame to preview, with its size and its layers' boxes in their parents by name. */
 export interface PreviewLayoutScene {
   id: string
+  width: number
   height: number
   boxes: Record<string, Rect>
 }
@@ -27,6 +28,7 @@ function laidOut(graph: SceneGraph, pageId: string, frame: SceneNode): PreviewLa
     .map(({ name, x, y, width, height }) => [name, { x, y, width, height }])
   return {
     id: frame.id,
+    width: graph.getNode(frame.id)?.width ?? 0,
     height: graph.getNode(frame.id)?.height ?? 0,
     boxes: Object.fromEntries(boxes)
   }
@@ -78,4 +80,27 @@ export function createStrokedCard(graph: SceneGraph, pageId: string): PreviewLay
   })
   graph.createInstance(button.id, card.id, { name: 'Control' })
   return laidOut(graph, pageId, card)
+}
+
+/** A row that hugs a one-line label and a control, as wide as the label makes it. */
+export function createHuggingRow(graph: SceneGraph, pageId: string): PreviewLayoutScene {
+  const button = createButton(graph, pageId)
+  const row = graph.createNode('FRAME', pageId, {
+    x: 120,
+    y: 120,
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG',
+    counterAxisAlign: 'MIN',
+    itemSpacing: 12
+  })
+  graph.createNode('TEXT', row.id, {
+    name: 'Label',
+    text: 'A label that stays on one line',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    textAutoResize: 'WIDTH_AND_HEIGHT'
+  })
+  graph.createInstance(button.id, row.id, { name: 'Control' })
+  return laidOut(graph, pageId, row)
 }
