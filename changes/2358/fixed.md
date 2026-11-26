@@ -1,0 +1,1 @@
+- Copy as text copies the text of the selected text layer instead of layer names.
