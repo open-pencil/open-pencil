@@ -288,7 +288,18 @@ export function strokeReach(stroke: Stroke, node: SceneNode): number {
 /** Half a pixel, so a stretched edge samples that pixel alone. */
 const EDGE_SLIVER = 0.5
 
-const CLAMP_SIDES = [-1, 0, 1] as const
+const CLAMPED_OUTSIDE = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+  [-1, -1],
+  [1, -1],
+  [-1, 1],
+  [1, 1]
+] as const
+
+const EDGE_OVERLAP = 1
 
 interface PatternImage {
   href: string
@@ -328,43 +339,44 @@ function strokeImagePattern(
   return svg(
     'pattern',
     region,
-    svg('g', { transform: placed }, svg('image', { id: sourceId, ...unstretched }), ...edges)
+    svg('g', { transform: placed }, ...edges, svg('image', { id: sourceId, ...unstretched }))
   )
 }
 
-/** Each side and corner around an image, its nearest half pixel stretched `extent` pixels out. */
+/**
+ * The image's sides, then its corners, each running one pixel under what is drawn over it, so no
+ * two antialiased edges meet where the background could show between them.
+ */
 function clampedEdges(image: PatternImage, extent: number, sourceId: string): SVGNode[] {
   const span = (side: number, length: number) => {
     if (side < 0) {
-      return { at: -extent, length: extent, from: 0, sliver: EDGE_SLIVER }
+      return { at: -extent, length: extent + EDGE_OVERLAP, from: 0, sliver: EDGE_SLIVER }
     }
     if (side > 0) {
-      return { at: length, length: extent, from: length - EDGE_SLIVER, sliver: EDGE_SLIVER }
+      const from = length - EDGE_SLIVER
+      return { at: length - EDGE_OVERLAP, length: extent + EDGE_OVERLAP, from, sliver: EDGE_SLIVER }
     }
     return { at: 0, length, from: 0, sliver: length }
   }
-  return CLAMP_SIDES.flatMap((sideX) =>
-    CLAMP_SIDES.filter((sideY) => sideX !== 0 || sideY !== 0).map((sideY) => {
-      const x = span(sideX, image.width)
-      const y = span(sideY, image.height)
-      const viewBox = [x.from, y.from, x.sliver, y.sliver].map((value) => round(value, 6))
-      return svg(
-        'svg',
-        {
-          x: round(x.at, 6),
-          y: round(y.at, 6),
-          width: round(x.length, 6),
-          height: round(y.length, 6),
-          viewBox: viewBox.join(' '),
-          preserveAspectRatio: 'none'
-        },
-        svg('use', { href: `#${sourceId}` })
-      )
-    })
-  )
+  return CLAMPED_OUTSIDE.map(([sideX, sideY]) => {
+    const x = span(sideX, image.width)
+    const y = span(sideY, image.height)
+    const viewBox = [x.from, y.from, x.sliver, y.sliver].map((value) => round(value, 6))
+    return svg(
+      'svg',
+      {
+        x: round(x.at, 6),
+        y: round(y.at, 6),
+        width: round(x.length, 6),
+        height: round(y.length, 6),
+        viewBox: viewBox.join(' '),
+        preserveAspectRatio: 'none'
+      },
+      svg('use', { href: `#${sourceId}` })
+    )
+  })
 }
 
-/** How many of the image's pixels the stroke's reach goes past its farthest edge. */
 function clampExtent(image: PatternImage, node: SceneNode, matrix: Mat3, reach: number): number {
   const toImage = Matrix.invert(matrix)
   if (!toImage) {

@@ -74,7 +74,6 @@ export function alignedStrokeElement(
     ctx.defs.push(svgElement('clipPath', { id: clipId }, clips))
   } else {
     // A box wide enough for the stroke, its mitred tips included, with the outline cut out of it.
-    // The doubled stroke mitres out to its weight times the miter limit.
     const margin = strokeReach(stroke, node)
     const left = round(-margin)
     const top = round(-margin)

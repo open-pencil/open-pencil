@@ -239,15 +239,26 @@ describe('an image stroke', () => {
     expect(elements(svg, 'g')[0]).toBe('<g transform="matrix(10 0 0 10 16 6)">')
   })
 
-  test('fill stretches its edge pixels past the image, as the canvas clamps it', () => {
+  test('fill stretches its edge pixels past the image, under the image, as the canvas clamps it', () => {
     const svg = imageStroked(IMAGE_STROKE)
-    expect(elements(svg, 'image')[0]).toContain('id="imgsrc1"')
     const edges = elements(svg, 'svg').slice(1)
     expect(edges).toHaveLength(8)
     expect(edges[0]).toBe(
-      '<svg x="-2" y="-2" width="2" height="2" viewBox="0 0 0.5 0.5" preserveAspectRatio="none">'
+      '<svg x="-2" y="0" width="3" height="4" viewBox="0 0 0.5 4" preserveAspectRatio="none">'
     )
+    expect(edges[7]).toBe(
+      '<svg x="3" y="3" width="3" height="3" viewBox="3.5 3.5 0.5 0.5" preserveAspectRatio="none">'
+    )
+    expect(svg.lastIndexOf('<svg x=')).toBeLessThan(svg.indexOf('<image id="imgsrc1"'))
     expect(elements(svg, 'use')).toEqual(Array.from({ length: 8 }, () => '<use href="#imgsrc1"/>'))
+  })
+
+  test('tile repeats the image at its own period, as the canvas does', () => {
+    const svg = imageStroked({ ...IMAGE_STROKE, imageScaleMode: 'TILE', scale: 0.5 })
+    expect(elements(svg, 'pattern')).toEqual([
+      '<pattern id="img0" patternUnits="userSpaceOnUse" width="2" height="2">'
+    ])
+    expect(elements(svg, 'use')).toEqual([])
   })
 
   test('fit draws the image once and nothing past it', () => {

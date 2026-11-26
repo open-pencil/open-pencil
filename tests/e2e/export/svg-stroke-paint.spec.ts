@@ -111,6 +111,16 @@ const SQUARES: SquareCase[] = [
     samples: imageEdgeSamples('OUTSIDE')
   },
   {
+    label: 'image fill, turned',
+    stroke: { ...RED_BLUE_IMAGE, align: 'OUTSIDE', imageRotation: 30 },
+    samples: (left, top) => [
+      [left, top - 4],
+      [left - 4, top + SIZE / 2],
+      [left + SIZE + 3, top + SIZE / 2],
+      [left + SIZE - 1, top + SIZE + 3]
+    ]
+  },
+  {
     label: 'image fit, centre',
     stroke: { ...RED_BLUE_IMAGE, imageScaleMode: 'FIT' },
     samples: (left, top) => [
