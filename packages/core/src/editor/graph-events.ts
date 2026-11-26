@@ -30,7 +30,8 @@ const GEOMETRY_CACHE_KEYS = new Set<keyof SceneNode>([
   'vectorNetwork',
   'cornerRadius',
   'fillGeometry',
-  'strokeGeometry'
+  'strokeGeometry',
+  'derivedTextGlyphs'
 ])
 
 const TILED_CHUNK_TOPOLOGY_KEYS = new Set<keyof SceneNode>([
