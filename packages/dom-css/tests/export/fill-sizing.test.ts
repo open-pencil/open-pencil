@@ -151,6 +151,18 @@ describe('auto layout as the canvas lays it out, in DOM/CSS export', () => {
       { name: 'B', ...box }
     ])
     expect(styleOf(column, 'A')).toMatchObject({ 'margin-bottom': '-10px' })
+    // A row that inherits right to left ends on its left.
+    const graph = new SceneGraph()
+    const outer = graph.createNode('FRAME', graph.getPages()[0].id, {
+      name: 'Outer',
+      layoutMode: 'VERTICAL',
+      layoutDirection: 'RTL'
+    })
+    const inner = graph.createNode('FRAME', outer.id, { name: 'Inner', ...layout })
+    for (const name of ['A', 'B']) graph.createNode('FRAME', inner.id, { name, ...box })
+    const inherited = sceneNodeToDesignDocument(graph, outer.id).children
+    expect(styleOf(inherited, 'A')).toMatchObject({ 'margin-left': '-10px' })
+    expect(styleOf(inherited, 'Inner')).toMatchObject({ 'padding-left': '10px' })
     const alone = exportParent(layout, [{ name: 'A', ...box }])
     expect(styleOf(alone, 'A')).not.toHaveProperty('margin-right')
   })
@@ -237,6 +249,50 @@ describe('canvas metrics, as preview projects', () => {
     })
     const centred = padding({ strokes: [{ ...stroke, align: 'CENTER' }] })
     expect(centred?.['box-shadow']).toBe('inset 0 0 0 1px #000000, 0 0 0 1px #000000')
+  })
+
+  it('takes back a negative gap past a border wider than the padding', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      name: 'Frame',
+      layoutMode: 'HORIZONTAL',
+      itemSpacing: -5,
+      strokes: [{ ...stroke, weight: 10, dashPattern: [4, 2] }]
+    })
+    for (const name of ['A', 'B'])
+      graph.createNode('FRAME', frame.id, { name, width: 20, height: 20 })
+    const canvasMetrics = { autoLineHeight: () => undefined }
+    const doc = sceneNodeToDesignDocument(graph, frame.id, { canvasMetrics }).children
+    expect(styleOf(doc, 'Frame')).toMatchObject({ 'padding-right': '5px' })
+  })
+
+  it('keeps the stroke of an image a border, which the image would cover as a shadow', () => {
+    const style = padding({
+      fills: [
+        {
+          type: 'IMAGE',
+          imageHash: 'a',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true
+        }
+      ]
+    })
+    expect(style).toHaveProperty('border')
+  })
+
+  it('draws each side of a stroke with weights of its own as a band along that side', () => {
+    const sides = padding({
+      strokes: [{ ...stroke, align: 'CENTER' }],
+      independentStrokeWeights: true,
+      borderTopWeight: 4,
+      borderRightWeight: 0,
+      borderBottomWeight: 0,
+      borderLeftWeight: 2
+    })
+    expect(sides?.['box-shadow']).toBe(
+      'inset 0px 2px 0 0 #000000, 0px -2px 0 0 #000000, inset 1px 0px 0 0 #000000, -1px 0px 0 0 #000000'
+    )
   })
 
   it('keeps a dashed stroke a border whose room the padding gives back, down to none', () => {

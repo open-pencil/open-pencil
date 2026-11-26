@@ -19,15 +19,27 @@ const PADDING_SIDES = [
   ['paddingLeft', 'left']
 ] as const
 
-/** A padding side changed by `extra` pixels, never below zero. */
-function adjusted(value: string, literal: number, extra: number): string {
-  if (extra === 0) return value
-  if (value === px(literal)) return px(Math.max(0, literal + extra))
-  return extra < 0 ? `max(0px, ${value} - ${px(-extra)})` : `calc(${value} + ${px(extra)})`
+/** What a frame's padding gives or takes on each side, in pixels. */
+export interface PaddingExtra {
+  /** Room a stroke takes or gives back, which leaves the padding no less than none. */
+  stroke: Sides
+  /** The overlap of a negative gap, taken back past that. */
+  overlap: Sides
+}
+
+const NO_EXTRA: PaddingExtra = { stroke: NO_SIDES, overlap: NO_SIDES }
+
+/** A padding side changed by a stroke's room, never below zero, then grown by an overlap. */
+function adjusted(value: string, literal: number, stroke: number, overlap: number): string {
+  if (value === px(literal)) return px(Math.max(0, literal + stroke) + overlap)
+  let side = value
+  if (stroke < 0) side = `max(0px, ${value} - ${px(-stroke)})`
+  else if (stroke > 0) side = `calc(${value} + ${px(stroke)})`
+  return overlap > 0 ? `calc(${side} + ${px(overlap)})` : side
 }
 
 /**
- * A frame's padding, each side changed by `extra`: room a stroke takes or gives back, or the
+ * A frame's padding, each side changed by `extra`: room a stroke takes or gives back, and the
  * overlap a negative gap takes back at the end. Sides compare by their CSS, so a token and a
  * literal of the same size stay separate.
  */
@@ -35,10 +47,10 @@ export function addPadding(
   style: DesignStyleDeclaration,
   node: SceneNode,
   css: FieldCSS,
-  extra: Sides = NO_SIDES
+  extra: PaddingExtra = NO_EXTRA
 ): void {
   const [top, right, bottom, left] = PADDING_SIDES.map(([field, side]) =>
-    adjusted(css(field, px(node[field])), node[field], extra[side])
+    adjusted(css(field, px(node[field])), node[field], extra.stroke[side], extra.overlap[side])
   )
   const zero = px(0)
   if ([top, right, bottom, left].every((value) => value === zero)) return
@@ -93,10 +105,21 @@ export function addWrappedLines(style: DesignStyleDeclaration, node: SceneNode):
   else style['align-content'] = 'flex-start'
 }
 
+/** The direction a frame lays its row out in: its own, or the nearest one it inherits. */
+function flowDirection(graph: SceneGraph, frame: SceneNode): 'LTR' | 'RTL' {
+  let node: SceneNode | undefined = frame
+  while (node) {
+    if (node.layoutDirection === 'LTR' || node.layoutDirection === 'RTL')
+      return node.layoutDirection
+    node = node.parentId ? graph.getNode(node.parentId) : undefined
+  }
+  return 'LTR'
+}
+
 /** The side a frame's flow ends on, where the overlap of a negative gap is taken back. */
-export function trailingSide(frame: SceneNode): Side {
+export function trailingSide(graph: SceneGraph, frame: SceneNode): Side {
   if (frame.layoutMode !== 'HORIZONTAL') return 'bottom'
-  return frame.layoutDirection === 'RTL' ? 'left' : 'right'
+  return flowDirection(graph, frame) === 'RTL' ? 'left' : 'right'
 }
 
 /**
@@ -123,7 +146,7 @@ export function addOverlapMargin(
 ): void {
   if (!parent || node.layoutPositioning === 'ABSOLUTE') return
   const overlap = flowOverlap(graph, parent)
-  if (overlap > 0) style[`margin-${trailingSide(parent)}`] = px(-overlap)
+  if (overlap > 0) style[`margin-${trailingSide(graph, parent)}`] = px(-overlap)
 }
 
 /**
@@ -138,14 +161,13 @@ export function paddingExtra(
   node: SceneNode,
   preview: boolean,
   shadows: boolean
-): Sides {
-  const extra = { ...NO_SIDES }
+): PaddingExtra {
+  const stroke = { ...NO_SIDES }
   if (preview) {
     const border = shadows ? NO_SIDES : borderWidths(node)
     const included = includedStrokeWeights(node)
-    for (const side of Object.keys(extra) as (keyof Sides)[])
-      extra[side] = included[side] - border[side]
+    for (const side of Object.keys(stroke) as Side[]) stroke[side] = included[side] - border[side]
   }
-  extra[trailingSide(node)] += flowOverlap(graph, node)
-  return extra
+  const overlap = { ...NO_SIDES, [trailingSide(graph, node)]: flowOverlap(graph, node) }
+  return { stroke, overlap }
 }

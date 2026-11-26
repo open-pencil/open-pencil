@@ -255,6 +255,14 @@ function addBoxSizing(style: DesignStyleDeclaration): void {
   if (sized && boxed) style['box-sizing'] = 'border-box'
 }
 
+/** Two CSS lengths added: in pixels where both are, else in `calc()`. */
+function sumLengths(a: string, b: string): string {
+  const pixels = /^-?[\d.]+px$/
+  return pixels.test(a) && pixels.test(b)
+    ? px(Number.parseFloat(a) + Number.parseFloat(b))
+    : `calc(${a} + ${b})`
+}
+
 /** A layer's size, its limits, and where it is placed: what every layer's style starts from. */
 function layerBox(
   graph: SceneGraph,
@@ -280,7 +288,9 @@ function styleFromSceneNode(
   const style = layerBox(graph, node, parent, css)
   addBackground(style, node, css, profile)
   addImageStyle(style, node)
-  const shadows = metrics ? strokeShadows(node, css, profile) : undefined
+  // An image covers an inset shadow, so its stroke stays a border.
+  const shadows =
+    metrics && tagNameForNode(node) !== 'img' ? strokeShadows(node, css, profile) : undefined
   if (!shadows) addStroke(style, node, css, profile)
   Object.assign(style, effectsToCSS(node.effects, css, profile))
   // The stroke paints over the layer's inner shadows, as on the canvas.
@@ -345,7 +355,10 @@ function styleFromTextNode(
   const ending = uniformLetterSpacing(node)
   if (ending && ending.value !== 0) {
     const written = isEqual(ending, node.letterSpacing) ? spacing : letterSpacingToCSS(ending)
-    Object.assign(style, letterSpacingRoomCSS(ending, written, style.width))
+    // The room's margin joins a negative gap's overlap on the same side.
+    const overlap = Object.hasOwn(style, 'margin-right') ? style['margin-right'] : undefined
+    Object.assign(style, letterSpacingRoomCSS(ending, written, style))
+    if (overlap !== undefined) style['margin-right'] = sumLengths(overlap, style['margin-right'])
   }
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()

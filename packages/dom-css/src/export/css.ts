@@ -194,11 +194,18 @@ export function letterSpacingToCSS(length: TextLength): string {
 export function letterSpacingRoomCSS(
   length: TextLength,
   spacing: string,
-  width: string | undefined
+  widths: Partial<Pick<DesignStyleDeclaration, 'width' | 'min-width' | 'max-width'>>
 ): DesignStyleDeclaration {
   const literal = spacing === letterSpacingToCSS(length)
+  // Its width and the limits on it each grow by the spacing, so none cuts into the room.
+  const grown = Object.fromEntries(
+    (['width', 'min-width', 'max-width'] as const).flatMap((property) => {
+      const value = widths[property]
+      return value === undefined ? [] : [[property, `calc(${value} + ${spacing})`]]
+    })
+  )
   return {
-    ...(width !== undefined && { width: `calc(${width} + ${spacing})` }),
+    ...grown,
     'margin-right': literal
       ? letterSpacingToCSS({ ...length, value: -length.value })
       : `calc(-1 * ${spacing})`

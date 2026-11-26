@@ -68,19 +68,33 @@ export function strokeShadows(
   }
   // A band along each side: a shadow moved off the box by the band's width, inside or out.
   const widths = borderWidths(node)
-  const toward = { top: [0, -1], right: [1, 0], bottom: [0, 1], left: [-1, 0] } as const
-  return (Object.keys(toward) as (keyof typeof toward)[]).flatMap((side) => {
-    const [dx, dy] = toward[side]
-    const within = widths[side] * inside
-    const beyond = widths[side] - within
-    const band = (inset: boolean, width: number) =>
-      `${inset ? 'inset ' : ''}${px(dx * width * (inset ? -1 : 1))} ${px(dy * width * (inset ? -1 : 1))} 0 0 ${color}`
+  return SIDE_BANDS.flatMap(({ side, field, dx, dy }) => {
+    const literal = px(widths[side])
+    const weight = css(field, literal)
+    // The weight times `share`, which carries the direction the shadow moves in.
+    const scaled = (share: number) => {
+      if (weight === literal) return px(widths[side] * share)
+      if (share === 0) return '0px'
+      return share === 1 ? weight : `calc(${weight} * ${share})`
+    }
+    const band = (inset: boolean, share: number) => {
+      const toward = inset ? -share : share
+      return `${inset ? 'inset ' : ''}${scaled(dx * toward)} ${scaled(dy * toward)} 0 0 ${color}`
+    }
     return [
-      ...(within > 0 ? [band(true, within)] : []),
-      ...(beyond > 0 ? [band(false, beyond)] : [])
+      ...(widths[side] > 0 && inside > 0 ? [band(true, inside)] : []),
+      ...(widths[side] > 0 && inside < 1 ? [band(false, 1 - inside)] : [])
     ]
   })
 }
+
+/** Each side's weight field, and the way a shadow moves to show a band along that side. */
+const SIDE_BANDS = [
+  { side: 'top', field: 'borderTopWeight', dx: 0, dy: -1 },
+  { side: 'right', field: 'borderRightWeight', dx: 1, dy: 0 },
+  { side: 'bottom', field: 'borderBottomWeight', dx: 0, dy: 1 },
+  { side: 'left', field: 'borderLeftWeight', dx: -1, dy: 0 }
+] as const
 
 /**
  * The layer's visible fills, painted bottom to top: its lowest solid fill as `background-color`,
