@@ -199,6 +199,16 @@ describe('community pages', () => {
     })
   })
 
+  test('keep a name with template tokens as it is, in the title and the structured data', async () => {
+    const name = 'Plan %separator draft %s %20'
+    const page = await visit(server(true, name), `/community/${DOCUMENT_ID}`)
+    const html = await page.text()
+    expect(html).toContain(`<title>${name} · Community · cloud.example</title>`)
+    expect(structuredData(html).graph).toMatchObject({
+      '@graph': expect.arrayContaining([expect.objectContaining({ '@type': 'CreativeWork', name })])
+    })
+  })
+
   test('let only the structured data carrying this response’s nonce run inline', async () => {
     const app = server(true)
     const nonces = []
@@ -220,7 +230,7 @@ describe('community pages', () => {
     expect(structuredData(html).graph).toMatchObject({
       '@graph': expect.arrayContaining([
         expect.objectContaining({
-          '@type': ['WebPage', 'CollectionPage'],
+          '@type': 'CollectionPage',
           url: 'https://cloud.example/community',
           mainEntity: { '@id': 'https://cloud.example/community#main-entity' }
         }),
@@ -230,7 +240,7 @@ describe('community pages', () => {
           itemListElement: [
             expect.objectContaining({
               position: 1,
-              item: `https://cloud.example/community/${DOCUMENT_ID}`
+              url: `https://cloud.example/community/${DOCUMENT_ID}`
             })
           ]
         })

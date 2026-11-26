@@ -148,7 +148,6 @@
     "@orpc/contract": "2.0.0-beta.53",
     "@orpc/openapi": "2.0.0-beta.53",
     "@orpc/server": "2.0.0-beta.53",
-    "@unhead/schema-org": "2.1.17",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",
     "@xmldom/xmldom": "^0.9.12",

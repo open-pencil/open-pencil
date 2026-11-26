@@ -4,13 +4,6 @@ import {
   communityDocumentsSchema,
   type CommunityDocument
 } from '#cloud/contract'
-import {
-  defineItemList,
-  defineListItem,
-  defineWebPage,
-  UnheadSchemaOrg,
-  useSchemaOrg
-} from '@unhead/schema-org'
 // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { createHead, transformHtmlTemplate as transformHTMLTemplate } from 'unhead/server'
 import * as v from 'valibot'
@@ -109,44 +102,53 @@ export async function communityPage(
   }
 }
 
-/** What the page is, as schema.org nodes for search engines. */
+/**
+ * What the page is, as a schema.org graph for search engines: the page, and the file it shows or
+ * the gallery's list as its main entity, each named by the page's address. Fields left undefined
+ * drop out when the graph is written.
+ */
 function structuredData({ meta, origin, documents, document }: CommunityPage) {
-  const page = { name: meta.title, url: meta.url, description: meta.description }
-  // What the page is about: the file it shows, or the gallery's list.
-  const mainEntity = `${meta.url}#main-entity`
-  if (document) {
-    return [
-      defineWebPage({
-        ...page,
-        dateModified: document.updatedAt,
-        primaryImageOfPage: meta.image,
-        mainEntity: { '@id': mainEntity }
-      }),
-      {
-        '@type': 'CreativeWork',
-        '@id': mainEntity,
-        name: document.name,
-        description: meta.description,
-        url: meta.url,
-        image: meta.image,
-        dateModified: document.updatedAt,
-        ...(document.versions[0] ? { version: document.versions[0].name } : {}),
-        isAccessibleForFree: true
-      }
-    ]
+  const page = {
+    '@id': `${meta.url}#webpage`,
+    name: meta.title,
+    description: meta.description,
+    url: meta.url,
+    mainEntity: { '@id': `${meta.url}#main-entity` }
   }
-  return [
-    defineWebPage({ ...page, '@type': 'CollectionPage', mainEntity: { '@id': mainEntity } }),
-    defineItemList({
-      '@id': mainEntity,
-      itemListElement: documents.map((entry) =>
-        defineListItem({
-          name: entry.name,
-          item: new URL(cloudCommunityPagePath(entry.id), origin).href
-        })
-      )
-    })
-  ]
+  const nodes = document
+    ? [
+        {
+          ...page,
+          '@type': 'WebPage',
+          dateModified: document.updatedAt,
+          primaryImageOfPage: meta.image
+        },
+        {
+          '@id': page.mainEntity['@id'],
+          '@type': 'CreativeWork',
+          name: document.name,
+          description: meta.description,
+          url: meta.url,
+          image: meta.image,
+          dateModified: document.updatedAt,
+          version: document.versions[0]?.name,
+          isAccessibleForFree: true
+        }
+      ]
+    : [
+        { ...page, '@type': 'CollectionPage' },
+        {
+          '@id': page.mainEntity['@id'],
+          '@type': 'ItemList',
+          itemListElement: documents.map((entry, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: entry.name,
+            url: new URL(cloudCommunityPagePath(entry.id), origin).href
+          }))
+        }
+      ]
+  return { '@context': 'https://schema.org', '@graph': nodes }
 }
 
 const APP_ROOT = '<div id="app"></div>'
@@ -163,9 +165,7 @@ export async function renderCommunityPage(
   scriptNonce: string
 ): Promise<string> {
   const { meta } = page
-  // Minified: registered first, so `useSchemaOrg` keeps it rather than one that decides by
-  // `process.env`, which a Worker may not have.
-  const head = createHead({ plugins: [UnheadSchemaOrg({ minify: true })] })
+  const head = createHead()
   head.push({
     title: meta.title,
     meta: [
@@ -182,12 +182,14 @@ export async function renderCommunityPage(
         : [])
     ],
     link: [{ rel: 'canonical', href: meta.url }],
-    // The graph names its nodes by the page's address; left unsaid, every page would be `/`.
-    templateParams: { schemaOrg: { host: page.origin, path: new URL(meta.url).pathname } }
-  })
-  // The policy lets this response's nonce alone run inline, so the graph's block carries it.
-  useSchemaOrg(head, {
-    script: [{ type: 'application/ld+json', nodes: structuredData(page), nonce: scriptNonce }]
+    // The policy lets this response's nonce alone run inline, so the graph's block carries it.
+    script: [
+      {
+        type: 'application/ld+json',
+        nonce: scriptNonce,
+        textContent: structuredData(page)
+      }
+    ]
   })
   // Vue's server renderer escapes every value it writes; a function replacement keeps `$`
   // patterns in names as they are.
