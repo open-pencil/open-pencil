@@ -182,30 +182,25 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
               </div>
             </section>
           </div>
-          <aside class="flex flex-col gap-6 text-xs">
-            <section class="max-sm:hidden">
-              <AppButton
-                variant="outline"
-                size="md"
-                @click="openCommunityInDesktop({ documentId: document.id, versionId })"
-              >
-                <template #leading><icon-lucide-monitor /></template>
-                {{ communityMessages.communityOpenInDesktop }}
-              </AppButton>
-            </section>
-            <section>
-              <h2 class="mb-3 text-sm font-semibold">{{ cloud.share }}</h2>
-              <AppCopyButton
-                :value="pageURL"
-                :label="cloud.shareCopyLink"
-                :copied-label="cloud.shareLinkCopied"
-                size="md"
-                variant="outline"
-              >
-                <template #icon><icon-lucide-link /></template>
-              </AppCopyButton>
-            </section>
-            <p class="border-t border-border pt-6 text-muted">
+          <aside class="flex flex-col gap-1">
+            <AppButton
+              size="lg"
+              class="justify-start gap-2 font-normal max-sm:hidden"
+              @click="openCommunityInDesktop({ documentId: document.id, versionId })"
+            >
+              <template #leading><icon-lucide-monitor /></template>
+              {{ communityMessages.communityOpenInDesktop }}
+            </AppButton>
+            <AppCopyButton
+              :value="pageURL"
+              :label="cloud.shareCopyLink"
+              :copied-label="cloud.shareLinkCopied"
+              size="lg"
+              class="justify-start gap-2 font-normal"
+            >
+              <template #icon><icon-lucide-link /></template>
+            </AppCopyButton>
+            <p class="mt-4 border-t border-border px-3.5 pt-4 text-xs text-muted">
               {{ communityMessages.communityOpenNote }}
             </p>
           </aside>
