@@ -38,7 +38,7 @@ async function reopen(graph: SceneGraph): Promise<SceneGraph> {
 }
 
 function byName(graph: SceneGraph, name: string): SceneNode {
-  const node = graph.getAllNodes().find((item) => item.name === name)
+  const node = [...graph.getAllNodes()].find((item) => item.name === name)
   if (!node) throw new Error(`No layer named ${name}`)
   return node
 }

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import * as v from 'valibot'
+
 import { createDocumentGraph } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { slideRows } from '@open-pencil/scene-graph/slides'
@@ -15,28 +17,46 @@ function deck() {
   return { graph, figma, first: first.id, title: title.id }
 }
 
+const outlineSchema = v.object({
+  sections: v.array(
+    v.object({
+      id: v.string(),
+      slides: v.array(
+        v.looseObject({
+          id: v.string(),
+          number: v.nullable(v.number()),
+          animations: v.array(
+            v.looseObject({ name: v.string(), direction: v.nullable(v.string()) })
+          )
+        })
+      )
+    })
+  )
+})
+const madeSchema = v.object({ slides: v.array(v.string()) })
+
 async function outline(figma: FigmaAPI) {
-  const result = await getDeck.execute(figma, {})
-  if (!('sections' in result)) throw new Error(JSON.stringify(result))
-  return result.sections
+  return v.parse(outlineSchema, await getDeck.execute(figma, {})).sections
+}
+
+/** The IDs of the slides a call made. */
+async function made(result: unknown): Promise<string[]> {
+  return v.parse(madeSchema, await result).slides
 }
 
 describe('slide tools', () => {
   test('slides are created after one or in a new section, numbered by their place', async () => {
     const { figma, first } = deck()
-    const made = await createSlides.execute(figma, { count: 2, after: first })
-    const section = await createSlides.execute(figma, { newSection: true })
-    if (!('slides' in made) || !('slides' in section)) throw new Error('No slides')
+    await made(createSlides.execute(figma, { count: 2, after: first }))
+    const section = await made(createSlides.execute(figma, { newSection: true }))
     const sections = await outline(figma)
     expect(sections.map((row) => row.slides.map((slide) => slide.number))).toEqual([[1, 2, 3], [4]])
-    expect(sections[1].slides[0].id).toBe(section.slides[0])
+    expect(sections[1].slides[0].id).toBe(section[0])
   })
 
   test('slides move after another and empty sections go away', async () => {
     const { figma, first } = deck()
-    const made = await createSlides.execute(figma, { count: 2 })
-    if (!('slides' in made)) throw new Error('No slides')
-    const [second, third] = made.slides
+    const [second, third] = await made(createSlides.execute(figma, { count: 2 }))
     await moveSlides.execute(figma, { slides: [third], newSection: true })
     await moveSlides.execute(figma, { slides: [third, first], after: second })
     const sections = await outline(figma)
