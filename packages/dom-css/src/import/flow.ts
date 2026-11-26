@@ -428,19 +428,29 @@ export function applyFlowSizing(
   if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
 }
 
-/** Whether a box is out of the flow, placed by its own position rather than in the lines. */
-function isOutOfFlow(node: DesignNode): boolean {
-  if (node.type !== 'element') return false
-  const position = pickStyle(mergedStyle(node), 'position')?.trim()
+/** Whether a style places its box by its own position rather than in the lines. */
+function placesOutOfFlow(style: DesignStyleDeclaration): boolean {
+  const position = pickStyle(style, 'position')?.trim()
   return position === 'absolute' || position === 'fixed'
 }
 
+/** Whether a box is out of the flow, placed by its own position rather than in the lines. */
+function isOutOfFlow(node: DesignNode): boolean {
+  return node.type === 'element' && placesOutOfFlow(mergedStyle(node))
+}
+
 /**
- * Whether a box shows nothing and takes no room: out of the flow, at zero opacity, which hides
- * all it holds. A page keeps such a box for what it does rather than for how it looks.
+ * Whether a box shows nothing and takes no room in any mode: out of the flow, at zero opacity,
+ * which hides all it holds. A page keeps such a box for what it does rather than for how it looks.
  */
-export function isUnseen(element: DesignElement, style: DesignStyleDeclaration): boolean {
-  return isOutOfFlow(element) && parseCSSNumber(pickStyle(style, 'opacity')) === 0
+export function isUnseen(element: DesignElement): boolean {
+  const styles = [mergedStyle(element), ...(element.modes ?? []).map((mode) => mode.computedStyle)]
+  return styles.every(
+    (style) =>
+      style !== undefined &&
+      placesOutOfFlow(style) &&
+      parseCSSNumber(pickStyle(style, 'opacity')) === 0
+  )
 }
 
 /**

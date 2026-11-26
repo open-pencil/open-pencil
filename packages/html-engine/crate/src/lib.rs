@@ -870,13 +870,14 @@ fn capture_pseudo(
     }
 }
 
-/// A time, in seconds, past the end of any finite transition or animation a page sets.
+/// A time, in seconds, past the end of any transition or animation iteration a page sets.
 const SETTLED_TIME: f64 = 1_000_000.0;
 
 /// Resolves the document's styles and layout as they settle. A change since the last capture,
 /// such as a mode's restyle, starts the transitions the page declares for it, at time zero; read
-/// then, they would show the styles before the change. Resolving again later ends them, and any
-/// finite animation.
+/// then, they would show the styles before the change. Resolving again later ends them, and an
+/// animation that runs once. Stylo moves an animation on by one iteration per resolve, so one
+/// that runs several times is still running.
 fn settle(doc: &mut BaseDocument) {
     doc.resolve(0.0);
     if doc.is_animating() {
