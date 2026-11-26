@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import type { Easing } from '@open-pencil/scene-graph'
 import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph/behaviours'
 import type {
   BehaviourControl,
@@ -18,6 +19,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AddBehaviourPicker from './AddBehaviourPicker.vue'
 import BehaviourRow from './BehaviourRow.vue'
 import BehaviourStates from './BehaviourStates.vue'
+import BehaviourTransition from './BehaviourTransition.vue'
 import { useBehaviourLabels } from './labels'
 
 /**
@@ -41,6 +43,10 @@ const emit = defineEmits<{
   createVariant: [valueId: string, name: string]
   createPart: [partId: string, name: string]
   createStates: []
+  addTransition: []
+  removeTransition: []
+  setTransition: [patch: { duration?: number; easing?: Easing }]
+  bindTransition: [field: 'duration' | 'easing', variableId: string | null]
 }>()
 const behaviourMessages = useMessages('panels/behaviours')
 const { locale } = useLocale()
@@ -158,6 +164,14 @@ const nextStep = computed(() => {
         @bind="emit('bindStates', $event)"
         @map="(state, value) => emit('mapState', state, value)"
         @create="emit('createStates')"
+      />
+
+      <BehaviourTransition
+        :transition="behaviour.transition"
+        @add="emit('addTransition')"
+        @remove="emit('removeTransition')"
+        @set="emit('setTransition', $event)"
+        @bind="(field, variableId) => emit('bindTransition', field, variableId)"
       />
 
       <AppCollapsible
