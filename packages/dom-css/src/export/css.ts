@@ -49,6 +49,15 @@ export function borderWidths(node: SceneNode): Record<BorderSide, number> {
   }
 }
 
+/**
+ * Whether preview draws a layer's stroke as box shadows, which take no room, rather than as a
+ * border: a solid stroke can be, a dashed one cannot. An image keeps a border, since it would
+ * cover an inset shadow; an image has no children, so this alone answers for a parent.
+ */
+export function strokeDrawsAsShadows(node: SceneNode): boolean {
+  return node.strokes.at(0)?.visible === true && node.dashPattern.length === 0
+}
+
 export function strokeColorToCSS(
   stroke: Stroke | undefined,
   profile: ColorProfile

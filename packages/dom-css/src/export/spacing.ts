@@ -131,10 +131,13 @@ export function flowOverlap(graph: SceneGraph, frame: SceneNode): number {
   if (frame.layoutMode !== 'HORIZONTAL' && frame.layoutMode !== 'VERTICAL') return 0
   const spacing = primaryAxisSpacingOf(frame)
   if (spacing >= 0) return 0
-  const flow = graph
-    .getChildren(frame.id)
-    .filter((child) => child.visible && child.layoutPositioning !== 'ABSOLUTE')
-  return flow.length > 1 ? -spacing : 0
+  // Only a second child in the flow matters, so the count stops there.
+  let flow = 0
+  for (const id of frame.childIds) {
+    const child = graph.getNode(id)
+    if (child?.visible && child.layoutPositioning !== 'ABSOLUTE' && ++flow > 1) return -spacing
+  }
+  return 0
 }
 
 /** A child's share of its frame's overlap: a negative margin after it. */

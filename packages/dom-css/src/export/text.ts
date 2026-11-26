@@ -481,7 +481,8 @@ export function textElementContent(
 export function addTextLines(style: DesignStyleDeclaration, node: SceneNode): void {
   const limit = node.maxLines ?? 0
   if (node.textTruncation === 'ENDING' && limit > 0) {
-    style.display = '-webkit-box'
+    // Text that hugs its line on the page keeps hugging it as an inline box.
+    style.display = style.display === 'inline-block' ? '-webkit-inline-box' : '-webkit-box'
     style['-webkit-box-orient'] = 'vertical'
     style['-webkit-line-clamp'] = String(limit)
     style.overflow = 'hidden'

@@ -193,14 +193,28 @@ describe('text lines in DOM/CSS export', () => {
   })
 
   it('shows a truncating text up to its line limit, ending with an ellipsis', () => {
+    // On the page, text hugs its line, so it clamps as an inline box.
     expect(textStyle({ textTruncation: 'ENDING', maxLines: 2 })).toMatchObject({
-      display: '-webkit-box',
+      display: '-webkit-inline-box',
       '-webkit-line-clamp': '2',
       overflow: 'hidden',
       'white-space': 'pre-wrap'
     })
     expect(textStyle({ maxLines: 2 })).not.toHaveProperty('-webkit-line-clamp')
     expect(textStyle({ maxLines: 1 })).toMatchObject({ 'white-space': 'nowrap' })
+  })
+
+  it('clamps a truncating text in a frame as a block box', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Frame' })
+    graph.createNode('TEXT', frame.id, {
+      name: 'Text',
+      text: 'Hi',
+      textTruncation: 'ENDING',
+      maxLines: 1
+    })
+    const style = styleOf(sceneNodeToDesignDocument(graph, frame.id).children, 'Text')
+    expect(style).toMatchObject({ display: '-webkit-box', '-webkit-line-clamp': '1' })
   })
 
   it('trims a text to its cap height', () => {
@@ -299,6 +313,22 @@ describe('canvas metrics, as preview projects', () => {
     expect(sides?.['box-shadow']).toBe(
       'inset 0px 2px 0 0 #000000, 0px -2px 0 0 #000000, inset 1px 0px 0 0 #000000, -1px 0px 0 0 #000000'
     )
+  })
+
+  it('places the children of a frame whose stroke is a shadow where the canvas does', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      name: 'Frame',
+      width: 200,
+      height: 100,
+      strokes: [{ ...stroke, weight: 4 }]
+    })
+    graph.createNode('FRAME', frame.id, { name: 'Child', x: 10, y: 12, width: 20, height: 20 })
+    const child = (canvasMetrics?: { autoLineHeight: () => undefined }) =>
+      styleOf(sceneNodeToDesignDocument(graph, frame.id, { canvasMetrics }).children, 'Child')
+    expect(child({ autoLineHeight: () => undefined })).toMatchObject({ left: '10px', top: '12px' })
+    // A border takes its weight from the box it places the child in.
+    expect(child()).toMatchObject({ left: '6px', top: '8px' })
   })
 
   it('keeps a dashed stroke a border whose room the padding gives back, down to none', () => {

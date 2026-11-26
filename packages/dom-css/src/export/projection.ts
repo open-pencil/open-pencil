@@ -132,7 +132,8 @@ function addSize(
   graph: SceneGraph,
   node: SceneNode,
   parent: SceneNode | undefined,
-  css: FieldCSS
+  css: FieldCSS,
+  preview: boolean
 ): void {
   const placed = placement(node, parent)
   // A frame with nothing to hug keeps its size, as on the canvas.
@@ -141,7 +142,7 @@ function addSize(
     node[axis] > 0 &&
     (!hugs(node, axis) || held.includes(axis)) &&
     !stretches(node, parent, axis) &&
-    !(placed && constraintSizes(node, placed.parent, axis))
+    !(placed && constraintSizes(node, placed.parent, axis, preview))
   if (sized('width')) style.width = css('width', px(node.width))
   if (sized('height')) style.height = css('height', px(node.height))
 }
@@ -274,11 +275,12 @@ function layerBox(
   graph: SceneGraph,
   node: SceneNode,
   parent: SceneNode | undefined,
-  css: FieldCSS
+  css: FieldCSS,
+  preview: boolean
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  addSize(style, graph, node, parent, css)
-  addPositioning(style, node, parent)
+  addSize(style, graph, node, parent, css, preview)
+  addPositioning(style, node, parent, preview)
   addSizeConstraints(style, node, css)
   return style
 }
@@ -291,7 +293,7 @@ function styleFromSceneNode(
   profile: ColorProfile,
   metrics: CanvasMetrics | undefined
 ): DesignStyleDeclaration {
-  const style = layerBox(graph, node, parent, css)
+  const style = layerBox(graph, node, parent, css, metrics !== undefined)
   addBackground(style, node, css, profile)
   addImageStyle(style, node)
   // An image covers an inset shadow, so its stroke stays a border.
@@ -344,7 +346,7 @@ function styleFromTextNode(
   metrics: CanvasMetrics | undefined,
   inheritsRightToLeft: boolean
 ): DesignStyleDeclaration {
-  const style = layerBox(graph, node, parent, css)
+  const style = layerBox(graph, node, parent, css, metrics !== undefined)
   addLayoutChild(style, graph, node, parent)
   addTextBox(style, node, parent, inheritsRightToLeft)
   const color = fillToCSS(node.fills.at(0), profile)

@@ -3,7 +3,13 @@ import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import type { DesignStyleDeclaration } from '../types'
-import { borderWidths, fillToCSS, gradientToCSS, strokeColorToCSS } from './css'
+import {
+  borderWidths,
+  fillToCSS,
+  gradientToCSS,
+  strokeColorToCSS,
+  strokeDrawsAsShadows
+} from './css'
 
 /** A field's CSS: its token reference where one is faithful, otherwise the literal value. */
 export type FieldCSS = (field: string, literal: string) => string
@@ -51,7 +57,7 @@ export function strokeShadows(
 ): string[] | undefined {
   const stroke = node.strokes.at(0)
   const literalColor = strokeColorToCSS(stroke, profile)
-  if (!literalColor || !stroke || node.dashPattern.length > 0) return undefined
+  if (!literalColor || !stroke || !strokeDrawsAsShadows(node)) return undefined
   const color = css('strokes/0/color', literalColor)
   const inside = INSIDE_SHARE[stroke.align]
   if (!node.independentStrokeWeights) {
