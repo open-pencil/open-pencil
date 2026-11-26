@@ -28,6 +28,7 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/directio
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { cssColor, fillToCSS, letterSpacingToCSS, lineHeightToCSS, showsOnlyShaders } from './css'
+import type { FieldCSS } from './paint-style'
 
 /** The character styles CSS writes, as a text layer and its runs hold them. */
 type CharacterStyle = Pick<
@@ -536,4 +537,13 @@ export function addTextBox(
   if (node.textAlignHorizontal !== 'LEFT' || rtl)
     style['text-align'] =
       node.textAlignHorizontal === 'JUSTIFIED' ? 'justify' : node.textAlignHorizontal.toLowerCase()
+}
+
+export function textColor(node: SceneNode, css: FieldCSS, profile: ColorProfile): string {
+  const colorIndex = node.fills.findIndex(isDrawnPaint)
+  if (colorIndex === -1) {
+    return showsOnlyShaders(node.fills) ? 'transparent' : cssColor(BLACK, profile)
+  }
+  const color = fillToCSS(node.fills[colorIndex], profile)
+  return color ? css(`fills/${colorIndex}/color`, color) : cssColor(BLACK, profile)
 }

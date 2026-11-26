@@ -2,20 +2,15 @@ import { compact } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { ColorProfile, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { heldHugAxes, layoutSizingInParent } from '@open-pencil/scene-graph/layout'
-import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import {
-  cssColor,
   effectsToCSS,
-  fillToCSS,
-  showsOnlyShaders,
   letterSpacingRoomCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
@@ -44,6 +39,7 @@ import {
   addTextLines,
   insideRightToLeftFrame,
   textCaseToCSS,
+  textColor,
   textElementContent,
   uniformLetterSpacing
 } from './text'
@@ -337,15 +333,6 @@ function styleFromSceneNode(
 
   addBoxSizing(style)
   return style
-}
-
-function textColor(node: SceneNode, css: FieldCSS, profile: ColorProfile): string {
-  const colorIndex = node.fills.findIndex(isDrawnPaint)
-  if (colorIndex === -1) {
-    return showsOnlyShaders(node.fills) ? 'transparent' : cssColor(BLACK, profile)
-  }
-  const color = fillToCSS(node.fills[colorIndex], profile)
-  return color ? css(`fills/${colorIndex}/color`, color) : cssColor(BLACK, profile)
 }
 
 function styleFromTextNode(
