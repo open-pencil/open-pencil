@@ -84,6 +84,25 @@ describe('the HTML engine', () => {
     expect(card?.style?.opacity).toBeUndefined()
   })
 
+  test('captures each mode with the transitions its change starts ended', async () => {
+    const engine = await loadHTMLEngine()
+    const capture = await engine.layout(
+      `<style>
+        #box { background: #ff0000; transition: background-color 5s }
+        .dark #box { background: #0000ff }
+        #fade { opacity: 0.5; animation: in 2s }
+        @keyframes in { from { opacity: 0 } }
+      </style><div id="box"></div><div id="fade"></div>`,
+      { viewport: VIEWPORT, modes: [{ class: 'dark' }] }
+    )
+    const style = (nodes: HTMLEngineCapture['nodes'], id: string) =>
+      nodes.find((node) => node.attrs?.id === id)?.style
+    expect(
+      [capture, ...capture.modes].map(({ nodes }) => style(nodes, 'box')?.['background-color'])
+    ).toEqual(['rgb(255, 0, 0)', 'rgb(0, 0, 255)'])
+    expect(style(capture.nodes, 'fade')?.opacity).toBe('0.5')
+  })
+
   test('applies the stylesheets and images the host fetches', async () => {
     const engine = await loadHTMLEngine()
     // The engine sets no line without a font, inline images included.

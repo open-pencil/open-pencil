@@ -870,12 +870,26 @@ fn capture_pseudo(
     }
 }
 
+/// A time, in seconds, past the end of any finite transition or animation a page sets.
+const SETTLED_TIME: f64 = 1_000_000.0;
+
+/// Resolves the document's styles and layout as they settle. A change since the last capture,
+/// such as a mode's restyle, starts the transitions the page declares for it, at time zero; read
+/// then, they would show the styles before the change. Resolving again later ends them, and any
+/// finite animation.
+fn settle(doc: &mut BaseDocument) {
+    doc.resolve(0.0);
+    if doc.is_animating() {
+        doc.resolve(SETTLED_TIME);
+    }
+}
+
 /// The document laid out; with `references`, also the root's custom properties and, for each
 /// element, the properties whose values come from them.
 pub fn capture(references: bool) -> String {
     with_session(|s| {
         s.doc.handle_messages();
-        s.doc.resolve(0.0);
+        settle(&mut s.doc);
         let mut root = references
             .then(|| Root::of(&s.doc, &s.doc.guard().read()))
             .flatten();
