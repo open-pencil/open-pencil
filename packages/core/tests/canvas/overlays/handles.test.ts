@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { renderFromEditorState } from '#core/canvas/renderer/pipeline'
@@ -20,26 +20,43 @@ const BLACK = { r: 0, g: 0, b: 0, a: 1 }
  * The pixel just outside the top-left corner of the selection, on a black page: a corner handle
  * paints it white, and without one it stays the page's black.
  */
-function cornerPixel(layers: number, levels: { layerEdits?: LayerEdits; readOnly?: boolean }) {
+function cornerPixel(
+  layers: number,
+  levels: { layerEdits?: LayerEdits; readOnly?: boolean },
+  inherited = false
+) {
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')
-  const ids = Array.from(
-    { length: layers },
-    (_, i) =>
-      graph.createNode('RECTANGLE', page.id, {
-        x: 16 + i * 12,
-        y: 16 + i * 12,
-        width: 20,
-        height: 20,
-        fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
-      }).id
+  const parent = inherited ? graph.createNode('COMPONENT', page.id, { x: -64 }) : page
+  const nodes = Array.from({ length: layers }, (_, i) =>
+    graph.createNode('RECTANGLE', parent.id, {
+      x: 16 + i * 12,
+      y: 16 + i * 12,
+      width: 20,
+      height: 20,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
   )
+  const picked = inherited
+    ? graph.getChildren(
+        expectDefined(graph.createInstance(parent.id, page.id, { x: 0 }), 'instance').id
+      )
+    : nodes
+  return selectedCornerPixel(graph, picked, levels)
+}
+
+function selectedCornerPixel(
+  graph: SceneGraph,
+  picked: readonly SceneNode[],
+  levels: { layerEdits?: LayerEdits; readOnly?: boolean } = {}
+) {
+  const page = expectDefined(graph.getPages()[0], 'page')
   const state = createDefaultEditorState(page.id)
   state.pageColor = BLACK
   state.zoom = 1
   state.panX = 0
   state.panY = 0
-  state.selectedIds = new Set(ids)
+  state.selectedIds = new Set(picked.map((node) => node.id))
   state.hostRestrictions = { ...state.hostRestrictions, ...levels }
   renderFromEditorState(renderer, state, graph, null, SIZE, SIZE, false)
   renderer.surface.flush()
@@ -71,6 +88,10 @@ describe.each([1, 2])('a selection of %i layer(s)', (layers) => {
     expect(cornerPixel(layers, {})).toEqual(WHITE_PIXEL)
   })
 
+  test('has no resize handles on inherited instance layers', () => {
+    expect(cornerPixel(layers, {}, true)).toEqual(BLACK_PIXEL)
+  })
+
   test.each(['move', 'none'] as const)(
     'shows none while layers take layerEdits %s',
     (layerEdits) => {
@@ -82,3 +103,30 @@ describe.each([1, 2])('a selection of %i layer(s)', (layers) => {
     expect(cornerPixel(layers, { readOnly: true })).toEqual(BLACK_PIXEL)
   })
 })
+
+test.each([
+  { locked: true, pixel: BLACK_PIXEL },
+  { locked: false, pixel: WHITE_PIXEL }
+])(
+  'a mixed selection shows resize handles according to its standalone layer lock ($locked)',
+  ({ locked, pixel }) => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    const component = graph.createNode('COMPONENT', page.id, { x: -64, width: 32, height: 32 })
+    graph.createNode('RECTANGLE', component.id, { x: 16, y: 16, width: 20, height: 20 })
+    const instance = expectDefined(
+      graph.createInstance(component.id, page.id, { x: 0 }),
+      'instance'
+    )
+    const [inherited] = graph.getChildren(instance.id)
+    const standalone = graph.createNode('RECTANGLE', page.id, {
+      x: 28,
+      y: 28,
+      width: 20,
+      height: 20,
+      locked
+    })
+
+    expect(selectedCornerPixel(graph, [inherited, standalone])).toEqual(pixel)
+  }
+)

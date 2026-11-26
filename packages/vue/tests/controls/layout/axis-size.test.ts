@@ -23,6 +23,41 @@ function panelActions(editor: ReturnType<typeof createEditor>, id: string) {
 // Figma (desktop, 2026-11-07): typing W into the panel places the layers inside by their
 // constraints, as a handle drag or resize() does.
 describe('a typed width or height', () => {
+  test('keeps inherited dimensions and edits the dimensions of owned slot content', () => {
+    const editor = createEditor()
+    const { graph } = editor
+    const page = editor.state.currentPageId
+    const component = graph.createNode('COMPONENT', page, {
+      width: 120,
+      height: 100,
+      componentPropertyDefinitions: [{ id: 'body', name: 'Body', type: 'SLOT', defaultValue: '' }]
+    })
+    graph.createNode('RECTANGLE', component.id, { width: 40, height: 20 })
+    graph.createNode('FRAME', component.id, {
+      componentPropertyReferences: [{ propertyId: 'body', field: 'SLOT_CONTENT' }]
+    })
+    const instance = graph.createInstance(component.id, page)
+    if (!instance) throw new Error('Expected an instance')
+    const [copy, slot] = graph.getChildren(instance.id)
+    const { actions, scope } = panelActions(editor, copy.id)
+    try {
+      actions.updateAxisSize('width', 70)
+      expect(copy.width).toBe(40)
+      actions.commitAxisSize('width', 70, 40)
+      expect(copy.width).toBe(40)
+      expect(editor.undo.canUndo).toBe(false)
+
+      const owned = editor.createShape('RECTANGLE', 0, 0, 40, 20, slot.id)
+      editor.select([owned])
+      actions.updateAxisSize('width', 70)
+      actions.commitAxisSize('width', 70, 40)
+      expect(graph.getNode(owned)?.width).toBe(70)
+    } finally {
+      scope.stop()
+      editor.dispose()
+    }
+  })
+
   function setup() {
     const editor = createEditor()
     const page = editor.state.currentPageId

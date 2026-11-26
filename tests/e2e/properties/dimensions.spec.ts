@@ -1,6 +1,24 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { buildInstanceResizeScene } from '#tests/helpers/canvas/instance-sizing-driver'
+
+test('inherited sizes can be read in the panel while the instance itself can be resized', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const scene = await buildInstanceResizeScene(page)
+  const width = page.getByRole('spinbutton', { name: 'Width', exact: true })
+  await scene.select('inherited')
+  await expect(width).toHaveAttribute('aria-valuenow', '40')
+  await expect(width).toBeDisabled()
+  await scene.select('instance')
+  await expect(width).toHaveAttribute('aria-valuenow', '120')
+  await expect(width).toBeEnabled()
+  canvas.assertNoErrors()
+})
 
 for (const theme of ['light', 'dark']) {
   test.describe(`dimension fields in ${theme}`, () => {

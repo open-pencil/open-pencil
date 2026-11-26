@@ -1,6 +1,7 @@
 import type { Editor } from '@open-pencil/core'
 import { isLineLike, lineWorldEnds, TRANSFORM_ZONE, type LineEnd } from '@open-pencil/core/geometry'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
+import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 
 import type { DragState } from '#vue/shared/input/types'
 
@@ -18,7 +19,14 @@ export function lineEndAt(
   const [id] = state.selectedIds
   const line = editor.graph.getNode(id)
   // A connector or sticky note is shaped by its own handles, never aimed as a line.
-  if (!line || line.locked || !isLineLike(line) || !layerRotates(line)) return null
+  if (
+    !line ||
+    line.locked ||
+    !isLineLike(line) ||
+    !layerRotates(line) ||
+    inheritsInstanceSize(editor.graph, line)
+  )
+    return null
   const reach = TRANSFORM_ZONE.resizeReach / (editor.renderer?.zoom ?? state.zoom)
   const [start, end] = lineWorldEnds(editor.graph, line)
   const toStart = Math.hypot(start.x - cx, start.y - cy)

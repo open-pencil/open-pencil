@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
+import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 import { useSelectionLayout } from '@open-pencil/vue/controls/selection-layout'
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useMessages } from '@open-pencil/vue/i18n'
@@ -19,6 +22,9 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
  * those that can clip.
  */
 const layout = useSelectionLayout()
+const sizeInherited = computed(() =>
+  layout.nodes.value.some((node) => inheritsInstanceSize(layout.editor.graph, node))
+)
 const { getCommand } = useEditorCommands()
 const wrapInAutoLayout = getCommand('selection.wrapInAutoLayout')
 const panels = useMessages('panels')
@@ -49,6 +55,7 @@ const panels = useMessages('panels')
             data-property="width"
             :aria-label="panels.width"
             :model-value="wValue"
+            :disabled="sizeInherited"
             :min="1"
             @update:model-value="actions.updateProp('width', $event)"
             @commit="(v: number, p: number) => actions.commitProp('width', v, p)"
@@ -61,6 +68,7 @@ const panels = useMessages('panels')
             data-property="height"
             :aria-label="panels.height"
             :model-value="hValue"
+            :disabled="sizeInherited"
             :min="1"
             @update:model-value="actions.updateProp('height', $event)"
             @commit="(v: number, p: number) => actions.commitProp('height', v, p)"

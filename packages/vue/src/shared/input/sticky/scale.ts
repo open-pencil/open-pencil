@@ -9,6 +9,7 @@ import {
   stickyWidth
 } from '@open-pencil/scene-graph/generated'
 import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
+import { inheritsInstanceSize } from '@open-pencil/scene-graph/slots'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
@@ -50,7 +51,7 @@ export function tryStartStickyScale(
 ): DragStickyScale | null {
   if (editor.state.selectedIds.size !== 1) return null
   const node = editor.graph.getNode([...editor.state.selectedIds][0])
-  if (!node || !scalesByHandles(node)) return null
+  if (!node || !scalesByHandles(node) || inheritsInstanceSize(editor.graph, node)) return null
   const hit = getHitHandleByMatrix(
     cx,
     cy,

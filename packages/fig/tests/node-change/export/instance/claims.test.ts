@@ -4,10 +4,43 @@ import { symbolDataOf } from '#fig/instance-overrides/types'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 describe('exporting an instance’s claims on its layers', () => {
+  test('writes only instance size claims, including a nested instance’s', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { width: 120, height: 100 })
+    graph.createNode('RECTANGLE', component.id, { width: 40, height: 20 })
+    const icon = graph.createNode('COMPONENT', page.id, { width: 16, height: 16 })
+    expectDefined(graph.createInstance(icon.id, component.id), 'icon in the component')
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    const [copy, nested] = graph.getChildren(instance.id)
+    graph.updateNode(instance.id, { width: 140 })
+    recordInstanceOverride(graph, instance.id, ['width'])
+    graph.updateNode(copy.id, { width: 70 })
+    recordInstanceOverride(graph, copy.id, ['width'])
+    graph.updateNode(nested.id, { width: 22 })
+    recordInstanceOverride(graph, nested.id, ['width'])
+
+    const [change] = sceneNodeToKiwi(
+      instance,
+      { sessionID: 1, localID: 1 },
+      0,
+      { value: 2 },
+      graph,
+      []
+    )
+
+    const sizes = symbolDataOf(change)?.symbolOverrides?.flatMap((claim) => claim.size ?? [])
+    expect(sizes).toEqual([
+      { x: 140, y: 100 },
+      { x: 22, y: 16 }
+    ])
+  })
+
   test('merges edited text into an existing override path', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
