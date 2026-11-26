@@ -423,6 +423,22 @@ describe('text style values in a scaled instance', () => {
 
     expect(graph.getChildren(instance.id)[1].fontSize).toBe(60)
   })
+  test('a style the component layer takes alone reaches the synced copy in its mode and scale', () => {
+    const { graph, component, frame, toRoomy } = scaledInstance()
+    const source = graph.createNode('TEXT', component.id, { text: 'Hi', fontSize: 10 })
+    graph.syncInstances(component.id)
+    const instance = expectDefined(graph.getChildren(frame.id)[0], 'instance')
+    toRoomy()
+
+    graph.updateNode(source.id, { textStyleId: 'style:body' })
+    graph.syncInstances(component.id)
+
+    expect(graph.getChildren(instance.id)[1]).toMatchObject({
+      textStyleId: 'style:body',
+      fontSize: 60,
+      letterSpacing: px(6)
+    })
+  })
 })
 
 describe('a text duplicated out of a scaled instance', () => {

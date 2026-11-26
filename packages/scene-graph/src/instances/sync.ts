@@ -242,7 +242,8 @@ function resolveBoundNumbersInPlace(
     { type: target.type, textStyleId, boundVariables: own },
     styles
   )
-  const synced = uniq([...Object.keys(updates), ...rebound]).filter(
+  const restyled = textStyleId !== target.textStyleId ? Object.keys(bound) : []
+  const synced = uniq([...Object.keys(updates), ...rebound, ...restyled]).filter(
     (field) => isNumericVariableBindingField(field) && bound[field] && !kept(field)
   )
   resolveSyncedRunsInPlace(graph, target, updates, styles)
