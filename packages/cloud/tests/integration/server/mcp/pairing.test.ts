@@ -45,7 +45,7 @@ async function withAgent<T>(bearer: string, use: (client: Client) => Promise<T>)
 }
 
 /** A tab paired with `token` that answers every call with the call's name. */
-async function pairTab(): Promise<TestRelayClient> {
+async function pairTab(): Promise<{ tab: TestRelayClient; stop(): Promise<void> }> {
   const tab = connectTestClient((socket) => pairing.connect(pairingSocket(socket)))
   tab.send({ type: 'auth', token })
   await until(() => tab.peerId() !== undefined)
@@ -58,8 +58,9 @@ async function pairTab(): Promise<TestRelayClient> {
     })
   say(encodeAgentToolMessage({ type: 'host' }))
   const answered = new Set<string>()
-  void (async () => {
-    while (!tab.closed) {
+  const stopping = new AbortController()
+  const answering = (async () => {
+    while (!stopping.signal.aborted && !tab.closed) {
       for (const frame of tab.messages(COLLAB_ACTIONS.agentTools)) {
         const message = decodeAgentToolMessage(frame.payload)
         if (message?.type !== 'call' || answered.has(message.id)) continue
@@ -78,7 +79,14 @@ async function pairTab(): Promise<TestRelayClient> {
       })
     }
   })()
-  return tab
+  return {
+    tab,
+    async stop() {
+      stopping.abort()
+      tab.connection.closed()
+      await answering
+    }
+  }
 }
 
 beforeAll(async () => {
@@ -105,7 +113,7 @@ describe('MCP for an agent paired with an editor tab', () => {
   })
 
   test('runs a call in the paired tab, on the page it names', async () => {
-    const tab = await pairTab()
+    const paired = await pairTab()
     try {
       await withAgent(token, async (client) => {
         const result = await client.callTool({
@@ -117,7 +125,7 @@ describe('MCP for an agent paired with an editor tab', () => {
         ).toEqual({ ran: 'get_page_tree', args: { page_id: '0:1' } })
       })
     } finally {
-      tab.connection.closed()
+      await paired.stop()
     }
   })
 
