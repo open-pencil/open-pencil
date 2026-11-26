@@ -15,6 +15,10 @@ import {
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { guid } from '@open-pencil/test-support/fig/guid'
+import {
+  SHADER_ASSET,
+  shaderDefinitionRecords
+} from '@open-pencil/test-support/fig/shader-definition'
 import { collectAllNodes } from '@open-pencil/test-support/fig/traversal'
 
 const SOLID: Paint = {
@@ -45,7 +49,7 @@ const LIBRARY_SHADER: Paint = {
   opacity: 0.5,
   visible: true,
   blendMode: 'NORMAL',
-  customEffectId: { assetRef: { key: 'abc', version: 'v1' } },
+  customEffectId: { assetRef: SHADER_ASSET },
   componentPropAssignments: ASSIGNMENTS
 }
 
@@ -67,7 +71,7 @@ function record(localID: number, type: string, parent?: number, fields = {}): No
   } as NodeChange
 }
 
-function archiveOf(shader: Paint): ArrayBuffer {
+function archiveOf(shader: Paint, withDefinition = false): ArrayBuffer {
   const kiwi = getCompiledSchema().encodeMessage({
     type: 'NODE_CHANGES',
     sessionID: 0,
@@ -79,7 +83,8 @@ function archiveOf(shader: Paint): ArrayBuffer {
         name: 'Plate',
         size: { x: 40, y: 20 },
         fillPaints: [SOLID, shader]
-      })
+      }),
+      ...(withDefinition ? shaderDefinitionRecords(guid(0), guid(2), guid(20)) : [])
     ]
   })
   return new Uint8Array(
@@ -92,8 +97,8 @@ function archiveOf(shader: Paint): ArrayBuffer {
   ).buffer
 }
 
-async function opened(shader: Paint) {
-  const graph = await parseFigFile(archiveOf(shader), { populate: 'all' })
+async function opened(shader: Paint, withDefinition = false) {
+  const graph = await parseFigFile(archiveOf(shader, withDefinition), { populate: 'all' })
   const plate = expectDefined(
     collectAllNodes(graph).find((node) => node.name === 'Plate'),
     'plate'
@@ -203,5 +208,14 @@ describe('Figma shader paints through a .fig archive', () => {
     )
     const saved = await savedStrokes(graph)
     expect(saved.map((paint) => paint.type)).toEqual(['SOLID', 'SOLID'])
+  })
+
+  test("opening a shader paint brings the shader's definition onto the internal page", async () => {
+    const { graph } = await opened(LIBRARY_SHADER, true)
+    const definition = expectDefined(
+      [...graph.nodes.values()].find((node) => node.type === 'CODE_COMPONENT'),
+      'definition'
+    )
+    expect(graph.getNode(definition.parentId ?? '')?.internalOnly).toBe(true)
   })
 })

@@ -5,6 +5,7 @@ import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source
 import { isComponentSetRecord } from '../node-change/convert'
 import { componentDependencies, slotContentDependencies } from './component/dependencies'
 import { createResourceResolver } from './resource-reference'
+import { shaderDependencies } from './shader-dependencies'
 import { styleDependencies } from './style-dependencies'
 
 export interface SceneDependencyClosure {
@@ -139,6 +140,7 @@ export function collectSceneDependencies(
     for (const dependency of [
       setVariants(node),
       styleDependencies(record, resolveReference, availableIds),
+      shaderDependencies(record, resolveReference, availableIds),
       components,
       slotContent
     ])

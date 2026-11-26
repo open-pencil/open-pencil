@@ -116,6 +116,8 @@ export interface Effect {
   clipToShape?: boolean
   /** Picks a noise or grain effect's pattern; Figma leaves it out for the default pattern. */
   seed?: number
+  /** A shader effect's definition, as a shader paint names its own. */
+  customEffectId?: CodeComponentId
   colorVar?: VariableDataEntry
   radiusVar?: VariableDataEntry
   spreadVar?: VariableDataEntry

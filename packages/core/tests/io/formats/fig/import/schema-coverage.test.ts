@@ -387,7 +387,7 @@ describe('Figma Kiwi schema coverage', () => {
       modeled: 128,
       schemaTag: 60,
       internalBookkeeping: 16,
-      rawPreserved: 48,
+      rawPreserved: 50,
       styleLibraryMetadata: 39,
       componentInstanceMetadata: 33,
       textMetadata: 20,
@@ -397,7 +397,7 @@ describe('Figma Kiwi schema coverage', () => {
       prototypeConnectorMetadata: 34,
       variableDevMetadata: 14,
       widgetMetadata: 11,
-      codeCmsAiMetadata: 73,
+      codeCmsAiMetadata: 71,
       mediaMotionMetadata: 33
     })
   })

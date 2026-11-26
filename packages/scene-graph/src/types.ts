@@ -155,6 +155,11 @@ export type NodeType =
   | 'SLIDE'
   | 'SLIDE_ROW'
   | 'SLIDE_GRID'
+  /**
+   * A Figma shader's definition on the internal page, which a shader paint names: its library key,
+   * version and property definitions. OpenPencil keeps it for Figma and never draws it.
+   */
+  | 'CODE_COMPONENT'
 
 export type FillType =
   | 'SOLID'
