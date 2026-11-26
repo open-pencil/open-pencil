@@ -7,6 +7,12 @@ import type { RoomLog } from './log'
 import type { RoomState } from './state'
 
 /**
+ * What an editor's next sync reply to the relay answers: what it holds that the room lacks, asked
+ * as it joined, or its whole copy, asked for a compaction when the room had taken `deletions`.
+ */
+export type AskedReply = { kind: 'join' } | { kind: 'copy'; deletions: number }
+
+/**
  * A room's document, held encoded (`RoomState`), and the log its saves go to, loaded when a
  * message first needs them.
  */
@@ -17,22 +23,21 @@ export type RoomContent = {
   compactedBytes: number
   /**
    * How many updates the room took that delete something, which only a compaction lets go of. A
-   * loaded room counts one for what its saved state may still hold.
+   * loaded room counts one for what its saved state may still hold. A sync reply carries its
+   * peer's whole delete set, most of which the room already holds, so one counts only when it
+   * also adds something, as work done offline does.
    */
   deletions: number
   /** `deletions` as of the editor's copy the room was last compacted with. */
   compactedDeletions: number
   /**
-   * When the relay last asked an editor for its copy of the document, and `deletions` then, until
-   * one answers; past `COMPACTION_ANSWER_MS` another editor may be asked, so a tab that stopped
+   * When the relay last asked an editor for its copy of the document, and which editor, until it
+   * answers; past `COMPACTION_ANSWER_MS` another editor may be asked, so a tab that stopped
    * answering does not hold the room's compaction.
    */
-  compactionAsked: { at: number; deletions: number } | null
-  /**
-   * What each editor's next sync replies to the relay answer, in order: what it holds that the
-   * room lacks, asked as it joined, or its whole copy, asked for a compaction.
-   */
-  asked: Map<string, ('join' | 'copy')[]>
+  compactionAsked: { at: number; peerId: string } | null
+  /** What each editor's next sync replies to the relay answer, in order. */
+  asked: Map<string, AskedReply[]>
 }
 
 export type Room = {
@@ -94,7 +99,9 @@ export function applyToRoom(
     return false
   }
   content.log.add(update.data)
-  if (update.deletes) content.deletions += 1
+  if (update.deletes && (namespace === COLLAB_ACTIONS.yjsUpdate || update.adds)) {
+    content.deletions += 1
+  }
   return true
 }
 
@@ -173,13 +180,14 @@ export function answerAsServer(
   const asked = content.asked.get(peer.id)
   const answers = asked?.shift()
   if (asked?.length === 0) content.asked.delete(peer.id)
-  if (answers !== 'copy') return applyToRoom(content, peer, namespace, payload, limit)
+  if (answers?.kind !== 'copy') return applyToRoom(content, peer, namespace, payload, limit)
   const compacted = compactWithCopy(content, payload, limit)
   // A copy that did not shrink the room counts too, so the relay asks again only once it grew
   // and deleted more.
   content.compactedBytes = content.state.bytes
-  content.compactedDeletions = content.compactionAsked?.deletions ?? content.compactedDeletions
-  content.compactionAsked = null
+  // A late answer, after the relay asked another editor, holds only the deletions of its own ask.
+  content.compactedDeletions = Math.max(content.compactedDeletions, answers.deletions)
+  if (content.compactionAsked?.peerId === peer.id) content.compactionAsked = null
   return compacted
 }
 

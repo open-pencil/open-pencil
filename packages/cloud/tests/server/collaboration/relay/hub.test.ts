@@ -26,6 +26,42 @@ function syncReply(text: string) {
   document.getText('t').insert(0, text)
   return encodeSyncReply(document, Y.encodeStateVector(new Y.Doc()))
 }
+
+/** An editor's document, whose edits and sync replies reach the relay as a tab's do. */
+function editing(client: Awaited<ReturnType<typeof join>>, document = new Y.Doc()) {
+  const text = document.getText('t')
+  const reply = (stateVector: Uint8Array) =>
+    client.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.syncReply,
+      target: RELAY_SERVER_PEER,
+      payload: encodeSyncReply(document, stateVector)
+    })
+  return {
+    document,
+    text,
+    /** Answers the relay's request on joining. */
+    answerJoin: () =>
+      reply(client.messages(COLLAB_ACTIONS.syncStep1)[0]?.payload ?? new Uint8Array([0])),
+    /** Answers a request for the whole copy. */
+    answerCopy: () => reply(new Uint8Array([0])),
+    /** The relay's requests after the one on joining, each for the whole copy. */
+    copyRequests: () => client.messages(COLLAB_ACTIONS.syncStep1).slice(1),
+    /** Changes the document; the update goes out as a tab sends its edits, one per change. */
+    edit(change: () => void) {
+      document.once('updateV2', (update: Uint8Array) =>
+        client.send({
+          type: 'message',
+          namespace: COLLAB_ACTIONS.yjsUpdate,
+          target: null,
+          payload: update
+        })
+      )
+      document.transact(change)
+    }
+  }
+}
+
 describe('collaboration relay', () => {
   test('welcomes peers with everyone in the room and announces arrivals and departures', async () => {
     const { relay: hub } = startTestRelay()
@@ -155,28 +191,8 @@ describe('collaboration relay', () => {
   test('asks for a copy only once the room deleted something, and sooner near its limit', async () => {
     const { relay: hub } = startTestRelay({ maximumRoomBytes: 64_000 })
     const alice = await join(hub)
-    const document = new Y.Doc()
-    const text = document.getText('t')
-    const reply = (stateVector: Uint8Array) =>
-      alice.send({
-        type: 'message',
-        namespace: COLLAB_ACTIONS.syncReply,
-        target: RELAY_SERVER_PEER,
-        payload: encodeSyncReply(document, stateVector)
-      })
-    const edit = (change: () => void) => {
-      const before = Y.encodeStateVector(document)
-      change()
-      alice.send({
-        type: 'message',
-        namespace: COLLAB_ACTIONS.yjsUpdate,
-        target: null,
-        payload: Y.encodeStateAsUpdateV2(document, before)
-      })
-    }
-    const copyRequests = () => alice.messages(COLLAB_ACTIONS.syncStep1).slice(1)
-    const answerCopy = () => reply(new Uint8Array([0]))
-    reply(Y.encodeStateVector(new Y.Doc()))
+    const { text, edit, answerJoin, answerCopy, copyRequests } = editing(alice)
+    answerJoin()
 
     // What the room was loaded with may hold deletions, so its first growth asks once.
     edit(() => text.insert(0, 'a'.repeat(33_000)))
@@ -196,7 +212,38 @@ describe('collaboration relay', () => {
     expect(copyRequests()).toHaveLength(2)
     edit(() => text.insert(0, 'd'.repeat(3_000)))
     expect(copyRequests()).toHaveLength(3)
+    answerCopy()
+    // Within the least step of its limit, a deletion may be all that still fits, so it asks.
+    edit(() => text.insert(0, 'e'.repeat(4_000)))
+    expect(copyRequests()).toHaveLength(3)
+    edit(() => text.delete(0, 4_000))
+    expect(copyRequests()).toHaveLength(4)
     expect(alice.closed).toBeNull()
+  })
+
+  test('takes an editor’s deletions on rejoining as new only when it brings new work', async () => {
+    const { relay: hub } = startTestRelay({ maximumRoomBytes: 64_000 })
+    const alice = await join(hub)
+    const tab = editing(alice)
+    tab.answerJoin()
+    tab.edit(() => tab.text.insert(0, 'a'.repeat(40_000)))
+    tab.answerCopy()
+    tab.edit(() => {
+      tab.text.delete(0, 10)
+      tab.text.insert(0, 'z'.repeat(12_500))
+    })
+    expect(tab.copyRequests()).toHaveLength(2)
+    tab.answerCopy()
+    const asked = tab.copyRequests().length
+
+    // The same document opened again replies with every deletion it holds, which the room has.
+    const bob = await join(hub)
+    const again = editing(bob, tab.document)
+    again.answerJoin()
+    // Half the room left below its limit is about 5.7 KB.
+    again.edit(() => again.text.insert(0, 'b'.repeat(6_000)))
+    expect(again.copyRequests()).toHaveLength(0)
+    expect(tab.copyRequests()).toHaveLength(asked)
   })
 
   test('takes an editor’s compressed answer into the room', async () => {

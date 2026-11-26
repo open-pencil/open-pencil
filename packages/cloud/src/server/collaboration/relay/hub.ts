@@ -221,16 +221,20 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
    * Whether the room deleted something since its last compaction and has grown well past it: an
    * editor's copy is collected of what the room deleted, which the relay's encoded room keeps
    * (`RoomState`), and asking for it costs a pass over the whole room. A room nearing its limit
-   * asks sooner, each time it has grown by half the room it had left.
+   * asks sooner, each time it has grown by half the room it had left, and within the least step
+   * of its limit, on any deletion, which may be all that still fits.
    */
   function compactionDue(content: RoomContent): boolean {
-    if (content.deletions === content.compactedDeletions) return false
+    if (content.deletions <= content.compactedDeletions) return false
+    const least = maximumRoomBytes * COMPACTION_LEAST_SHARE
+    const { bytes } = content.state
+    if (maximumRoomBytes - bytes < least) return true
     const left = maximumRoomBytes - content.compactedBytes
     const growth = Math.min(
       Math.max(COMPACTION_GROWTH_BYTES, content.compactedBytes * COMPACTION_GROWTH_SHARE),
-      Math.max(maximumRoomBytes * COMPACTION_LEAST_SHARE, left / 2)
+      Math.max(least, left / 2)
     )
-    return content.state.bytes >= content.compactedBytes + growth
+    return bytes >= content.compactedBytes + growth
   }
 
   /**
@@ -248,8 +252,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         peer.authorization.permission === 'edit' && !content.asked.has(peer.id) && current(peer)
     )
     if (!editor) return
-    content.compactionAsked = { at: Date.now(), deletions: content.deletions }
-    content.asked.set(editor.id, ['copy'])
+    content.compactionAsked = { at: Date.now(), peerId: editor.id }
+    content.asked.set(editor.id, [{ kind: 'copy', deletions: content.deletions }])
     send(editor.socket, {
       type: 'message',
       namespace: COLLAB_ACTIONS.syncStep1,
@@ -425,7 +429,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     // Ask for what the newcomer has that the room lacks, such as edits made offline.
     if (authorization.permission === 'edit') {
       const content = await contentOf(room)
-      content.asked.set(peer.id, [...(content.asked.get(peer.id) ?? []), 'join'])
+      content.asked.set(peer.id, [...(content.asked.get(peer.id) ?? []), { kind: 'join' }])
       send(socket, {
         type: 'message',
         namespace: COLLAB_ACTIONS.syncStep1,
@@ -463,7 +467,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     if (!room?.peers.delete(peer.id)) return
     const content = room.content
     // A compaction it was asked for ends with it, so the next change asks another editor.
-    if (content?.asked.get(peer.id)?.includes('copy')) content.compactionAsked = null
+    if (content?.compactionAsked?.peerId === peer.id) content.compactionAsked = null
     content?.asked.delete(peer.id)
     sendAll(deliverable(room.peers.values()), { type: 'leave', peerId: peer.id })
     void leaveRoom(room)
