@@ -293,6 +293,23 @@ describe('style ranges', () => {
     expect(text.getRangeBoundVariable(0, 11, 'fontSize')).toBeNull()
   })
 
+  test('let a range that left the text style drop its own bindings when it takes the style again', async () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    textStyle(api, '1:20', { fontSize: 20 })
+    await text.setTextStyleIdAsync('1:20')
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(caption.id))
+    const left = graph.getNode(text.id)?.styleRuns.find((run) => run.start === 0)
+    expect(left?.style.textStyleId).toBeNull()
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+
+    expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toBeNull()
+    expect(text.getRangeFontSize(0, 5)).toBe(20)
+  })
+
   test('give a range a fill style and its paints, and detach it when filled', async () => {
     const { api, text } = styledText()
     fillStyle(api, '1:30')

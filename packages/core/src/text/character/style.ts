@@ -189,7 +189,8 @@ function withoutBindingsStyleTakesOver(
 ): CharacterStyleOverride {
   const own = after.boundVariables
   const styleId = after.textStyleId
-  const tookStyle = Boolean(styleId) && styleId !== (before.textStyleId ?? node.textStyleId)
+  const previousStyleId = before.textStyleId === undefined ? node.textStyleId : before.textStyleId
+  const tookStyle = Boolean(styleId) && styleId !== previousStyleId
   if (!own || !tookStyle) {
     return after
   }
