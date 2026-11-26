@@ -60,12 +60,9 @@ export async function saveCloudDocument(input: {
     ? { bytes: input.cover, checksum: await cloudChecksum(input.cover) }
     : null
   const save = async () => {
-    await uploadCloudImages({
-      cloud,
-      documentId,
-      images: cover ? [...document.images, cover] : document.images,
-      objectFetch
-    })
+    await uploadCloudImages({ cloud, documentId, images: document.images, objectFetch })
+    // On its own, so a file with as many images as a request takes can still have a cover.
+    if (cover) await uploadCloudImages({ cloud, documentId, images: [cover], objectFetch })
     const upload = await uploadCloudObject({
       cloud,
       documentId,

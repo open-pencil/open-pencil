@@ -92,12 +92,15 @@ export async function headlessRenderNodes(
   })
 }
 
-export async function headlessRenderThumbnail(
+/**
+ * Draws part of `pageId` headless with `draw`, once the fonts of `nodeIds`, by default everything
+ * on the page, are loaded and text ink is measured as the editor measures it.
+ */
+function headlessDrawPage(
   graph: SceneGraph,
   pageId: string,
-  width: number,
-  height: number,
-  nodeIds?: readonly string[]
+  nodeIds: readonly string[] | undefined,
+  draw: (ck: CanvasKit, renderer: SkiaRenderer) => Uint8Array | null
 ): Promise<Uint8Array | null> {
   return withHeadlessExport(async (renderer, ck) => {
     await renderer.prepareForExport(graph, pageId, [
@@ -105,26 +108,32 @@ export async function headlessRenderThumbnail(
     ])
     return withTextInkMeasurer(
       (node) => renderer.measureTextInk(node),
-      () => renderThumbnail(ck, renderer, graph, pageId, width, height, 'contain', nodeIds)
+      () => draw(ck, renderer)
     )
   })
 }
 
-/** Draws a cover of `pageId` headless, as `renderCover` frames it: `nodeIds` alone, or the top of the page. */
-export async function headlessRenderCover(
+export function headlessRenderThumbnail(
   graph: SceneGraph,
   pageId: string,
   width: number,
   height: number,
   nodeIds?: readonly string[]
 ): Promise<Uint8Array | null> {
-  return withHeadlessExport(async (renderer, ck) => {
-    await renderer.prepareForExport(graph, pageId, [
-      ...(nodeIds ?? graph.getNode(pageId)?.childIds ?? [])
-    ])
-    return withTextInkMeasurer(
-      (node) => renderer.measureTextInk(node),
-      () => renderCover(ck, renderer, graph, pageId, width, height, nodeIds)
-    )
-  })
+  return headlessDrawPage(graph, pageId, nodeIds, (ck, renderer) =>
+    renderThumbnail(ck, renderer, graph, pageId, width, height, 'contain', nodeIds)
+  )
+}
+
+/** Draws a cover of `pageId` headless, as `renderCover` frames it: `nodeIds` alone, or the top of the page. */
+export function headlessRenderCover(
+  graph: SceneGraph,
+  pageId: string,
+  width: number,
+  height: number,
+  nodeIds?: readonly string[]
+): Promise<Uint8Array | null> {
+  return headlessDrawPage(graph, pageId, nodeIds, (ck, renderer) =>
+    renderCover(ck, renderer, graph, pageId, width, height, nodeIds)
+  )
 }

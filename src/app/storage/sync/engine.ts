@@ -83,6 +83,9 @@ async function runJob(job: OutboxJob): Promise<void> {
   if (!meta.hasFig) return
   const fig = await store.readFig(job.canvasId)
   if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
+  const cover = await store.readCover(job.canvasId, meta.revision)
+  // A save between these reads would pair one file with another's cover; its own job uploads it.
+  if ((await store.getMeta(job.canvasId))?.revision !== meta.revision) return
   setUploadProgress(job.canvasId, 0)
   let written: { revision: string | null }
   try {
@@ -96,7 +99,7 @@ async function runJob(job: OutboxJob): Promise<void> {
       ({ transferredBytes, totalBytes }) => {
         if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
       },
-      { baseRevision: meta.remoteRevision ?? null, cover: await store.readCover(job.canvasId) }
+      { baseRevision: meta.remoteRevision ?? null, cover }
     )
   } finally {
     setUploadProgress(job.canvasId, null)

@@ -1,4 +1,5 @@
 import {
+  CLOUD_COVER_MAX_BYTES,
   CLOUD_COVER_SIZE,
   type CommitUploadInput,
   type DocumentImageDownload,
@@ -212,17 +213,17 @@ export function createDocumentImages(
 
     /**
      * Whether the workspace image `checksum` can be a revision's cover: a PNG no larger than
-     * `CLOUD_COVER_SIZE`, which the gallery serves as an image to any site.
+     * `CLOUD_COVER_SIZE` and `CLOUD_COVER_MAX_BYTES`, which the gallery serves to any site.
      */
     async isCover(workspaceId: string, checksum: string): Promise<boolean> {
       const image = await database
         .selectFrom('workspaceImage')
         .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
-        .select('storageObject.objectKey')
+        .select(['storageObject.objectKey', 'storageObject.byteSize'])
         .where('workspaceImage.workspaceId', '=', workspaceId)
         .where('workspaceImage.checksum', '=', checksum)
         .executeTakeFirst()
-      if (!image) return false
+      if (!image || Number(image.byteSize) > CLOUD_COVER_MAX_BYTES) return false
       const header = await objects.readRange(image.objectKey, 0, PNG_HEADER_BYTES)
       if (!header) return false
       try {

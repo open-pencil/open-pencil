@@ -170,6 +170,12 @@ export const CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH = 500
  */
 export const CLOUD_COVER_SIZE = { width: 1920, height: 960 } as const
 
+/**
+ * The most bytes a cover may take: a cover at `CLOUD_COVER_SIZE` encodes well under it, and the
+ * gallery reads each one whole to serve it to anyone.
+ */
+export const CLOUD_COVER_MAX_BYTES = 8 * 1024 * 1024
+
 /** What an editor may change about a document besides its file: its description, or null for none. */
 export const updateDocumentSchema = v.object({
   description: v.nullable(

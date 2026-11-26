@@ -5,6 +5,7 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { COVER_PNG, saveDocument, THUMBNAIL_PNG } from '#cloud-tests/helpers/save'
 import { fetchCommunityExample, fetchCommunityTour } from '#cloud/client'
+import { CLOUD_COVER_MAX_BYTES } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -382,13 +383,16 @@ describe('community gallery', () => {
     expect([...(await picture(plain))]).toEqual([...THUMBNAIL_PNG])
   })
 
-  test('refuses a cover that is not a PNG within the cover size', async () => {
+  test('refuses a cover that is not a PNG within the cover size and bytes', async () => {
     const server = await gallery()
     const tour = await server.document(server.workspace.community, 'Tour')
     // A PNG header that declares a picture wider than a cover.
     const wide = Uint8Array.from(COVER_PNG)
     new DataView(wide.buffer).setUint32(16, 4000)
-    for (const cover of [new TextEncoder().encode('not a picture'), wide]) {
+    // A PNG within the size that carries more bytes than a cover may take.
+    const heavy = new Uint8Array(CLOUD_COVER_MAX_BYTES + 1)
+    heavy.set(COVER_PNG)
+    for (const cover of [new TextEncoder().encode('not a picture'), wide, heavy]) {
       expect(await outcome(server.save(tour, null, 'refused', cover))).toMatchObject({
         code: 'invalid_upload'
       })

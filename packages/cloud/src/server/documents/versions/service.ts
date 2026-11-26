@@ -141,6 +141,35 @@ export function createDocumentVersionService(
     return stored
   }
 
+  /**
+   * Makes `revisionId` a new revision of `documentId` holding what `fromRevisionId` holds: its
+   * stored file, cover, and images, shared rather than copied, as a restore or a duplicate does.
+   */
+  async function reuseRevision(
+    transaction: Transaction<CloudDatabase>,
+    input: {
+      fromRevisionId: string
+      revisionId: string
+      documentId: string
+      parentRevisionId: string | null
+      userId: string
+    }
+  ): Promise<void> {
+    const stored = await storedRevision(transaction, input.fromRevisionId)
+    await transaction
+      .insertInto('documentRevision')
+      .values({
+        id: input.revisionId,
+        documentId: input.documentId,
+        parentRevisionId: input.parentRevisionId,
+        storageObjectId: stored.storageObjectId,
+        coverChecksum: stored.coverChecksum,
+        createdBy: input.userId
+      })
+      .execute()
+    await copyRevisionImages(transaction, input.fromRevisionId, input.revisionId)
+  }
+
   /** A document's history for a caller that already let the reader in, and where it starts. */
   async function sharedHistory(documentId: string) {
     const document = await getDocumentSummaryRow(database, documentId)
@@ -344,7 +373,6 @@ export function createDocumentVersionService(
           .executeTakeFirst()
         if (!locked || locked.deletedAt) throw new DocumentNotFoundError()
         // Compaction locks the document too, so the version's file cannot go while it is reused.
-        const stored = await storedRevision(transaction, version.revisionId)
         if (locked.currentRevisionId) {
           const current = await transaction
             .selectFrom('documentRevision')
@@ -358,18 +386,13 @@ export function createDocumentVersionService(
             createdAt: now
           })
         }
-        await transaction
-          .insertInto('documentRevision')
-          .values({
-            id: revisionId,
-            documentId,
-            parentRevisionId: locked.currentRevisionId,
-            storageObjectId: stored.storageObjectId,
-            coverChecksum: stored.coverChecksum,
-            createdBy: userId
-          })
-          .execute()
-        await copyRevisionImages(transaction, version.revisionId, revisionId)
+        await reuseRevision(transaction, {
+          fromRevisionId: version.revisionId,
+          revisionId,
+          documentId,
+          parentRevisionId: locked.currentRevisionId,
+          userId
+        })
         await transaction
           .updateTable('document')
           .set({
@@ -437,7 +460,6 @@ export function createDocumentVersionService(
           .forUpdate()
           .executeTakeFirst()
         if (!source || source.deletedAt || source.cleanupClaimId) throw new DocumentNotFoundError()
-        const stored = await storedRevision(transaction, version.revisionId)
         await insertDocument(transaction, {
           id: copyId,
           workspaceId: document.workspaceId,
@@ -445,18 +467,13 @@ export function createDocumentVersionService(
           kind: document.kind,
           createdBy: userId
         })
-        await transaction
-          .insertInto('documentRevision')
-          .values({
-            id: revisionId,
-            documentId: copyId,
-            parentRevisionId: null,
-            storageObjectId: stored.storageObjectId,
-            coverChecksum: stored.coverChecksum,
-            createdBy: userId
-          })
-          .execute()
-        await copyRevisionImages(transaction, version.revisionId, revisionId)
+        await reuseRevision(transaction, {
+          fromRevisionId: version.revisionId,
+          revisionId,
+          documentId: copyId,
+          parentRevisionId: null,
+          userId
+        })
         await transaction
           .updateTable('document')
           .set({ currentRevisionId: revisionId, version: 1 })

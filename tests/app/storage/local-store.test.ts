@@ -110,7 +110,7 @@ describe.each([
   ['memory', createMemoryLocalCanvasStore],
   ['IndexedDB', createIdbLocalCanvasStore]
 ] as const)('local canvas covers (%s)', (_kind, createStore) => {
-  test('keeps the cover a write drew until a write without one, and drops it with the copy', async () => {
+  test('keeps the cover a write drew for its revision until a write without one', async () => {
     const store = createStore()
     const write = (coverBytes?: Uint8Array) =>
       store.writeCanvas({
@@ -121,14 +121,16 @@ describe.each([
         coverBytes
       })
 
-    await write(new Uint8Array([7, 7]))
-    expect([...expectDefined(await store.readCover('covered'))]).toEqual([7, 7])
+    const first = await write(new Uint8Array([7, 7]))
+    expect([...expectDefined(await store.readCover('covered', first.revision))]).toEqual([7, 7])
+    // Another revision's file never goes up with this cover.
+    expect(await store.readCover('covered', first.revision + 1)).toBeNull()
     // A later file without a cover must not go up with the earlier file's.
-    await write()
-    expect(await store.readCover('covered')).toBeNull()
+    const second = await write()
+    expect(await store.readCover('covered', second.revision)).toBeNull()
 
-    await write(new Uint8Array([8]))
+    const third = await write(new Uint8Array([8]))
     await store.remove('covered')
-    expect(await store.readCover('covered')).toBeNull()
+    expect(await store.readCover('covered', third.revision)).toBeNull()
   })
 })

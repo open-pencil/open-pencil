@@ -93,6 +93,7 @@ export function coverFrame(
   const bounds = page ? computeContentBounds(graph, page.childIds) : null
   if (!bounds) return null
   const contentW = bounds.maxX - bounds.minX
+  if (contentW <= 0) return null
   const sliceH = (contentW * height) / width
   // Content no taller than the cover's shape fits whole.
   if (bounds.maxY - bounds.minY <= sliceH) {

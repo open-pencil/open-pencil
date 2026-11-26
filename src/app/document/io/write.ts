@@ -5,8 +5,8 @@ import { randomHex } from '@open-pencil/std/random'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { storageLocationOf } from '@/app/integrations/storage/location'
-import { storageShowsCovers } from '@/app/integrations/storage/providers'
-import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
+import { storageCoverDrawer } from '@/app/integrations/storage/providers'
+import type { StorageCoverDrawer, StorageDocumentBinding } from '@/app/integrations/storage/types'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
 
@@ -19,8 +19,8 @@ type DocumentWriterOptions = {
   getStorageBinding: () => StorageDocumentBinding | null
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
-  /** The cover of the document as it is saved, for storage that shows covers; null for none. */
-  buildCover?: () => Uint8Array | null
+  /** Draws the cover storage shows of the document as it is saved, with the provider's `draw`. */
+  buildCover?: (draw: StorageCoverDrawer) => Uint8Array | null
   /** A desktop save replaced the file, which a watcher on the old one may no longer see. */
   onFileReplaced?: () => void
   onWriteSuccess?: (version: number) => void | Promise<void>
@@ -120,12 +120,15 @@ export function createDocumentWriter({
   ): Promise<boolean> {
     try {
       if (storage) {
+        // Drawn before the file is read out, from the same state the file holds.
+        const draw = storageCoverDrawer(storage.providerId)
+        const coverBytes = draw ? (buildCover?.(draw) ?? null) : null
         await persistStorageCanvasLocally({
           ...storageLocationOf(storage),
           canvasId: storage.documentId,
           name: state.documentName || 'Untitled',
           figBytes: await new Response(stream).blob(),
-          coverBytes: storageShowsCovers(storage.providerId) ? buildCover?.() : null
+          coverBytes
         })
         return await finishWrite(version)
       }

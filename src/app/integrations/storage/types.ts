@@ -1,5 +1,6 @@
 import type { CloudTransferProgress } from '@open-pencil/cloud/client'
-import type { DocumentKind } from '@open-pencil/scene-graph'
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import type { CredentialResolver } from '@/app/settings/credentials/types'
 
@@ -57,6 +58,16 @@ export type StoragePutOptions = {
   /** The cover the save drew, which a provider that shows covers, as Cloud does, stores with it. */
   cover?: Uint8Array | null
 }
+
+/**
+ * Draws a cover of `graph` with `renderer`, starting from `pageId`, the page in view; null when
+ * there is nothing to draw.
+ */
+export type StorageCoverDrawer = (
+  graph: SceneGraph,
+  renderer: SkiaRenderer,
+  pageId: string
+) => Uint8Array | null
 
 export type StoragePutResult = {
   /** The revision the write created, or null when the provider does not track revisions. */
@@ -158,10 +169,10 @@ export type StorageProviderRegistration = {
    */
   keepsComments?: boolean
   /**
-   * Whether the provider shows a cover of each saved file, as Cloud's gallery and link previews
-   * do: a save then draws one for it.
+   * Draws the cover the provider shows of each saved file, as Cloud's gallery and link previews
+   * do; a provider without one shows none, and its saves draw none.
    */
-  showsCovers?: boolean
+  drawCover?: StorageCoverDrawer
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter
 }
 

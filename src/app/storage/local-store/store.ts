@@ -22,8 +22,8 @@ export type LocalCanvasStore = {
   getMeta(id: string): Promise<LocalCanvasMeta | null>
   readFig(id: string): Promise<Uint8Array | null>
   readThumb(id: string): Promise<Uint8Array | null>
-  /** The cover the last write drew, which syncing sends with the file. */
-  readCover(id: string): Promise<Uint8Array | null>
+  /** The cover the write of local `revision` drew, which syncing sends with that file; null for none. */
+  readCover(id: string, revision: number): Promise<Uint8Array | null>
   writeCanvas(input: LocalCanvasWriteInput): Promise<LocalCanvasMeta>
   /** Index-only row for remote canvases not yet downloaded (no fig body). */
   upsertIndexMeta(meta: LocalCanvasIndexInput): Promise<LocalCanvasMeta>

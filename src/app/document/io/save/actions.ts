@@ -8,6 +8,7 @@ import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/docume
 import type { NamedDocumentState } from '@/app/document/io/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentWriter } from '@/app/document/io/write'
+import type { StorageCoverDrawer } from '@/app/integrations/storage/types'
 import { rememberRecentFile } from '@/app/recent-files'
 import { IS_TAURI } from '@/constants'
 
@@ -18,8 +19,8 @@ type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
   /** The `.fig`, encoded and compressed, streaming as its target writes it. */
   buildFigStream: () => Promise<ReadableStream<Uint8Array>>
   startWatchingFile: () => void
-  /** The cover of the document as it is saved, for storage that shows covers. */
-  buildCover?: () => Uint8Array | null
+  /** Draws the cover storage shows of the document as it is saved, with the provider's `draw`. */
+  buildCover?: (draw: StorageCoverDrawer) => Uint8Array | null
   onWriteSuccess?: (version: number) => void | Promise<void>
   onDownloadSuccess?: (version: number) => void | Promise<void>
 }

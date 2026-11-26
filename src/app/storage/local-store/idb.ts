@@ -21,7 +21,7 @@ import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local
 
 const localCanvasDatabase = defineAppDatabase<LocalCanvasDatabase>({
   name: APP_DATABASE_NAMES.localCanvas,
-  version: 2,
+  version: 1,
   callbacks: {
     upgrade(database) {
       if (!database.objectStoreNames.contains('meta')) {
@@ -29,7 +29,6 @@ const localCanvasDatabase = defineAppDatabase<LocalCanvasDatabase>({
       }
       if (!database.objectStoreNames.contains('fig')) database.createObjectStore('fig')
       if (!database.objectStoreNames.contains('thumb')) database.createObjectStore('thumb')
-      if (!database.objectStoreNames.contains('cover')) database.createObjectStore('cover')
     }
   }
 })
@@ -47,9 +46,26 @@ interface LocalCanvasDatabase extends DBSchema {
     key: string
     value: StoredBinary
   }
+}
+
+/**
+ * Covers a save drew, in a database of their own so the canvas database keeps the version the
+ * stable release opens. Each names the local revision it was drawn for.
+ */
+const localCanvasCoverDatabase = defineAppDatabase<LocalCanvasCoverDatabase>({
+  name: APP_DATABASE_NAMES.localCanvasCovers,
+  version: 1,
+  callbacks: {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('cover')) database.createObjectStore('cover')
+    }
+  }
+})
+
+interface LocalCanvasCoverDatabase extends DBSchema {
   cover: {
     key: string
-    value: StoredBinary
+    value: { revision: number; bytes: StoredBinary }
   }
 }
 
@@ -60,11 +76,9 @@ function connectDatabase(): AppDatabase<LocalCanvasDatabase> {
 /** IndexedDB-backed local canvas store (meta + fig/thumb blobs). */
 export function createIdbLocalCanvasStore(): LocalCanvasStore {
   const database = connectDatabase()
+  const covers = connectAppDatabase(localCanvasCoverDatabase)
 
-  async function readBinary(
-    storeName: 'fig' | 'thumb' | 'cover',
-    id: string
-  ): Promise<Uint8Array | null> {
+  async function readBinary(storeName: 'fig' | 'thumb', id: string): Promise<Uint8Array | null> {
     return readStoredBinary(await (await database.open()).get(storeName, id))
   }
 
@@ -85,17 +99,15 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       return readBinary('thumb', id)
     },
 
-    async readCover(id: string) {
-      return readBinary('cover', id)
+    async readCover(id: string, revision: number) {
+      const cover = await (await covers.open()).get('cover', id)
+      return cover?.revision === revision ? readStoredBinary(cover.bytes) : null
     },
 
     async writeCanvas(input: LocalCanvasWriteInput) {
       const storeBinary = await binaryStorage()
       const fig = await storedBinary(input.figBytes)
-      const transaction = (await database.open()).transaction(
-        ['meta', 'fig', 'thumb', 'cover'],
-        'readwrite'
-      )
+      const transaction = (await database.open()).transaction(['meta', 'fig', 'thumb'], 'readwrite')
       const figStore = transaction.objectStore('fig')
       const thumbStore = transaction.objectStore('thumb')
       const metaStore = transaction.objectStore('meta')
@@ -114,14 +126,20 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
         }
       }
 
-      const coverStore = transaction.objectStore('cover')
-      if (input.coverBytes?.byteLength)
-        await coverStore.put(storeBinary(input.coverBytes), input.id)
-      else await coverStore.delete(input.id)
-
       const meta = buildWriteMeta(input, existing, hasThumb)
       await metaStore.put(meta)
       await transaction.done
+      // The cover of this revision, or none: an earlier one no longer matches the file.
+      const coverDatabase = await covers.open()
+      if (input.coverBytes?.byteLength) {
+        await coverDatabase.put(
+          'cover',
+          { revision: meta.revision, bytes: storeBinary(input.coverBytes) },
+          input.id
+        )
+      } else {
+        await coverDatabase.delete('cover', input.id)
+      }
       return meta
     },
 
@@ -194,10 +212,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
     },
 
     async remove(id: string, options) {
-      const transaction = (await database.open()).transaction(
-        ['meta', 'fig', 'thumb', 'cover'],
-        'readwrite'
-      )
+      const transaction = (await database.open()).transaction(['meta', 'fig', 'thumb'], 'readwrite')
       const expected = options?.unchangedFrom
       if (expected) {
         const existing = await transaction.objectStore('meta').get(id)
@@ -209,25 +224,22 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       await Promise.all([
         transaction.objectStore('meta').delete(id),
         transaction.objectStore('fig').delete(id),
-        transaction.objectStore('thumb').delete(id),
-        transaction.objectStore('cover').delete(id)
+        transaction.objectStore('thumb').delete(id)
       ])
       await transaction.done
+      await (await covers.open()).delete('cover', id)
       return true
     },
 
     async clearAll() {
-      const transaction = (await database.open()).transaction(
-        ['meta', 'fig', 'thumb', 'cover'],
-        'readwrite'
-      )
+      const transaction = (await database.open()).transaction(['meta', 'fig', 'thumb'], 'readwrite')
       await Promise.all([
         transaction.objectStore('meta').clear(),
         transaction.objectStore('fig').clear(),
-        transaction.objectStore('thumb').clear(),
-        transaction.objectStore('cover').clear()
+        transaction.objectStore('thumb').clear()
       ])
       await transaction.done
+      await (await covers.open()).clear('cover')
     }
   }
 }
