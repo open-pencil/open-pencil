@@ -1,0 +1,1 @@
+- Saving a `.fig` no longer fails when an edited or newly loaded layer binds a library variable the file does not hold (#2375).
