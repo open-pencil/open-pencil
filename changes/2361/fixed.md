@@ -1,0 +1,1 @@
+- Figma shader fills no longer draw as a dark veil, and their shader survives a .fig save and the Figma clipboard (#2361).
