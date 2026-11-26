@@ -6,6 +6,7 @@ import { shaderPresetKey } from '@open-pencil/scene-graph/shaders'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import type * as FigmaShaderScenes from '#tests/helpers/canvas/figma-shader-paints/scene'
 import type * as ImageAdjustmentScenes from '#tests/helpers/canvas/image-adjustments/scene'
 import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
@@ -388,46 +389,13 @@ test('a shader paint draws its saved frame, and its live frame while one plays',
 
 test('a Figma shader paint adds no pixels to the paints beside it', async () => {
   await showView(editor.page, { zoom: 1, panX: 0, panY: 0 })
-  await editor.page.evaluate(async () => {
-    const figURL = '/@id/@open-pencil/fig/node-change'
-    const { convertFills, convertStrokes }: typeof FigNodeChange = await import(figURL)
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const shader = {
-      type: 'CUSTOM' as const,
-      opacity: 0.5,
-      customEffectId: { assetRef: { key: 'abc', version: 'v1' } },
-      componentPropAssignments: [
-        { defID: { sessionID: 1, localID: 2 }, varValue: { value: { floatValue: 0.3 } } }
-      ]
-    }
-    const solid = { type: 'SOLID' as const, color: { r: 0.2, g: 0.6, b: 0.4, a: 1 }, opacity: 1 }
-    const layers = [
-      { name: 'Solid', fills: convertFills([solid]), strokes: [] },
-      { name: 'Solid under shader', fills: convertFills([solid, shader]), strokes: [] },
-      { name: 'Shader only', fills: convertFills([shader]), strokes: [] },
-      {
-        name: 'Shader stroke',
-        fills: convertFills([solid]),
-        strokes: convertStrokes([{ ...shader, opacity: 1 }], 12, 'INSIDE')
-      }
-    ]
-    for (const [index, layer] of layers.entries()) {
-      store.graph.createNode('RECTANGLE', store.state.currentPageId, {
-        ...layer,
-        x: 40 + index * 140,
-        y: 40,
-        width: 120,
-        height: 120
-      })
-    }
-    store.clearSelection()
-    store.requestRender()
-  })
-  await editor.canvas.waitForRender()
+  const { tileProbes, backgroundProbe } = await pageScene<typeof FigmaShaderScenes>(
+    () => editor.page,
+    '/tests/helpers/canvas/figma-shader-paints/scene.ts'
+  ).build('createFigmaShaderTilesScene')
   const [solid, underShader, shaderOnly, shaderStroke, background] = await readScenePixels(
     editor.page,
-    [0, 1, 2, 3, 4].map((index) => ({ x: 46 + index * 140, y: 46 }))
+    [...tileProbes, backgroundProbe]
   )
   expect(underShader).toEqual(solid)
   expect(shaderStroke).toEqual(solid)
