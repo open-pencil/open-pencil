@@ -45,6 +45,16 @@ export async function waitForSettledScene(page: Page) {
   })
 }
 
+/** Loads the fonts of the texts `ids` names, then waits for the scene drawn with them to settle. */
+export async function loadSceneFonts(page: Page, ids: string[]) {
+  await page.evaluate(async (textIds) => {
+    const store = window.openPencil?.getStore?.()
+    await store?.loadFontsForNodes(textIds)
+    store?.requestRender()
+  }, ids)
+  await waitForSettledScene(page)
+}
+
 /** Shows the open page at `view`: its zoom, and where the canvas origin sits in the canvas. */
 export function showView(page: Page, view: ViewportTransform) {
   return page.evaluate((next) => {

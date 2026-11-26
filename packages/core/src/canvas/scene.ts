@@ -41,7 +41,12 @@ import {
   forVisibleStrokes
 } from './strokes/draw'
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
-import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
+import {
+  drawTextEmoji,
+  drawTextRangeFills,
+  hasOverflowPathTextPaint,
+  renderText
+} from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
 import { beginTexture, endTexture, visibleTexture } from './texture/render'
 
@@ -575,7 +580,10 @@ export function paintShapeContent(
   if (!drawVectorMultiStyleFills(r, canvas, node, graph)) {
     drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, fill))
   }
-  if (node.type === 'TEXT') drawTextEmoji(r, canvas, node)
+  if (node.type === 'TEXT') {
+    drawTextRangeFills(r, canvas, node, graph)
+    drawTextEmoji(r, canvas, node)
+  }
   afterFills?.()
   if (isolated) canvas.restore()
 
