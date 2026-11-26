@@ -212,13 +212,39 @@ test('a boolean with no operands whose saved fill is not finite stays out of its
   graph.createNode('BOOLEAN_OPERATION', group.id, {
     x: 0,
     y: 0,
+    width: 10,
+    height: 10,
+    fillGeometry: [
+      {
+        windingRule: 'NONZERO',
+        commandsBlob: polygonBlob([
+          { x: Number.NaN, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 }
+        ])
+      }
+    ]
+  })
+  graph.createNode('RECTANGLE', group.id, { x: 40, y: 30, width: 20, height: 10 })
+
+  fitEnclosingGroups(graph, [group.id])
+  const { x, y, width, height } = graph.getNode(group.id) ?? group
+  expect({ x, y, width, height }).toEqual({ x: 40, y: 30, width: 20, height: 10 })
+})
+
+test('a boolean with no operands and no size does not pull its group to its corner', () => {
+  const graph = new SceneGraph()
+  const group = graph.createNode('GROUP', graph.getPages()[0].id, { width: 1, height: 1 })
+  graph.createNode('BOOLEAN_OPERATION', group.id, {
+    x: 5,
+    y: 5,
     width: 0,
     height: 0,
     fillGeometry: [
       {
         windingRule: 'NONZERO',
         commandsBlob: polygonBlob([
-          { x: Number.NaN, y: 0 },
+          { x: 0, y: 0 },
           { x: 10, y: 0 },
           { x: 10, y: 10 }
         ])

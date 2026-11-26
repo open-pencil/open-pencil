@@ -77,17 +77,23 @@ function hasFiniteSavedFill(node: SceneNode): boolean {
   return box !== null && [box.x, box.y, box.width, box.height].every(Number.isFinite)
 }
 
-function drawsNothing(node: SceneNode): boolean {
+function hasSize(node: SceneNode): boolean {
+  return node.width > 0 || node.height > 0
+}
+
+function hasNoBoxedResult(node: SceneNode): boolean {
   return (
-    node.type === 'BOOLEAN_OPERATION' && node.childIds.length === 0 && !hasFiniteSavedFill(node)
+    node.type === 'BOOLEAN_OPERATION' &&
+    node.childIds.length === 0 &&
+    !(hasSize(node) && hasFiniteSavedFill(node))
   )
 }
 
 /**
  * The layers a group's box covers, bottom to top. Hidden layers do not count, as in Figma, nor do
- * booleans with neither operands nor a finite saved fill, which draw nothing. A mask hides the
- * layers above it outside its shape, so they count only through the mask: the box is the layers
- * below it and the masks.
+ * booleans with no operands unless they keep a finite saved fill and a box sized to it, since a
+ * group counts a layer by its box. A mask hides the layers above it outside its shape, so they
+ * count only through the mask: the box is the layers below it and the masks.
  */
 function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
   const shown = children.filter((child) => child.visible)
@@ -99,7 +105,7 @@ function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
           ...shown.slice(0, runs[0].start),
           ...runs.flatMap((run) => shown.slice(run.start, run.maskedStart))
         ]
-  return covered.filter((layer) => !drawsNothing(layer))
+  return covered.filter((layer) => !hasNoBoxedResult(layer))
 }
 
 /**
