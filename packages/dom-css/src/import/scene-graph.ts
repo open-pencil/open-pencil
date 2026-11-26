@@ -8,22 +8,18 @@ import { maxOf } from '@open-pencil/std/arrays'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { COMPONENT_ATTRIBUTES, isMarked } from './attributes/component'
 import {
+  applyBorder,
   applyBoxSizing,
   applyCornerRadii,
   applyRing,
   applyFlexGap,
   applyPadding,
   applyPositioning,
-  dashPatternFromCSS,
   fillsFromStyle,
-  firstStrokeColor,
-  setBorderWeights,
-  setNodeBox,
-  hasBorder,
-  strokeWeightFromStyle
+  setNodeBox
 } from './box'
 import { hasBoxStyle } from './boxes'
-import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
+import { mergedStyle, pickStyle } from './css-values'
 import {
   alignBlocksInFlow,
   type FlowBlock,
@@ -117,28 +113,9 @@ function applyElementStyle(
   if (fills.length > 0) node.fills = fills
   applyImageFill(graph, node, element, style)
 
-  // A border without a style is not drawn and takes no room.
-  // One a theme may color in another mode is kept while it is transparent.
-  const strokes = hasBorder(style)
-    ? colorToStrokeFromCSS(
-        firstStrokeColor(style),
-        strokeWeightFromStyle(style)?.toString(),
-        element.references !== undefined
-      )
-    : []
-  if (strokes.length > 0) {
-    const dashPattern = dashPatternFromCSS(style, strokes[0].weight)
-    if (dashPattern.length > 0) {
-      strokes[0].dashPattern = dashPattern
-      node.dashPattern = dashPattern
-    }
-    node.strokes = strokes
-    setBorderWeights(node, style, strokes[0])
-    // A CSS border takes room inside the box, as an inside stroke included in layout does.
-    node.strokesIncludedInLayout = true
-  }
+  const bordered = applyBorder(node, element, style)
 
-  const effects = applyRing(node, style, cssShadows(pickStyle(style, 'box-shadow')))
+  const effects = applyRing(node, cssShadows(pickStyle(style, 'box-shadow')), bordered)
   if (effects.length > 0) node.effects = effects
 
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))

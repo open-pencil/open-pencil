@@ -6,7 +6,7 @@ import { parseCSSNumber, parseCSSShadows, splitCSSLayers } from '@open-pencil/sc
 import { ICON_PAINTS, type IconPaint } from '@open-pencil/scene-graph/icons'
 import { effectBindingField } from '@open-pencil/scene-graph/variables'
 
-import { firstStrokeProperty, ringOf } from '../box'
+import { drawsBorder, firstStrokeProperty, ringOf } from '../box'
 import { anyCSSColor, mergedStyle } from '../css-values'
 import { maskSVG } from '../pictures'
 import { colorPart, referencedProperty } from './expression'
@@ -174,7 +174,8 @@ class Binder {
     }))
     const first = lists[0].computed.map((layer) => parseCSSShadows(layer, 'srgb').at(0))
     const drawn = first.filter((shadow) => shadow !== undefined)
-    const ring = property === 'box-shadow' ? ringOf(modes[0].computedStyle, drawn) : null
+    const bordered = drawsBorder(element, modes[0].computedStyle)
+    const ring = property === 'box-shadow' ? ringOf(drawn, bordered) : null
     let effect = 0
     for (const [index, initial] of first.entries()) {
       if (!initial) continue
@@ -193,7 +194,9 @@ class Binder {
   bindLayer(node: SceneNode, element: DesignElement): void {
     const isText = node.type === 'TEXT'
     this.#bindPaint(node, 'fills', this.#colors(element, isText ? 'color' : 'background-color'))
-    const stroke = isText ? null : firstStrokeProperty(mergedStyle(element))
+    const style = mergedStyle(element)
+    // A border that draws nothing has no stroke, which a ring may have become instead.
+    const stroke = isText || !drawsBorder(element, style) ? null : firstStrokeProperty(style)
     if (stroke) this.#bindPaint(node, 'strokes', this.#colors(element, stroke))
     this.#bindShadows(node, element, isText ? 'text-shadow' : 'box-shadow')
     this.#bindNumbers(node, element)

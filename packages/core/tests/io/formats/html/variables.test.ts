@@ -256,6 +256,16 @@ describe('variables from custom properties', () => {
     expect(paints).toEqual(['ink', undefined])
   })
 
+  test('keep a border transparent in one mode that another colors', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div id="box" style="width:9px;height:9px;border:1px solid var(--line);box-shadow:0 0 0 3px red"></div>',
+      { cssText: ':root { --line: transparent } .dark { --line: #112233 }', variables: VARIABLES }
+    )
+    const box = named(graph, 'box')
+    expect(box.strokes).toMatchObject([{ align: 'INSIDE', weight: 1 }])
+    expect(box.effects).toMatchObject([{ spread: 3 }])
+  })
+
   test('bind letter spacing, and inline SVG only where it follows the color', async () => {
     const { graph } = await readHTMLDocument(
       `<p style="letter-spacing:var(--track);color:var(--ink)">Spaced</p>

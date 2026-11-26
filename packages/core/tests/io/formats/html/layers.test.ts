@@ -35,6 +35,20 @@ describe('what CSS draws', () => {
     expect(layer('rings').effects).toHaveLength(2)
   })
 
+  test('a transparent border is the room it takes, so a ring beside it is a stroke', async () => {
+    const layer = await layers(
+      `<div id="clear" style="display:flex;padding:4px 6px;border:1px solid transparent;box-shadow:0 0 0 3px red"><i style="display:block;width:9px;height:9px;background:blue"></i></div>`
+    )
+    expect(layer('clear')).toMatchObject({
+      paddingTop: 5,
+      paddingRight: 7,
+      paddingBottom: 5,
+      paddingLeft: 7,
+      strokes: [{ weight: 3, align: 'OUTSIDE' }],
+      effects: []
+    })
+  })
+
   test('a decoration draws through flex items but not inline blocks or absolute boxes', async () => {
     const layer = await layers(
       `<div style="display:flex;text-decoration:underline"><span>Item</span></div>
