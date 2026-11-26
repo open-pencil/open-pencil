@@ -26,6 +26,7 @@ use style::servo_arc::Arc as ServoArc;
 use style::stylesheets::{CssRule, Stylesheet};
 use style::values::computed::Length;
 use style::values::generics::font::LineHeight;
+use style::values::generics::svg::SVGPaintKind;
 use style::values::generics::transform::Translate;
 use style::values::specified::box_::DisplayInside;
 use url::{Position, Url};
@@ -379,9 +380,16 @@ fn rect(x: f32, y: f32, w: f32, h: f32) -> Value {
     json!([x, y, w, h])
 }
 
-/// The computed values of `COMPUTED_PROPERTIES`, such as `auto`, `50%`, `390px`, or `1.5`.
+/// The computed values of `COMPUTED_PROPERTIES`, such as `auto`, `50%`, `390px`, or `1.5`, and
+/// `currentcolor` for an SVG paint that is the element's color, which its resolved value hides.
 fn computed(node: &Node) -> Option<Value> {
     let styles = node.primary_styles()?;
+    let svg = styles.get_inherited_svg();
+    let paints = [("fill", &svg.fill.kind), ("stroke", &svg.stroke.kind)];
+    let current = paints
+        .into_iter()
+        .filter(|(_, kind)| matches!(kind, SVGPaintKind::Color(color) if color.is_currentcolor()))
+        .map(|(name, _)| (name.to_owned(), Value::from("currentcolor")));
     let out: Map<String, Value> = COMPUTED_PROPERTIES
         .iter()
         .map(|id| {
@@ -392,6 +400,7 @@ fn computed(node: &Node) -> Option<Value> {
             };
             (id.name().to_owned(), value.into())
         })
+        .chain(current)
         .collect();
     Some(Value::Object(out))
 }

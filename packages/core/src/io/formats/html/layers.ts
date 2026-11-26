@@ -94,8 +94,8 @@ export async function sceneGraphFromStyledHTML(
   // Once laid out, so each takes its layer's final size.
   placeBackgroundPictures(graph, backgroundPictures)
   applyStacking(graph, stackings)
-  await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
-  if (options.theme) bindThemeVariables(graph, options.theme, sources, svgs)
+  const tinted = await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
+  if (options.theme) bindThemeVariables(graph, options.theme, sources, svgs, tinted)
   applyCSSTransforms(graph, transforms)
   clipSpreadShadows(graph, sources.keys())
   options.createComponents?.(graph, sources, styled)

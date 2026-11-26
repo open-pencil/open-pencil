@@ -3,6 +3,7 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseCSSNumber, parseCSSShadows, splitCSSLayers } from '@open-pencil/scene-graph/css'
+import { ICON_PAINTS, type IconPaint } from '@open-pencil/scene-graph/icons'
 import { effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { firstStrokeProperty } from '../box'
@@ -27,10 +28,6 @@ function inModes(element: DesignElement, count: number): ModeStyle[] | null {
     styled.push({ computedStyle, references: references ?? {} })
   }
   return styled
-}
-
-function elementsOf(parent: DesignElement): DesignElement[] {
-  return parent.children.filter((child) => child.type === 'element')
 }
 
 /** Where a layer's number comes from: the field that binds, and the properties that all set it. */
@@ -78,35 +75,6 @@ function numberIn(node: SceneNode, field: string): number | null {
 
 function isSameNumber(value: number | undefined, other: number | null): boolean {
   return value !== undefined && other !== null && Math.abs(value - other) <= NUMBER_TOLERANCE
-}
-
-/**
- * Whether inline SVG paints a shape in the artwork's color without following it, as a black shape
- * in black text or one that names another custom property does, so its layers' paints do not tell which follow the color.
- */
-function holdsFixedPaint(
-  element: DesignElement,
-  color: string | undefined,
-  reference: string | undefined,
-  inherited: Record<string, string> = { fill: 'black' }
-): boolean {
-  const paints = { ...inherited }
-  for (const property of ['fill', 'stroke']) {
-    const declared = new Map([
-      ...Object.entries(element.attrs),
-      ...Object.entries(element.inlineStyle ?? {})
-    ])
-    const own = element.references?.[property]
-    const named = own === reference ? 'currentcolor' : mergedStyle(element)[property]
-    const paint = own ? named : declared.get(property)
-    if (paint !== undefined) paints[property] = paint.trim().toLowerCase()
-  }
-  const children = elementsOf(element)
-  if (children.length > 0)
-    return children.some((child) => holdsFixedPaint(child, color, reference, paints))
-  return Object.values(paints).some(
-    (paint) => paint !== 'currentcolor' && isEqual(anyCSSColor(paint), anyCSSColor(color))
-  )
 }
 
 class Binder {
@@ -210,28 +178,39 @@ class Binder {
     this.#bindNumbers(node, element)
   }
 
-  /** Binds the paints inline SVG draws in its element's color, which `currentColor` stands for. */
-  bindArtwork(frameId: string, element: DesignElement): void {
-    const mask = maskSVG(element)
-    const property = mask ? 'background-color' : 'color'
-    const colors = this.#colors(element, property)
+  /**
+   * Binds the paints inline SVG draws in its element's color, which `tinted` names, to that
+   * color; a mask shows its background through every shape it draws.
+   */
+  bindArtwork(
+    frameId: string,
+    element: DesignElement,
+    tinted: ReadonlyMap<string, readonly IconPaint[]>
+  ): void {
+    const mask = maskSVG(element) !== null
+    const colors = this.#colors(element, mask ? 'background-color' : 'color')
     if (!colors) return
-    const { color } = mergedStyle(element)
-    if (!mask && holdsFixedPaint(element, color, element.references?.color)) return
-    for (const child of this.#graph.getChildren(frameId)) this.#bindPaintsIn(child, colors)
+    for (const child of this.#graph.getChildren(frameId)) {
+      this.#bindTinted(child, colors, mask ? null : tinted)
+    }
   }
 
-  #bindPaintsIn(node: SceneNode, colors: ModeColor[]): void {
-    const { a: alpha, ...rgb } = colors[0].color
-    const own = { ...rgb, a: 1 }
-    for (const list of ['fills', 'strokes'] as const) {
-      for (const [index, paint] of node[list].entries()) {
-        const sameOpacity = Math.abs(paint.opacity - alpha) <= NUMBER_TOLERANCE
-        if (paint.type === 'SOLID' && sameOpacity && isEqual({ ...paint.color, a: 1 }, own))
+  #bindTinted(
+    node: SceneNode,
+    colors: ModeColor[],
+    tinted: ReadonlyMap<string, readonly IconPaint[]> | null
+  ): void {
+    const paints = tinted ? (tinted.get(node.id) ?? []) : ICON_PAINTS
+    for (const paint of paints) {
+      const list = paint === 'fill' ? 'fills' : 'strokes'
+      for (const [index, { type, opacity }] of node[list].entries()) {
+        // A bound paint takes its variable's alpha as its opacity, so one with an opacity of its
+        // own, such as `fill-opacity`, keeps its color.
+        if (type === 'SOLID' && Math.abs(opacity - colors[0].color.a) <= NUMBER_TOLERANCE)
           this.#bindColor(node, `${list}/${index}/color`, colors)
       }
     }
-    for (const child of this.#graph.getChildren(node.id)) this.#bindPaintsIn(child, colors)
+    for (const child of this.#graph.getChildren(node.id)) this.#bindTinted(child, colors, tinted)
   }
 }
 
@@ -244,12 +223,13 @@ export function bindThemeVariables(
   graph: SceneGraph,
   theme: HTMLTheme,
   sources: LayerSources,
-  svgs: ReadonlyMap<string, DesignElement>
+  svgs: ReadonlyMap<string, DesignElement>,
+  tinted: ReadonlyMap<string, readonly IconPaint[]>
 ): void {
   const binder = new Binder(graph, theme)
   for (const [nodeId, element] of sources) {
     const node = graph.getNode(nodeId)
     if (node) binder.bindLayer(node, element)
   }
-  for (const [frameId, element] of svgs) binder.bindArtwork(frameId, element)
+  for (const [frameId, element] of svgs) binder.bindArtwork(frameId, element, tinted)
 }

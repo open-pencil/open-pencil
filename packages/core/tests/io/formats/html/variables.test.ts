@@ -169,6 +169,20 @@ describe('variables from custom properties', () => {
     expect(bound(graph, shape, 'fills/0/color')).toBe('ink')
   })
 
+  test('bind the SVG paints that follow the color, beside fixed ones of the same color', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div style="color:var(--ink)"><svg id="art" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M0 0h9v9z"/><path fill="#112233" d="M9 9h9v9z"/></svg></div>',
+      {
+        cssText: ':root { --ink: #112233 } .dark { --ink: white }',
+        variables: VARIABLES
+      }
+    )
+    const paints = graph
+      .getChildren(named(graph, 'art').id)
+      .map((layer) => bound(graph, layer, 'fills/0/color'))
+    expect(paints).toEqual(['ink', undefined])
+  })
+
   test('leave inline SVG that names another property of the same color unbound', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="color:var(--ink)"><svg id="art" width="20" height="20" viewBox="0 0 20 20"><path style="fill:var(--accent)" d="M0 0h9v9z"/></svg></div>',
