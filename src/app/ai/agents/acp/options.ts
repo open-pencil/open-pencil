@@ -123,6 +123,19 @@ export function agentModeCategories(offered: Partial<Record<AgentChoiceCategory,
   return { mode: offered.mode ? 'mode' : null, access: null }
 }
 
+/**
+ * The values a session opened on in place of those the chat named, as when the person kept the
+ * agent asking or the desktop app moved it to a mode that asks; the composer shows these.
+ */
+export function choicesKept(named: AgentChoices, opened: SessionChoices): AgentChoices {
+  const kept: AgentChoices = {}
+  for (const category of AGENT_CHOICE_CATEGORIES) {
+    const current = opened[category]?.current
+    if (named[category] && current && current !== named[category]) kept[category] = current
+  }
+  return kept
+}
+
 /** The agent's own values among a session's options: those the chat did not name. */
 export function agentOwnChoices(offered: AgentModelChoices, named: AgentChoices): AgentChoices {
   const own: AgentChoices = {}
