@@ -50,6 +50,39 @@ describe('room log', () => {
     expect(reopened.document.getText('t').toString()).toBe('abcde')
   })
 
+  test('logs a small change to a large room as it closes, without rewriting its snapshot', async () => {
+    const { document, log, store } = await openLog()
+    type(document, 'x'.repeat(10_000))
+    await log.save({ closing: true })
+    const { snapshot } = await store.load(room)
+
+    const again = await openRoomLog(store, room, limits)
+    type(again.document, 'small')
+    await again.log.save({ closing: true })
+    const saved = await store.load(room)
+    expect(saved.snapshot === snapshot).toBe(true)
+    expect(saved.updates).toHaveLength(1)
+
+    const reopened = await openRoomLog(store, room, limits)
+    expect(reopened.document.getText('t').toString()).toEndWith('small')
+    type(reopened.document, 'y'.repeat(5_000))
+    await reopened.log.save({ closing: true })
+    expect((await store.load(room)).updates).toEqual([])
+  })
+
+  test('waits for a share of a large snapshot before its logged bytes fold', async () => {
+    const { store } = await openLog()
+    const byteLimits = { updates: 100, bytes: 100 }
+    const opened = await openRoomLog(store, room, byteLimits)
+    type(opened.document, 'x'.repeat(10_000))
+    await opened.log.save({ closing: true })
+    type(opened.document, 'y'.repeat(500))
+    await opened.log.save()
+    type(opened.document, 'z')
+    await opened.log.save()
+    expect((await store.load(room)).updates).toHaveLength(2)
+  })
+
   test('keeps a refused save for the next one, which writes a snapshot', async () => {
     const memory = memoryStateStore()
     let refuse = true

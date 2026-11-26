@@ -13,10 +13,11 @@ import {
 } from '@open-pencil/fig/node-change'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { DECK_TYPES, isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { slideRows, slideSettings } from '@open-pencil/scene-graph/slides'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 import {
   collectionsBoundIn,
@@ -223,6 +224,27 @@ function savedModeId(
   return graph.variableCollections.get(collectionId)?.defaultModeId
 }
 
+/**
+ * A slide's transition names the slide after it, so deleting, skipping, adding, or moving one
+ * changes the record of the slide before. Only records whose target changed are patched.
+ */
+function addTransitionSlides(
+  graph: SceneGraph,
+  changes: ArchiveChangeSummary,
+  add: (id: string) => unknown
+): void {
+  const before = archiveBaseline(graph)?.before
+  // A slide that left its page, or was deleted after it did, shows only in what it was.
+  const deckChanged = [...changes.touched].some((id) => {
+    const node = graph.getNode(id) ?? before?.get(id)
+    return node !== undefined && DECK_TYPES.has(node.type)
+  })
+  if (!deckChanged) return
+  for (const page of graph.getPages())
+    for (const slide of slideRows(graph, page.id).flat())
+      if (slideSettings(slide)?.transition) add(slide.id)
+}
+
 /** Siblings keep the positions the archive saved; one that cannot moves, and so is written. */
 function siblingPositions(graph: SceneGraph, records: Set<string>): Map<string, string> {
   const orderKeys = new Map<string, string>()
@@ -280,6 +302,7 @@ function planRecords(
   addSetVariants(graph, changes, add)
   addModeChangeUsers(graph, add)
   addComponentInstances(graph, records, add)
+  addTransitionSlides(graph, changes, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)
   const orderKeys = siblingPositions(graph, records)

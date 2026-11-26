@@ -191,6 +191,14 @@ describe('document data in a room', () => {
     })
   })
 
+  test('a deck reaches the other peer as slides', async () => {
+    await withRoom(async ({ host, guest, settle }) => {
+      host.setDocumentKind('slides')
+      await settle()
+      expect([guest.graph.documentKind, guest.state.documentKind]).toEqual(['slides', 'slides'])
+    })
+  })
+
   test('a color space change is an edit the room has not saved', async () => {
     await withRoom(async ({ host, hostSession }) => {
       hostSession.saves.markSaved(hostSession.saves.counts())

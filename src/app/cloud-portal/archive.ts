@@ -27,9 +27,12 @@ const DOCUMENT_CONCURRENCY = 3
  * The extension each kind saves under, as the editor's own Save does (Core's
  * `DOCUMENT_EXTENSIONS`, which the portal does not load).
  */
-const EXTENSIONS = { design: 'fig', board: 'jam' } as const satisfies Record<DocumentKind, string>
+const EXTENSIONS = { design: 'fig', board: 'jam', slides: 'deck' } as const satisfies Record<
+  DocumentKind,
+  string
+>
 
-/** The name a document is saved under when it leaves Cloud: `Poster.fig`, or `Retro.jam`. */
+/** The name a document is saved under when it leaves Cloud: `Poster.fig`, `Retro.jam`, or `Pitch.deck`. */
 export function documentFileName(name: string, kind: DocumentKind): string {
   return `${name}.${EXTENSIONS[kind]}`
 }

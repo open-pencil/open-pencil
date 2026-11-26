@@ -8,7 +8,12 @@ import type {
   VariableCollection,
   VariableCollectionMode
 } from '@open-pencil/scene-graph'
-import { printFormula, variableValueReferences } from '@open-pencil/scene-graph/variables'
+import {
+  formulaTypeOf,
+  isEasing,
+  printFormula,
+  variableValueReferences
+} from '@open-pencil/scene-graph/variables'
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { fileSegment, placeTokens, tokenPath, tokenReference, tokenTree } from './paths'
@@ -20,7 +25,7 @@ import {
   type DesignTokenFile,
   type DesignTokenIssue
 } from './types'
-import { literalTokenValue, variableTokenType } from './values'
+import { cubicBezierTokenValue, literalTokenValue, variableTokenType } from './values'
 
 export interface DesignTokenExport {
   files: DesignTokenFile[]
@@ -75,6 +80,70 @@ function openPencilFields(variable: Variable, modeId: string, formula?: string) 
 }
 
 /**
+ * Whether an easing gives a `cubicBezier` token in each of these modes of its collection. An alias
+ * follows its target: in the same collection, in the same mode; in another, in every mode of the
+ * target's, since a resolver picks each collection's mode on its own.
+ */
+function easingTokenInModes(
+  context: ExportContext,
+  variableId: string,
+  modeIds: readonly string[],
+  seen: ReadonlySet<string> = new Set()
+): boolean {
+  const variable = context.graph.variables.get(variableId)
+  const collection = context.collectionOf.get(variableId)
+  if (!variable || !collection) return false
+  return modeIds.every((modeId) => {
+    const key = `${variableId}:${modeId}`
+    if (seen.has(key) || !Object.hasOwn(variable.valuesByMode, modeId)) return false
+    const value = variable.valuesByMode[modeId]
+    if (typeof value === 'object' && 'aliasId' in value) {
+      const target = context.collectionOf.get(value.aliasId)
+      if (!target) return false
+      const targetModes =
+        target.id === collection.id ? [modeId] : target.modes.map((mode) => mode.modeId)
+      return easingTokenInModes(context, value.aliasId, targetModes, new Set(seen).add(key))
+    }
+    if (typeof value === 'object' && 'expression' in value && value.expression !== 'FORMULA')
+      return false
+    const resolved = context.graph.resolveVariable(variableId, modeId)
+    return isEasing(resolved) && cubicBezierTokenValue(resolved) !== undefined
+  })
+}
+
+/**
+ * An alias as a `{group.token}` reference, with the target's names for Figma when it is in another
+ * collection; or why it has none. A spring or hold has no token, so an alias that can reach one
+ * would name a token that is not there.
+ */
+function aliasTokenValue(
+  context: ExportContext,
+  collection: VariableCollection,
+  mode: VariableCollectionMode,
+  variable: Variable,
+  aliasId: string
+):
+  | { value: string; figma: Record<string, unknown> }
+  | { issue: 'unsupported-easing' | 'missing-alias' } {
+  if (variable.type === 'EASING' && !easingTokenInModes(context, variable.id, [mode.modeId]))
+    return { issue: 'unsupported-easing' }
+  const path = context.references.get(aliasId)
+  const target = context.graph.variables.get(aliasId)
+  const targetCollection = context.collectionOf.get(aliasId)
+  if (!path || !target || !targetCollection) return { issue: 'missing-alias' }
+  const figma =
+    targetCollection.id === collection.id
+      ? {}
+      : {
+          'com.figma.aliasData': {
+            targetVariableName: target.name,
+            targetVariableSetName: targetCollection.name
+          }
+        }
+  return { value: tokenReference(path), figma }
+}
+
+/**
  * A variable's value in one mode as a token. An alias is a `{group.token}` reference; one to
  * another collection also names its target in `com.figma.aliasData`, the way Figma resolves it.
  */
@@ -102,28 +171,26 @@ function variableToken(
       return undefined
     }
     formula = printFormula(value.value, (id) => tokenReference(context.references.get(id) ?? []), {
-      type: (id) => context.graph.variables.get(id)?.type
+      type: (id) => formulaTypeOf(context.graph.variables.get(id)?.type)
     })
     $value = literalTokenValue(variable, resolved, context.graph.documentColorSpace)
   } else if (typeof value === 'object' && 'expression' in value) {
     context.issues.push({ kind: 'unsupported-expression', ...where })
     return undefined
   } else if (typeof value === 'object' && 'aliasId' in value) {
-    const path = context.references.get(value.aliasId)
-    const target = context.graph.variables.get(value.aliasId)
-    const targetCollection = context.collectionOf.get(value.aliasId)
-    if (!path || !target || !targetCollection) {
-      context.issues.push({ kind: 'missing-alias', ...where })
+    const alias = aliasTokenValue(context, collection, mode, variable, value.aliasId)
+    if ('issue' in alias) {
+      context.issues.push({ kind: alias.issue, ...where })
       return undefined
     }
-    $value = tokenReference(path)
-    if (targetCollection.id !== collection.id)
-      figma['com.figma.aliasData'] = {
-        targetVariableName: target.name,
-        targetVariableSetName: targetCollection.name
-      }
+    $value = alias.value
+    Object.assign(figma, alias.figma)
   } else {
     $value = literalTokenValue(variable, value, context.graph.documentColorSpace)
+    if ($value === undefined) {
+      context.issues.push({ kind: 'unsupported-easing', ...where })
+      return undefined
+    }
   }
   if (variable.type === 'BOOLEAN') figma['com.figma.type'] = 'boolean'
   const $extensions = { ...figma, ...openPencilFields(variable, mode.modeId, formula) }

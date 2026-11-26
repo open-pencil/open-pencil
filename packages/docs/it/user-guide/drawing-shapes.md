@@ -43,6 +43,6 @@ Ombre esterna e interna, sfocatura del livello, dello sfondo o del primo piano.
 
 ## Frame e sezioni
 
-Un frame è un contenitore. Gli oggetti trascinati al suo interno diventano figli. Il ritaglio è disattivato per impostazione predefinita. I frame supportano la [disposizione automatica](./auto-layout).
+Un frame è un contenitore. Gli oggetti trascinati al suo interno diventano figli. Il ritaglio è disattivato per impostazione predefinita. I frame supportano la [disposizione automatica](/user-guide/auto-layout).
 
 Una sezione è un contenitore di primo livello che adotta automaticamente gli oggetti sovrapposti durante la creazione.

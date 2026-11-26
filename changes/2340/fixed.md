@@ -1,0 +1,1 @@
+- Lists in any font and truncated right-to-left text keep their bullets, numbers, and ellipses when copied to Figma.

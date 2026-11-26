@@ -19,7 +19,8 @@ export default {
   variants: {
     kind: {
       design: {},
-      board: { icon: 'text-board' }
+      board: { icon: 'text-board' },
+      slides: { icon: 'text-slides' }
     }
   }
 }
