@@ -1,0 +1,11 @@
+# Licenses the crates compiled into fig.wasm may carry (`bun run check:licenses`).
+[graph]
+targets = ["wasm32-unknown-unknown"]
+
+[licenses]
+allow = [
+  "Apache-2.0",
+  "MIT",
+  "Zlib",
+]
+confidence-threshold = 0.9

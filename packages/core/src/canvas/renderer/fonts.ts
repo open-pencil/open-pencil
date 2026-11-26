@@ -21,7 +21,7 @@ import {
   SIZE_FONT_SIZE,
   VALUE_FONT_SIZE
 } from '#core/constants'
-import { withTextMeasurer } from '#core/layout/text-measurement'
+import { withTextBaselineMeasurer, withTextMeasurer } from '#core/layout/text-measurement'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { resetFontCollection } from '#core/text/font/collection'
 import { fontManager } from '#core/text/font/manager'
@@ -256,6 +256,10 @@ export async function prepareForExport(
   syncFontGeneration(r)
   withTextMeasurer(
     (node, maxWidth) => r.measureTextNode(node, maxWidth),
-    () => graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph, pageId))
+    () =>
+      withTextBaselineMeasurer(
+        (node) => r.measureTextBaseline(node),
+        () => graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph, pageId))
+      )
   )
 }

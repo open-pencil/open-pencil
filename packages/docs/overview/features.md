@@ -15,7 +15,7 @@ Open and save native Figma files directly. The import/export pipeline uses the s
 - **Rich text** — per-character bold (<kbd>⌘</kbd><kbd>B</kbd>), italic (<kbd>⌘</kbd><kbd>I</kbd>), underline (<kbd>⌘</kbd><kbd>U</kbd>), strikethrough
 - **Auto-layout** — flexbox and CSS Grid via Taffy WASM: direction, gap, padding, justify, align, child sizing, grid tracks. <kbd>⇧</kbd><kbd>A</kbd> to toggle
 - **Components** — create (<kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>), component sets (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>), instances with override support, slots, live sync
-- **Behaviours and preview** — make components work as Reka UI controls (switch, slider, tabs, text field, accordion, …) and try them live over the canvas with <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> ([Components](/user-guide/components#behaviours-and-preview))
+- **Behaviours and preview** — make components work as Reka UI controls (switch, slider, tabs, text field, accordion, …) and try them live over the canvas with <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> ([Components](/user-guide/components#make-a-component-work-like-a-control))
 - **Variables** — design tokens with collections, modes (Light/Dark), color/float/string/boolean types, variable binding
 - **Sections** — organizational containers with auto-adopting children and title pills
 

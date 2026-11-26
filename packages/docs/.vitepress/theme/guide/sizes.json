@@ -51,6 +51,30 @@
     "width": 282,
     "height": 420
   },
+  "component-libraries/publish": {
+    "width": 542,
+    "height": 693
+  },
+  "components/assets": {
+    "width": 262,
+    "height": 221
+  },
+  "components/behaviour": {
+    "width": 284,
+    "height": 521
+  },
+  "components/instance": {
+    "width": 284,
+    "height": 117
+  },
+  "components/overview": {
+    "width": 559,
+    "height": 278
+  },
+  "components/property": {
+    "width": 286,
+    "height": 278
+  },
   "exporting/copy-as": {
     "width": 194,
     "height": 263
@@ -98,5 +122,17 @@
   "selection-and-manipulation/several": {
     "width": 284,
     "height": 180
+  },
+  "variables/apply": {
+    "width": 397,
+    "height": 316
+  },
+  "variables/dialog": {
+    "width": 1054,
+    "height": 702
+  },
+  "variables/mode": {
+    "width": 284,
+    "height": 308
   }
 }

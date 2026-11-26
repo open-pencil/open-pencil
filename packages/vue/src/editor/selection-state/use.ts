@@ -6,6 +6,7 @@ import {
   slotOwner,
   slotPropertyId
 } from '@open-pencil/scene-graph/slots'
+import { canBeDocumentThumbnail } from '@open-pencil/scene-graph/thumbnail'
 
 import { useEditor } from '#vue/editor/context'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
@@ -54,6 +55,17 @@ export function useSelectionState() {
     return !!slotOwner(editor.graph, first)
   })
 
+  /**
+   * What Set as thumbnail does with the selection: `set` for one layer that can be the document's
+   * thumbnail, `restore` for the layer that already is, and null otherwise.
+   */
+  const thumbnailAction = useSceneComputed((): 'set' | 'restore' | null => {
+    const node = selectedIds.value.size === 1 ? selectedNode.value : null
+    if (!node) return null
+    if (editor.getDocumentThumbnail() === node.id) return 'restore'
+    return canBeDocumentThumbnail(editor.graph, node) ? 'set' : null
+  })
+
   /** Whether Ungroup takes any selected layer apart: a group, frame, boolean, or section. */
   const canUngroup = useSceneComputed(
     () => selectedIds.value.size > 0 && editor.canUngroupSelection()
@@ -76,6 +88,7 @@ export function useSelectionState() {
     canCreateComponentSet,
     canCreateSlot,
     canUngroup,
-    canAutoArrange
+    canAutoArrange,
+    thumbnailAction
   }
 }
