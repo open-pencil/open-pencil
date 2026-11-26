@@ -4,8 +4,8 @@ import { computed } from 'vue'
 
 import { useLocale, useMessages } from '@open-pencil/vue/i18n'
 
-import { usePermissionQuestions } from '@/app/shell/permission/questions'
 import { animationsEnabled } from '@/app/shell/motion'
+import { usePermissionQuestions } from '@/app/shell/permission/questions'
 import { useAppTheme } from '@/app/shell/theme'
 import PermissionQuestion from '@/components/permission/PermissionQuestion.vue'
 

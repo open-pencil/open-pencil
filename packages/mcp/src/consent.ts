@@ -2,6 +2,8 @@ import { createInterface } from 'node:readline'
 
 import * as v from 'valibot'
 
+import { createDeferred } from '@open-pencil/std/async'
+
 /** Whether a tool reads a file or writes one. */
 export type PathAccess = 'read' | 'write'
 
@@ -20,6 +22,16 @@ export interface PathConsentRequest {
  * once refused. A server without one lets every path inside its root through.
  */
 export type PathConsent = (request: PathConsentRequest) => Promise<void>
+
+/**
+ * Asks `consent`, when the server asks at all, before `tool` reads or writes a path, naming the
+ * client by the name it introduced itself with.
+ */
+export function askPath(consent: PathConsent | undefined, client: () => string | undefined) {
+  return (tool: string, access: PathAccess) => async (path: string) => {
+    await consent?.({ tool, access, path, client: client() })
+  }
+}
 
 const answerSchema = v.pipe(
   v.string(),
@@ -53,9 +65,10 @@ export function stdioPathConsent(
       return
     }
     const id = next++
-    const answer = new Promise<boolean>((resolve) => waiting.set(id, resolve))
+    const answer = createDeferred<boolean>()
+    waiting.set(id, answer.resolve)
     output.write(`${JSON.stringify({ type: 'consent', id, ...request })}\n`)
-    if (!(await answer)) {
+    if (!(await answer.promise)) {
       const verb = request.access === 'read' ? 'read' : 'write'
       throw new Error(`The person did not allow ${request.tool} to ${verb} ${request.path}.`)
     }

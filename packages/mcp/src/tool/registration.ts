@@ -6,19 +6,18 @@ import type {
   InputRequiredResult,
   McpServer,
   ToolCallback,
-  ToolAnnotations,
   ServerContext
 } from '@modelcontextprotocol/server'
 import * as v from 'valibot'
 
 import { CODEGEN_PROMPT, toolInputFor } from '@open-pencil/core/tools'
 
+import { askPath, type PathConsent } from '#mcp/consent'
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
-import type { PathAccess, PathConsent } from '#mcp/consent'
 import { readFileInput, withFileInput } from '#mcp/tool/input'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
-import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
+import { toolAnnotations, type ToolDescriptor, type ToolPolicy } from '#mcp/tool/metadata'
 import {
   resolveSafePath,
   withFileOutputHint,
@@ -103,13 +102,6 @@ export interface RegisterToolsOptions {
   pathConsent?: PathConsent
 }
 
-function toolAnnotations(effect: ToolEffect): ToolAnnotations {
-  return {
-    readOnlyHint: effect === 'read',
-    destructiveHint: effect === 'write'
-  }
-}
-
 function descriptorByName(descriptors: readonly ToolDescriptor[]): Map<string, ToolDescriptor> {
   return new Map(descriptors.map((descriptor) => [descriptor.name, descriptor]))
 }
@@ -138,15 +130,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     return { ...session, chat: agentSession.chat, call: agentCallId(meta) }
   }
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
-  /** Asks, when the server asks at all, before `tool` reads or writes `path`. */
-  const consent = (tool: string, access: PathAccess) => async (path: string) => {
-    await options.pathConsent?.({
-      tool,
-      access,
-      path,
-      client: mcpServer.server.getClientVersion()?.name
-    })
-  }
+  const consent = askPath(options.pathConsent, () => mcpServer.server.getClientVersion()?.name)
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
   const callable = new Map<string, CallableTool>()
   const register = <InputArgs extends v.GenericSchema>(

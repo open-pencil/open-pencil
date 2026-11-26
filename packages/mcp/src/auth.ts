@@ -32,17 +32,24 @@ export interface MCPAccess {
   refuse(authorization: string | null | undefined, scope: MCPAccessScope): Response | null
 }
 
+/** Who besides the server's and the client's token gets in. */
+export interface MCPAccessOptions {
+  /**
+   * A token that opens `app` alone, for an app that must not reach what the server's token opens
+   * besides: raw commands, files, and MCP sessions. The desktop app gives its editor this one.
+   */
+  appToken?: string | null
+  /**
+   * A caller without a token gets what the client token opens, and nothing more: the desktop
+   * app's switch that lets MCP clients connect without one.
+   */
+  tokenlessClients?: boolean
+}
+
 export function createMCPAccess(
   serverToken: string | null,
   clientToken: string | null,
-  {
-    appToken = null,
-    tokenlessClients = false
-  }: {
-    appToken?: string | null
-    /** A caller without a token gets what the client token opens, and nothing more. */
-    tokenlessClients?: boolean
-  } = {}
+  { appToken = null, tokenlessClients = false }: MCPAccessOptions = {}
 ): MCPAccess {
   function scopes(token: string | null): readonly MCPAccessScope[] {
     if (serverToken === null) return SERVER_SCOPES
