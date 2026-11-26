@@ -18,10 +18,12 @@ interface FigCrateExports {
   page_count(): number
   page_guid(page: number, part: number): number
   expand_page(page: number): number
+  expand_record(session: number, local: number): number
   occurrences(): number
   layers(): number
   unresolved(which: number): number
   properties(page: number, first: number, count: number): number
+  record_properties(session: number, local: number, first: number, count: number): number
   json(): number
   json_length(): number
 }
@@ -40,15 +42,18 @@ export interface CrateExpansion {
   loops: number
 }
 
+/** What the crate expands: a page by its position, or a component or an instance by its id. */
+export type CrateRoot = number | string
+
 export interface CrateDocument {
   /** Page ids in saved order. */
   pageIds: string[]
-  expand(page: number): CrateExpansion
+  expand(root: CrateRoot): CrateExpansion
   /**
-   * The field values of `count` occurrences of a page from `first` on, in tree order, as JSON
-   * values: 64-bit integers as strings, bytes as arrays of numbers.
+   * The field values of `count` occurrences of an expansion from `first` on, in tree order, as
+   * JSON values: 64-bit integers as strings, bytes as arrays of numbers.
    */
-  properties(page: number, first: number, count: number): unknown[]
+  properties(root: CrateRoot, first: number, count: number): unknown[]
 }
 
 let compiled: Promise<WebAssembly.Module> | undefined
@@ -84,11 +89,16 @@ export async function openWithCrate(file: Uint8Array): Promise<CrateDocument> {
     // WebAssembly returns `u32` results as signed numbers; a GUID's halves are unsigned.
     (_, page) => `${crate.page_guid(page, 0) >>> 0}:${crate.page_guid(page, 1) >>> 0}`
   )
+  const guid = (id: string) => {
+    const [session, local] = id.split(':').map(Number)
+    return [session, local] as const
+  }
   return {
     pageIds,
-    expand(page) {
-      const count = crate.expand_page(page)
-      if (count < 0) throw new Error(`No page ${page}`)
+    expand(root) {
+      const count =
+        typeof root === 'number' ? crate.expand_page(root) : crate.expand_record(...guid(root))
+      if (count < 0) throw new Error(`No page or record ${root}`)
       const rows = new Uint32Array(crate.memory.buffer, crate.occurrences(), count * 4)
       const depths: number[] = []
       const occurrences: CrateOccurrence[] = []
@@ -109,8 +119,12 @@ export async function openWithCrate(file: Uint8Array): Promise<CrateDocument> {
         missingComponents: crate.unresolved(4)
       }
     },
-    properties(page, first, count) {
-      if (crate.properties(page, first, count) < 0) throw failure()
+    properties(root, first, count) {
+      const written =
+        typeof root === 'number'
+          ? crate.properties(root, first, count)
+          : crate.record_properties(...guid(root), first, count)
+      if (written < 0) throw failure()
       const text = new TextDecoder().decode(
         new Uint8Array(crate.memory.buffer, crate.json(), crate.json_length())
       )
@@ -145,7 +159,7 @@ function firstDifference(crate: Tree, reader: Tree): string | null {
 
 /** Reported, as an editor load reports them, rather than thrown. */
 const ignore = () => undefined
-const LENIENT: InterpretInstanceOptions = {
+export const LENIENT: InterpretInstanceOptions = {
   derivedBounds: true,
   onUnresolvedProperty: ignore,
   onUnresolvedAssignment: ignore,
@@ -221,6 +235,41 @@ export interface FieldComparison {
 }
 
 /**
+ * One expansion as each reader gives it: where the layer trees first differ, then the first
+ * fields that differ, up to `limit`.
+ */
+export function compareLayers(
+  read: InstanceOccurrence,
+  crate: CrateDocument,
+  root: CrateRoot,
+  limit = 5
+): { values: number; differences: string[] } {
+  const layers = flatten(read)
+  const { occurrences } = crate.expand(root)
+  const tree = firstDifference(
+    occurrences,
+    layers.map(({ layer, depth }) => ({ sourceId: layer.sourceId, depth }))
+  )
+  if (tree) return { values: 0, differences: [`layers differ at ${tree}`] }
+  const values = crate.properties(root, 0, occurrences.length)
+  const differences: string[] = []
+  let compared = 0
+  for (const [at, { layer }] of layers.entries()) {
+    const expected = asCrateWrites(layer.properties)
+    const actual = values[at]
+    if (!isPlainObject(expected) || !isPlainObject(actual)) continue
+    for (const field of new Set([...Object.keys(expected), ...Object.keys(actual)])) {
+      compared++
+      if (isEqual(expected[field], actual[field]) || differences.length >= limit) continue
+      differences.push(
+        `${layer.sourceId} ${field}: reader ${brief(expected[field])}, crate ${brief(actual[field])}`
+      )
+    }
+  }
+  return { values: compared, differences }
+}
+
+/**
  * Every field of every layer of a file's pages, from the crate and from the TypeScript reader.
  * Each page's comparison keeps its first `limit` differences.
  */
@@ -229,25 +278,6 @@ export async function readFieldsWithBoth(file: Uint8Array, limit = 5): Promise<F
   const { reader } = createArchiveDocumentReader(new Uint8Array(file).buffer, new Set())
   return crate.pageIds.map((id, page): FieldComparison => {
     const read = reader.selectPages(new Set([id])).readPage(id, LENIENT)
-    const layers = flatten(read).map(({ layer }) => layer)
-    const count = crate.expand(page).occurrences.length
-    const values = crate.properties(page, 0, count)
-    const differences: string[] = []
-    let compared = 0
-    if (count !== layers.length)
-      differences.push(`crate has ${count} layers, reader ${layers.length}`)
-    for (const [at, layer] of layers.entries()) {
-      const expected = asCrateWrites(layer.properties)
-      const actual = values[at]
-      if (!isPlainObject(expected) || !isPlainObject(actual)) continue
-      for (const field of new Set([...Object.keys(expected), ...Object.keys(actual)])) {
-        compared++
-        if (isEqual(expected[field], actual[field]) || differences.length >= limit) continue
-        differences.push(
-          `${layer.sourceId} ${field}: reader ${brief(expected[field])}, crate ${brief(actual[field])}`
-        )
-      }
-    }
-    return { id, values: compared, differences }
+    return { id, ...compareLayers(read, crate, page, limit) }
   })
 }

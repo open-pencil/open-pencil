@@ -160,6 +160,8 @@ struct Group {
 
 pub struct Expansion<'a> {
     index: &'a Index,
+    /// The page expanded, whose slot content frames are not its layers; `NONE` for a component
+    /// or an instance.
     page: u32,
     pub occurrences: Vec<Occurrence>,
     pub steps: Vec<Step>,
@@ -172,7 +174,18 @@ pub struct Expansion<'a> {
 }
 
 impl<'a> Expansion<'a> {
+    /// Expands a page: its layers, leaving out the slot content frames kept on it.
     pub fn page(index: &'a Index, page: u32) -> Expansion<'a> {
+        Expansion::from(index, page, page)
+    }
+
+    /// Expands a component or an instance on its own, as the reader's `interpretComponent` and
+    /// `interpretInstance` do.
+    pub fn record(index: &'a Index, record: u32) -> Expansion<'a> {
+        Expansion::from(index, record, NONE)
+    }
+
+    fn from(index: &'a Index, root: u32, page: u32) -> Expansion<'a> {
         let mut expansion = Expansion {
             index,
             page,
@@ -183,7 +196,7 @@ impl<'a> Expansion<'a> {
             unresolved: Unresolved::default(),
             entered: Vec::new(),
         };
-        expansion.expand(page, &[], Vec::new(), 0, None, NONE, None);
+        expansion.expand(root, &[], Vec::new(), 0, None, NONE, None);
         expansion
     }
 

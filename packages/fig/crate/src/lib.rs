@@ -106,6 +106,11 @@ impl Document {
         Some(Expansion::page(&self.index, *self.index.pages.get(page)?))
     }
 
+    /// Expands a component or an instance on its own, by its GUID.
+    pub fn expand_record(&self, guid: u64) -> Option<Expansion<'_>> {
+        Some(Expansion::record(&self.index, self.index.find(guid)?))
+    }
+
     /// The field values of an expanded page's occurrences.
     pub fn properties<'a>(&'a self, expansion: &'a Expansion<'a>) -> Result<Properties<'a>> {
         Properties::new(expansion, &self.index, &self.schema, &self.message)

@@ -59,6 +59,7 @@
     "check:rust": "cargo fmt --manifest-path crate/Cargo.toml --check && cargo clippy --manifest-path crate/Cargo.toml --target wasm32-unknown-unknown --profile wasm --features exports -- -D warnings && cargo clippy --manifest-path crate/Cargo.toml --profile wasm --all-targets -- -D warnings && cargo test --manifest-path crate/Cargo.toml",
     "prepack": "bun run build",
     "test": "bun run build:wasm && bun test tests",
+    "test:shadow": "bun run build:wasm && bun tests/crate/shadow/run.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {

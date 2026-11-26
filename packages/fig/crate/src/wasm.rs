@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use core::fmt::Write;
 
 use crate::Document;
-use crate::expand::{Step, Unresolved};
+use crate::expand::{Expansion, Step, Unresolved};
 use crate::index::NONE;
 use crate::kiwi::Value;
 
@@ -97,14 +97,42 @@ pub extern "C" fn page_guid(page: u32, part: u32) -> u32 {
     })
 }
 
+/// What an expansion starts from: a page by its position, or a component or an instance by
+/// its GUID.
+#[derive(Clone, Copy)]
+enum Root {
+    Page(u32),
+    Record(u64),
+}
+
+impl Root {
+    fn expand(self, document: &Document) -> Option<Expansion<'_>> {
+        match self {
+            Root::Page(page) => document.expand_page(page as usize),
+            Root::Record(guid) => document.expand_record(guid),
+        }
+    }
+}
+
 /// Expands a page. Returns its occurrence count, or -1 for a page that does not exist.
 #[unsafe(no_mangle)]
 pub extern "C" fn expand_page(page: u32) -> i32 {
+    expand(Root::Page(page))
+}
+
+/// Expands a component or an instance on its own, by its GUID's session and local id. Returns
+/// its occurrence count, or -1 for a record that does not exist.
+#[unsafe(no_mangle)]
+pub extern "C" fn expand_record(session: u32, local: u32) -> i32 {
+    expand(Root::Record(u64::from(session) << 32 | u64::from(local)))
+}
+
+fn expand(root: Root) -> i32 {
     STATE.with_borrow_mut(|state| {
         let Some(document) = &state.document else {
             return -1;
         };
-        let Some(expansion) = document.expand_page(page as usize) else {
+        let Some(expansion) = root.expand(document) else {
             return -1;
         };
         let records = &document.index.records;
@@ -130,8 +158,8 @@ pub extern "C" fn expand_page(page: u32) -> i32 {
     })
 }
 
-/// The last expanded page's occurrences, four `u32`s each: the GUID's session and local id of
-/// the record placed, the parent occurrence (`u32::MAX` at the page), and the flags.
+/// The last expansion's occurrences, four `u32`s each: the GUID's session and local id of the
+/// record placed, the parent occurrence (`u32::MAX` at the root), and the flags.
 #[unsafe(no_mangle)]
 pub extern "C" fn occurrences() -> *const u32 {
     STATE.with_borrow(|state| state.occurrences.as_ptr())
@@ -166,6 +194,20 @@ pub extern "C" fn unresolved(which: u32) -> u32 {
 /// how many it wrote, or -1 with `error` saying why.
 #[unsafe(no_mangle)]
 pub extern "C" fn properties(page: u32, first: u32, count: u32) -> i32 {
+    write_properties(Root::Page(page), first, count)
+}
+
+/// `properties` for a component or an instance expanded on its own, by its GUID.
+#[unsafe(no_mangle)]
+pub extern "C" fn record_properties(session: u32, local: u32, first: u32, count: u32) -> i32 {
+    write_properties(
+        Root::Record(u64::from(session) << 32 | u64::from(local)),
+        first,
+        count,
+    )
+}
+
+fn write_properties(root: Root, first: u32, count: u32) -> i32 {
     STATE.with_borrow_mut(|state| {
         let State {
             document,
@@ -177,7 +219,7 @@ pub extern "C" fn properties(page: u32, first: u32, count: u32) -> i32 {
         let Some(document) = document else {
             return -1;
         };
-        let Some(expansion) = document.expand_page(page as usize) else {
+        let Some(expansion) = root.expand(document) else {
             return -1;
         };
         let values = match document.properties(&expansion) {
