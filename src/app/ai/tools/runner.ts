@@ -22,6 +22,7 @@ import {
   recordAgentEdit
 } from '@/app/automation/execution/editor'
 import { acquireDocumentEdit } from '@/app/automation/execution/lock'
+import { recordToolUse } from '@/app/automation/tool-access/usage'
 import type { EditorStore } from '@/app/editor/active-store'
 
 import { recordToolChange } from './changes/capture'
@@ -185,6 +186,7 @@ async function editAndRecord(
  */
 export async function runEditorTool(call: EditorToolCall): Promise<unknown> {
   const { store, figma, def, args } = call
+  recordToolUse(def.name)
   if (!def.mutates) return def.execute(figma, args)
   // Fonts load before the edit takes its turn, so an edit never waits on the network.
   try {

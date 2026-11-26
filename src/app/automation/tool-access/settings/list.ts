@@ -1,18 +1,31 @@
 import { computed, ref, watch, type Ref } from 'vue'
 
 import type { ToolAccessEntry } from '../types'
+import { toolUseCount } from '../usage'
+
+export type ToolAccessSort = 'default' | 'name' | 'most-used' | 'least-used'
 
 /** Tool access is derived from the catalog and one controlled disabled-name model. */
-export function useToolAccess(tools: Readonly<Ref<ToolAccessEntry[]>>, disabled: Ref<string[]>) {
+export function useToolAccess(
+  tools: Readonly<Ref<ToolAccessEntry[]>>,
+  disabled: Ref<string[]>,
+  sort: Ref<ToolAccessSort> = ref<ToolAccessSort>('name')
+) {
   const search = ref('')
   const disabledNames = computed(() => new Set(disabled.value))
   const enabledCount = computed(() => tools.value.filter(isEnabled).length)
   const visibleTools = computed(() => {
     const query = search.value.trim().toLowerCase()
-    return tools.value.filter(
+    const visible = tools.value.filter(
       (tool) =>
         tool.name.toLowerCase().includes(query) || tool.description.toLowerCase().includes(query)
     )
+    if (sort.value === 'default') return visible
+    return visible.sort((a, b) => {
+      const usage = toolUseCount(a.name) - toolUseCount(b.name)
+      if (sort.value !== 'name' && usage) return sort.value === 'most-used' ? -usage : usage
+      return a.name.localeCompare(b.name)
+    })
   })
 
   function isEnabled(tool: ToolAccessEntry) {
@@ -66,6 +79,7 @@ export function useToolAccess(tools: Readonly<Ref<ToolAccessEntry[]>>, disabled:
 
   return {
     search,
+    sort,
     visibleTools,
     enabledCount,
     groups,
