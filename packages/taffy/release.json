@@ -1,10 +1,10 @@
 {
   "repository": "open-pencil/taffy",
-  "tag": "taffy-eeb0e4e7e94a825ed5f4e88d4238c3d31ede21c7",
+  "tag": "taffy-e20c1cf14fe0df3172f295784e623702084be030",
   "files": {
-    "taffy.js": "ede2bbdf20dd95506d82958841113177c29d1a85179f78c8610003e9bc465bc9",
-    "taffy.wasm": "4566b5ac0c5f2af045721cde1add8850b0d6afc54e278dfdd14b3b26ef047ef6",
-    "taffy.d.ts": "819fda3154b817a917940803c9920bbf95fd8ad700d19897baeb22414fa467aa",
-    "THIRD-PARTY-NOTICES.md": "423b14f7d880f26f16da8bd7fb80a514630dee333e3c8dba836e89f3a3d06a1d"
+    "taffy.js": "402066a336948fe184e1b18cb26d4177cd78edf752e02a288313cafae404fe01",
+    "taffy.wasm": "7709fef60f7f9c2c4d204ecb349001ed77c18153128f4fd87d54c0e0e6ca1c90",
+    "taffy.d.ts": "fe4a51ea45ceb670d4dc2a60d0c569b363581808237f61bf5e5cd3fceedbe970",
+    "THIRD-PARTY-NOTICES.md": "4585396059fa43beebaa4d5368fd77718e6a72dc93a89e42bed633dea487ec19"
   }
 }
