@@ -38,6 +38,7 @@ import statuses from './statuses.json'
 import storage from './storage.json'
 import tools from './tools.json'
 import updates from './updates.json'
+import variablesEasing from './variables/easing.json'
 import variablesPanel from './variables/panel.json'
 import variablesTypes from './variables/types.json'
 
@@ -80,6 +81,7 @@ export default {
   storage,
   tools,
   updates,
+  'variables/easing': variablesEasing,
   'variables/panel': variablesPanel,
   'variables/types': variablesTypes
 } satisfies LocaleTranslations

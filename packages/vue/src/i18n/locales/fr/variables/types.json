@@ -6,5 +6,9 @@
   "text": "Texte",
   "textHint": "Texte et libellés",
   "boolean": "Booléen",
-  "booleanHint": "Vrai ou faux"
+  "booleanHint": "Vrai ou faux",
+  "easing": "Accélération",
+  "easingHint": "Courbes et ressorts",
+  "timing": "Durée",
+  "timingHint": "Durées et délais"
 }
