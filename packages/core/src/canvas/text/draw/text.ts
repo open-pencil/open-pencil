@@ -107,6 +107,15 @@ export function drawsOnlySavedGlyphs(r: SkiaRenderer, node: SceneNode): boolean 
   return (node.derivedTextGlyphs?.length ?? 0) > 0 && drawsSaved(r, node) && drawsSavedText(node)
 }
 
+/** Whether a fill of the text draws its saved glyphs, while another may lay it out live. */
+export function drawsSomeSavedGlyphs(r: SkiaRenderer, node: SceneNode): boolean {
+  return (
+    (node.derivedTextGlyphs?.length ?? 0) > 0 &&
+    drawsSaved(r, node) &&
+    node.fills.some((fill) => fill.visible && canDrawSavedText(node, fill))
+  )
+}
+
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
   return (
     drawsSaved(r, node) && canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node, fill)

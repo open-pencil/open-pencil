@@ -183,6 +183,25 @@ export function createSelectionCommands({
         })
       }
     },
+    'selection.setAsThumbnail': {
+      id: 'selection.setAsThumbnail',
+      get label() {
+        return t.value.setAsThumbnail
+      },
+      enabled: capabilities.canSetAsThumbnail,
+      run: () => {
+        const node = editor.getSelectedNode()
+        if (node) editor.setDocumentThumbnailNode(node.id)
+      }
+    },
+    'selection.restoreDefaultThumbnail': {
+      id: 'selection.restoreDefaultThumbnail',
+      get label() {
+        return t.value.restoreDefaultThumbnail
+      },
+      enabled: capabilities.canRestoreDefaultThumbnail,
+      run: () => editor.setDocumentThumbnailNode(null)
+    },
     'selection.goToMainComponent': {
       id: 'selection.goToMainComponent',
       get label() {

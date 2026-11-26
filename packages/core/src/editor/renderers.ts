@@ -2,7 +2,7 @@ import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
-import { installTextMeasurer, type TextMeasurer } from '#core/layout'
+import { installTextBaselineMeasurer, installTextMeasurer, type TextMeasurer } from '#core/layout'
 import { TextEditor } from '#core/text/editor'
 import { installTextInkMeasurer } from '#core/text/ink'
 
@@ -30,6 +30,7 @@ export function createCanvasRenderers(
   let textEditor: TextEditor | null = null
   let uninstallTextMeasurer: (() => void) | null = null
   let uninstallTextInkMeasurer: (() => void) | null = null
+  let uninstallTextBaselineMeasurer: (() => void) | null = null
 
   function setCanvasKit(canvasKit: CanvasKit, renderer: SkiaRenderer) {
     ck = canvasKit
@@ -50,6 +51,11 @@ export function createCanvasRenderers(
       typeof renderer.measureTextInk === 'function'
         ? installTextInkMeasurer((node) => current?.measureTextInk(node))
         : null
+    uninstallTextBaselineMeasurer?.()
+    uninstallTextBaselineMeasurer =
+      typeof renderer.measureTextBaseline === 'function'
+        ? installTextBaselineMeasurer((node) => current?.measureTextBaseline(node))
+        : null
     if (first) onFirstCanvas()
   }
 
@@ -58,6 +64,8 @@ export function createCanvasRenderers(
     uninstallTextMeasurer = null
     uninstallTextInkMeasurer?.()
     uninstallTextInkMeasurer = null
+    uninstallTextBaselineMeasurer?.()
+    uninstallTextBaselineMeasurer = null
   }
 
   function removeCanvasRenderer(renderer: SkiaRenderer) {

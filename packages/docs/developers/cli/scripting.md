@@ -119,7 +119,7 @@ Use `--quiet` / `-q` to suppress output when only writing a file.
 
 Next to `figma`, scripts get `openpencil`: what OpenPencil adds to the Figma Plugin API, in the same style. The same global is available to the `eval` tool and the running app's automation.
 
-A main component or component set can [behave as a Reka UI control](/user-guide/components#behaviours-and-preview). Bind it by its own property and slot names:
+A main component or component set can [behave as a Reka UI control](/user-guide/components#make-a-component-work-like-a-control). Bind it by its own property and slot names:
 
 ```sh
 openpencil eval design.fig -w -c '
