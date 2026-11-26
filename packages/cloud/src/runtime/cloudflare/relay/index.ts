@@ -39,11 +39,12 @@ export type CollaborationRelayObjectClass = new (
 const documentIdSchema = v.pipe(v.string(), v.uuid())
 
 /**
- * The most a room's document may hold on Cloudflare. A Durable Object has 128 MB of memory for
- * the document, the update joining it, and the snapshot written from it, so a room past this is
- * turned away and its editors save without one.
+ * The most a room's encoded document may hold on Cloudflare. A Durable Object has 128 MB of
+ * memory, in which the relay merges, diffs, and converts the room's encoded state, each step
+ * writing a copy about the room's size beside it, so an update past this is turned away and its
+ * editor saves without the room.
  */
-export const CLOUDFLARE_MAXIMUM_ROOM_BYTES = 32 * 1024 * 1024
+export const CLOUDFLARE_MAXIMUM_ROOM_BYTES = 24 * 1024 * 1024
 
 /**
  * The document's relay object. With a jurisdiction, objects are created and keep their storage

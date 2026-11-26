@@ -4,8 +4,9 @@ import { detectPlatform } from '@tanstack/hotkeys'
 import { Window } from 'happy-dom'
 import { defineComponent, h } from 'vue'
 
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createDocumentGraph, createEditor, type Editor } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { slideRows } from '@open-pencil/scene-graph/slides'
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 
 import { provideEditor } from '#vue/editor/context'
@@ -123,6 +124,18 @@ describe('useEditorKeyboard', () => {
     expect(editor.state.activeTool).toBe('RECTANGLE')
     editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
     press('KeyP')
+    expect(editor.state.activeTool).toBe('SELECT')
+  })
+
+  test('Shift+S adds a slide in a deck and picks the Section tool in a design', () => {
+    const editor = mountKeyboard()
+    press('KeyS', { key: 'S', shiftKey: true })
+    expect(editor.state.activeTool).toBe('SECTION')
+    editor.setTool('SELECT')
+    editor.replaceGraph(createDocumentGraph('slides', 'light'))
+    const before = slideRows(editor.graph, editor.state.currentPageId).flat().length
+    expect(press('KeyS', { key: 'S', shiftKey: true })).toBe(true)
+    expect(slideRows(editor.graph, editor.state.currentPageId).flat()).toHaveLength(before + 1)
     expect(editor.state.activeTool).toBe('SELECT')
   })
 

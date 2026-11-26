@@ -30,6 +30,7 @@ export {
   COLLAB_ACTIONS,
   decodeRoomUpdate,
   encodeSyncReply,
+  encodeSyncReplyFromUpdate,
   MAX_COLLAB_MESSAGE_BYTES,
   RELAY_SERVER_PEER
 } from './room/protocol'

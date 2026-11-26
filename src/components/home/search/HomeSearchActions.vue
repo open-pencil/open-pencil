@@ -26,7 +26,8 @@ const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 /** What Home offers to create, side by side, as Figma's Home and New file tab offer theirs. */
 const CREATE_CHOICES = [
   { kind: 'design', label: 'createDesign', icon: DOCUMENT_KIND_ICONS.design },
-  { kind: 'board', label: 'createBoard', icon: DOCUMENT_KIND_ICONS.board }
+  { kind: 'board', label: 'createBoard', icon: DOCUMENT_KIND_ICONS.board },
+  { kind: 'slides', label: 'createSlides', icon: DOCUMENT_KIND_ICONS.slides }
 ] as const satisfies ReadonlyArray<{ kind: DocumentKind; label: string; icon: unknown }>
 const query = defineModel<string>({ required: true })
 const menu = useMessages('menu')
