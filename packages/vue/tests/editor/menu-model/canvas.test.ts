@@ -131,7 +131,9 @@ describe('buildCanvasContextMenu', () => {
   test('offers Set as thumbnail for a layer that can be one, and Restore on the chosen one', () => {
     const idsFor = (action: 'set' | 'restore' | null) =>
       itemIds(
-        buildCanvasContextMenu(options({ selection: selection({ thumbnailAction: ref(action) }) }))
+        buildCanvasContextMenu(
+          options({ selection: selection({ thumbnailAction: computed(() => action) }) })
+        )
       )
     expect(idsFor('set')).toContain('selection.setAsThumbnail')
     expect(idsFor('set')).not.toContain('selection.restoreDefaultThumbnail')
