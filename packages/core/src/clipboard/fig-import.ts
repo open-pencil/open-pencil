@@ -8,6 +8,25 @@ import {
   prepareGraphTransfer
 } from '@open-pencil/scene-graph/transfer'
 
+import { heldShaderAssets, shaderAssetKey } from './shader-definitions'
+
+/**
+ * Leaves out the shader definitions the document already holds: one library shader has one
+ * definition in a file, and a paint finds it by key and version.
+ */
+function withoutHeldShaders(changes: NodeChange[], graph: SceneGraph): NodeChange[] {
+  const held = heldShaderAssets(graph)
+  if (held.size === 0) return changes
+  return changes.filter(
+    (change) =>
+      change.type !== 'CODE_COMPONENT' ||
+      typeof change.key !== 'string' ||
+      !held.has(
+        shaderAssetKey(change.key, typeof change.version === 'string' ? change.version : undefined)
+      )
+  )
+}
+
 /** Interpret in isolation before any destination mutation. */
 export function prepareClipboardImport(
   changes: NodeChange[],
@@ -17,7 +36,9 @@ export function prepareClipboardImport(
   offsetX = 0,
   offsetY = 0
 ) {
-  const fragment = materializeFigFragment(changes, blobs, { missingComponent: 'detach-empty' })
+  const fragment = materializeFigFragment(withoutHeldShaders(changes, graph), blobs, {
+    missingComponent: 'detach-empty'
+  })
   const plan = prepareGraphTransfer({
     source: fragment.graph,
     rootIds: fragment.rootIds,
