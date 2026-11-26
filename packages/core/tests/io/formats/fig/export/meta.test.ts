@@ -11,6 +11,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, readFigArchiveMeta } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { imageSize } from '@open-pencil/scene-graph/images'
+import { documentThumbnail, setDocumentThumbnail } from '@open-pencil/scene-graph/thumbnail'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 setDefaultTimeout(60_000)
@@ -66,6 +67,39 @@ describe('.fig meta.json', () => {
     const { meta } = readArchive(await exportFigFile(graph, { renderHeadlessThumbnail: true }))
 
     expect(meta.client_meta.render_coordinates).toEqual({ x: 49, y: 3, width: 345, height: 308 })
+  })
+
+  test('a frame set as thumbnail is what the thumbnail shows, after a round trip too', async () => {
+    const { graph, pageId } = landingPage()
+    const cover = graph.createNode('FRAME', pageId, { x: 600, y: 40, width: 400, height: 200 })
+    setDocumentThumbnail(graph, cover.id)
+    const saved = await exportFigFile(graph, { pageId, renderHeadlessThumbnail: true })
+
+    expect(readArchive(saved).meta.client_meta.render_coordinates).toEqual({
+      x: 600,
+      y: 40,
+      width: 400,
+      height: 200
+    })
+    const reopened = await parseFigFile(saved.slice().buffer, { populate: 'first-page' })
+    expect(documentThumbnail(reopened)?.id).toBe(cover.id)
+  })
+
+  test('choosing a thumbnail in a reopened file draws a new one', async () => {
+    const { graph, pageId } = landingPage()
+    const cover = graph.createNode('FRAME', pageId, { x: 600, y: 40, width: 400, height: 200 })
+    const saved = await exportFigFile(graph, { pageId, renderHeadlessThumbnail: true })
+    const reopened = await parseFigFile(saved.slice().buffer, { populate: 'first-page' })
+    // The only edit: the choice itself.
+    setDocumentThumbnail(reopened, cover.id)
+    const { meta } = readArchive(
+      await exportFigFile(reopened, {
+        pageId: reopened.getPages()[0].id,
+        renderHeadlessThumbnail: true
+      })
+    )
+
+    expect(meta.client_meta.render_coordinates).toEqual({ x: 600, y: 40, width: 400, height: 200 })
   })
 
   test('describes the placeholder when no thumbnail was rendered', async () => {

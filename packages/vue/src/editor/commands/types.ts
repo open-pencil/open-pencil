@@ -22,6 +22,8 @@ export type EditorCommandId =
   | 'selection.detachIcon'
   | 'selection.goToMainComponent'
   | 'selection.createSlot'
+  | 'selection.setAsThumbnail'
+  | 'selection.restoreDefaultThumbnail'
   | 'selection.wrapInAutoLayout'
   | 'selection.toggleMask'
   | 'selection.bringForward'
