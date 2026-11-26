@@ -4,9 +4,7 @@ export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/sto
 export { createBrowserCSSRuntime, createCSSRuntime } from './runtime'
 export { attachImages, backgroundImageURLs } from './runtime/resources'
 export { parseHTMLDocument } from './import/markup'
-export { customPropertyValues, type CustomPropertyValue } from './import/variables/values'
 export {
-  htmlStylesheet,
   htmlToDesignDocument,
   htmlToSceneGraph,
   tailwindHTMLToDesignDocument,

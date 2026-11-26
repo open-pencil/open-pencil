@@ -10,7 +10,6 @@ import { anyCSSColor, mergedStyle } from '../css-values'
 import { maskSVG } from '../pictures'
 import { colorPart, referencedProperty } from './expression'
 import { ThemeVariables, type HTMLTheme, type ModeColor } from './theme'
-import { lengthOf } from './values'
 
 /** The element each layer was built from; its text layers come from the element that holds them. */
 export type LayerSources = Map<string, DesignElement>
@@ -82,10 +81,9 @@ function numberIn(node: SceneNode, field: string): number | null {
   return length?.unit === 'PIXELS' ? length.value : null
 }
 
-/** A property's number in an element's styles, in pixels unless it is an opacity. */
+/** A property's computed number in an element's styles. */
 function styledNumber(element: DesignElement, property: string): number | null {
-  const value = mergedStyle(element)[property]
-  return property === 'opacity' ? parseCSSNumber(value) : lengthOf(value)
+  return parseCSSNumber(mergedStyle(element)[property])
 }
 
 function isSameNumber(value: number | undefined, other: number | null): boolean {
@@ -173,7 +171,7 @@ class Binder {
     if (paint?.type === 'SOLID') this.#bindColor(node, `${list}/0/color`, colors)
   }
 
-  /** Binds numbers a single property gives and that hold its value still, in every mode. */
+  /** Binds numbers a single property gives, where its variable holds the layer's in every mode. */
   #bindNumbers(node: SceneNode, element: DesignElement): void {
     for (const [field, property] of numberSlots(node)) {
       const same = this.#counterparts.get(element)
@@ -182,7 +180,9 @@ class Binder {
       if (variable?.type !== 'FLOAT' || names.some((name) => name !== names[0])) continue
       const others = (same ?? []).slice(1).map((other) => styledNumber(other, property))
       const expected = [numberIn(node, field), ...others]
-      const values = this.#variables.numbers(variable)
+      // A text length or a radius takes a length; a unitless line height is no length.
+      const unit = field === 'opacity' ? 'number' : 'length'
+      const values = this.#variables.numbers(names[0] ?? '', unit)
       if (expected.length !== values.length) continue
       if (values.every((value, index) => isSameNumber(value, expected[index])))
         this.#graph.bindVariable(node.id, field, variable.id)

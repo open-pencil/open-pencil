@@ -7,6 +7,17 @@ import type { DesignTokens } from './tokens/references'
 
 export type DesignNode = DesignElement | DesignText
 
+/**
+ * A root custom property: as declared, such as `var(--primary)` for an alias, and what it computes
+ * to where that is a color, a length in pixels, or a number.
+ */
+export interface DesignCustomProperty {
+  declared: string
+  color?: string
+  length?: number
+  number?: number
+}
+
 export interface DesignDocument {
   type: 'document'
   children: DesignNode[]
@@ -22,10 +33,9 @@ export interface DesignDocument {
    */
   background?: string
   /**
-   * The root element's custom properties as declared, such as `var(--primary)` for an alias, when
-   * the runtime was asked for references.
+   * The root element's custom properties, by name, when the runtime was asked for references.
    */
-  customProperties?: Record<string, string>
+  customProperties?: Record<string, DesignCustomProperty>
   sourceGraph?: SceneGraph
   /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
   tokens?: DesignTokens

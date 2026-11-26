@@ -1,18 +1,36 @@
-import type { DesignDocument } from '#dom-css/types'
+import type { DesignCustomProperty, DesignDocument } from '#dom-css/types'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneGraph, Variable, VariableValue } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { anyCSSColor } from '../css-values'
 import { expressionLabel, referencedProperty } from './expression'
-import type { CustomPropertyValue } from './values'
 
-/** One mode of an imported theme: the page styled in it, and its custom properties' values. */
+/** One mode of an imported theme: the page styled in it, with its root's custom properties. */
 export interface ThemeMode {
   name: string
   styled: DesignDocument
-  values: ReadonlyMap<string, CustomPropertyValue>
+}
+
+/** What a custom property holds as a variable: a color, or a number with how CSS reads it. */
+type CustomPropertyValue =
+  | { type: 'COLOR'; color: Color }
+  | { type: 'FLOAT'; number: number; unit: 'length' | 'number' }
+
+function valueOf(property: DesignCustomProperty | undefined): CustomPropertyValue | null {
+  const color = anyCSSColor(property?.color)
+  if (color) return { type: 'COLOR', color }
+  if (property?.length !== undefined)
+    return { type: 'FLOAT', number: property.length, unit: 'length' }
+  if (property?.number !== undefined)
+    return { type: 'FLOAT', number: property.number, unit: 'number' }
+  return null
+}
+
+function valueIn(mode: ThemeMode, property: string): CustomPropertyValue | null {
+  return valueOf(mode.styled.customProperties?.[property])
 }
 
 /** A page's custom properties to import as variables, one mode per way the page was styled. */
@@ -48,11 +66,13 @@ export class ThemeVariables {
   readonly #graph: SceneGraph
   readonly #collectionId: string
   readonly #modeIds: string[]
+  readonly #modes: readonly ThemeMode[]
   readonly #byProperty = new Map<string, Variable>()
   readonly #combined = new Map<string, Variable>()
 
   constructor(graph: SceneGraph, theme: HTMLTheme) {
     this.#graph = graph
+    this.#modes = theme.modes
     const collection = graph.createCollection(theme.collection)
     this.#collectionId = collection.id
     const [first, ...rest] = theme.modes
@@ -65,8 +85,9 @@ export class ThemeVariables {
   }
 
   #createProperties({ modes }: HTMLTheme): void {
-    const initial = modes[0].values
-    for (const [property, value] of initial) {
+    for (const property of Object.keys(modes[0].styled.customProperties ?? {})) {
+      const value = valueIn(modes[0], property)
+      if (!value) continue
       const variable = this.#graph.createVariable(
         property.replace(/^--/, ''),
         value.type,
@@ -80,9 +101,10 @@ export class ThemeVariables {
         variable,
         modes.map((mode) => {
           // A property a mode sets to something else entirely keeps the first mode's value.
-          const own = mode.values.get(property)
-          const value = own?.type === variable.type ? own : initial.get(property)
-          const alias = this.named(referencedProperty(mode.styled.customProperties?.[property]))
+          const own = valueIn(mode, property)
+          const value = own?.type === variable.type ? own : valueIn(modes[0], property)
+          const declared = mode.styled.customProperties?.[property]?.declared
+          const alias = this.named(referencedProperty(declared))
           if (alias && alias.type === variable.type && alias.id !== variable.id)
             return { aliasId: alias.id }
           return value?.type === 'COLOR' ? value.color : (value?.number ?? 0)
@@ -101,11 +123,14 @@ export class ThemeVariables {
     return property ? this.#byProperty.get(property) : undefined
   }
 
-  /** A number variable's value in each mode. */
-  numbers(variable: Variable): (number | undefined)[] {
-    return this.#modeIds.map((modeId) => {
-      const value = this.#graph.resolveVariable(variable.id, modeId)
-      return typeof value === 'number' ? value : undefined
+  /**
+   * A number variable's value in each mode where it holds `unit`, as a length a layer's pixels
+   * can take, or a plain number such as an opacity.
+   */
+  numbers(property: string, unit: 'length' | 'number'): (number | undefined)[] {
+    return this.#modes.map((mode) => {
+      const own = valueIn(mode, property)
+      return own?.type === 'FLOAT' && own.unit === unit ? own.number : undefined
     })
   }
 

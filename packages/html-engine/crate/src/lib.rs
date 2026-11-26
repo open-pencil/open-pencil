@@ -5,6 +5,7 @@
 
 mod references;
 mod states;
+mod values;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -833,13 +834,22 @@ pub fn capture(references: bool) -> String {
     with_session(|s| {
         s.doc.handle_messages();
         s.doc.resolve(0.0);
+        let mut root = references
+            .then(|| Root::of(&s.doc, &s.doc.guard().read()))
+            .flatten();
+        let root_styles = s.doc.try_root_element().and_then(|element| {
+            element
+                .primary_styles()
+                .map(|styles| ServoArc::clone(&styles))
+        });
+        if let (Some(root), Some(styles)) = (root.as_mut(), root_styles) {
+            root.type_values(s.doc.stylist_device(), &styles);
+        }
         let doc = &s.doc;
         let mut nodes = Vec::new();
         let context = Context {
             local: local_bases(doc),
-            root: references
-                .then(|| Root::of(doc, &doc.guard().read()))
-                .flatten(),
+            root,
         };
         let scope = Scope::default();
         let root = doc.root_node();

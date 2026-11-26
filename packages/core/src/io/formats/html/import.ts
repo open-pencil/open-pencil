@@ -1,7 +1,5 @@
 import {
   compileTailwindCSS,
-  customPropertyValues,
-  htmlStylesheet,
   htmlToDesignDocument,
   type DesignDocument,
   type DesignResource,
@@ -202,20 +200,7 @@ export async function readHTMLDocument(
   const readTheme = async (collection = DEFAULT_COLLECTION): Promise<HTMLTheme> => {
     const pages = [styled]
     for (const mode of modes.slice(1)) pages.push(await style(mode))
-    const stylesheet = htmlStylesheet(html, { ...styleOptions, cssText }) ?? ''
-    const themed: ThemeMode[] = []
-    for (const [index, { name, rootAttributes }] of modes.entries()) {
-      const values = await customPropertyValues(
-        runtime,
-        stylesheet,
-        pages[index].customProperties ?? {},
-        {
-          viewport: styleOptions.compute?.viewport,
-          rootAttributes
-        }
-      )
-      themed.push({ name, styled: pages[index], values })
-    }
+    const themed: ThemeMode[] = modes.map(({ name }, index) => ({ name, styled: pages[index] }))
     return { collection, modes: themed }
   }
   const graph = await sceneGraphFromStyledHTML(styled, {

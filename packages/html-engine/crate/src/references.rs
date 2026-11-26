@@ -10,8 +10,9 @@ use std::rc::Rc;
 use blitz_dom::{BaseDocument, Node};
 use blitz_traits::node_id::NodeId;
 use cssparser::{ParseError, Parser, Token, TokenSerializationType};
-use serde_json::{Map, Value};
+use serde_json::{Map, Value, json};
 use style::Atom;
+use style::device::Device;
 use style::properties::{
     CSSWideKeyword, ComputedValues, CustomDeclarationValue, LonghandId, PropertyDeclaration,
     PropertyDeclarationBlock,
@@ -37,6 +38,8 @@ pub struct Root {
     node: NodeId,
     computed: HashMap<Atom, String>,
     declared: HashMap<Atom, String>,
+    /// What each computed value is as a variable's, where it is a color, length, or number.
+    values: HashMap<Atom, Value>,
 }
 
 impl Root {
@@ -52,10 +55,24 @@ impl Root {
             node: element.id,
             computed,
             declared,
+            values: HashMap::new(),
         })
     }
 
-    /// Each property as the root declares it, such as `var(--primary)`, by its full name.
+    /// Types each computed value as a variable's, in the root element's styles.
+    pub fn type_values(&mut self, device: &Device, styles: &ComputedValues) {
+        let texts = self
+            .computed
+            .iter()
+            .map(|(name, text)| (name, text.as_str()));
+        self.values = crate::values::typed(device, styles, texts)
+            .into_iter()
+            .map(|(name, value)| (name.clone(), value))
+            .collect();
+    }
+
+    /// Each property, by its full name, as the root declares it, such as `var(--primary)`, with
+    /// what it holds as a variable's value when it is a color, length, or number.
     pub fn to_json(&self) -> Value {
         let out: Map<String, Value> = self
             .declared
@@ -64,7 +81,14 @@ impl Root {
             .map(|(name, text)| {
                 let mut property = String::from("--");
                 let _ = serialize_name(name, &mut property);
-                (property, text.trim().into())
+                let mut value = json!({ "declared": text.trim() });
+                if let Some(Value::Object(typed)) = self.values.get(name) {
+                    value
+                        .as_object_mut()
+                        .into_iter()
+                        .for_each(|out| out.extend(typed.clone()));
+                }
+                (property, value)
             })
             .collect();
         Value::Object(out)

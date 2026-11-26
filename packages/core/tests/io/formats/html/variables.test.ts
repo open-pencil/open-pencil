@@ -110,6 +110,20 @@ describe('variables from custom properties', () => {
     expect(values(graph, 'a')).toMatchObject([{ r: 0, g: 0, b: 1 }])
   })
 
+  test('compute lengths, colors, and numbers as the root does', async () => {
+    const { graph } = await readHTMLDocument('<p>x</p>', {
+      cssText:
+        'html { font-size: 10px; color: rgb(0 0 255) } :root { --gap: calc(2rem + 1px); --mix: color-mix(in srgb, currentColor 50%, white); --scale: 1.5; --share: 50%; --font: Inter, sans-serif }',
+      variables: {}
+    })
+    expect(values(graph, 'gap')).toEqual([21])
+    expect(values(graph, 'mix')).toMatchObject([{ r: 0.5, g: 0.5, b: 1, a: 1 }])
+    expect(values(graph, 'scale')).toEqual([1.5])
+    const names = [...graph.variables.values()].map(({ name }) => name)
+    expect(names).not.toContain('share')
+    expect(names).not.toContain('font')
+  })
+
   test('read each value past generated content', async () => {
     const { graph } = await readHTMLDocument('<p>x</p>', {
       cssText: ':root { --a: red; --b: blue } *::before { content: "x"; color: green }',

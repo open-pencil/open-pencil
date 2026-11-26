@@ -70,8 +70,21 @@ export const captureSchema = v.object({
   viewport: v.tuple([v.number(), v.number()]),
   /** The initial values of the properties nodes leave out of `style` when they hold them. */
   initial: v.record(v.string(), v.string()),
-  /** The root element's custom properties as declared, when the capture reports references. */
-  variables: v.optional(v.record(v.string(), v.string())),
+  /**
+   * The root element's custom properties, as declared and as a color, a length in pixels, or a
+   * number where they compute to one, when the capture reports references.
+   */
+  variables: v.optional(
+    v.record(
+      v.string(),
+      v.object({
+        declared: v.string(),
+        color: v.optional(v.string()),
+        length: v.optional(v.number()),
+        number: v.optional(v.number())
+      })
+    )
+  ),
   nodes: v.array(capturedNodeSchema)
 })
 
