@@ -5,6 +5,7 @@ import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { findLayerByPath } from '@open-pencil/scene-graph/behaviours'
 
+import { behaviourTransitionCSS, transitionDeclarations } from '../transition'
 import { variantConditions } from './conditions'
 import {
   allElements,
@@ -161,6 +162,13 @@ export function stateStyles(
   for (const element of elements) {
     settleCombined(element, drawn, hiddenAtRest.has(element))
     element.rules = pruneCombined(element.rules)
+  }
+  // The component's transition eases every layer a state changes into its new look.
+  const transition = behaviourTransitionCSS(graph, set)
+  if (transition) {
+    const declarations = transitionDeclarations(transition)
+    for (const element of elements)
+      if (element.rules.length > 0) element.base = { ...element.base, ...declarations }
   }
   return { name: set.name, restId: rest.id, root }
 }

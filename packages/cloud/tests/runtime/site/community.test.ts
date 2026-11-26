@@ -91,6 +91,17 @@ async function headOf(page: Response) {
   return head
 }
 
+/** A page's one structured data block: its nonce, and its graph as parsed JSON. */
+function structuredData(html: string) {
+  const blocks = [
+    ...html.matchAll(/<script type="application\/ld\+json" nonce="([^"]+)">([\s\S]*?)<\/script>/g)
+  ]
+  expect(blocks).toHaveLength(1)
+  const [, nonce = '', json = ''] = blocks[0] ?? []
+  const graph: unknown = JSON.parse(json)
+  return { nonce, graph }
+}
+
 describe('community pages', () => {
   test('describe a document to link previews, escaped, with its preview as the image', async () => {
     const page = await visit(server(true), `/community/${DOCUMENT_ID}`)
@@ -151,23 +162,90 @@ describe('community pages', () => {
 
   test('describe the document as structured data that cannot close its script', async () => {
     const html = await (await visit(server(true), `/community/${DOCUMENT_ID}`)).text()
-    const scripts = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)
-    expect(scripts).toHaveLength(1)
-    const json = (scripts?.[0] ?? '').replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '')
-    const data: unknown = JSON.parse(json)
-    expect(data).toMatchObject({
-      '@type': 'CreativeWork',
-      name: 'Tour <of> "OpenPencil"',
-      description: 'Notes </script><b>bold</b>',
-      url: `https://cloud.example/community/${DOCUMENT_ID}`,
-      version: '0.17.0'
+    const { graph } = structuredData(html)
+    const url = `https://cloud.example/community/${DOCUMENT_ID}`
+    expect(graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({
+          '@type': 'WebPage',
+          url,
+          dateModified: expect.any(String),
+          mainEntity: { '@id': `${url}#main-entity` }
+        }),
+        expect.objectContaining({
+          '@id': `${url}#main-entity`,
+          '@type': 'CreativeWork',
+          name: 'Tour <of> "OpenPencil"',
+          description: 'Notes </script><b>bold</b>',
+          url,
+          version: '0.17.0'
+        })
+      ])
     })
+  })
+
+  test('name each page’s structured data by its own address', async () => {
+    const html = await (await visit(server(true), `/community/${DOCUMENT_ID}`)).text()
+    const gallery = await (await visit(server(true), '/community')).text()
+    expect(structuredData(html).graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({ '@id': `https://cloud.example/community/${DOCUMENT_ID}#webpage` })
+      ])
+    })
+    expect(structuredData(gallery).graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({ '@id': 'https://cloud.example/community#webpage' })
+      ])
+    })
+  })
+
+  test('keep a name with template tokens as it is, in the title and the structured data', async () => {
+    const name = 'Plan %separator draft %s %20'
+    const page = await visit(server(true, name), `/community/${DOCUMENT_ID}`)
+    const html = await page.text()
+    expect(html).toContain(`<title>${name} · Community · cloud.example</title>`)
+    expect(structuredData(html).graph).toMatchObject({
+      '@graph': expect.arrayContaining([expect.objectContaining({ '@type': 'CreativeWork', name })])
+    })
+  })
+
+  test('let only the structured data carrying this response’s nonce run inline', async () => {
+    const app = server(true)
+    const nonces = []
+    for (const path of [`/community/${DOCUMENT_ID}`, '/community']) {
+      const page = await visit(app, path)
+      const policy = page.headers.get('Content-Security-Policy') ?? ''
+      const { nonce } = structuredData(await page.text())
+      expect(policy).toContain(`'nonce-${nonce}'`)
+      expect(policy).not.toContain('unsafe-inline')
+      expect(policy).toContain("frame-ancestors 'none'")
+      nonces.push(nonce)
+    }
+    expect(new Set(nonces).size).toBe(2)
   })
 
   test('list the gallery’s files with links to their pages', async () => {
     const html = await (await visit(server(true), '/community')).text()
     expect(html).toContain(`href="/community/${DOCUMENT_ID}"`)
-    expect(html).toContain('"@type":"CollectionPage"')
+    expect(structuredData(html).graph).toMatchObject({
+      '@graph': expect.arrayContaining([
+        expect.objectContaining({
+          '@type': 'CollectionPage',
+          url: 'https://cloud.example/community',
+          mainEntity: { '@id': 'https://cloud.example/community#main-entity' }
+        }),
+        expect.objectContaining({
+          '@id': 'https://cloud.example/community#main-entity',
+          '@type': 'ItemList',
+          itemListElement: [
+            expect.objectContaining({
+              position: 1,
+              url: `https://cloud.example/community/${DOCUMENT_ID}`
+            })
+          ]
+        })
+      ])
+    })
   })
 
   test('list the gallery’s pages in a sitemap where indexing is allowed', async () => {
