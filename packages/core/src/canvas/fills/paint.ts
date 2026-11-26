@@ -219,12 +219,13 @@ function resolvePatternSource(graph: SceneGraph, sourceId: string): SceneNode | 
   return null
 }
 
-function applyPatternFill(
+export function applyPatternFill(
   r: SkiaRenderer,
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  patternStack: Set<string>
+  patternStack: Set<string>,
+  paints: readonly Paint[] = [r.fillPaint]
 ): boolean {
   const sourceId = fill.sourceNodeId
   if (!sourceId || sourceId === node.id || sourceId === node.source.id) return false
@@ -251,8 +252,10 @@ function applyPatternFill(
     undefined,
     tileRect
   )
-  r.fillPaint.setShader(shader)
-  r.fillPaintShaded = true
+  for (const paint of paints) {
+    paint.setShader(shader)
+    markShaded(r, paint)
+  }
   shader.delete()
   picture.delete()
   return true
