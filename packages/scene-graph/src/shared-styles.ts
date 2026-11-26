@@ -158,19 +158,6 @@ export function styleDetachmentChanges(
   return next
 }
 
-/** The node of the shared style with `id`, when the document holds one of `type`. */
-export function findSharedStyle(
-  graph: SceneGraph,
-  id: string,
-  type: SharedStyleType
-): SceneNode | undefined {
-  if (!id) return undefined
-  for (const node of graph.getAllNodes()) {
-    if (node.sharedStyleType === type && node.source.id === id) return node
-  }
-  return undefined
-}
-
 /** A new local style's ID, in the shape Figma gives one: `S:` and a 40-digit hex key. */
 export function newSharedStyleId(): string {
   return `S:${randomHex(20)},`

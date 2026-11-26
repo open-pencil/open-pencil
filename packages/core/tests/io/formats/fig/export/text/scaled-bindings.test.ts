@@ -7,7 +7,6 @@ import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
-import { findSharedStyle } from '@open-pencil/scene-graph/shared-styles'
 import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
@@ -27,7 +26,7 @@ function tripledText() {
   const size = graph.createVariable('Size', 'FLOAT', collection.id, 5)
   const style = api.createTextStyle()
   style.fontSize = 5
-  const styleNode = expectDefined(findSharedStyle(graph, style.id, 'TEXT'), 'style')
+  const styleNode = expectDefined(graph.getSharedStyleNode(style.id, 'TEXT'), 'style')
   graph.bindVariable(styleNode.id, 'fontSize', size.id)
   const component = graph.createNode('COMPONENT', page.id, { width: 40, height: 20 })
   graph.createNode('TEXT', component.id, { text: 'Hello world', fontSize: 8 })

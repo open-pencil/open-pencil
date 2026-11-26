@@ -14,7 +14,7 @@ function restyles(changes: Partial<SceneNode>): boolean {
 }
 
 function styleKey(node: SceneNode): string | null {
-  return node.sharedStyleType ? node.source.id : null
+  return node.sharedStyleType && node.source.id ? node.source.id : null
 }
 
 export class SharedStyleIndex {
@@ -24,6 +24,9 @@ export class SharedStyleIndex {
   constructor(private readonly nodes: () => NodeMap) {}
 
   styleNode(styleId: string, type: SharedStyleType): SceneNode | undefined {
+    if (!styleId) {
+      return undefined
+    }
     const nodes = this.current()
     for (const id of this.nodeIdsByStyleId.get(styleId) ?? []) {
       const node = nodes.get(id)

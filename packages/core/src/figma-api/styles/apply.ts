@@ -9,7 +9,6 @@ import type {
 } from '@open-pencil/scene-graph'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import {
-  findSharedStyle,
   sharedStyleDetachPatch,
   sharedStylePatch,
   sharedStyleRefKey,
@@ -63,7 +62,7 @@ export function styleChanges(
     const patch = sharedStyleDetachPatch(kind)
     return wholeText ? textStyleChanges(node, patch) : patch
   }
-  const style = findSharedStyle(graph, styleId, sharedStyleTypeForKind(kind))
+  const style = graph.getSharedStyleNode(styleId, sharedStyleTypeForKind(kind))
   if (!style) return null
   const patch = sharedStylePatch(kind, node, styleId, style)
   return wholeText ? layerTextStyleChanges(node, patch) : patch
@@ -80,7 +79,7 @@ export function bindStylePaints(
   styleId: string
 ): void {
   if ((kind !== 'fill' && kind !== 'stroke') || !styleId) return
-  const style = findSharedStyle(graph, styleId, 'FILL')
+  const style = graph.getSharedStyleNode(styleId, 'FILL')
   if (!style) return
   setPaintBindings(graph, node, kind === 'fill' ? 'fills' : 'strokes', figmaFills(style))
 }
@@ -96,7 +95,7 @@ export function bindStyleEffects(
   styleId: string
 ): void {
   if (kind !== 'effect' || !styleId) return
-  const style = findSharedStyle(graph, styleId, 'EFFECT')
+  const style = graph.getSharedStyleNode(styleId, 'EFFECT')
   if (!style) return
   setEffectBindings(graph, node, figmaEffects(style))
 }

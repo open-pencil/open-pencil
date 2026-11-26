@@ -12,7 +12,7 @@ import {
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { scaledTextStyleLengths } from '@open-pencil/scene-graph/scaling'
-import { findSharedStyle, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
+import { SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
 import { boundNumberValue, textStyleBoundVariables } from '@open-pencil/scene-graph/variables'
 
 import { parseFigma } from '#core/figma-api/validation'
@@ -45,7 +45,7 @@ export function rangeSharedStylePatch(
 ): CharacterStyleOverride | null {
   const key = kind === 'text' ? 'textStyleId' : 'fillStyleId'
   if (!styleId) return { [key]: null }
-  const style = findSharedStyle(graph, styleId, kind === 'text' ? 'TEXT' : 'FILL')
+  const style = graph.getSharedStyleNode(styleId, kind === 'text' ? 'TEXT' : 'FILL')
   if (!style) return null
   return sharedStyleRangePatcher(graph, kind, styleId, style)(node)
 }

@@ -625,6 +625,7 @@ export class SceneGraph {
     this.applyNodeChanges(node, this.impliedChanges(node, omitBy(changes, isUndefined)))
   }
 
+  /** The node of the shared style with this ID, when the document holds one of `type`. */
   getSharedStyleNode(styleId: string, type: SharedStyleType): SceneNode | undefined {
     return this.sharedStyleIndex.styleNode(styleId, type)
   }
