@@ -43,10 +43,11 @@ const AUTH_TIMEOUT_MS = DEADLINE_MS.request
 const COMPACTION_GROWTH_SHARE = 0.25
 const COMPACTION_GROWTH_BYTES = 1024 * 1024
 /**
- * How full a room is before any growth asks for a compaction, since only a compaction frees what
- * the room's deletions hold, and a full room takes nothing more until it is freed.
+ * The least growth that asks for a compaction as a room nears its limit, as a share of the limit:
+ * there the relay asks once the room has grown by half the room it had left, and a full room
+ * takes nothing more until a compaction frees it.
  */
-const COMPACTION_FULL_SHARE = 0.75
+const COMPACTION_LEAST_SHARE = 1 / 64
 /** How long an editor has to answer a compaction request before another may be asked. */
 const COMPACTION_ANSWER_MS = 30 * SECOND_MS
 /** A state vector naming nothing, which a peer answers with its whole document. */
@@ -174,7 +175,9 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
           state,
           log,
           compactedBytes: state.bytes,
-          compactionAskedAt: null,
+          deletions: 1,
+          compactedDeletions: 0,
+          compactionAsked: null,
           asked: new Map()
         }
         room.content = content
@@ -215,30 +218,37 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   }
 
   /**
-   * Asks an editor for its whole copy of the document once the room has grown well past its last
-   * compaction, or at all once it is nearly full: an editor's copy is collected of what the room
-   * deleted, which the relay's encoded room keeps (`RoomState`). The editor longest in the room is
-   * asked among those with nothing left to answer, so an editor that stopped answering is passed
-   * over once its request lapses. Checked as the room changes, never by a timer.
+   * Whether the room deleted something since its last compaction and has grown well past it: an
+   * editor's copy is collected of what the room deleted, which the relay's encoded room keeps
+   * (`RoomState`), and asking for it costs a pass over the whole room. A room nearing its limit
+   * asks sooner, each time it has grown by half the room it had left.
+   */
+  function compactionDue(content: RoomContent): boolean {
+    if (content.deletions === content.compactedDeletions) return false
+    const left = maximumRoomBytes - content.compactedBytes
+    const growth = Math.min(
+      Math.max(COMPACTION_GROWTH_BYTES, content.compactedBytes * COMPACTION_GROWTH_SHARE),
+      Math.max(maximumRoomBytes * COMPACTION_LEAST_SHARE, left / 2)
+    )
+    return content.state.bytes >= content.compactedBytes + growth
+  }
+
+  /**
+   * Asks an editor for its whole copy of the document once a compaction is due. The editor longest
+   * in the room is asked among those with nothing left to answer, so an editor that stopped
+   * answering is passed over once its request lapses. Checked as the room changes, never by a
+   * timer.
    */
   function askForCompaction(room: Room, content: RoomContent) {
-    const asked = content.compactionAskedAt
-    if (asked !== null && Date.now() - asked < COMPACTION_ANSWER_MS) return
-    const growth = Math.max(
-      COMPACTION_GROWTH_BYTES,
-      content.compactedBytes * COMPACTION_GROWTH_SHARE
-    )
-    const { bytes } = content.state
-    const full = bytes >= maximumRoomBytes * COMPACTION_FULL_SHARE
-    if (bytes < content.compactedBytes + growth && !(full && bytes > content.compactedBytes)) {
-      return
-    }
+    const asked = content.compactionAsked
+    if (asked !== null && Date.now() - asked.at < COMPACTION_ANSWER_MS) return
+    if (!compactionDue(content)) return
     const editor = [...room.peers.values()].find(
       (peer) =>
         peer.authorization.permission === 'edit' && !content.asked.has(peer.id) && current(peer)
     )
     if (!editor) return
-    content.compactionAskedAt = Date.now()
+    content.compactionAsked = { at: Date.now(), deletions: content.deletions }
     content.asked.set(editor.id, ['copy'])
     send(editor.socket, {
       type: 'message',
@@ -453,7 +463,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     if (!room?.peers.delete(peer.id)) return
     const content = room.content
     // A compaction it was asked for ends with it, so the next change asks another editor.
-    if (content?.asked.get(peer.id)?.includes('copy')) content.compactionAskedAt = null
+    if (content?.asked.get(peer.id)?.includes('copy')) content.compactionAsked = null
     content?.asked.delete(peer.id)
     sendAll(deliverable(room.peers.values()), { type: 'leave', peerId: peer.id })
     void leaveRoom(room)

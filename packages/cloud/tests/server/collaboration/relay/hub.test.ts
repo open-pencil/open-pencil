@@ -93,7 +93,7 @@ describe('collaboration relay', () => {
       target: RELAY_SERVER_PEER,
       payload: syncReply('')
     })
-    // Filling three quarters of the room makes it ask for a compaction.
+    // Filling half of what the room had left makes it ask for a compaction.
     alice.send({
       type: 'message',
       namespace: COLLAB_ACTIONS.yjsUpdate,
@@ -150,6 +150,53 @@ describe('collaboration relay', () => {
     } finally {
       setSystemTime()
     }
+  })
+
+  test('asks for a copy only once the room deleted something, and sooner near its limit', async () => {
+    const { relay: hub } = startTestRelay({ maximumRoomBytes: 64_000 })
+    const alice = await join(hub)
+    const document = new Y.Doc()
+    const text = document.getText('t')
+    const reply = (stateVector: Uint8Array) =>
+      alice.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.syncReply,
+        target: RELAY_SERVER_PEER,
+        payload: encodeSyncReply(document, stateVector)
+      })
+    const edit = (change: () => void) => {
+      const before = Y.encodeStateVector(document)
+      change()
+      alice.send({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.yjsUpdate,
+        target: null,
+        payload: Y.encodeStateAsUpdateV2(document, before)
+      })
+    }
+    const copyRequests = () => alice.messages(COLLAB_ACTIONS.syncStep1).slice(1)
+    const answerCopy = () => reply(new Uint8Array([0]))
+    reply(Y.encodeStateVector(new Y.Doc()))
+
+    // What the room was loaded with may hold deletions, so its first growth asks once.
+    edit(() => text.insert(0, 'a'.repeat(33_000)))
+    expect(copyRequests()).toHaveLength(1)
+    answerCopy()
+    // A room that only grows has nothing for a copy to collect.
+    edit(() => text.insert(0, 'b'.repeat(20_000)))
+    expect(copyRequests()).toHaveLength(1)
+    edit(() => text.delete(0, 10))
+    expect(copyRequests()).toHaveLength(2)
+    answerCopy()
+    // Under 11 KB from its limit, the room asks again once it grows by half of that.
+    edit(() => {
+      text.insert(0, 'c'.repeat(3_000))
+      text.delete(0, 10)
+    })
+    expect(copyRequests()).toHaveLength(2)
+    edit(() => text.insert(0, 'd'.repeat(3_000)))
+    expect(copyRequests()).toHaveLength(3)
+    expect(alice.closed).toBeNull()
   })
 
   test('takes an editor’s compressed answer into the room', async () => {
