@@ -16,7 +16,7 @@ import {
   McpServer,
   type AuthInfo
 } from '@modelcontextprotocol/server'
-import { Hono } from 'hono'
+import { Hono, type MiddlewareHandler } from 'hono'
 import { cors } from 'hono/cors'
 import * as v from 'valibot'
 
@@ -66,6 +66,8 @@ export type MCPRouteDependencies = {
    */
   callPairedTool?: (pairingId: string, call: AgentToolCall) => Promise<AgentToolOutcome>
   onError?: (error: Error) => void
+  /** Counts calls before they run, inside the endpoint's CORS so a browser client reads a refusal. */
+  limit?: MiddlewareHandler
 }
 
 /**
@@ -137,6 +139,7 @@ export function createMCPRoutes(dependencies: MCPRouteDependencies) {
         exposeHeaders: ['WWW-Authenticate', 'Mcp-Session-Id']
       })
     )
+    .use(CLOUD_MCP_PATH, dependencies.limit ?? ((_context, next) => next()))
     .all(CLOUD_MCP_PATH, async (context) => {
       const authorization = context.req.header('authorization')
       const token = authorization?.match(BEARER)?.[1]

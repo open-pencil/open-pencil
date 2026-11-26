@@ -58,6 +58,7 @@ export function createCloudApp(services: CloudServices) {
           fetchAPI: (request: Request): Response | Promise<Response> => cloudApp.fetch(request),
           oauth: Boolean(services.auth.oauth),
           callPairedTool: services.callPairedTool,
+          limit: limiters.agentPairingLimiter,
           onError: (error) =>
             void reportCloudError(services.reportError, 'MCP request failed', error, {
               source: 'request'
@@ -122,7 +123,6 @@ export function createCloudApp(services: CloudServices) {
     .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', routers.account)
     .route('/', routers.accessTokens)
-    .use(CLOUD_MCP_PATH, limiters.agentPairingLimiter)
     .route('/', mcp)
     .route('/', createPictureRoutes(app.pictures))
     .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)
