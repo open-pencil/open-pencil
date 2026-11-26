@@ -1479,7 +1479,7 @@
   },
   {
     "name": "set_behaviour",
-    "description": "Make a main component or set behave as a Reka UI control in preview and code, by its own property and slot names: e.g. { kind: \"switch\", values: { value: \"State\" }, parts: { thumb: \"Thumb\" }, states: \"Interaction\" }. On/off variant values are guessed from names like On and Off unless given as { property, on, off }. null removes it. Returns the behaviour and what it still misses; get_behaviour lists every kind.",
+    "description": "Make a main component or set behave as a Reka UI control in preview and code, by its own property and slot names: e.g. { kind: \"switch\", values: { value: \"State\" }, parts: { thumb: \"Thumb\" }, states: \"Interaction\" }. On/off variant values are guessed from names like On and Off unless given as { property, on, off }. transition: { duration, easing } eases state changes in preview and code: seconds or { variable: \"Duration/Fast\" }, a CSS easing such as \"ease-out\" or { variable: \"Easing/Standard\" }. null removes it. Returns the behaviour and what it still misses; get_behaviour lists every kind.",
     "mutates": true,
     "readOnly": false,
     "inputSchema": {
@@ -1612,6 +1612,136 @@
                       ]
                     }
                   ]
+                },
+                "transition": {
+                  "type": "object",
+                  "properties": {
+                    "duration": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "variable": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "variable"
+                          ]
+                        }
+                      ]
+                    },
+                    "easing": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "variable": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "variable"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "easing": {
+                              "enum": [
+                                "IN_CUBIC",
+                                "OUT_CUBIC",
+                                "INOUT_CUBIC",
+                                "LINEAR",
+                                "IN_BACK_CUBIC",
+                                "OUT_BACK_CUBIC",
+                                "INOUT_BACK_CUBIC",
+                                "CUSTOM_CUBIC",
+                                "SPRING",
+                                "GENTLE_SPRING",
+                                "CUSTOM_SPRING",
+                                "SPRING_PRESET_ONE",
+                                "SPRING_PRESET_TWO",
+                                "SPRING_PRESET_THREE",
+                                "HOLD",
+                                "EASE_IN"
+                              ],
+                              "type": "string"
+                            },
+                            "bezier": {
+                              "type": "object",
+                              "properties": {
+                                "x1": {
+                                  "type": "number"
+                                },
+                                "y1": {
+                                  "type": "number"
+                                },
+                                "x2": {
+                                  "type": "number"
+                                },
+                                "y2": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "x1",
+                                "y1",
+                                "x2",
+                                "y2"
+                              ]
+                            },
+                            "spring": {
+                              "type": "object",
+                              "properties": {
+                                "stiffness": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "damping": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "mass": {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0
+                                },
+                                "type": {
+                                  "enum": [
+                                    "NORMALIZED",
+                                    "PHYSICAL"
+                                  ],
+                                  "type": "string"
+                                },
+                                "platform": {
+                                  "enum": [
+                                    "IOS_WEB",
+                                    "ANDROID"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "stiffness",
+                                "damping",
+                                "mass"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "easing"
+                          ]
+                        }
+                      ]
+                    }
+                  }
                 }
               },
               "required": [
