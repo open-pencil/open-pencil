@@ -4,12 +4,12 @@ import { until, useMediaQuery } from '@vueuse/core'
 import { onMounted, onScopeDispose, shallowRef, watch } from 'vue'
 import IconSparkles from '~icons/lucide/sparkles'
 
+import type { JoinCollabRoom } from '@open-pencil/collab'
 import { CHAPTERS } from '@open-pencil/demo-tools/chapters'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 
 import type { useCollabIdentity } from '@/app/collab/identity'
 import { openRoomSession, type RoomSession } from '@/app/collab/session'
-import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { EditorStore } from '@/app/editor/active-store'
 import AppButton from '@/components/ui/button/AppButton.vue'
 

@@ -1,12 +1,12 @@
 import * as v from 'valibot'
 
 /**
- * What the router loads statically, gzipped: the bulk of startup, not all of it, as the boot code
- * before the router and any dynamic import at startup are left out. Raise it only for a deliberate
- * cost.
+ * What the editor's views load statically, gzipped: the bulk of startup, not all of it, as the
+ * boot code before them and any dynamic import at startup are left out. Raise it only for a
+ * deliberate cost.
  */
-export const STARTUP_BUDGET_KIB = 2872
-export const STARTUP_ENTRY = 'src/router.ts'
+export const STARTUP_BUDGET_KIB = 2973
+export const STARTUP_ENTRY = 'src/views/editor.ts'
 
 const manifestSchema = v.record(
   v.string(),

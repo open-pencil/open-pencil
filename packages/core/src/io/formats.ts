@@ -59,18 +59,19 @@ function lowerExt(name: string): string {
   return match?.[1] ?? ''
 }
 
-/** The file a document saves as: Figma's `.fig` for a design, FigJam's `.jam` for a board. */
-export const DOCUMENT_EXTENSIONS: Readonly<Record<DocumentKind, 'fig' | 'jam'>> = {
+/** The file a document saves as: Figma's `.fig` for a design, `.jam` for a board, `.deck` for slides. */
+export const DOCUMENT_EXTENSIONS = {
   design: 'fig',
-  board: 'jam'
-}
+  board: 'jam',
+  slides: 'deck'
+} as const satisfies Record<DocumentKind, string>
 
 export const figFormat: IOFormatAdapter<'fig'> = {
   id: 'fig',
   label: 'OpenPencil Document',
   role: 'native-document',
   category: 'document',
-  extensions: ['fig', 'jam'],
+  extensions: Object.values(DOCUMENT_EXTENSIONS),
   mimeTypes: ['application/octet-stream'],
   support: {
     readDocument: true,
@@ -83,7 +84,7 @@ export const figFormat: IOFormatAdapter<'fig'> = {
   exportOptions: FIXED_SIZE_EXPORT,
   matchesFile(fileName) {
     const ext = lowerExt(fileName)
-    return ext === 'fig' || ext === 'jam'
+    return Object.values<string>(DOCUMENT_EXTENSIONS).includes(ext)
   },
   async readDocument(input) {
     const data = input.data.slice().buffer

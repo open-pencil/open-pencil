@@ -7,14 +7,10 @@ import {
   textUpdate,
   until
 } from '#cloud-tests/helpers/relay'
-import {
-  COLLAB_ACTIONS,
-  RELAY_CLOSE,
-  RELAY_FRAGMENT_BYTES,
-  RELAY_SERVER_PEER,
-  relayClientMessages
-} from '#cloud/contract'
+import { RELAY_CLOSE, RELAY_FRAGMENT_BYTES, relayClientMessages } from '#cloud/contract'
 import * as Y from 'yjs'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 

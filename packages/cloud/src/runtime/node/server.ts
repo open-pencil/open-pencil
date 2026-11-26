@@ -164,6 +164,8 @@ async function startConfiguredServer(
   const cloudServer = createCloudServer(app, {
     site: siteFiles(environment),
     indexingPolicy: config.indexingPolicy,
+    publicURL: config.publicURL,
+    embedding: config.embeddingEnabled ? { allowedOrigins: config.embeddingOrigins } : undefined,
     reportError,
     forwardedRequestId: proxyRequestId
   })

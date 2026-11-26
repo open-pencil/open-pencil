@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { fill } from '#docs-config/theme/landing/content/messages/fill'
 import { formatSize } from '#docs-config/theme/landing/download/format'
-import { latestReleases } from '#docs-config/theme/landing/download/releases'
+import { latestStable } from '#docs-config/theme/landing/download/releases'
 import { platformOf } from '#docs-config/theme/landing/download/visitor'
 
 const AGENTS = {
@@ -45,7 +45,7 @@ describe('download copy', () => {
   })
 })
 
-describe('the releases a build shows', () => {
+describe('the stable release a build shows', () => {
   const release = (version: string, published: string, prerelease = false) => ({
     tag_name: `v${version}`,
     published_at: published,
@@ -53,39 +53,23 @@ describe('the releases a build shows', () => {
   })
 
   test('pick the latest stable release by when it was published, not listed', () => {
-    const { stable } = latestReleases([
+    const stable = latestStable([
       release('0.15.0', '2026-09-01T00:00:00Z'),
       release('0.15.1', '2026-09-18T00:00:00Z')
     ])
     expect(stable?.tag_name).toBe('v0.15.1')
   })
 
-  test('show a beta only when it came out after the stable release', () => {
-    const newer = latestReleases([
-      release('0.16.0-beta.1', '2026-10-01T00:00:00Z', true),
-      release('0.16.0-beta.2', '2026-10-10T00:00:00Z', true),
-      release('0.15.1', '2026-09-18T00:00:00Z')
-    ])
-    expect(newer.beta?.tag_name).toBe('v0.16.0-beta.2')
-    const older = latestReleases([
-      release('0.16.0-beta.2', '2026-10-10T00:00:00Z', true),
-      release('0.16.0', '2026-10-12T00:00:00Z')
-    ])
-    expect(older.beta).toBeNull()
-  })
-
-  test('never offer the rolling nightly, though it is the newest pre-release', () => {
-    const { beta } = latestReleases([
+  test('never pick a beta or the nightly, though they are newer', () => {
+    const stable = latestStable([
       release('0.17.0-beta.5', '2026-11-15T00:00:00Z', true),
       { tag_name: 'nightly', published_at: '2026-11-16T03:30:00Z', prerelease: true },
       release('0.16.2', '2026-11-01T00:00:00Z')
     ])
-    expect(beta?.tag_name).toBe('v0.17.0-beta.5')
+    expect(stable?.tag_name).toBe('v0.16.2')
   })
 
-  test('show a beta without any stable release', () => {
-    const { stable, beta } = latestReleases([release('0.1.0-beta.1', '2026-01-01T00:00:00Z', true)])
-    expect(stable).toBeNull()
-    expect(beta?.tag_name).toBe('v0.1.0-beta.1')
+  test('without a stable release there is none to pick', () => {
+    expect(latestStable([release('0.1.0-beta.1', '2026-01-01T00:00:00Z', true)])).toBeNull()
   })
 })

@@ -1,0 +1,1 @@
+- `@open-pencil/cloud/client` exports `createContractClient`, so a service can call a Cloud API by its contract, such as `internalContract`, with answers checked against it and refusals read as the service chooses.

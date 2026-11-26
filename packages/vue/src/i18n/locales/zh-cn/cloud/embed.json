@@ -1,0 +1,9 @@
+{
+  "opening": "正在打开…",
+  "unavailable": "此文件已不再共享，或链接有误。",
+  "failed": "无法打开文件。",
+  "tryAgain": "重试",
+  "openInEditor": "在 OpenPencil 中打开",
+  "zoomToFit": "缩放至适合",
+  "pages": "页面"
+}

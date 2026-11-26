@@ -230,6 +230,7 @@ export const en: LandingMessages = {
     lede: 'Your team’s design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI paid from the plan’s credits, with nothing to install or run. Start free with 300 MB, and export your files as .fig whenever you like.',
     signUp: 'Try OpenPencil Cloud',
     plans: 'See plans',
+    community: 'Browse community files',
     features: [
       {
         title: 'Real-time team sync',
@@ -343,16 +344,16 @@ export const en: LandingMessages = {
         action: 'Build instructions'
       }
     },
-    beta: {
-      badge: 'Beta',
+    nightly: {
+      badge: 'Nightly',
       title: 'Try what’s next',
-      lede: 'Betas bring the next version’s features early, before they reach everyone.',
+      lede: 'Nightlies are built every night from the newest code, so new features arrive as soon as they land.',
       caveats: [
-        'An app on the stable release does not update to a beta; install the beta to try it.',
-        'On Linux, remove a beta installed with .deb or .rpm before installing the final release.',
-        'The CLI and SDK betas are on npm under the next tag.'
+        'A nightly has not been through release testing and can break; keep your work backed up.',
+        'Already have the app? Choose Nightly under Settings → Updates → Update channel instead of downloading.',
+        'A nightly updates to the next night’s build. To go back, choose Stable there.'
       ],
-      notes: 'What’s new'
+      onGitHub: 'Latest nightly on GitHub'
     }
   }
 }

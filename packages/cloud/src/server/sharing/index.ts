@@ -17,7 +17,6 @@ export {
 } from './errors'
 export { createGrantService, type GrantService } from './grants/service'
 
-export { createPublicDocumentRoutes } from './document-routes'
 export {
   createInvitationService,
   type InvitationService,
@@ -25,10 +24,11 @@ export {
 } from './invitations/service'
 
 export {
-  createDocumentSharingRoutes,
-  createPublicSharingRoutes,
-  type SharingRouteEnvironment
-} from './routes'
+  createPublicSharingProcedures,
+  createSharingProcedures,
+  type PublicProcedureContext
+} from './procedures'
+export { createSharingRateLimits } from './routes'
 export {
   createDocumentSharingService,
   type DocumentShareCapability,

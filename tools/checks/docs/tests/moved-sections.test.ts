@@ -6,6 +6,7 @@ describe('moved sections', () => {
   // `_redirects` sends /user-guide/openpencil-cloud#your-account to /cloud/#your-account.
   test('sends a redirected section on to the page it moved to', () => {
     expect(movedSection('/cloud/', '#your-account')).toBe('/cloud/account')
+    expect(movedSection('/cloud/', '#connect-a-server')).toBe('/cloud/connect')
     expect(movedSection('/de/developers/', '#url-scheme')).toBe('/de/developers/url-scheme')
     expect(movedSection('/cloud', '#version-history')).toBe('/cloud/documents#version-history')
     expect(movedSection('/cloud/self-hosting/', '#cloudflare-workers')).toBe(
@@ -14,7 +15,7 @@ describe('moved sections', () => {
   })
 
   test('leaves sections that stayed, and other pages, alone', () => {
-    expect(movedSection('/cloud/', '#connect-a-server')).toBeNull()
+    expect(movedSection('/cloud/', '#hosted-or-your-own-server')).toBeNull()
     expect(movedSection('/cloud/', '')).toBeNull()
     expect(movedSection('/cloud/account', '#your-account')).toBeNull()
   })

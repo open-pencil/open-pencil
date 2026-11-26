@@ -24,10 +24,15 @@ const kind = defineModel<DocumentKindFilter>('kind', { required: true })
 const kindOptions = computed(() => [
   { value: 'all', label: files.value.allFiles },
   { value: 'design', label: files.value.createDesign },
-  { value: 'board', label: files.value.createBoard }
+  { value: 'board', label: files.value.createBoard },
+  { value: 'slides', label: files.value.createSlides }
 ])
 const libraryMessages = useMessages('panels/libraries')
 const files = useMessages('files')
+const emptyMessage = computed(() => {
+  if (kind.value === 'board') return files.value.noRecentBoards
+  return kind.value === 'slides' ? files.value.noRecentSlides : files.value.noRecentDesigns
+})
 const { isTouch } = useViewportKind()
 const dates = useDateFormat()
 const previewURL = workspace.previewURL
@@ -127,7 +132,7 @@ function formattedDate(updatedAt: string): string {
       v-else-if="!query"
       class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"
     >
-      {{ kind === 'board' ? files.noRecentBoards : files.noRecentDesigns }}
+      {{ emptyMessage }}
     </p>
 
     <!-- The search matches files of another kind only. -->

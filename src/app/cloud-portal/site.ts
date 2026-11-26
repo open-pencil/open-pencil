@@ -6,7 +6,11 @@ import {
   discoverCloud,
   type CloudPortalClient
 } from '@open-pencil/cloud/client'
-import { parseCloudLinkPath, type CloudAccountStatus } from '@open-pencil/cloud/contract'
+import {
+  parseCloudEmbedPath,
+  parseCloudLinkPath,
+  type CloudAccountStatus
+} from '@open-pencil/cloud/contract'
 
 /**
  * A Cloud server serves the editor to signed-in people and, where the server allows the local
@@ -104,11 +108,13 @@ async function signedInAccount(api: CloudPortalClient): Promise<SiteAccount> {
 
 /**
  * Before the editor boots on a Cloud server: leaves for the welcome page when the visit belongs
- * there (`siteDestination`). Returns whether the editor should boot. A server whose discovery
+ * there (`siteDestination`); an embed always stays. Returns whether the editor should boot. A server whose discovery
  * fails is taken not to allow the local editor; one that cannot say who is signed in at all is
  * unreachable, and the editor opens.
  */
 export async function enterCloudSite(location: Location = globalThis.location): Promise<boolean> {
+  // An embed shows its document to whoever looks at the page around it, with no account.
+  if (parseCloudEmbedPath(location.pathname)) return true
   if (isSecretCloudLink(new URL(location.href))) return true
   const [discovery, account] = await Promise.all([
     discoverCloud(location.origin).catch(() => null),

@@ -10,7 +10,7 @@ import {
 import { errorMessage } from '@open-pencil/std/errors'
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
-import frameScript from '@/app/code/sandbox/frame.ts?script'
+import frameScript from '@/app/code/sandbox/frame.ts?script-file'
 import {
   SANDBOX_READY,
   SANDBOX_RUN,
@@ -54,7 +54,7 @@ export async function evaluateDesignJSX(
   const iframe = document.createElement('iframe')
   iframe.hidden = true
   iframe.setAttribute('sandbox', 'allow-scripts')
-  iframe.srcdoc = sandboxDocument(frameScript)
+  iframe.srcdoc = sandboxDocument(frameScript, document.baseURI)
   document.body.append(iframe)
 
   return new Promise((resolve) => {

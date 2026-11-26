@@ -10,6 +10,7 @@ import type {
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
 } from '#cloud/email'
+import type * as OAuth from '#cloud/server/oauth/tables'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -90,8 +91,10 @@ export interface DocumentTable {
   id: string
   workspaceId: string
   name: string
+  /** What the file is, in a few sentences, for the community gallery; see migration 020. */
+  description: Generated<string | null>
   /** A design or a board; see migration 027. */
-  kind: Generated<'design' | 'board'>
+  kind: Generated<'design' | 'board' | 'slides'>
   currentRevisionId: string | null
   collaborationEpoch: Generated<number>
   version: Generated<number>
@@ -566,6 +569,10 @@ export interface CloudDatabase {
   commentRead: CommentReadTable
   commentEmail: CommentEmailTable
   notificationSetting: NotificationSettingTable
+  oauthClient: OAuth.OAuthClientTable
+  oauthAccessToken: OAuth.OAuthAccessTokenTable
+  oauthRefreshToken: OAuth.OAuthRefreshTokenTable
+  oauthConsent: OAuth.OAuthConsentTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

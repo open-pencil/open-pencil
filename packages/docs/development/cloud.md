@@ -25,11 +25,11 @@ flowchart LR
 
 | Subpath                           | Contents                                                                   |
 | --------------------------------- | -------------------------------------------------------------------------- |
-| `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
-| `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
+| `@open-pencil/cloud/contract`     | Valibot schemas and the API's oRPC contract, shared by every side          |
+| `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the contract's client |
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
 | `@open-pencil/cloud/errors`       | The PostHog error reporter, for services beside Cloud; only `posthog-node` |
-| `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
+| `@open-pencil/cloud/server`       | The contract's procedures, Hono routes, and services; all injected         |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 
 The Cloudflare runtime, `src/runtime/cloudflare`, isn't a subpath: Wrangler bundles it from
@@ -255,8 +255,9 @@ sequenceDiagram
 The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
 document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
 A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
-typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
-the room closes, a fresh snapshot replaces it. Snapshots are files in the object store beside the
+typical edit, rather than rewriting the room. Once the log reaches 500 updates, or both 4 MiB and a
+quarter of the snapshot, a fresh snapshot replaces it; a closing room writes one only when at least
+a quarter of its snapshot changed, since encoding a large document takes memory it may not have. Snapshots are files in the object store beside the
 documents' revisions, which a room's row names, so the database holds only the updates since the
 last one. A compaction records its file before writing it and points the room at it last, so a
 replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
@@ -433,8 +434,14 @@ token of that account.
 The tool builds each example in its manifest (`src/examples.ts`; the tour is the editor's demo
 document) and saves it as the editor does, through `saveCloudDocument` in
 `@open-pencil/cloud/client`: the document is created the first time, gets a new revision only when
-its file changed, and, given a version, has its current state named after the release once. A run
-with the same files and version changes nothing.
+its file changed, takes the manifest's description when it differs, and, given a version, has its
+current state named after the release once. A run with the same files, descriptions, and version
+changes nothing.
+
+A document's description says what the file is, and editors set it with `PATCH
+/api/documents/:id`; it is not a change to the file, so the document's last change stays. The
+gallery's pages show it and give it to search engines and link previews, falling back to the newest
+named version's notes, which say what changed in that release.
 
 `[community] tour` names the gallery document editors open as their tour: discovery advertises it as
 `community.tourDocumentId`, and the editor and the docs landing download it with `fetchCommunityTour`

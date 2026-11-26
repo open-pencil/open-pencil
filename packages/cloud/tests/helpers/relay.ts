@@ -1,9 +1,7 @@
 import {
   createRelayServerAssembler,
   decodeRelayServerFrame,
-  decodeRoomUpdate,
   encodeRelayClientFrame,
-  MAX_COLLAB_MESSAGE_BYTES,
   relayClientMessages,
   type CollaborationPrincipal,
   type DocumentPermission,
@@ -21,6 +19,8 @@ import {
 } from '#cloud/server'
 import { SignJWT } from 'jose'
 import * as Y from 'yjs'
+
+import { decodeRoomUpdate, MAX_COLLAB_MESSAGE_BYTES } from '@open-pencil/collab'
 
 export const relaySecret = 'relay-test-secret-at-least-32-characters'
 

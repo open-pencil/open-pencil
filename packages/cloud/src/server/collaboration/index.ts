@@ -1,8 +1,4 @@
-export {
-  createCollaborationRoutes,
-  createPublicCollaborationRoutes,
-  type CollaborationRouteEnvironment
-} from './routes'
+export { createCollaborationRateLimits } from './routes'
 export {
   createCollaborationTicketService,
   signCollaborationTicket,

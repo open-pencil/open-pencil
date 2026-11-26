@@ -46,6 +46,9 @@ function authAdapter() {
     async resolveAccessToken() {
       return null
     },
+    async resolveAppToken() {
+      return null
+    },
     async listAccessTokens() {
       return []
     },

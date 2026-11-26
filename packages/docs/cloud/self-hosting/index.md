@@ -76,6 +76,18 @@ For a server only its members use, set `deployment.local_editor = false`: the we
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
+## Embedding in other sites
+
+Other sites can show documents shared by link, and community gallery documents, in a frame at `/embed/…`, read-only and without the visitor's account. A shared document keeps up with edits as they happen; a community document shows its latest version, or the one its address names. Self-hosted servers keep this off; turn it on under `[deployment.embedding]`, and list the sites that may embed documents, or leave the list out to let any site:
+
+```toml
+[deployment.embedding]
+enabled = true
+allowed_origins = ["https://wiki.example.com"]
+```
+
+Only `/embed/…` pages may be framed; every other page of the server refuses to be. A shared link embeds only where guests may view it (`guest_view` under `[entitlements.sharing]`), since an embed never signs in. Embeds are never indexed, whatever `deployment.indexing` says.
+
 ## Your name on the server's pages
 
 The server's public pages, such as its community gallery, carry your name rather than OpenPencil's: the bar shows the server's address, the gallery, and help, and the footer your legal links with a small "Powered by OpenPencil". Name the server, add your logo, and point help at your own page under `[deployment.branding]`:
@@ -120,6 +132,17 @@ Deployment administrators can see what every document on the server looks like: 
 ## Terms and privacy
 
 The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there and as the address a document's owner writes to when an administrator blocks it, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when, so give each version that needs accepting again a value never used before: going back to an earlier one asks nobody who accepted it.
+
+## Connected apps
+
+Add an `[oauth]` table to let people connect apps to their accounts through OAuth, with the server as the [apps' authorization server](../apps#for-app-developers):
+
+```toml
+[oauth]
+enabled = true
+```
+
+Apps register themselves, so anyone can register one, but each connection takes the person's approval and reaches one workspace they pick. Connected apps then read, and with the person's approval change, that workspace's documents, so say so in your privacy notice. Without the table, the server accepts no apps and its account pages have no **Connected apps**.
 
 ## Community gallery
 
