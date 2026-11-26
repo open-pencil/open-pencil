@@ -7,8 +7,8 @@ const optionSchema = v.object({ optionId: v.string(), name: v.string(), kind: v.
 
 /**
  * What an agent asks the person, as the desktop app holds it (`desktop/src/host/permission.rs`):
- * to run a tool, with ACP's `toolCall` and its options, or to switch to a mode in which it runs
- * tools without asking.
+ * to run a tool, with ACP's `toolCall` and its options, to switch to a mode in which it runs
+ * tools without asking, or for an OpenPencil tool to read or write a file it named.
  */
 const questionSchema = v.variant('kind', [
   v.object({
@@ -23,13 +23,22 @@ const questionSchema = v.variant('kind', [
       options: v.array(optionSchema)
     })
   }),
-  v.object({ id: v.number(), kind: v.literal('mode'), agent: v.string(), mode: v.string() })
+  v.object({ id: v.number(), kind: v.literal('mode'), agent: v.string(), mode: v.string() }),
+  v.object({
+    id: v.number(),
+    kind: v.literal('file'),
+    /** The MCP client's own name; empty when it gave none. */
+    client: v.string(),
+    tool: v.string(),
+    write: v.boolean(),
+    path: v.string()
+  })
 ])
 
 export type PermissionQuestion = v.InferOutput<typeof questionSchema>
 export type PermissionOption = v.InferOutput<typeof optionSchema>
 
-/** The answer that confirms a mode; anything else keeps the agent asking. */
+/** The answer that confirms a mode or a file; none refuses it. */
 export const ALLOW_MODE = 'allow'
 
 /** What the desktop app tells this window when its questions change. */

@@ -17,11 +17,13 @@ export type MCPAccessScope = 'mcp' | 'rpc' | 'files' | 'app'
 
 const SERVER_SCOPES: readonly MCPAccessScope[] = ['mcp', 'rpc', 'files', 'app']
 const CLIENT_SCOPES: readonly MCPAccessScope[] = ['mcp']
+const APP_SCOPES: readonly MCPAccessScope[] = ['app']
 
 /**
  * Who may do what. The server's token belongs to the app, the CLI, and the stdio bridge and opens
- * everything; the client token, given to MCP clients, opens `mcp` alone. Null tokens mean auth is
- * off, and then every caller gets every scope.
+ * everything; the client token, given to MCP clients, opens `mcp` alone; an app token opens `app`
+ * alone, for an app kept from the rest. Null tokens mean auth is off, and then every caller gets
+ * every scope.
  */
 export interface MCPAccess {
   /** The scopes a token opens; empty for an unknown token. */
@@ -30,12 +32,24 @@ export interface MCPAccess {
   refuse(authorization: string | null | undefined, scope: MCPAccessScope): Response | null
 }
 
-export function createMCPAccess(serverToken: string | null, clientToken: string | null): MCPAccess {
+export function createMCPAccess(
+  serverToken: string | null,
+  clientToken: string | null,
+  {
+    appToken = null,
+    tokenlessClients = false
+  }: {
+    appToken?: string | null
+    /** A caller without a token gets what the client token opens, and nothing more. */
+    tokenlessClients?: boolean
+  } = {}
+): MCPAccess {
   function scopes(token: string | null): readonly MCPAccessScope[] {
     if (serverToken === null) return SERVER_SCOPES
-    if (token === null) return []
+    if (token === null) return tokenlessClients ? CLIENT_SCOPES : []
     if (tokensMatch(token, serverToken)) return SERVER_SCOPES
     if (clientToken !== null && tokensMatch(token, clientToken)) return CLIENT_SCOPES
+    if (appToken !== null && tokensMatch(token, appToken)) return APP_SCOPES
     return []
   }
 

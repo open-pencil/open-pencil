@@ -1,5 +1,3 @@
-import { dirname } from '@tauri-apps/api/path'
-import { mkdir } from '@tauri-apps/plugin-fs'
 import * as v from 'valibot'
 
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
@@ -91,13 +89,6 @@ const closeArgsSchema = v.object({
   unsaved: v.optional(v.picklist(['error', 'save', 'discard']), 'error')
 })
 
-export async function ensureTauriParentDirectory(path: string): Promise<void> {
-  if (!isTauri()) return
-  const dir = await dirname(path)
-  if (dir === path) return
-  await mkdir(dir, { recursive: true })
-}
-
 /**
  * The file commands. `files` is the MCP server a browser app reads and writes paths through;
  * without one, as in-process on the landing page, a browser path is a URL beside the page.
@@ -130,7 +121,7 @@ export function createFileHandlers(files?: AutomationFiles) {
       await store.saveFigFileCopy((data) => writeThroughServer(files, path, data))
       return
     }
-    if (path) await ensureTauriParentDirectory(path)
+    // On desktop the app made the file's folder when the person allowed the save.
     // A failed save to a new path leaves the document with the source it had.
     const saved = path ? await store.saveFigFileToPath(path) : await store.saveFigFile()
     if (!saved) throw new Error(`Could not save "${name}"`)

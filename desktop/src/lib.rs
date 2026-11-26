@@ -30,6 +30,28 @@ use std::sync::Mutex;
 use system::window::show_main_window;
 use tauri::{Emitter, Manager};
 
+/// A package that runs no host programs finds an MCP server the person runs through its
+/// discovery file, so the editor may read it there. Elsewhere it holds the server's own token,
+/// which the app keeps from the editor (`host::mcp`).
+fn discovery_for_sandbox<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    capabilities: &DesktopCapabilities,
+) {
+    use tauri_plugin_fs::FsExt;
+    if capabilities.host_processes {
+        return;
+    }
+    let paths = [
+        app.path().home_dir().ok().map(|home| home.join("Library/Application Support/OpenPencil/mcp.json")),
+        app.path().local_data_dir().ok().map(|dir| dir.join("OpenPencil/mcp.json")),
+        app.path().runtime_dir().ok().map(|dir| dir.join("openpencil/mcp.json")),
+        app.path().home_dir().ok().map(|home| home.join(".openpencil/mcp.json")),
+    ];
+    for path in paths.into_iter().flatten() {
+        let _ = app.fs_scope().allow_file(path);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Before anything starts GTK or EGL, which read the variable once: WebKitGTK before 2.54.2
@@ -89,6 +111,7 @@ pub fn run() {
         .manage(NativeMenuState(Mutex::new(NativeMenuInputs::default())))
         .manage(launch::PendingCloudLinks::default())
         .manage(host::HostProcesses::default())
+        .manage(files::grants::FileGrants::default())
         .manage(host::permission::Permissions::default())
         // A reload starts the editor afresh: the programs the old page started go with it.
         .on_page_load(|webview, payload| {
@@ -96,7 +119,7 @@ pub fn run() {
                 && payload.event() == tauri::webview::PageLoadEvent::Started
             {
                 let app = webview.app_handle();
-                app.state::<host::HostProcesses>().stop_all(app);
+                app.state::<host::HostProcesses>().stop_all(app, true);
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -105,9 +128,14 @@ pub fn run() {
             host::host_start,
             host::host_write,
             host::host_kill,
+            host::mcp_tokens,
             host::permission::permission_questions,
             host::permission::permission_answer,
             files::fig::compress_fig_canvas,
+            files::grants::allow_save_partial,
+            files::grants::read_document_asset,
+            #[cfg(feature = "native-test")]
+            files::grants::native_test_allow_file,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,
             network::oauth::chatgpt_oauth_cancel,
@@ -162,6 +190,12 @@ pub fn run() {
             handle_menu_event(app, event.id().0.as_str());
         })
         .setup(move |app| {
+            // Before the grants are kept, so the next launch, which may run the server itself,
+            // does not give the editor the discovery file.
+            discovery_for_sandbox(app.handle(), &capabilities);
+            // Before the main window exists, so the files it reopens are reachable.
+            files::grants::restore(app.handle());
+
             // Panics from here on are kept for the next launch to offer as a report.
             if let Ok(directory) = app.path().app_data_dir() {
                 system::crash::install_panic_hook(
@@ -252,7 +286,7 @@ pub fn run() {
                 has_visible_windows: false,
                 ..
             } => show_main_window(_app),
-            tauri::RunEvent::Exit => _app.state::<host::HostProcesses>().stop_all(_app),
+            tauri::RunEvent::Exit => _app.state::<host::HostProcesses>().stop_all(_app, false),
             _ => {}
         });
 }

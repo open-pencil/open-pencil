@@ -23,7 +23,8 @@ export type HostProgram =
   | { kind: 'install'; manager: 'npm' | 'bun'; package: HostPackage }
   | {
       kind: 'mcpServer'
-      authToken: string | null
+      /** MCP clients may connect without a token; the desktop app makes the tokens itself. */
+      tokenlessClients: boolean
       root: string
       disabledTools: string[]
       scope: 'document' | 'selection'

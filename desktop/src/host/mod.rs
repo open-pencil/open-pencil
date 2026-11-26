@@ -2,11 +2,13 @@
 //! the MCP server, and the harness companion. The editor names one from a fixed table
 //! (`program`), and talks to it through these commands; the app checks what passes between an
 //! agent and the editor (`acp`, `harness`) and asks the person in a window of its own
-//! (`permission`). Programs stop with the page that started them and with the app.
+//! (`permission`). Programs stop with the page that started them and with the app, except the
+//! MCP server, which outlives a reload so its clients stay connected (`mcp`).
 
 mod acp;
 mod harness;
 mod lines;
+mod mcp;
 pub mod permission;
 pub mod program;
 
@@ -59,6 +61,8 @@ pub enum HostEvent {
 enum Gate {
     Acp(AcpGate),
     Harness,
+    /// The MCP server: its questions about files go to the permission window.
+    Mcp,
     Plain,
 }
 
@@ -77,6 +81,14 @@ struct Running {
 pub struct HostProcesses {
     next: AtomicU32,
     running: Mutex<HashMap<u32, Running>>,
+    /// The MCP server the app runs: its handle, what it was started with, and its tokens.
+    mcp: Mutex<Option<McpRun>>,
+}
+
+struct McpRun {
+    id: u32,
+    request: ProgramRequest,
+    tokens: mcp::McpTokens,
 }
 
 impl HostProcesses {
@@ -84,9 +96,17 @@ impl HostProcesses {
         self.running.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
-    /// Stops every program, as when the editor's page reloads or the app quits.
-    pub fn stop_all<R: Runtime>(&self, app: &AppHandle<R>) {
-        let stopped: Vec<(u32, Running)> = self.lock().drain().collect();
+    /// Stops every program, as when the app quits; a reload keeps the MCP server, which the
+    /// next page takes over.
+    pub fn stop_all<R: Runtime>(&self, app: &AppHandle<R>, keep_mcp: bool) {
+        let kept = if keep_mcp { self.mcp_id() } else { None };
+        let stopped: Vec<(u32, Running)> = {
+            let mut running = self.lock();
+            let ids: Vec<u32> = running.keys().copied().filter(|id| Some(*id) != kept).collect();
+            ids.into_iter()
+                .filter_map(|id| running.remove(&id).map(|process| (id, process)))
+                .collect()
+        };
         for (id, running) in stopped {
             app.state::<Permissions>().cancel(app, id, None);
             let _ = running.child.kill();
@@ -104,6 +124,16 @@ pub fn agent_workspace_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, St
         .join("agent-workspace");
     std::fs::create_dir_all(&dir).map_err(|e| format!("Could not create the agent workspace: {e}"))?;
     Ok(dir)
+}
+
+impl HostProcesses {
+    fn mcp_lock(&self) -> std::sync::MutexGuard<'_, Option<McpRun>> {
+        self.mcp.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    fn mcp_id(&self) -> Option<u32> {
+        self.mcp_lock().as_ref().map(|run| run.id)
+    }
 }
 
 fn from_editor<R: Runtime>(
@@ -129,6 +159,27 @@ pub async fn host_start<R: Runtime>(
     events: Channel<HostEvent>,
 ) -> Result<u32, String> {
     from_editor(&webview, &capabilities)?;
+    let processes = app.state::<HostProcesses>();
+    let mut tokens = None;
+    if matches!(program, ProgramRequest::McpServer { .. }) {
+        // A reloaded page takes over the server it left running, when nothing about it changed.
+        let previous = processes.mcp_lock().take();
+        if let Some(run) = previous {
+            let mut running = processes.lock();
+            if run.request == program {
+                if let Some(process) = running.get_mut(&run.id) {
+                    process.events = events;
+                    let id = run.id;
+                    drop(running);
+                    *processes.mcp_lock() = Some(run);
+                    return Ok(id);
+                }
+            } else if let Some(process) = running.remove(&run.id) {
+                let _ = process.child.kill();
+            }
+        }
+        tokens = Some(mcp::McpTokens::generate()?);
+    }
     let workspace = agent_workspace_dir(&app)?;
     let origin = webview
         .url()
@@ -156,6 +207,11 @@ pub async fn host_start<R: Runtime>(
         .env("PATH", &search_path)
         .envs(launch.env.iter().map(|(key, value)| (*key, value.as_str())))
         .set_raw_out(true);
+    if let Some(tokens) = &tokens {
+        command = command
+            .env("OPENPENCIL_MCP_AUTH_TOKEN", &tokens.server)
+            .env("OPENPENCIL_MCP_APP_TOKEN", &tokens.app);
+    }
     if let Some(dir) = &launch.cwd {
         command = command.current_dir(dir);
     }
@@ -175,9 +231,9 @@ pub async fn host_start<R: Runtime>(
             agent.name(),
         ),
         Protocol::Harness => (Gate::Harness, "Pi"),
+        Protocol::Mcp => (Gate::Mcp, ""),
         Protocol::Plain => (Gate::Plain, ""),
     };
-    let processes = app.state::<HostProcesses>();
     let id = processes.next.fetch_add(1, Ordering::Relaxed);
     processes.lock().insert(
         id,
@@ -190,6 +246,13 @@ pub async fn host_start<R: Runtime>(
             from_editor: Lines::default(),
         },
     );
+    if let Some(tokens) = tokens {
+        *processes.mcp_lock() = Some(McpRun {
+            id,
+            request: program,
+            tokens,
+        });
+    }
 
     tauri::async_runtime::spawn(async move {
         while let Some(event) = output.recv().await {
@@ -200,6 +263,12 @@ pub async fn host_start<R: Runtime>(
                 }),
                 CommandEvent::Terminated(payload) => {
                     app.state::<Permissions>().cancel(&app, id, None);
+                    let processes = app.state::<HostProcesses>();
+                    let mut mcp = processes.mcp_lock();
+                    if mcp.as_ref().is_some_and(|run| run.id == id) {
+                        *mcp = None;
+                    }
+                    drop(mcp);
                     if let Some(running) = app.state::<HostProcesses>().lock().remove(&id) {
                         let _ = running.events.send(HostEvent::Close {
                             code: payload.code,
@@ -228,8 +297,11 @@ pub fn host_write<R: Runtime>(
     let processes = app.state::<HostProcesses>();
     let mut running = processes.lock();
     let process = running.get_mut(&id).ok_or("The program has stopped.")?;
-    if matches!(process.gate, Gate::Plain) {
-        return process.child.write(data.as_bytes()).map_err(|e| e.to_string());
+    match process.gate {
+        Gate::Plain => return process.child.write(data.as_bytes()).map_err(|e| e.to_string()),
+        // Only the app answers the server's questions on its standard input.
+        Gate::Mcp => return Err("The MCP server takes no input from the editor.".to_owned()),
+        _ => {}
     }
     let lines = process.from_editor.push(data.as_bytes());
     let mut later = Vec::new();
@@ -255,7 +327,7 @@ pub fn host_write<R: Runtime>(
                 }
                 Err(None) => {}
             },
-            Gate::Plain => unreachable!("written above"),
+            Gate::Plain | Gate::Mcp => unreachable!("answered above"),
         }
     }
     let agent = process.agent;
@@ -284,7 +356,13 @@ pub fn host_kill<R: Runtime>(
 ) -> Result<(), String> {
     from_editor(&webview, &capabilities)?;
     app.state::<Permissions>().cancel(&app, id, None);
-    let running = app.state::<HostProcesses>().lock().remove(&id);
+    let processes = app.state::<HostProcesses>();
+    let mut mcp = processes.mcp_lock();
+    if mcp.as_ref().is_some_and(|run| run.id == id) {
+        *mcp = None;
+    }
+    drop(mcp);
+    let running = processes.lock().remove(&id);
     if let Some(running) = running {
         running.child.kill().map_err(|e| e.to_string())?;
         let _ = running.events.send(HostEvent::Close {
@@ -314,6 +392,24 @@ fn from_program<R: Runtime>(app: &AppHandle<R>, id: u32, bytes: &[u8]) {
     let Some(process) = running.get_mut(&id) else {
         return;
     };
+    if matches!(process.gate, Gate::Mcp) {
+        let mut asks = Vec::new();
+        let mut shown = String::new();
+        for line in process.from_program.push(bytes) {
+            match mcp::consent_request(&line) {
+                Some(request) => asks.push(request),
+                None => shown.push_str(&(line + "\n")),
+            }
+        }
+        if !shown.is_empty() {
+            let _ = process.events.send(HostEvent::Stdout { data: shown });
+        }
+        drop(running);
+        for request in asks {
+            ask_about_file(app, id, request);
+        }
+        return;
+    }
     let Gate::Acp(gate) = &mut process.gate else {
         let data = match process.gate {
             // Harness lines pass whole, so the editor reads one message at a time.
@@ -393,6 +489,57 @@ fn ask_about_tool<R: Runtime>(app: &AppHandle<R>, id: u32, agent: &'static str, 
             waiting: false,
         });
     });
+}
+
+/// Puts the MCP server's question about a file to the person. Allowing a document tool lets the
+/// editor open and save that file; the server reads and writes other tools' files itself.
+fn ask_about_file<R: Runtime>(app: &AppHandle<R>, id: u32, request: mcp::ConsentRequest) {
+    let question = Question::File {
+        client: request.client.clone().unwrap_or_default(),
+        tool: request.tool.clone(),
+        write: request.access == mcp::Access::Write,
+        path: request.path.clone(),
+    };
+    let (question_id, reply) = app
+        .state::<Permissions>()
+        .ask(app, question, id, String::new());
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let allowed = matches!(wait(&app, question_id, reply).await, Reply::Chose(_));
+        if allowed && mcp::editor_opens(&request.tool) {
+            use tauri_plugin_fs::FsExt;
+            // A save to a new folder inside the MCP root needs the folder, which the editor,
+            // given the file alone, cannot make.
+            if request.access == mcp::Access::Write {
+                if let Some(parent) = std::path::Path::new(&request.path).parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+            }
+            if let Err(error) = app.fs_scope().allow_file(&request.path) {
+                eprintln!("[mcp] could not allow {}: {error}", request.path);
+            }
+        }
+        let processes = app.state::<HostProcesses>();
+        let mut running = processes.lock();
+        if let Some(process) = running.get_mut(&id) {
+            let _ = write_line(&mut process.child, &mcp::consent_answer(request.id, allowed));
+        }
+    });
+}
+
+/// The tokens the editor connects to the app's MCP server with, while it runs.
+#[tauri::command]
+pub fn mcp_tokens<R: Runtime>(
+    app: AppHandle<R>,
+    webview: tauri::Webview<R>,
+    capabilities: tauri::State<'_, DesktopCapabilities>,
+) -> Result<Option<mcp::EditorTokens>, String> {
+    from_editor(&webview, &capabilities)?;
+    Ok(app
+        .state::<HostProcesses>()
+        .mcp_lock()
+        .as_ref()
+        .map(|run| run.tokens.for_editor()))
 }
 
 /// Puts a mode that never asks to the person; the editor's request goes on only if they allow it.

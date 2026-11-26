@@ -66,6 +66,17 @@ const rejectOptions = computed(() => options.value.filter((o) => o.kind.startsWi
             <pre v-else :class="ui.input()">{{ toolInput }}</pre>
           </div>
         </template>
+        <template v-else-if="question.kind === 'file'">
+          <h1 :class="ui.title()">{{ ai.permissionFileTitle }}</h1>
+          <p :class="ui.subtitle()">
+            {{
+              (question.write ? ai.permissionFileWrite : ai.permissionFileRead)({
+                client: question.client || ai.permissionFileSomeAgent,
+                path: question.path
+              })
+            }}
+          </p>
+        </template>
         <template v-else>
           <h1 :class="ui.title()">{{ ai.permissionModeTitle }}</h1>
           <p :class="ui.subtitle()">
@@ -109,10 +120,10 @@ const rejectOptions = computed(() => options.value.filter((o) => o.kind.startsWi
           class="w-full"
           @click="emit('answer', ALLOW_MODE)"
         >
-          {{ ai.permissionModeAllow }}
+          {{ question.kind === 'file' ? ai.permissionFileAllow : ai.permissionModeAllow }}
         </AppButton>
         <AppButton size="md" class="w-full" @click="emit('answer', null)">
-          {{ ai.permissionModeKeep }}
+          {{ question.kind === 'file' ? ai.permissionFileRefuse : ai.permissionModeKeep }}
         </AppButton>
       </template>
       <p v-if="waiting > 0" :class="ui.waiting()">

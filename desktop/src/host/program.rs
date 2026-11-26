@@ -90,7 +90,7 @@ pub enum McpScope {
 }
 
 /// A program the editor asks for, with the values it may choose.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum ProgramRequest {
     /// An ACP agent, talking ACP over its standard streams. One that `refuses_tools` has every
@@ -107,9 +107,10 @@ pub enum ProgramRequest {
         manager: PackageManager,
         package: Package,
     },
-    /// OpenPencil's MCP server on its fixed port.
+    /// OpenPencil's MCP server on its fixed port, with tokens the app makes (`super::mcp`).
     McpServer {
-        auth_token: Option<String>,
+        /// MCP clients may connect without a token, with the client token's reach.
+        tokenless_clients: bool,
         /// The folder its file tools work in.
         root: PathBuf,
         disabled_tools: Vec<String>,
@@ -131,6 +132,8 @@ pub enum Protocol {
     Acp(Agent, bool),
     /// The harness's JSON lines, whose session settings the app checks.
     Harness,
+    /// The MCP server, which asks the app before a tool reads or writes a file it was given.
+    Mcp,
     /// Output passed to the editor as it is.
     Plain,
 }
@@ -202,16 +205,11 @@ impl ProgramRequest {
                 Ok(plain(program, args.into_iter().map(str::to_owned).collect()))
             }
             ProgramRequest::McpServer {
-                auth_token,
+                tokenless_clients,
                 root,
                 disabled_tools,
                 scope,
             } => {
-                if let Some(token) = auth_token {
-                    if !is_token(token) {
-                        return Err("The MCP token must be hexadecimal.".to_owned());
-                    }
-                }
                 if !root.is_absolute() || !root.is_dir() {
                     return Err("The MCP folder must be a folder that exists.".to_owned());
                 }
@@ -220,7 +218,9 @@ impl ProgramRequest {
                 }
                 let mut env = BTreeMap::from([
                     ("PORT", MCP_PORT.to_string()),
-                    ("OPENPENCIL_MCP_AUTH_TOKEN", auth_token.clone().unwrap_or_default()),
+                    // The server asks over its standard streams before a tool reads or writes
+                    // a file it was given; only the app holds those streams.
+                    ("OPENPENCIL_MCP_CONSENT", "stdio".to_owned()),
                     ("OPENPENCIL_MCP_CORS_ORIGIN", context.origin.to_owned()),
                     ("OPENPENCIL_MCP_TCP", "1".to_owned()),
                     ("OPENPENCIL_MCP_ROOT", root.to_string_lossy().into_owned()),
@@ -230,6 +230,9 @@ impl ProgramRequest {
                     ("OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE", "1".to_owned()),
                     ("OPENPENCIL_MCP_DISABLED_TOOLS", disabled_tools.join(",")),
                 ]);
+                if *tokenless_clients {
+                    env.insert("OPENPENCIL_MCP_TOKENLESS_CLIENTS", "1".to_owned());
+                }
                 env.insert(
                     "OPENPENCIL_MCP_SCOPE",
                     match scope {
@@ -240,6 +243,7 @@ impl ProgramRequest {
                 );
                 Ok(Launch {
                     env,
+                    protocol: Protocol::Mcp,
                     ..plain("openpencil-mcp-http", Vec::new())
                 })
             }
@@ -308,10 +312,6 @@ fn companion(name: &str, version: &str) -> Result<String, String> {
         return Err(format!("{version:?} is not a release version."));
     }
     Ok(format!("{name}@{version}"))
-}
-
-fn is_token(token: &str) -> bool {
-    !token.is_empty() && token.len() <= 128 && token.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 fn is_tool_name(name: &str) -> bool {
@@ -406,23 +406,25 @@ mod tests {
     #[test]
     fn checks_what_the_mcp_server_is_given() {
         let root = std::env::temp_dir();
-        let server = |token: Option<&str>, tools: &[&str]| {
+        let server = |tokenless: bool, tools: &[&str]| {
             request(serde_json::json!({
                 "kind": "mcpServer",
-                "authToken": token,
+                "tokenlessClients": tokenless,
                 "root": root,
                 "disabledTools": tools,
                 "scope": "selection"
             }))
             .launch(&context(Path::new("/w")))
         };
-        let launch = server(Some("ab12"), &["eval", "export_image"]).unwrap();
+        let launch = server(false, &["eval", "export_image"]).unwrap();
         assert_eq!(launch.env["PORT"], "7600");
         assert_eq!(launch.env["OPENPENCIL_MCP_CORS_ORIGIN"], "tauri://localhost");
         assert_eq!(launch.env["OPENPENCIL_MCP_DISABLED_TOOLS"], "eval,export_image");
         assert_eq!(launch.env["OPENPENCIL_MCP_SCOPE"], "selection");
-        assert!(server(Some("not hex"), &[]).is_err());
-        assert!(server(None, &["a,b"]).is_err());
+        assert_eq!(launch.env["OPENPENCIL_MCP_CONSENT"], "stdio");
+        assert!(!launch.env.contains_key("OPENPENCIL_MCP_TOKENLESS_CLIENTS"));
+        assert_eq!(server(true, &[]).unwrap().env["OPENPENCIL_MCP_TOKENLESS_CLIENTS"], "1");
+        assert!(server(false, &["a,b"]).is_err());
     }
 
     #[test]

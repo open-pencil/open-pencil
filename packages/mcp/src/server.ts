@@ -19,6 +19,7 @@ import {
   type MCPAccess
 } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
+import type { PathConsent } from '#mcp/consent'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
 import type { RPCJSONObject } from '#mcp/json'
 import { registerFileRoutes } from '#mcp/server/files'
@@ -93,6 +94,19 @@ export interface ServerOptions {
   /** What clients can reach: the whole document (default) or only the user's selection. */
   scope?: MCPToolScope
   mcpRoot?: string | null
+  /** Asked before a tool reads or writes a file its caller named; see `stdioPathConsent`. */
+  pathConsent?: PathConsent
+  /**
+   * A token that only registers as the app, for an app that must not reach what the server's
+   * token opens besides: raw commands, files, and MCP sessions. The desktop app gives its editor
+   * this one and keeps the server's token.
+   */
+  appToken?: string | null
+  /**
+   * MCP clients may connect without a token and get the client token's scope, while the app,
+   * raw commands, and files still need theirs: the desktop app's "require a token" switch.
+   */
+  tokenlessClients?: boolean
   /** The server's token, for the app and every endpoint. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. `/mcp` also takes `mcpClientToken(authToken)`, which opens nothing else. */
   authToken?: string | null
   corsOrigin?: string | readonly string[] | null
@@ -324,7 +338,10 @@ async function buildServerContext(options: ServerOptions) {
   const authToken =
     options.authToken === undefined ? randomBytes(16).toString('hex') : options.authToken
   const clientToken = authToken === null ? null : await mcpClientToken(authToken)
-  const access = createMCPAccess(authToken, clientToken)
+  const access = createMCPAccess(authToken, clientToken, {
+    appToken: options.appToken ?? null,
+    tokenlessClients: options.tokenlessClients
+  })
   const corsOrigin = options.corsOrigin ?? null
   const withTcp = options.withTcp ?? false
 
@@ -349,7 +366,8 @@ async function buildServerContext(options: ServerOptions) {
         mcpRoot,
         sendRPC: sendToBrowser,
         agentSession,
-        onToolSettled
+        onToolSettled,
+        pathConsent: options.pathConsent
       }),
     onSessionOpened: ({ id, kind, chat }) => {
       sendToBrowser({ command: 'agent_session_opened', args: { session: id, kind, chat } }).catch(

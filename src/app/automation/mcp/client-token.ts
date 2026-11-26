@@ -1,6 +1,6 @@
 import { mcpClientToken } from '@open-pencil/mcp/tools'
 
-import { getAutomationAuthToken } from './spawn'
+import { desktopMCPClientToken, getAutomationAuthToken } from './spawn'
 
 /**
  * The token an agent connects to the MCP server with. The server's own token also opens raw
@@ -8,6 +8,9 @@ import { getAutomationAuthToken } from './spawn'
  * client token derived from it, which opens the tools alone.
  */
 export async function getMCPClientToken(): Promise<string | null> {
+  // The desktop app hands over the client token and keeps the server's own.
+  const desktop = desktopMCPClientToken()
+  if (desktop) return desktop
   const serverToken = await getAutomationAuthToken()
   return serverToken ? mcpClientToken(serverToken) : null
 }

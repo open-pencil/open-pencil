@@ -23,6 +23,14 @@ pub enum Question {
     Tool { agent: String, params: Value },
     /// To switch to a mode in which it runs tools without asking.
     Mode { agent: String, mode: String },
+    /// For an OpenPencil tool to read or write a file the caller named. `client` is the MCP
+    /// client's own name, empty when it gave none.
+    File {
+        client: String,
+        tool: String,
+        write: bool,
+        path: String,
+    },
 }
 
 /// The person's answer.

@@ -15,6 +15,7 @@ import { CODEGEN_PROMPT, toolInputFor } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
+import type { PathAccess, PathConsent } from '#mcp/consent'
 import { readFileInput, withFileInput } from '#mcp/tool/input'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
@@ -98,6 +99,8 @@ export interface RegisterToolsOptions {
   agentSession?: MCPAgentSession
   /** Transport lifecycle cleanup after tool execution, including cancellation. */
   onToolSettled?: MCPToolSettled
+  /** Asked before a tool reads or writes a file its caller named. */
+  pathConsent?: PathConsent
 }
 
 function toolAnnotations(effect: ToolEffect): ToolAnnotations {
@@ -135,6 +138,15 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     return { ...session, chat: agentSession.chat, call: agentCallId(meta) }
   }
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
+  /** Asks, when the server asks at all, before `tool` reads or writes `path`. */
+  const consent = (tool: string, access: PathAccess) => async (path: string) => {
+    await options.pathConsent?.({
+      tool,
+      access,
+      path,
+      client: mcpServer.server.getClientVersion()?.name
+    })
+  }
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
   const callable = new Map<string, CallableTool>()
   const register = <InputArgs extends v.GenericSchema>(
@@ -188,7 +200,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             return fail(new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR))
           }
           const appArgs = resolvedRoot
-            ? await readFileInput(def.name, toolArgs, resolvedRoot)
+            ? await readFileInput(def.name, toolArgs, resolvedRoot, consent(def.name, 'read'))
             : withoutOutputPath(def.name, toolArgs)
           const result = await sendRPC({
             command: 'tool',
@@ -205,7 +217,13 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           if (res.ok === false) return fail(new Error(res.error))
           const r = res.result as RPCJSONObject | undefined
           if (r && filePath && resolvedRoot) {
-            const written = await writeToolOutput(def.name, r, filePath, resolvedRoot)
+            const written = await writeToolOutput(
+              def.name,
+              r,
+              filePath,
+              resolvedRoot,
+              consent(def.name, 'write')
+            )
             if (written) return written
           }
           // Only an image goes back as one; a PDF stays base64 in the JSON result, as described.
@@ -292,6 +310,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           args.path !== undefined && resolvedRoot
             ? await resolveSafePath(args.path, resolvedRoot)
             : undefined
+        if (safePath) await consent('save_document', 'write')(safePath.realPath)
         const { target } = splitAutomationTarget(args)
         const result = await sendRPC({
           command: 'save_document',
@@ -326,6 +345,8 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: { path: string; document_id?: string; page_id?: string }, context) => {
         try {
           const safe = await resolveSafePath(args.path, resolvedRoot)
+          // The app reads the file, and saves to it later, so opening asks to write it too.
+          await consent('open_document', 'write')(safe.realPath)
           const { target } = splitAutomationTarget(args)
           const result = await sendRPC({
             command: 'open_document',
@@ -380,6 +401,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         try {
           const safePath =
             args.path !== undefined ? await resolveSafePath(args.path, resolvedRoot) : undefined
+          if (safePath) await consent('create_document', 'write')(safePath.realPath)
           const { target } = splitAutomationTarget(args)
           const result = await sendRPC({
             command: 'create_document',
@@ -441,6 +463,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           args.path !== undefined && resolvedRoot
             ? await resolveSafePath(args.path, resolvedRoot)
             : undefined
+        if (safePath) await consent('close_document', 'write')(safePath.realPath)
         const { target } = splitAutomationTarget(args)
         // An app chat's agent closes the chat's document unless it names another.
         const rpcArgs: Record<string, unknown> = { ...target, agent: agent(context.mcpReq._meta) }

@@ -71,7 +71,7 @@ export async function openRecentDocument(
 ): Promise<void> {
   try {
     if (document.kind === 'local') {
-      await openFileFromPath(document.path)
+      await openFileFromPath(document.path, { askAgain: true })
       return
     }
     const location = storageLocationOf(document)
