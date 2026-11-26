@@ -6,6 +6,7 @@ import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
+import { slideSettings } from '@open-pencil/scene-graph/slides'
 import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
@@ -132,7 +133,12 @@ export async function renderNodesToPPTX(
       stats
     }
 
-    if (root.type !== 'FRAME') {
+    // A deck's slide keeps its speaker notes, and one presenting skips stays as a hidden slide.
+    const settings = slideSettings(root)
+    if (settings?.notes) slide.addNotes(settings.notes)
+    if (settings?.skipped) slide.hidden = true
+
+    if (root.type !== 'FRAME' && root.type !== 'SLIDE') {
       // Non-frame root: export as a single image on its own slide.
       await addFallbackImage(ctx, root, root.opacity, `root node type ${root.type}`)
       continue
@@ -246,7 +252,8 @@ function rootRasterReason(root: SceneNode): string | null {
   // visible — rasterizing the whole slide for it would only cost editability.
   if (root.effects.some((e) => e.visible && e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW'))
     return 'blur effect'
-  const shadowReason = getShadowFallbackReason(root)
+  // A deck's slide wears its shadows only to stand out in the grid, so they are not its paint.
+  const shadowReason = root.type === 'SLIDE' ? null : getShadowFallbackReason(root)
   if (shadowReason) return shadowReason
   if (hasAsymmetricCorners(root)) return 'asymmetric corners'
   if (root.strokes.filter(isDrawnPaint).length > 1) {

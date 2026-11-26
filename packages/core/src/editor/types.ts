@@ -219,6 +219,8 @@ export interface EditorViewState {
   nodeEditState: NodeEditState | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
+  /** The slide on the stage in a deck's Slide view, or null while the whole deck shows. */
+  focusedSlideId: string | null
   /** What this canvas shows: the design being edited, or running as a preview. */
   canvasView: CanvasView
 }

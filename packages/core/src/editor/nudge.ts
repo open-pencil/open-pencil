@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { DECK_TYPES } from '@open-pencil/scene-graph/generated'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { collectNodePositions, pushPositionUndo } from './history/position'
@@ -170,7 +171,8 @@ export function createNudgeActions(ctx: EditorContext) {
     const movable: string[] = []
     for (const id of ids) {
       const node = ctx.graph.getNode(id)
-      if (node && !node.locked) movable.push(id)
+      // A deck lays its slides out; they move through its own commands.
+      if (node && !node.locked && !DECK_TYPES.has(node.type)) movable.push(id)
     }
     if (movable.length === 0) return
 

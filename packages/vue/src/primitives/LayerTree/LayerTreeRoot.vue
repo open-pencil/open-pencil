@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { TreeRoot } from 'reka-ui'
-import { computed, nextTick, onScopeDispose, reactive, ref } from 'vue'
+import { computed, nextTick, onScopeDispose, reactive, ref, watch } from 'vue'
 
+import { canvasRootId } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
@@ -59,7 +60,7 @@ let rebuildToken = 0
 function rebuildTree() {
   rebuildPending = false
   rebuildToken++
-  const model = buildLayerTreeModel(editor.graph, editor.state.currentPageId)
+  const model = buildLayerTreeModel(editor.graph, canvasRootId(editor.graph, editor.state))
   items.value = model.items
   nodesById = model.byId
   expanded.value = expanded.value.filter((id) => nodesById.has(id))
@@ -77,6 +78,8 @@ function scheduleTreeRebuild() {
 }
 
 rebuildTree()
+// The slide on the stage shows its own layers.
+watch(() => editor.state.focusedSlideId, scheduleTreeRebuild)
 
 const PATCHABLE_NODE_KEYS = new Set<keyof SceneNode>([
   'name',
@@ -117,9 +120,10 @@ function setRowRef(id: string, el: HTMLElement | null) {
 
 function expandSelectionAncestors(ids: readonly string[]) {
   const next = new Set(expanded.value)
+  const root = canvasRootId(editor.graph, editor.state)
   for (const id of ids) {
     let node = editor.graph.getNode(id)
-    while (node?.parentId && node.parentId !== editor.state.currentPageId) {
+    while (node?.parentId && node.id !== root && node.parentId !== root) {
       next.add(node.parentId)
       node = editor.graph.getNode(node.parentId)
     }

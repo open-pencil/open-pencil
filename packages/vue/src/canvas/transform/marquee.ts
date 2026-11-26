@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import { canvasRootId, type Editor } from '@open-pencil/core'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -29,7 +29,9 @@ export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy
   // Layers are compared by their canvas bounds, so rotated layers and containers match what is drawn.
   const scopeId = d.containerId ?? editor.state.enteredContainerId
   const hits: string[] = []
-  for (const node of editor.graph.getChildren(scopeId ?? editor.state.currentPageId)) {
+  for (const node of editor.graph.getChildren(
+    scopeId ?? canvasRootId(editor.graph, editor.state)
+  )) {
     if (!node.visible || node.locked) continue
     const bounds = getAxisAlignedWorldBounds(node, editor.graph)
     // As in Figma, on the page a frame or section holding layers needs to be fully enclosed.

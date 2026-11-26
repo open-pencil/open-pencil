@@ -9,6 +9,7 @@ import {
 } from 'reka-ui'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 
+import { canvasRootId } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
@@ -311,7 +312,7 @@ async function insertAsset(asset: LocalAsset) {
   if (!component) return
   const parentId = cycleSafeParent(
     editor.graph,
-    editor.state.enteredContainerId ?? editor.state.currentPageId,
+    editor.state.enteredContainerId ?? canvasRootId(editor.graph, editor.state),
     [componentId]
   )
   const point = insertionPoint(component, parentId)
