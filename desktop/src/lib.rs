@@ -127,6 +127,7 @@ pub fn run() {
             #[cfg(feature = "native-test")]
             launch::native_test_open_deep_link,
             system::opener::open_external_url,
+            system::windows::open_updater_window,
             #[cfg(feature = "native-test")]
             system::opener::take_native_test_opened_urls,
             launch::paths::path_matches_suffix,
