@@ -28,11 +28,12 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 
 - [Warstwy i strony](./layers-and-pages) — drzewo warstw, strony i panel właściwości;
 - [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje;
-- [Eksport](./exporting) — eksport obrazów i praca z plikami `.fig`.
+- [Otwieranie i zapisywanie](/user-guide/files) — dokumenty i strony internetowe.
+- [Eksport](/user-guide/exporting) — eksport obrazów.
 
 ## Funkcje zaawansowane
 
-- [Automatyczny układ](./auto-layout) — rozmieszczanie obiektów za pomocą Flexbox i CSS Grid;
+- [Automatyczny układ](/user-guide/auto-layout) — rozmieszczanie obiektów za pomocą Flexbox i CSS Grid;
 - [Komponenty](./components) — komponenty, egzemplarze i nadpisania przeznaczone do ponownego użycia;
 - [Zmienne](./variables) — zmienne projektu, kolekcje, tryby i powiązania z zalewami;
 - [Checking Designs](/user-guide/checking-designs) — panel Sprawdź, znaczniki problemów na obszarze roboczym i reguły lintu.

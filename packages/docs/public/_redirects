@@ -124,3 +124,17 @@
 
 # BYOK compatibility became Models and Providers, its test method a contributor page
 /user-guide/byok-provider-compatibility /user-guide/models-and-providers 301
+
+# Guide pages being rewritten are English only until they are translated
+/de/user-guide/auto-layout /user-guide/auto-layout 301
+/de/user-guide/exporting /user-guide/exporting 301
+/es/user-guide/auto-layout /user-guide/auto-layout 301
+/es/user-guide/exporting /user-guide/exporting 301
+/fr/user-guide/auto-layout /user-guide/auto-layout 301
+/fr/user-guide/exporting /user-guide/exporting 301
+/it/user-guide/auto-layout /user-guide/auto-layout 301
+/it/user-guide/exporting /user-guide/exporting 301
+/pl/user-guide/auto-layout /user-guide/auto-layout 301
+/pl/user-guide/exporting /user-guide/exporting 301
+/ru/user-guide/auto-layout /user-guide/auto-layout 301
+/ru/user-guide/exporting /user-guide/exporting 301

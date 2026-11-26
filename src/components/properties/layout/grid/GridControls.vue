@@ -50,6 +50,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
           <AppSelect
             :model-value="track.sizing"
             :options="ctx.trackSizingOptions"
+            :ui="{ trigger: 'w-24 shrink-0' }"
             @update:model-value="
               ctx.updateGridTrack(trackProp, i, {
                 sizing: $event as GridTrackSizing,
