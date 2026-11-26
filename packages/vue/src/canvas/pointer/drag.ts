@@ -24,6 +24,7 @@ export const ESCAPABLE_DRAGS: ReadonlySet<DragType> = new Set<DragType>([
   'draw',
   'gradient',
   'blur-ramp',
+  'slides',
   'rotate',
   'rotate-selection',
   'connector-draw',
@@ -92,6 +93,11 @@ export function moveCanvasDrag(
 
   if (d.type === 'blur-ramp') {
     d.update(sx, sy)
+    return
+  }
+
+  if (d.type === 'slides') {
+    d.update(cx, cy, sx, sy)
     return
   }
 

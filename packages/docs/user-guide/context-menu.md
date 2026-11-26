@@ -17,7 +17,7 @@ The **Copy/Paste as** submenu offers additional clipboard formats for the select
 | Copy as PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
 | Copy as JSX | — | — |
 
-- **Copy as text** — copies visible text content from the selection
+- **Copy as text** — copies the text of the one selected text layer
 - **Copy as SVG** — copies the node tree as SVG markup
 - **Copy as PNG** — renders at 2× and places on the system clipboard (paste into Slack, Notion, etc.)
 - **Copy as JSX** — copies the OpenPencil JSX representation for use with `renderJsx()`

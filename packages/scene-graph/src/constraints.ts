@@ -9,7 +9,8 @@ export const CONSTRAINT_PARENT_TYPES: ReadonlySet<SceneNode['type']> = new Set<S
   'FRAME',
   'COMPONENT',
   'COMPONENT_SET',
-  'INSTANCE'
+  'INSTANCE',
+  'SLIDE'
 ])
 
 /**

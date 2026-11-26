@@ -1,6 +1,6 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { layerRotates } from '@open-pencil/scene-graph/generated'
+import { DECK_TYPES, layerRotates } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
@@ -106,6 +106,9 @@ function drawSingleSelection(
   } else if (isPathText) {
     drawTextPathSelection(r, canvas, node, rotation, graph, editing, preview)
     if (!editing) drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
+  } else if (DECK_TYPES.has(node.type)) {
+    // The deck sizes and places its slides, so they have no handles to drag.
+    drawNodeOutline(r, canvas, node, rotation, graph, preview)
   } else {
     drawNodeSelection(r, canvas, node, rotation, graph, preview, !overlays.scaleTool)
     drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
@@ -150,7 +153,8 @@ export function drawSelection(
     .filter((id) => id !== nodeEditId)
     .map((id) => graph.getNode(id))
     .filter((n): n is SceneNode => n !== undefined)
-  if (nodes.length === 0) return
+  // An empty selection draws nothing, and the deck places its slides, so they have no bounds box.
+  if (nodes.every((node) => DECK_TYPES.has(node.type))) return
   drawGroupBounds(r, canvas, nodes, graph, preview, !overlays.scaleTool)
 
   drawSelectionLabels(r, canvas, graph, selectedIds, overlays)

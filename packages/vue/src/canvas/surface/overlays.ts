@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core'
+import { stagedSlide, type Editor } from '@open-pencil/core'
 import {
   hitTestIssueMarkers,
   hitTestStatusLabels,
@@ -21,7 +21,11 @@ export function createRulerVisibility(options?: RulerVisibilityOptions) {
 }
 
 export function createCanvasHitTests(editor: Editor, getRenderer: () => SkiaRenderer | null) {
+  // A slide on the stage hides every label around it, so none takes a click.
+  const onStage = () => stagedSlide(editor.graph, editor.state) !== null
+
   function hitTestSectionTitle(canvasX: number, canvasY: number) {
+    if (onStage()) return null
     return (
       getRenderer()?.hitTestSectionTitle(
         editor.graph,
@@ -33,6 +37,7 @@ export function createCanvasHitTests(editor: Editor, getRenderer: () => SkiaRend
   }
 
   function hitTestComponentLabel(canvasX: number, canvasY: number) {
+    if (onStage()) return null
     return (
       getRenderer()?.hitTestComponentLabel(
         editor.graph,
@@ -44,6 +49,7 @@ export function createCanvasHitTests(editor: Editor, getRenderer: () => SkiaRend
   }
 
   function hitTestFrameTitle(canvasX: number, canvasY: number) {
+    if (onStage()) return null
     return (
       getRenderer()?.hitTestFrameTitle(
         editor.graph,

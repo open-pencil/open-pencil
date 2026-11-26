@@ -1,0 +1,1 @@
+- Large Cloud documents keep their live room working, instead of having it reset every time an editor rejoins (#2354).
