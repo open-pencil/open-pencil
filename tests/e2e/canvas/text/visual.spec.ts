@@ -1,5 +1,6 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { textDecorationDriver } from '#tests/helpers/canvas/text-decoration/driver'
+import { showNumericPrefixDirection } from '#tests/helpers/canvas/text-direction/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
@@ -8,6 +9,14 @@ async function expectCanvas(name: string) {
   const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot(`${name}.png`)
 }
+
+test('automatic text direction follows the letters after Arabic-Indic numbers', async () => {
+  await showNumericPrefixDirection(editor.page)
+  editor.canvas.assertNoErrors()
+  expect(await editor.canvas.screenshotCanvasRegion(360, 120)).toMatchSnapshot(
+    'text-arabic-numeric-prefix.png'
+  )
+})
 
 test('complex text fills preserve native paragraph layout', async () => {
   await editor.page.evaluate(async () => {
