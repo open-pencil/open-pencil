@@ -16,8 +16,11 @@ import {
   withStrokeLines
 } from '../strokes'
 import type { SceneNode } from '../types'
-import { resolvedNumericBindings, resolvedRunBindings } from '../variables/bindings'
-import { isNumericVariableBindingField } from '../variables/fields'
+import {
+  resolvedNumericBindings,
+  resolvedRunBindings,
+  resolvesToNumber
+} from '../variables/bindings'
 import {
   applyBoundPaintColorsIn,
   copyAppliedBoundPaints,
@@ -242,7 +245,7 @@ function resolveBoundNumbersInPlace(
   )
   const restyled = textStyleId !== target.textStyleId ? Object.keys(bound) : []
   const synced = uniq([...Object.keys(updates), ...rebound, ...restyled]).filter(
-    (field) => isNumericVariableBindingField(field) && bound[field] && !kept(field)
+    (field) => resolvesToNumber(field) && bound[field] && !kept(field)
   )
   resolveSyncedRunsInPlace(graph, target, updates, styles)
   if (synced.length === 0) return

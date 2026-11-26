@@ -183,6 +183,25 @@ function detachedStyles(
   return { ...left, boundVariables: omitBy(bound, (_value, field) => isTextStyleField(field)) }
 }
 
+const STYLE_BINDABLE_FIELDS = TEXT_BINDABLE_FIELDS.filter((field) =>
+  (SHARED_TEXT_STYLE_FIELDS as readonly string[]).includes(field)
+)
+
+function withoutBindingsStyleTakesOver(
+  node: SceneNode,
+  before: CharacterStyleOverride,
+  after: CharacterStyleOverride
+): CharacterStyleOverride {
+  const own = after.boundVariables
+  const styleId = after.textStyleId
+  const tookStyle = Boolean(styleId) && styleId !== (before.textStyleId ?? node.textStyleId)
+  if (!own || !tookStyle) {
+    return after
+  }
+  const kept = omit(own, STYLE_BINDABLE_FIELDS)
+  return isEmptyObject(kept) ? omit(after, ['boundVariables']) : { ...after, boundVariables: kept }
+}
+
 /** Style runs with `patch` over `text[start, end)`, as Figma restyles a range. */
 export function styleRunsWithPatch(
   node: SceneNode,
@@ -211,7 +230,8 @@ export function styleRunsWithPatchOver(
         style = patches.get(fontSize) ?? sized(fontSize)
         patches.set(fontSize, style)
       }
-      chars[index] = { ...chars[index], ...style, ...detachedStyles(node, chars[index], style) }
+      const restyled = { ...chars[index], ...style, ...detachedStyles(node, chars[index], style) }
+      chars[index] = withoutBindingsStyleTakesOver(node, chars[index], restyled)
     }
   }
   // A newline takes the style of the character before it, as in Figma: a range that ends a
