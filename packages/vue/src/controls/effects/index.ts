@@ -1,2 +1,3 @@
 export { useEffectsControls } from './use'
-export type { BlurKind } from './helpers'
+export { grainSizeChange, noiseChange, noiseTypeChange, textureChange } from './helpers'
+export type { BlurKind, EffectChange, NoiseType } from './helpers'

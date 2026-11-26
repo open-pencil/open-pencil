@@ -1,12 +1,26 @@
+import type { CloudTokenScope } from '#cloud/contract'
 import type { CloudAuthAdapter, CloudIdentity } from '#cloud/server/auth/adapter'
+
+/** What an app's access reaches: the one workspace its grant was made for. */
+export type CloudAppGrant = {
+  clientId: string
+  workspaceId: string
+}
 
 export type CloudActor = {
   userId: string
   email: string
   name: string
   deploymentRole?: 'user' | 'admin'
-  /** How the request proved who it is: a signed-in session, or a personal access token. */
-  credential?: 'session' | 'token'
+  /**
+   * How the request proved who it is: a signed-in session, a personal access token, or an app's
+   * OAuth access token.
+   */
+  credential?: 'session' | 'token' | 'app'
+  /** What a token may do; a session may do anything its account may. */
+  scopes?: readonly CloudTokenScope[]
+  /** An app's grant, which reaches one workspace alone. */
+  grant?: CloudAppGrant
 }
 
 export type CloudIdentityResolver = (request: Request) => Promise<CloudIdentity | null>

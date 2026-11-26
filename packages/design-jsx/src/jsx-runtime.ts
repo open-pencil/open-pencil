@@ -3,6 +3,8 @@ import {
   node,
   type BaseProps,
   type EllipseProps,
+  type PolygonProps,
+  type StarProps,
   type ParagraphProps,
   type SpanProps,
   type TreeNode,
@@ -35,8 +37,8 @@ export namespace JSX {
     rectangle: BaseProps
     ellipse: BaseProps & EllipseProps
     line: BaseProps
-    star: BaseProps & { points?: number; innerRadius?: number }
-    polygon: BaseProps & { pointCount?: number }
+    star: BaseProps & StarProps
+    polygon: BaseProps & PolygonProps
     vector: BaseProps
     group: BaseProps
     section: BaseProps

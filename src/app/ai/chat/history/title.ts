@@ -1,9 +1,9 @@
 import type { UIMessage } from 'ai'
-import dedent from 'dedent'
 import * as v from 'valibot'
 
 import { answersQuestions, askModel, type ModelAnswer } from '@/app/ai/models/ask'
 import { fastTasksRuntime } from '@/app/ai/models/fast'
+import { renderPrompt } from '@/app/ai/prompts/engine'
 import { reviewOf } from '@/app/ai/review/message'
 
 import { fallbackTitle } from './messages'
@@ -59,18 +59,9 @@ export async function conversationTitle(
   if (!request || !reply) return null
   const runtime = await fastTasks()
   if (!runtime || !answersQuestions(runtime)) return null
-  const text = dedent`
-    Write a title of at most six words for this design conversation, in the language of the request.
-
-    Request:
-    ${request}
-
-    Reply:
-    ${reply}
-
-    Reply with the title alone.
-  `
   try {
+    // Inside the try: a prompt that cannot be filled keeps the first-message title too.
+    const text = await renderPrompt('title', { request, reply })
     const { title } = await ask(runtime, {
       text,
       maxOutputTokens: MAX_TITLE_TOKENS,

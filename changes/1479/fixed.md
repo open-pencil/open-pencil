@@ -1,2 +1,0 @@
-- SVG export draws background blur behind the layer, as Figma's SVG export does, instead of blurring the layer itself, and draws shadow spread, shadows hidden behind the layer, and shadow blend modes. Effects SVG cannot draw, such as glass, are left out and listed in the export's warnings (#1423).
-- Draw.io export lists the effects its shapes leave out in the export's warnings.

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -11,7 +10,8 @@ import type { HarnessRequest, HarnessSidecarMessage } from '#harness/protocol'
 import { parseHarnessRequest } from '#harness/protocol'
 import { HarnessSessionService } from '#harness/service'
 import { FileResumeStateStore } from '#harness/session-store'
-import { loadTypeScriptDependencies } from '#harness/typescript-dependencies'
+
+import { errorMessage } from '@open-pencil/std/errors'
 
 import packageJSON from '../package.json' with { type: 'json' }
 
@@ -22,7 +22,6 @@ if (process.argv.includes('--version')) {
 }
 
 const writeProtocol = reserveProtocolOutput()
-loadTypeScriptDependencies()
 
 const stateRoot =
   process.env.OPENPENCIL_HARNESS_STATE_DIR ?? join(homedir(), '.open-pencil', 'harness-sessions')
@@ -42,10 +41,6 @@ async function emit(message: HarnessSidecarMessage): Promise<void> {
   await new Promise<void>((resolve) => {
     process.stdout.once('drain', resolve)
   })
-}
-
-function messageFor(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 async function dispatch(line: string): Promise<boolean> {
@@ -111,7 +106,7 @@ async function dispatch(line: string): Promise<boolean> {
     await emit({ type: 'response', id: request.id, result: { shutdown: true } })
     return false
   } catch (error) {
-    await emit({ type: 'response', id: requestId, error: messageFor(error) })
+    await emit({ type: 'response', id: requestId, error: errorMessage(error) })
     return true
   }
 }
@@ -147,7 +142,7 @@ async function closeSidecar(): Promise<void> {
       return undefined
     })
     .catch((error) => {
-      process.stderr.write(`${messageFor(error)}\n`)
+      process.stderr.write(`${errorMessage(error)}\n`)
       process.exitCode = 1
     })
   await closing

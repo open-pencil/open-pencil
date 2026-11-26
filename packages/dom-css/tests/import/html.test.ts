@@ -24,6 +24,7 @@ describe('linked stylesheets', () => {
     <link rel="stylesheet" href="wide.css" media="screen and (min-width: 800px)">
     <link rel="stylesheet" href="evil.css" media="all;} body { display: none">
     <link rel="alternate stylesheet" href="dark.css">
+    <link rel="stylesheet" href="off.css" disabled>
     <link rel="icon" href="icon.png">
     <style>.card { color: red }</style>
   </head><body><div class="card"></div></body>`

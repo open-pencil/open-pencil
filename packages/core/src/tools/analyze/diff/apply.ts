@@ -11,8 +11,9 @@ import {
   type JSXAttributeSource
 } from '@open-pencil/design-jsx'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll, insertAll } from '@open-pencil/scene-graph/arrays'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { appendAll, insertAll } from '@open-pencil/std/arrays'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaAPI } from '#core/figma-api'
@@ -57,10 +58,6 @@ interface Plan {
   result: ApplyResult
   update?: NodeUpdate
   place?: Placement
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 function failed(operation: DiffOperation, error: string): Plan {

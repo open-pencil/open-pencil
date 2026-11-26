@@ -16,4 +16,4 @@ Les clÃ©s et noms de configuration restent en anglais car ils font partie de lâ€
 
 ## Voir aussi
 
-- [useI18n](../composables/use-i18n)
+- [useMessages](/developers/sdk/api/composables/use-messages)

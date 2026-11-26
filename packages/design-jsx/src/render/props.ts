@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode, VariableModeMap } from '@open-pencil/scene-graph'
+import { isRecord } from '@open-pencil/std/records'
 
 import { prepareScalarBindings } from '../overrides/scalar-bindings'
 import { isVariable } from '../variables'
@@ -13,10 +14,6 @@ import { paintProps } from '../variables/props'
 export interface PreparedProps {
   props: Record<string, unknown>
   bindings: Record<string, string>
-}
-
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 export function preparePropsForRender(
@@ -40,7 +37,7 @@ export function preparePropsForRender(
     bindVariableProp(graph, props, bindings, prop, fields[0], layer)
   }
 
-  if (isObjectRecord(props.style)) {
+  if (isRecord(props.style)) {
     const style = { ...props.style }
     for (const key of ['background', 'backgroundColor']) {
       bindVariableProp(graph, style, bindings, key, 'fills/0/color', layer)
@@ -54,7 +51,7 @@ export function preparePropsForRender(
     resolveForLayer(graph, variableId, layer.parentId, layer.modes)
   )
 
-  if (isObjectRecord(props.bind)) {
+  if (isRecord(props.bind)) {
     for (const [field, value] of Object.entries(props.bind)) {
       if (isVariable(value)) {
         bindings[field] = requireVariableId(graph, value)

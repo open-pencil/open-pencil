@@ -1,0 +1,9 @@
+{
+  "opening": "開いています…",
+  "unavailable": "このファイルは共有されていないか、リンクが間違っています。",
+  "failed": "ファイルを開けませんでした。",
+  "tryAgain": "再試行",
+  "openInEditor": "OpenPencil で開く",
+  "zoomToFit": "全体を表示",
+  "pages": "ページ"
+}

@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Fill, VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { buildIconData } from '#core/icons/artwork'
+import { buildIconData, svgIconPaths } from '#core/icons/artwork'
 import { extractPaths, extractSVGContent, extractSVGContentFromElements } from '#core/icons/svg'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
 import { vectorizeSVGContent } from '#core/vector/vectorize/svg/to-vectors'
@@ -130,6 +130,36 @@ describe('SVG XML parsing', () => {
     expect(
       extractPaths('<defs><path id="p" d="M0 0h4v4H0z"/></defs><use xlink:href="#p"/>')
     ).toHaveLength(1)
+  })
+
+  test('fits a symbol drawn through <use> to the viewport, by its viewBox', () => {
+    const extent = (markup: string) => {
+      const [path] = svgIconPaths(
+        extractSVGContent(markup),
+        { x: 0, y: 0, width: 16, height: 16 },
+        {
+          width: 16,
+          height: 16
+        }
+      )
+      const xs = path.vectorNetwork.vertices.map((vertex) => vertex.x)
+      const ys = path.vectorNetwork.vertices.map((vertex) => vertex.y)
+      return [minOf(xs), minOf(ys), maxOf(xs), maxOf(ys)]
+    }
+    const symbol =
+      '<defs><symbol id="s" viewBox="0 0 10 10"><rect width="10" height="10"/></symbol></defs>'
+
+    expect(extent(`<svg width="16" height="16">${symbol}<use href="#s"/></svg>`)).toEqual([
+      0, 0, 16, 16
+    ])
+    // A wider viewport centers it, as xMidYMid meet does; the use's own size wins over it.
+    expect(
+      extent(`<svg width="16" height="16">${symbol}<use href="#s" width="8" height="4"/></svg>`)
+    ).toEqual([2, 0, 6, 4])
+    // Percentages take their share of the viewport.
+    expect(
+      extent(`<svg width="16" height="16">${symbol}<use href="#s" width="50%" height="50%"/></svg>`)
+    ).toEqual([0, 0, 8, 8])
   })
 
   test('rejects malformed SVG documents', () => {

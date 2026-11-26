@@ -3,8 +3,7 @@ import {
   type EditorState,
   type SwitchPageOptions
 } from '@open-pencil/core'
-import type { DocumentColorSpace } from '@open-pencil/scene-graph'
-import type { PresentationColorSpace } from '@open-pencil/vue/canvas/surface'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 
 import type { EditorPreparation, EditorPreparationHandle } from '@/app/editor/preparation/types'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -64,14 +63,18 @@ export type AppEditorState = EditorState & {
   renameNodeId: string | null
   preparation: EditorPreparation | null
   /** Color space the canvas is presenting, reported by the surface. */
-  canvasPresentation: PresentationColorSpace | null
+  canvasPresentation: ColorProfile | null
   /** Mirror of the document's color space, kept reactive for UI. */
-  documentColorSpace: DocumentColorSpace
+  documentColorSpace: ColorProfile
 }
 
 /** How the app switches pages: inside a preparation, with the loader up until the page is shown. */
 export interface AppSwitchPageOptions {
-  /** The preparation the switch belongs to, such as a document opening; else it starts its own. */
+  /**
+   * The preparation the switch belongs to, such as a document opening; else it starts its own.
+   * A page that cannot be shown fails it as `render-failed`, and the switch still resolves, since
+   * the page is already in.
+   */
   preparation?: EditorPreparationHandle
   /**
    * Runs once the page is committed and before its first frame counts as shown, such as

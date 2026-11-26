@@ -1,8 +1,8 @@
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneGraph, SceneNode, ComponentPropertyDefinition } from '@open-pencil/scene-graph'
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
+import type { JSONObject } from '@open-pencil/std/json'
 
 import { verifyComponentPropDefs, verifyDerivedTextData } from './raw-verifiers/helpers'
 

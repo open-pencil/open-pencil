@@ -5,7 +5,7 @@ export default {
     inner:
       'mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-8 gap-y-10 px-4 pt-12 pb-8 sm:px-6 md:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]',
     about: 'col-span-2 flex flex-col gap-3 md:col-span-1',
-    tagline: 'max-w-xs text-sm text-pretty text-muted',
+    tagline: 'max-w-xs text-sm text-muted',
     column: 'flex flex-col gap-3',
     columnTitle: 'text-xs font-semibold text-surface',
     columnLinks: 'flex flex-col gap-2',

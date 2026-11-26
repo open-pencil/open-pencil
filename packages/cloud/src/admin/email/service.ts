@@ -17,6 +17,8 @@ import type { Kysely } from 'kysely'
 const ENROLLMENT_MESSAGE_STATUS: Partial<Record<string, EnrollmentStatus>> = {
   'enrollment-requested': 'pending',
   'enrollment-approved': 'approved',
+  // The beta's invitation letter, no longer sent; one kept in the outbox resends as the approval.
+  'enrollment-invited': 'approved',
   'enrollment-rejected': 'rejected',
   'enrollment-revoked': 'revoked'
 }
@@ -92,7 +94,8 @@ export function createAdminEmailService(
             'This message cannot be regenerated'
           )
         }
-        const kind = original.kind
+        // A letter from the beta's invitations resends as the plain approval it stood for.
+        const kind = original.kind === 'enrollment-invited' ? 'enrollment-approved' : original.kind
         const enrollment = await transaction
           .selectFrom('enrollment')
           .selectAll()

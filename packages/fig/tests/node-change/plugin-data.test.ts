@@ -75,6 +75,22 @@ describe('OpenPencil plugin data readers', () => {
     })
   })
 
+  test('effect aliases count only the effects the scene graph models', () => {
+    const radius = {
+      dataType: 'ALIAS' as const,
+      resolvedDataType: 'FLOAT' as const,
+      value: { alias: { guid: { sessionID: 1, localID: 4 } } }
+    }
+    expect(
+      extractBoundVariables({
+        effects: [
+          { type: 'REPEAT', radiusVar: radius },
+          { type: 'GRAIN', radiusVar: radius }
+        ]
+      })
+    ).toEqual({ 'effects/0/radius': '1:4' })
+  })
+
   test('export settings clamp scales and fall back to native settings when any entry is invalid', () => {
     const native: NodeChange = {
       exportSettings: [{ imageType: 'SVG', constraint: { type: 'CONTENT_SCALE', value: 1 } }]

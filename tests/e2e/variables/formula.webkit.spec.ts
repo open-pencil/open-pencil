@@ -2,19 +2,12 @@ import type { Locator, Page } from '@playwright/test'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
 import {
   formulaSceneState,
   pasteFormulaText,
   seedFormulaScene,
   updateFormulaNumber
 } from '#tests/helpers/variables/formula'
-
-test.beforeEach(async ({ page }) => {
-  await page.route('https://cloud.openpencil.dev/.well-known/openpencil', (route) =>
-    route.fulfill({ json: cloudDiscoveryFixture('https://cloud.openpencil.dev') })
-  )
-})
 
 async function openToken(page: Page, id: string) {
   await page

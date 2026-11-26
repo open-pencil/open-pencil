@@ -1,8 +1,8 @@
 import type { Canvas, Paragraph } from '@open-pencil/canvaskit'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { StatusState } from '@open-pencil/scene-graph/statuses'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {

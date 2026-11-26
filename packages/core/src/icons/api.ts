@@ -2,11 +2,13 @@ import { uniq } from 'es-toolkit'
 import { createFetch } from 'ofetch'
 import * as v from 'valibot'
 
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
 import { collectionListSchema, collectionsSchema, iconSetSchema, type IconSet } from './schema'
 import type { IconCollection, IconSearchResult } from './types'
 
 const ICONIFY_API = 'https://api.iconify.design'
-const FETCH_TIMEOUT_MS = 10_000
+const FETCH_TIMEOUT_MS = DEADLINE_MS.request
 
 export function createIconifyAPIClient(
   fetcher: typeof globalThis.fetch = globalThis.fetch,

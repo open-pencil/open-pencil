@@ -1,4 +1,4 @@
-import { isEmptyObject, isEqual, omitBy, pick } from 'es-toolkit'
+import { isEqual, omitBy, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type {
@@ -7,14 +7,15 @@ import type {
   StyleRun,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import {
   MAX_LIST_INDENTATION,
   paragraphCount,
   PLAIN_PARAGRAPH,
-  trimParagraphStyles
+  trimParagraphStyles,
+  appendStyleRun
 } from '@open-pencil/scene-graph/text'
+import { minOf } from '@open-pencil/std/arrays'
 
 import { parseScriptInput } from './schema'
 import type { MarkdownService } from './services'
@@ -184,12 +185,7 @@ function styleRuns(segments: readonly Segment[], textStyle: SpanStyle): StyleRun
   let start = 0
   for (const segment of segments) {
     const style = omitBy(segment.style, (value, key) => isEqual(value, textStyle[key]))
-    if (segment.length > 0 && !isEmptyObject(style)) {
-      const previous = runs.at(-1)
-      const adjoins = previous && previous.start + previous.length === start
-      if (adjoins && isEqual(previous.style, style)) previous.length += segment.length
-      else runs.push({ start, length: segment.length, style })
-    }
+    appendStyleRun(runs, start, segment.length, style)
     start += segment.length
   }
   return runs

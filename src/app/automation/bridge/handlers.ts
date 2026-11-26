@@ -1,6 +1,7 @@
 import { omit } from 'es-toolkit'
 
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import { isRecord, type UnknownRecord } from '@open-pencil/std/records'
 
 import { agentChatStore } from '@/app/ai/reply/run'
 import { agentSessionOpened, endAgentSession, readAgentSession } from '@/app/automation/agents'
@@ -19,14 +20,12 @@ import { handleRPCFallback } from '@/app/automation/bridge/rpc-handler'
 import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import {
   forgetSessionDocument,
-  isUnknownRecord,
   listAutomationDocuments,
   rememberSessionDocument,
   resolveAutomationTarget,
   responseWithTarget,
   stripAutomationTargetArgs,
   type AutomationTarget,
-  type UnknownRecord,
   withSessionDocument
 } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
@@ -93,7 +92,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
       return { ok: true, result: null }
     }
     if (command === 'agent_session_closed') {
-      const session = isUnknownRecord(args) ? args.session : undefined
+      const session = isRecord(args) ? args.session : undefined
       if (typeof session === 'string') {
         // Only the server's word ends the session's document: a dropped connection may come
         // back with the same session, which must keep working where it did.
@@ -105,7 +104,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)
 
-    const rawArgs = isUnknownRecord(args) ? args : {}
+    const rawArgs = isRecord(args) ? args : {}
     const session = sessionOf(rawArgs)
     if (command === 'open_document' || command === 'create_document') {
       const response =

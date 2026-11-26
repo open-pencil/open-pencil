@@ -8,7 +8,12 @@
     "emitDeclarationOnly": true,
     "noEmit": false,
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
-    "types": ["bun"]
+    "types": ["bun"],
+    "paths": {
+      "#scene-graph/*": ["./src/*"],
+      "@open-pencil/scene-graph": ["./src/index.ts"],
+      "@open-pencil/scene-graph/*": ["./src/*"]
+    }
   },
   "include": ["src"]
 }

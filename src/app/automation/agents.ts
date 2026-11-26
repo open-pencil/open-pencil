@@ -1,8 +1,9 @@
 import * as v from 'valibot'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { createDeferred } from '@open-pencil/std/async'
+import { isRecord } from '@open-pencil/std/records'
 
-import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
 import {
   addAgent,
@@ -11,7 +12,6 @@ import {
   type AgentHandle
 } from '@/app/presence/registry'
 import { MAX_NAME_LENGTH } from '@/app/presence/schema'
-import { createDeferred } from '@/app/runtime/deferred'
 
 /** After this long without a tool call, a session's agent rests and leaves the canvas. */
 export const MCP_AGENT_IDLE_MS = 20_000
@@ -133,7 +133,7 @@ function restartTimers(agent: SessionAgent): void {
 }
 
 function collectIds(value: unknown, ids: Set<string>): void {
-  if (!isUnknownRecord(value)) return
+  if (!isRecord(value)) return
   const record = value
   for (const field of NODE_ID_FIELDS) {
     const entry = record[field]
@@ -146,7 +146,7 @@ function collectIds(value: unknown, ids: Set<string>): void {
     const list = record[field]
     if (!Array.isArray(list)) continue
     for (const item of list) {
-      if (isUnknownRecord(item) && typeof item.id === 'string') ids.add(item.id)
+      if (isRecord(item) && typeof item.id === 'string') ids.add(item.id)
     }
   }
 }
@@ -299,7 +299,7 @@ export function watchChatAgent(chat: string): { connected: Promise<void>; stop: 
 
 /** The MCP server says an agent opened a session; the ACP chat waiting for it may go on. */
 export function agentSessionOpened(args: unknown): void {
-  if (!isUnknownRecord(args) || args.kind !== 'acp') return
+  if (!isRecord(args) || args.kind !== 'acp') return
   const { chat } = args
   if (typeof chat !== 'string') return
   waitingChats.get(chat)?.()

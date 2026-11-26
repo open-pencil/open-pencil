@@ -8,6 +8,13 @@ import type { NodeCloneMode } from '../copy'
 import type { SceneGraph } from '../graph'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
+import {
+  STROKE_LINE_FIELDS,
+  STROKE_LINE_KEYS,
+  strokeLine,
+  type StrokeLines,
+  withStrokeLines
+} from '../strokes'
 import type { SceneNode } from '../types'
 import { resolvedNumericBindings } from '../variables/bindings'
 import { isNumericVariableBindingField } from '../variables/fields'
@@ -154,6 +161,8 @@ export function updateSyncedProps(
     applySyncedModes(graph, target, updates)
     keepCopyBoundPaints(graph, target, updates)
   }
+  // After the copy's own bound paints, which can bring its strokes into the write.
+  applySyncedStrokeLines(target, updates, kept)
   let changed: Partial<SceneNode> | undefined
   for (const key of Object.keys(updates)) {
     const current = target[key as keyof SceneNode]
@@ -170,6 +179,38 @@ export function updateSyncedProps(
     changed.fillStyleId = updates.fillStyleId
   }
   graph.updateNode(target.id, changed)
+}
+
+/**
+ * Strokes a sync or swap gives a copy draw with the copy's own line fields: the weight,
+ * alignment, cap, join, or dash it overrides, and a bound weight resolved in its modes. Figma
+ * keeps a stroke weight override when the component's color changes (live).
+ */
+export function applySyncedStrokeLines(
+  target: SceneNode,
+  updates: Partial<SceneNode>,
+  kept: (field: string) => boolean
+): void {
+  const strokes = updates.strokes
+  const first = strokes?.at(0)
+  if (!strokes || !first) return
+  const lines: StrokeLines = {}
+  let set = false
+  for (const key of STROKE_LINE_KEYS) {
+    const field = STROKE_LINE_FIELDS[key]
+    const own = kept(field)
+    const value = own ? target[field] : updates[field]
+    if (value === undefined) continue
+    // A field the copy overrides holds for every stroke; the component's own values keep its
+    // strokes' differences unless a binding resolved the first one apart.
+    const differs = own
+      ? strokes.some((stroke) => !isEqual(value, strokeLine(stroke, key)))
+      : !isEqual(value, strokeLine(first, key))
+    if (!differs) continue
+    Reflect.set(lines, key, value)
+    set = true
+  }
+  if (set) updates.strokes = withStrokeLines(strokes, lines)
 }
 
 /**

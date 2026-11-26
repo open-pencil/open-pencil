@@ -1,6 +1,6 @@
 import { promiseTimeout } from '@vueuse/core'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 import { watchChatAgent } from '@/app/automation/agents'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'

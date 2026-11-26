@@ -1,1 +1,0 @@
-- Each row of the Apply variable picker previews its own variable's color after the field is bound to a variable, instead of every row showing the bound color (#1937).

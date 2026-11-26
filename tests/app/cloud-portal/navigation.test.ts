@@ -49,6 +49,26 @@ describe('portal access rules', () => {
     })
   })
 
+  test('an app’s approval page keeps its signed query through sign-in and the terms', () => {
+    const query = 'client_id=app&scope=documents%3Aread+offline_access&exp=1&sig=abc'
+    const authorize: PortalRouteTarget = {
+      meta: { account: true },
+      path: '/auth/authorize',
+      fullPath: `/auth/authorize?${query}`,
+      query: {}
+    }
+    expect(portalDestination(authorize, null)).toEqual({
+      name: 'sign-in',
+      query: { redirect: `/auth/authorize?${query}` }
+    })
+    expect(portalDestination(authorize, account('terms'))).toEqual({
+      path: '/account/terms',
+      query: { redirect: `/auth/authorize?${query}` }
+    })
+    const signIn = target('/auth/sign-in', { signedOut: true }, `/auth/authorize?${query}`)
+    expect(portalDestination(signIn, account('active'))).toBe(`/auth/authorize?${query}`)
+  })
+
   test('an account waiting for review or declined only reaches its standing page', () => {
     const security = target('/account', { account: true })
     expect(portalDestination(security, account('pending'))).toBe('/account/pending')
@@ -88,6 +108,18 @@ describe('portal access rules', () => {
     expect(portalDestination(terms, account('terms'))).toBe(true)
     expect(portalDestination(terms, account('active'))).toBe('/')
     expect(portalDestination(terms, account('pending'))).toBe('/account/pending')
+  })
+
+  test('a session that has to prove its second step proves it first, then goes where it was going', () => {
+    const security = target('/account/security', { account: true })
+    expect(portalDestination(security, account('two-step'))).toEqual({
+      path: '/account/confirm',
+      query: { redirect: '/account/security' }
+    })
+    const confirm = target('/account/confirm', { account: true }, '/admin/people')
+    expect(portalDestination(confirm, account('two-step'))).toBe(true)
+    // An administrator whose proof aged proves it again from an active account.
+    expect(portalDestination(confirm, account('active', 'admin'))).toBe(true)
   })
 
   test('console pages ask for a deployment administrator', () => {

@@ -134,6 +134,10 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'zoomToPreviousFrame',
   'zoomToSelection',
 
+  // Slide view
+  'focusSlide',
+  'focusAdjacentSlide',
+
   // Preview
   'leaveCanvasView',
   'resetPlay',

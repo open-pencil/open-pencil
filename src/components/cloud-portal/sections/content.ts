@@ -1,19 +1,33 @@
+import { downloadCloudDocument } from '@open-pencil/cloud/client'
 import type { CloudAdminDocument } from '@open-pencil/cloud/contract'
 
+import { documentFileName } from '@/app/cloud-portal/archive'
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction } from '@/app/cloud-portal/state'
+import { downloadBlob } from '@/app/document/io/browser'
 import { formatDate } from '@/app/i18n/date'
 
 import type { PortalContentAction, PortalDocumentRow } from '../types'
 
-/** A document from the server as the console's rows show it. */
-export function documentRow(document: CloudAdminDocument, locale: string): PortalDocumentRow {
+/**
+ * A document from the server as the console's rows show it; `thumbnailURL` names where its saved
+ * thumbnail is.
+ */
+export function documentRow(
+  document: CloudAdminDocument,
+  locale: string,
+  thumbnailURL: (documentId: string, revisionId: string) => string
+): PortalDocumentRow {
   return {
     id: document.id,
     name: document.name,
+    kind: document.kind,
+    saved: document.revisionId !== null,
     workspace: document.workspace.name,
     owner: document.owner,
-    updated: formatDate(document.updatedAt, 'date', locale),
+    updatedAt: document.updatedAt,
+    thumbnail: document.revisionId ? thumbnailURL(document.id, document.revisionId) : null,
+    exposure: document.exposure,
     takenDown: document.disabledAt !== null,
     takenDownReason: document.disabledReason,
     openReports: document.openReports,
@@ -39,6 +53,17 @@ export function useContentActions(reload: () => Promise<void> | undefined, chang
       },
       reason?: string
     ) => {
+      if (action === 'download') {
+        const download = await portal.api.downloadDocument(target.document.id)
+        const bytes = await downloadCloudDocument(download, globalThis.fetch.bind(globalThis))
+        downloadBlob(
+          bytes,
+          documentFileName(target.document.name, target.document.kind),
+          'application/octet-stream'
+        )
+        // Nothing on the server changed, so the list stays as it is.
+        return
+      }
       if (action === 'take-down') {
         await portal.api.documentAction(target.document.id, 'disable', reason)
       } else if (action === 'restore') {

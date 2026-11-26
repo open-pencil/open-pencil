@@ -1,5 +1,7 @@
 import type { LanguageModel } from 'ai'
 
+import { AI_PROVIDERS } from '@open-pencil/core/constants'
+
 import type { ModelConfig, ModelProviderRuntime } from '@/app/ai/providers/types'
 import type { FetchFunction } from '@/app/http/types'
 import { isTauri } from '@/app/tauri/env'
@@ -7,17 +9,20 @@ import { tauriFetch } from '@/app/tauri/http'
 
 export type { ModelConfig } from '@/app/ai/providers/types'
 
+/**
+ * The model a profile names: the ID typed in when there is one, else the one picked from a list.
+ * Empty for an agent's profile that leaves the choice to the agent.
+ */
+export function profileModelID(profile: Pick<ModelConfig, 'modelID' | 'customModelID'>): string {
+  return profile.customModelID.trim() || profile.modelID.trim()
+}
+
+/** The model a provider is asked for: a typed-in ID only where the provider takes one. */
 export function resolveLanguageModelID(
   config: Pick<ModelConfig, 'providerID' | 'modelID' | 'customModelID'>
 ): string {
-  if (
-    config.providerID === 'openrouter' ||
-    config.providerID === 'openai-compatible' ||
-    config.providerID === 'anthropic-compatible'
-  ) {
-    return config.customModelID.trim() || config.modelID
-  }
-  return config.modelID
+  const provider = AI_PROVIDERS.find((definition) => definition.id === config.providerID)
+  return provider?.supportsCustomModel ? profileModelID(config) : config.modelID
 }
 
 function desktopFetch(): FetchFunction | undefined {

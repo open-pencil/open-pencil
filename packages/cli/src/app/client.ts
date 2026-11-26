@@ -3,12 +3,12 @@ import type { IncomingMessage } from 'node:http'
 
 import { readDiscoveryFile } from '@open-pencil/mcp/discovery'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
-import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
+import { CLIENT_RPC_DEADLINE_MS, platformHasUnixSockets } from '@open-pencil/mcp/transport'
 
 import type { AppTarget } from '#cli/app/target'
 
 /** Maximum time to wait for a single RPC request before giving up. */
-const RPC_TIMEOUT_MS = 30_000
+const RPC_TIMEOUT_MS = CLIENT_RPC_DEADLINE_MS
 
 let cachedInfo: DiscoveryInfo | null = null
 

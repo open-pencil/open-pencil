@@ -1,1 +1,0 @@
-- `TextAutoResize` from `@open-pencil/scene-graph` no longer includes `TRUNCATE`: a truncating text is `textAutoResize: 'NONE'` with `textTruncation: 'ENDING'`, as Figma stores it. Design JSX no longer accepts `textAutoResize="truncate"`; use `truncate` (#2028).

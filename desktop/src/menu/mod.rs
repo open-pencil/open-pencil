@@ -120,14 +120,23 @@ fn is_separator(entry: &MenuEntry) -> bool {
     entry.r#type.as_deref() == Some("separator")
 }
 
-/// The entries a menu shows. Items whose feature is off are left out, as is the schema's
-/// Settings… on macOS, where the application menu holds it, along with the separators they
-/// would leave at either end of the menu or next to each other.
+/// The schema's items that the macOS application menu holds instead.
+const APP_MENU_IDS: [&str; 2] = ["settings", "check-updates"];
+
+/// The entries a menu shows. Items whose feature is off are left out, as are the schema's
+/// Settings… and Check for Updates… on macOS, where the application menu holds them, along
+/// with the separators they would leave at either end of the menu or next to each other.
 fn platform_entries<'a>(items: &'a [MenuEntry], features: &[String]) -> Vec<&'a MenuEntry> {
     let mut entries: Vec<&MenuEntry> = Vec::new();
     for entry in items
         .iter()
-        .filter(|entry| !(cfg!(target_os = "macos") && entry.id.as_deref() == Some("settings")))
+        .filter(|entry| {
+            !(cfg!(target_os = "macos")
+                && entry
+                    .id
+                    .as_deref()
+                    .is_some_and(|id| APP_MENU_IDS.contains(&id)))
+        })
         .filter(|entry| {
             entry
                 .feature
@@ -639,6 +648,22 @@ mod tests {
                 group.label
             );
         }
+    }
+
+    // macOS keeps Check for Updates… in the application menu; elsewhere Help has it while the
+    // app updates itself.
+    #[test]
+    fn puts_check_for_updates_in_help_off_macos() {
+        let help = groups()
+            .into_iter()
+            .find(|group| group.label == "Help")
+            .expect("Help menu");
+        let check = "check-updates".to_string();
+        assert!(!shown(&help, &[]).contains(&check));
+        assert_eq!(
+            shown(&help, &["self-update".to_string()]).contains(&check),
+            !cfg!(target_os = "macos")
+        );
     }
 
     #[test]

@@ -56,4 +56,35 @@ describe('moving a layer from the layers panel', () => {
       editor.dispose()
     }
   })
+
+  test('out of a frame lays the layer out for its new place, and undo for its old one', () => {
+    const editor = createEditor()
+    try {
+      const page = editor.state.currentPageId
+      const rtl = editor.graph.createNode('FRAME', page, {
+        width: 300,
+        height: 100,
+        layoutDirection: 'RTL'
+      })
+      const row = editor.graph.createNode('FRAME', rtl.id, {
+        layoutMode: 'HORIZONTAL',
+        primaryAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG',
+        layoutDirection: 'AUTO'
+      })
+      const first = editor.graph.createNode('RECTANGLE', row.id, { width: 40, height: 40 })
+      editor.graph.createNode('RECTANGLE', row.id, { width: 60, height: 40 })
+      editor.runLayoutForNode(rtl.id)
+      expect(editor.graph.getNode(first.id)?.x).toBe(60)
+
+      editor.reorderChildWithUndo(row.id, page, 0)
+      expect(editor.graph.getNode(first.id)?.x).toBe(0)
+
+      editor.undo.undo()
+      expect(editor.graph.getNode(row.id)?.parentId).toBe(rtl.id)
+      expect(editor.graph.getNode(first.id)?.x).toBe(60)
+    } finally {
+      editor.dispose()
+    }
+  })
 })

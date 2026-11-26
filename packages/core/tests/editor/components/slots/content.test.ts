@@ -131,6 +131,64 @@ describe('editing instance slots', () => {
     expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual(before)
   })
 
+  test('duplicating slot content claims the slot in the same undo step', () => {
+    const { editor, instance, slot } = setup()
+    const [content] = editor.graph.getChildren(slot.id)
+    editor.select([content.id])
+    editor.duplicateSelected()
+    expect(names(editor, slot)).toEqual(['Default', 'Default'])
+    expect(ownsSlotContent(editor.graph, slot)).toBe(true)
+
+    editor.undo.undo()
+    expect(names(editor, slot)).toEqual(['Default'])
+    expect(ownsSlotContent(editor.graph, slot)).toBe(false)
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({})
+    expect(editor.undo.canUndo).toBe(false)
+  })
+
+  test('dragging a layer into a slot in the layers panel claims it in the same undo step', () => {
+    const { editor, pageId, free, slot } = setup()
+    editor.reorderChildWithUndo(free.id, slot.id, 1)
+    expect(names(editor, slot)).toEqual(['Default', 'Free'])
+    expect(ownsSlotContent(editor.graph, slot)).toBe(true)
+
+    editor.undo.undo()
+    expect(editor.graph.getNode(free.id)?.parentId).toBe(pageId)
+    expect(ownsSlotContent(editor.graph, slot)).toBe(false)
+    expect(editor.undo.canUndo).toBe(false)
+  })
+
+  test('reordering slot content claims the slot in the same undo step', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const list = editor.graph.createNode('COMPONENT', pageId, {
+      componentPropertyDefinitions: [
+        { id: 'list:items', name: 'Items', type: 'SLOT', defaultValue: '' }
+      ]
+    })
+    const items = editor.graph.createNode('FRAME', list.id, {
+      componentPropertyReferences: [{ propertyId: 'list:items', field: 'SLOT_CONTENT' }]
+    })
+    editor.graph.createNode('TEXT', items.id, { name: 'First', text: 'First' })
+    editor.graph.createNode('TEXT', items.id, { name: 'Second', text: 'Second' })
+    const instance = expectDefined(editor.graph.createInstance(list.id, pageId))
+    const slot = expectDefined(
+      editor.graph.getChildren(instance.id).find((child) => slotPropertyId(child))
+    )
+
+    editor.setChildOrder(slot.id, [...slot.childIds].reverse())
+    expect(names(editor, slot)).toEqual(['Second', 'First'])
+    expect(ownsSlotContent(editor.graph, slot)).toBe(true)
+
+    editor.undo.undo()
+    const restored = expectDefined(
+      editor.graph.getChildren(instance.id).find((child) => slotPropertyId(child))
+    )
+    expect(names(editor, restored)).toEqual(['First', 'Second'])
+    expect(ownsSlotContent(editor.graph, restored)).toBe(false)
+    expect(editor.undo.canUndo).toBe(false)
+  })
+
   test('undoing an added instance restores the selection', () => {
     const { editor, item, slot, free } = setup()
     editor.select([free.id])

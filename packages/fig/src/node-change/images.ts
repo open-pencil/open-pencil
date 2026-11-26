@@ -1,11 +1,11 @@
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
+
 import type { NodeChange, PluginData } from '@open-pencil/kiwi/fig/codec'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import {
   OPEN_PENCIL_PLUGIN_DATA,
   OPEN_PENCIL_PLUGIN_ID
 } from '@open-pencil/scene-graph/plugin-data'
-
-import { bytesToHex, hexToBytes } from './bytes'
 
 /** The fields of a paint that reference an image. */
 const IMAGE_FIELDS = ['image', 'imageThumbnail', 'animatedImage'] as const

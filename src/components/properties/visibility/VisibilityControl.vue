@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { useVisibilityBindingProvider } from '@open-pencil/vue/controls/binding-provider'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { BindableValueRoot } from '@open-pencil/vue/primitives/BindableValue'
 
 import FieldBindingPicker from '@/components/properties/binding/FieldBindingPicker.vue'
@@ -19,7 +19,7 @@ const { nodeId, visibility } = defineProps<{
 }>()
 const emit = defineEmits<{ toggle: [] }>()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const provider = useVisibilityBindingProvider()
 const targets = computed(() => (nodeId ? [{ nodeId, path: 'visible' }] : []))
 </script>

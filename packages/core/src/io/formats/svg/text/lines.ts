@@ -1,5 +1,9 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { estimatedLineStep } from '@open-pencil/scene-graph/text'
+import {
+  estimatedLineStep,
+  styleRunPieces,
+  type StyleRunPiece
+} from '@open-pencil/scene-graph/text'
 import { containsRTLText, resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
@@ -56,25 +60,9 @@ export type SpanAttrs = (
   fallback?: SVGFallbackFace
 ) => Record<string, string | number | undefined>
 
-interface TextPiece {
-  from: number
-  to: number
-  style: CharacterStyleOverride | null
-}
-
 /** The text cut at its style runs; characters no run covers keep the node's own style. */
-function textPieces(node: SceneNode): TextPiece[] {
-  const pieces: TextPiece[] = []
-  let cursor = 0
-  for (const run of node.styleRuns.toSorted((a, b) => a.start - b.start)) {
-    if (run.start > cursor) pieces.push({ from: cursor, to: run.start, style: null })
-    const from = Math.max(cursor, run.start)
-    const to = Math.min(run.start + run.length, node.text.length)
-    if (to > from) pieces.push({ from, to, style: run.style })
-    cursor = Math.max(cursor, to)
-  }
-  if (cursor < node.text.length) pieces.push({ from: cursor, to: node.text.length, style: null })
-  return pieces
+function textPieces(node: SceneNode): StyleRunPiece[] {
+  return styleRunPieces(node.styleRuns, node.text.length)
 }
 
 /** One unpositioned span per style run, including uncovered text in the node's own style. */
@@ -83,7 +71,7 @@ export function textStyleSpans(node: SceneNode, spanAttrs: SpanAttrs): SVGNode[]
     svg(
       'tspan',
       piece.style ? spanAttrs(piece.style) : {},
-      shownTextSlice(node, piece.from, piece.to)
+      shownTextSlice(node, piece.start, piece.end)
     )
   )
 }
@@ -205,7 +193,7 @@ function directionalPieces(
 
 function lineSpans(
   node: SceneNode,
-  pieces: readonly TextPiece[],
+  pieces: readonly StyleRunPiece[],
   line: SVGTextLine,
   spanAttrs: SpanAttrs
 ): SVGNode[] {
@@ -221,8 +209,8 @@ function lineSpans(
   for (const piece of pieces) {
     for (const segment of fallbackSegments(
       line,
-      Math.max(piece.from, line.start),
-      Math.min(piece.to, end)
+      Math.max(piece.start, line.start),
+      Math.min(piece.end, end)
     )) {
       if (segment.to <= segment.from) continue
       const { fallback } = segment
@@ -276,7 +264,7 @@ function lineHeightSpan(text: string, start: number, end: number): { from: numbe
  */
 function explicitLineHeight(
   node: SceneNode,
-  pieces: readonly TextPiece[],
+  pieces: readonly StyleRunPiece[],
   start: number,
   end: number
 ): number {
@@ -284,8 +272,8 @@ function explicitLineHeight(
   let height = 0
   let covered = false
   for (const piece of pieces) {
-    const pieceFrom = Math.max(piece.from, from)
-    const pieceTo = Math.min(piece.to, to)
+    const pieceFrom = Math.max(piece.start, from)
+    const pieceTo = Math.min(piece.end, to)
     if (pieceTo <= pieceFrom) continue
     covered = true
     height = Math.max(height, runLineHeight(node, piece.style))

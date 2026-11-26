@@ -1,4 +1,12 @@
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
+import { compact } from 'es-toolkit'
+
+import {
+  dimension,
+  parseCSSURLReferences,
+  parseFragmentReference
+} from '@open-pencil/scene-graph/css'
+import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
 import { parseSVGGradients, type SVGGradients } from '#core/vector/vectorize/svg/gradients'
@@ -145,6 +153,40 @@ function appendShapePath(
   })
 }
 
+/**
+ * A length attribute in user units, a percentage resolving against `viewport`, or null when it
+ * is missing or not a number.
+ */
+function lengthAttribute(element: Element | null, name: string, viewport?: number): number | null {
+  const length = dimension(element?.getAttribute(name)?.trim() ?? '')
+  if (!length) return null
+  if (length.unit === '%') return viewport === undefined ? null : (length.number / 100) * viewport
+  return length.unit === '' || length.unit === 'px' ? length.number : null
+}
+
+/**
+ * How a `<use>` draws a `<symbol>` with a viewBox (SVG 2 §5.6): the viewBox fits the `<use>`'s
+ * width and height, which percentages take of the viewport, else the whole viewport the
+ * outermost `<svg>` sets, centered as the default `preserveAspectRatio` (`xMidYMid meet`)
+ * centers it. Other targets draw as they are.
+ */
+function symbolViewBox(use: Element, target: Element, traversal: Traversal): string {
+  if ((target.localName || target.tagName) !== 'symbol') return ''
+  const viewBox = parseSVGViewBoxValue(target.getAttribute('viewBox'))
+  if (!viewBox) return ''
+  const svg = traversal.viewport
+  const outer = parseSVGViewBoxValue(svg?.getAttribute('viewBox') ?? null)
+  const viewportWidth = outer?.width ?? lengthAttribute(svg, 'width')
+  const viewportHeight = outer?.height ?? lengthAttribute(svg, 'height')
+  const width = lengthAttribute(use, 'width', viewportWidth ?? undefined) ?? viewportWidth
+  const height = lengthAttribute(use, 'height', viewportHeight ?? undefined) ?? viewportHeight
+  if (!width || !height) return ''
+  const scale = Math.min(width / viewBox.width, height / viewBox.height)
+  const dx = (width - viewBox.width * scale) / 2 - viewBox.x * scale
+  const dy = (height - viewBox.height * scale) / 2 - viewBox.y * scale
+  return `translate(${dx} ${dy}) scale(${scale})`
+}
+
 function collectUsePaths(
   element: Element,
   scope: Scope,
@@ -153,10 +195,12 @@ function collectUsePaths(
 ): void {
   const x = num(element, 'x')
   const y = num(element, 'y')
-  const transform =
-    x !== 0 || y !== 0 ? `${scope.transform ?? ''} translate(${x} ${y})`.trim() : scope.transform
   const href = element.getAttribute('href') ?? element.getAttribute('xlink:href')
-  const target = href?.startsWith('#') ? traversal.elementsById.get(href.slice(1)) : null
+  const id = parseFragmentReference(href)
+  const target = id ? traversal.elementsById.get(id) : null
+  const moved = x !== 0 || y !== 0 ? `translate(${x} ${y})` : ''
+  const placed = [scope.transform, moved, target ? symbolViewBox(element, target, traversal) : '']
+  const transform = compact(placed).join(' ') || null
   if (target && !scope.useStack.has(target)) {
     collectPaths(
       target,
@@ -172,9 +216,9 @@ function collectClipPath(
   parentTransform: string | null,
   traversal: Traversal
 ): SVGClipPathRegion | null {
-  const match = value?.trim().match(/^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$/)
-  const target = match ? traversal.elementsById.get(match[1]) : null
-  if (!match || !target || (target.localName || target.tagName) !== 'clipPath') return null
+  const [id] = parseCSSURLReferences(value ?? undefined)
+  const target = id ? traversal.elementsById.get(id) : null
+  if (!target || (target.localName || target.tagName) !== 'clipPath') return null
 
   const units =
     target.getAttribute('clipPathUnits') === 'objectBoundingBox'
@@ -195,7 +239,7 @@ function collectClipPath(
     paths
   )
   return {
-    id: match[1],
+    id,
     paths: paths.map((path) => ({
       d: path.d,
       fillRule: path.fillRule,

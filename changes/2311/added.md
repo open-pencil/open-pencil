@@ -1,0 +1,1 @@
+- Cloud's community gallery serves its documents' files and images to any page at `/api/community/:documentId/objects`, and `fetchCommunityTour` and `fetchCommunityExample` from `@open-pencil/cloud/client` download through it, so they work from any origin, such as a local development server.

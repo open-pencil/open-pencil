@@ -1,4 +1,8 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { slideSettings } from '@open-pencil/scene-graph/slides'
+
+import { resolveExportNodes, resolveExportSlides } from '#core/io/targets'
+import type { ExportRequest } from '#core/io/types'
 
 export const PDF_MODES = ['single', 'frames', 'pages'] as const
 export type PDFMode = (typeof PDF_MODES)[number]
@@ -85,4 +89,22 @@ export function planPDFPages(graph: SceneGraph, input: PDFPlanInput): PDFPageSpe
     )
   }
   return specs
+}
+
+/**
+ * A PDF's pages: a page for each slide of a deck, in its order, or one page of the layers the
+ * request names. A whole deck leaves out the slides presenting skips, as presenting does; slides
+ * picked by name are kept.
+ */
+export function planExportPDFPages(request: ExportRequest): PDFPageSpec[] | null {
+  const slides = resolveExportSlides(request)
+  if (!slides) {
+    const target = resolveExportNodes(request)
+    return target ? [target] : null
+  }
+  const picked = request.target.scope === 'selection' || request.target.scope === 'node'
+  const specs = slides
+    .filter(({ slide }) => picked || !slideSettings(slide)?.skipped)
+    .map(({ pageId, slide }) => ({ pageId, nodeIds: [slide.id], label: slide.name }))
+  return specs.length > 0 ? specs : null
 }

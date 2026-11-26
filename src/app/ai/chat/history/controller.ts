@@ -2,6 +2,8 @@ import type { UIMessage } from 'ai'
 import { omit } from 'es-toolkit'
 import { computed, ref, shallowRef } from 'vue'
 
+import { createMutex } from '@open-pencil/std/async'
+
 import { chatDocumentId, resolveChatDocumentId, type ChatDocumentEditor } from './document'
 import { createConversationStore } from './idb'
 import { restoreMessages } from './messages'
@@ -31,7 +33,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
   let ownerRecoveryId: string | null = null
   // Weak, so the history does not keep a closed document's editor alive.
   let owner: WeakRef<ChatDocumentEditor> | null = null
-  let operation: Promise<unknown> = Promise.resolve()
+  const operations = createMutex()
   let disposed = false
   let disposal: Promise<void> | null = null
   const session = createHistorySession(() => runtime.resetChat())
@@ -48,7 +50,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
   })
 
   function serialize<T>(run: () => Promise<T>): Promise<T> {
-    const next = operation.then(async () => {
+    return operations.run(async () => {
       busy.value = true
       try {
         return await run()
@@ -56,8 +58,6 @@ export function createConversationHistory<TChat extends HistoryChat>(
         busy.value = false
       }
     })
-    operation = next.catch(() => undefined)
-    return next
   }
 
   async function refresh() {

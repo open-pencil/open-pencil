@@ -2,27 +2,10 @@ import { omit } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { CharacterStyleOverride, StyleRun, TextDecoration } from '@open-pencil/scene-graph'
+import { appendStyleRun, characterOverrides, styleRunAt } from '@open-pencil/scene-graph/text'
 
-export function getStyleAt(runs: StyleRun[], index: number): CharacterStyleOverride {
-  for (const run of runs) {
-    if (index >= run.start && index < run.start + run.length) {
-      return run.style
-    }
-  }
-  return {}
-}
-
-function expandRuns(runs: StyleRun[], textLength: number): (CharacterStyleOverride | null)[] {
-  const chars: (CharacterStyleOverride | null)[] = Array.from(
-    { length: textLength },
-    (): CharacterStyleOverride | null => null
-  )
-  for (const run of runs) {
-    for (let i = run.start; i < run.start + run.length && i < textLength; i++) {
-      chars[i] = { ...chars[i], ...run.style }
-    }
-  }
-  return chars
+export function getStyleAt(runs: readonly StyleRun[], index: number): CharacterStyleOverride {
+  return styleRunAt(runs, index)?.style ?? {}
 }
 
 export function applyStyleToRange(
@@ -32,7 +15,7 @@ export function applyStyleToRange(
   patch: CharacterStyleOverride,
   textLength: number
 ): StyleRun[] {
-  const chars = expandRuns(runs, textLength)
+  const chars = characterOverrides(runs, textLength)
 
   for (let i = start; i < end && i < textLength; i++) {
     chars[i] = { ...chars[i], ...patch }
@@ -48,15 +31,10 @@ export function removeStyleFromRange(
   keys: (keyof CharacterStyleOverride)[],
   textLength: number
 ): StyleRun[] {
-  const chars = expandRuns(runs, textLength)
+  const chars = characterOverrides(runs, textLength)
 
   for (let i = start; i < end && i < textLength; i++) {
-    if (chars[i]) {
-      const current = chars[i]
-      if (!current) continue
-      const copy = omit(current, keys) as CharacterStyleOverride
-      chars[i] = Object.keys(copy).length > 0 ? copy : null
-    }
+    chars[i] = omit(chars[i], keys)
   }
 
   return compactRuns(chars)
@@ -76,27 +54,13 @@ export function selectionHasStyle(
   return true
 }
 
-function isEmptyStyle(style: CharacterStyleOverride | null): boolean {
-  return !style || Object.keys(style).length === 0
+function isEmptyStyle(style: CharacterStyleOverride): boolean {
+  return Object.keys(style).length === 0
 }
 
-function compactRuns(chars: (CharacterStyleOverride | null)[]): StyleRun[] {
+function compactRuns(chars: readonly CharacterStyleOverride[]): StyleRun[] {
   const result: StyleRun[] = []
-  let i = 0
-  while (i < chars.length) {
-    if (isEmptyStyle(chars[i])) {
-      i++
-      continue
-    }
-    const start = i
-    const style = chars[i]
-    if (!style) {
-      i++
-      continue
-    }
-    while (i < chars.length && isEqual(chars[i], style)) i++
-    result.push({ start, length: i - start, style: { ...style } })
-  }
+  for (const [index, style] of chars.entries()) appendStyleRun(result, index, 1, style)
   return result
 }
 

@@ -15,6 +15,14 @@ describe('relative times', () => {
     expect(formatRelativeTime(ago(5 * 60_000), NOW, 'de')).toBe('vor 5 Min.')
   })
 
+  test('count days by the calendar, not by 24-hour spans', () => {
+    // 37 hours back is late the day before yesterday, not yesterday.
+    expect(formatRelativeTime(new Date(2026, 9, 7, 23), NOW, 'en')).toBe('2 days ago')
+    expect(formatRelativeTime(new Date(2026, 9, 8, 0, 30), NOW, 'en')).toBe('yesterday')
+    expect(formatRelativeTime(new Date(2026, 9, 3, 1), NOW, 'en')).toBe('6 days ago')
+    expect(formatRelativeTime(new Date(2026, 9, 2, 23), NOW, 'en')).toBe('Oct 2')
+  })
+
   test('turn into a short date after a week, and show nothing for a bad date', () => {
     expect(formatRelativeTime(new Date(2026, 8, 1, 12), NOW, 'en')).toBe('Sep 1')
     expect(formatRelativeTime('not a date', NOW, 'en')).toBe('')

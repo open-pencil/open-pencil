@@ -7,6 +7,7 @@ import * as v from 'valibot'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
@@ -20,7 +21,6 @@ import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { skillFixture } from '#tests/helpers/chat/skills'
 import { memoryTraceStore } from '#tests/helpers/chat/trace-store'

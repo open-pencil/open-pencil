@@ -7,7 +7,8 @@ import {
   createConfiguredCloudPolicy,
   relayDocumentLookups,
   reportCloudError,
-  type CollaborationRelay
+  type CollaborationRelay,
+  type CollaborationRelayOptions
 } from '#cloud/server'
 import { DurableObject } from 'cloudflare:workers'
 import type { Context } from 'hono'
@@ -25,6 +26,8 @@ export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvi
   closeDocument(documentId: string): Promise<void>
   /** Tells the document's live rooms its version history changed. */
   announceVersions(documentId: string): Promise<void>
+  /** Tells the document's live rooms one of its comment threads changed. */
+  announceComments(documentId: string, threadId: string): Promise<void>
 }
 
 /** The Durable Object class a Worker exports for collaboration rooms. */
@@ -36,11 +39,12 @@ export type CollaborationRelayObjectClass = new (
 const documentIdSchema = v.pipe(v.string(), v.uuid())
 
 /**
- * The most a room's document may hold on Cloudflare. A Durable Object has 128 MB of memory for
- * the document, the update joining it, and the snapshot written from it, so a room past this is
- * turned away and its editors save without one.
+ * The most a room's encoded document may hold on Cloudflare. A Durable Object has 128 MB of
+ * memory, in which the relay merges, diffs, and converts the room's encoded state, each step
+ * writing a copy about the room's size beside it, so an update past this is turned away and its
+ * editor saves without the room.
  */
-export const CLOUDFLARE_MAXIMUM_ROOM_BYTES = 32 * 1024 * 1024
+export const CLOUDFLARE_MAXIMUM_ROOM_BYTES = 24 * 1024 * 1024
 
 /**
  * The document's relay object. With a jurisdiction, objects are created and keep their storage
@@ -75,7 +79,7 @@ export function relayRoute(jurisdiction?: DurableObjectJurisdiction) {
 function configuredRelay(
   { config }: PreparedCloudflareCloud,
   documentId: string,
-  onError: (message: string, error: unknown) => void
+  onError: NonNullable<CollaborationRelayOptions['onError']>
 ): CollaborationRelay {
   // Hyperdrive keeps no session settings and ends queries past its own limit.
   const database = createPostgresCloudDatabase({
@@ -122,10 +126,17 @@ export function createCloudflareRelayObject(
       sockets: () => this.ctx.getWebSockets(),
       createRelay: async (documentId) => {
         const prepared = await prepare(this.env)
-        return configuredRelay(prepared, documentId, (message, error) =>
-          this.ctx.waitUntil(
-            reportCloudError(prepared.reportError, message, error, { source: 'relay' })
-          )
+        return configuredRelay(
+          prepared,
+          documentId,
+          (message, error, { userId, ...resources } = {}) =>
+            this.ctx.waitUntil(
+              reportCloudError(prepared.reportError, message, error, {
+                source: 'relay',
+                resources,
+                ...(userId && { userId })
+              })
+            )
         )
       }
     })
@@ -177,6 +188,11 @@ export function createCloudflareRelayObject(
     async announceVersions(documentId: string) {
       if (!this.#sockets.active) return
       ;(await this.#sockets.open(documentId)).announceVersions(documentId)
+    }
+
+    async announceComments(documentId: string, threadId: string) {
+      if (!this.#sockets.active) return
+      ;(await this.#sockets.open(documentId)).announceComments(documentId, threadId)
     }
   }
 }

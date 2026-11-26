@@ -55,6 +55,56 @@ describe('createPostHogErrorReporter', () => {
     })
   })
 
+  test('names the user and records only when asked to', async () => {
+    const context = {
+      source: 'request',
+      userId: 'user-1',
+      resources: { documentId: 'document-1', workspaceId: 'workspace-1' }
+    } as const
+    const reporter = (includeIds: boolean) => {
+      const posthog = fakePostHog()
+      const report = createPostHogErrorReporter<'request'>({
+        key: 'phc_test',
+        host: 'https://eu.i.posthog.com',
+        properties: {},
+        sourceProperty: 'cloud_source',
+        logName: 'Cloud',
+        includeIds,
+        fetch: posthog.fetch
+      })
+      return { report, posthog }
+    }
+
+    const anonymous = reporter(false)
+    await anonymous.report(new Error('failed'), context)
+    const [withoutIds] = v.parse(
+      v.object({
+        batch: v.array(
+          v.object({ distinct_id: v.string(), properties: v.record(v.string(), v.unknown()) })
+        )
+      }),
+      sentJSON(anonymous.posthog.sent[0])
+    ).batch
+    expect(withoutIds?.distinct_id).not.toBe('user-1')
+    expect(withoutIds?.properties).not.toHaveProperty('document_id')
+    expect(withoutIds?.properties).not.toHaveProperty('workspace_id')
+
+    const identified = reporter(true)
+    await identified.report(new Error('failed'), context)
+    expect(sentJSON(identified.posthog.sent[0])).toMatchObject({
+      batch: [
+        {
+          distinct_id: 'user-1',
+          properties: {
+            $process_person_profile: false,
+            document_id: 'document-1',
+            workspace_id: 'workspace-1'
+          }
+        }
+      ]
+    })
+  })
+
   test('reads a key it could not read again with the next error, and never rejects', async () => {
     const logged = spyOn(console, 'error').mockImplementation(() => undefined)
     try {

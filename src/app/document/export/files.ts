@@ -13,7 +13,8 @@ import {
   type RasterExportFormat,
   renderNodesToImage
 } from '@open-pencil/core/io/formats/raster'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { ColorProfile, SceneGraph } from '@open-pencil/scene-graph'
+import { isAbortError } from '@open-pencil/std/errors'
 
 import type { ExportOptions } from '@/app/document/export/types'
 import { pickBrowserSaveFile, supportsFileSystemAccess } from '@/app/document/io/capability'
@@ -74,12 +75,15 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     scale: number,
     format: RasterExportFormat,
     pageId = state.currentPageId,
-    { useAbsoluteBounds = false }: { useAbsoluteBounds?: boolean } = {}
+    {
+      useAbsoluteBounds = false,
+      colorSpace
+    }: { useAbsoluteBounds?: boolean; colorSpace?: ColorProfile } = {}
   ): Promise<Uint8Array<ArrayBuffer> | null> {
     const ids = nodeIds.length > 0 ? nodeIds : editor.graph.getChildren(pageId).map((n) => n.id)
     if (ids.length === 0) return null
     const ownerPageId = findPageId(editor.graph, ids[0]) ?? pageId
-    const options = { scale, format, useAbsoluteBounds }
+    const options = { scale, format, useAbsoluteBounds, colorSpace }
     // A canvas just put on screen draws no text until its fonts load, so its export waits for
     // them; one gone meanwhile leaves the export to the headless renderer.
     await editor.renderer?.whenFontsLoaded()
@@ -145,7 +149,7 @@ export async function saveExportedFile(
       await writable.close()
       return true
     } catch (e) {
-      if ((e as Error).name === 'AbortError') return false
+      if (isAbortError(e)) return false
     }
   }
 

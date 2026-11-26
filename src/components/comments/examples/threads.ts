@@ -33,6 +33,21 @@ export const discussed: CommentThread = {
   ]
 }
 
+/** A reply that names someone, as the composer sends a mention. */
+export const mentioned: CommentThread = {
+  ...discussed,
+  id: 'c_4',
+  replies: [
+    {
+      id: 'r_4',
+      author: 'Ben Ortiz',
+      authorColor: blue,
+      text: '[@Dana Scully](openpencil://person/acc-dana) done, the total is 20px now.',
+      createdAt: ago(1)
+    }
+  ]
+}
+
 export const resolved: CommentThread = {
   ...discussed,
   id: 'c_2',

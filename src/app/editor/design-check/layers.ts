@@ -16,6 +16,17 @@ export interface LayerIssueMark {
   own: boolean
 }
 
+/**
+ * Whether a layer's row shows its mark: always for its own issues, and for issues inside it only
+ * while it is collapsed, since its expanded children show their own.
+ */
+export function showsLayerIssueMark(
+  mark: LayerIssueMark | null | undefined,
+  expanded: boolean
+): mark is LayerIssueMark {
+  return !!mark && (mark.own || !expanded)
+}
+
 function moreSevere(a: DesignIssueSeverity, b: DesignIssueSeverity): DesignIssueSeverity {
   return compareIssueSeverity({ severity: a }, { severity: b }) <= 0 ? a : b
 }

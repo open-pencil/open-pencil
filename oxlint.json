@@ -131,6 +131,8 @@
     "@open-pencil/data/no-hand-rolled-color": "error",
     "@open-pencil/data/no-raw-runtime-effect": "error",
     "@open-pencil/data/no-hand-rolled-data-url": "error",
+    "@open-pencil/data/no-hand-rolled-std-helpers": "error",
+    "@open-pencil/data/no-provider-id-checks": "error",
     "@open-pencil/runtime/no-raw-console-format": "off",
     "@open-pencil/runtime/no-typeof-window-check": "error",
     "@open-pencil/imports/no-vue-self-package": "error",
@@ -229,6 +231,18 @@
           {
             "minDepth": 1,
             "alias": "#mcp/*"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/theme/src/**"],
+      "rules": {
+        "@open-pencil/imports/no-deep-parent-relative-imports": [
+          "error",
+          {
+            "minDepth": 1,
+            "alias": "#theme/*"
           }
         ]
       }
@@ -390,7 +404,7 @@
     {
       "files": [
         "src/**/*.{ts,vue}",
-        "packages/{scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}",
+        "packages/{std,scene-graph,pen,kiwi,fig,core,dom-css,theme,vue}/src/**/*.{ts,vue}",
         "packages/cloud/src/{client,contract}/**/*.ts"
       ],
       "rules": {
@@ -451,6 +465,12 @@
       "files": ["packages/scene-graph/src/constants.ts"],
       "rules": {
         "@open-pencil/data/no-hardcoded-color-constants": "off"
+      }
+    },
+    {
+      "files": ["packages/core/src/ai/providers.ts"],
+      "rules": {
+        "@open-pencil/data/no-provider-id-checks": "off"
       }
     },
     {

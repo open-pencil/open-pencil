@@ -12,6 +12,7 @@
     "@open-pencil/cloud": "workspace:*",
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "smol-toml": "^1.8.0"
   }
 }

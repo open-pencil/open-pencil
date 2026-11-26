@@ -26,5 +26,9 @@
   "reload": "重新加载",
   "settingsSection": "更新",
   "checkOnStartup": "启动时检查更新",
-  "checkOnStartupDescription": "桌面应用打开几秒后查找新版本。关闭此项后，菜单中的「检查更新」仍然可用。"
+  "checkOnStartupDescription": "桌面应用打开几秒后查找新版本。关闭此项后，菜单中的「检查更新」仍然可用。",
+  "channel": "更新通道",
+  "channelDescription": "每夜版每晚由最新代码构建，可能出现问题。切换回“稳定版”后，下次检查时会安装当前的稳定版。",
+  "channelStable": "稳定版",
+  "channelNightly": "每夜版"
 }

@@ -8,7 +8,7 @@ import { pathNetwork } from './geometry'
 import { removeUnusedIconComponents } from './icons'
 import { createImageStore } from './images'
 import { importedComponentsInUse, withImports, type PenImports } from './imports'
-import { inAncestorThemes, populateInstances } from './instances'
+import { inLayerThemes, populateInstances } from './instances'
 import { spreadAround } from './layout'
 import { createSceneNode, redrawIconAtLaidOutSize, type Build, type PenIconSource } from './nodes'
 import { placeLayers } from './placement'
@@ -71,14 +71,7 @@ function drawAtFinalSize(build: Build, laidOut: boolean): void {
       if (network) node.vectorNetwork = network
     } else if (pen.type === 'icon' && laidOut) {
       // In the themes the icon was read in, which its colour and glyph may take variables from.
-      inAncestorThemes(build, node, () => {
-        const leave = pen.theme ? build.ctx.enterTheme(pen.theme) : undefined
-        try {
-          redrawIconAtLaidOutSize(node, pen, build)
-        } finally {
-          leave?.()
-        }
-      })
+      inLayerThemes(build, node, pen.theme, () => redrawIconAtLaidOutSize(node, pen, build))
     }
   }
 }

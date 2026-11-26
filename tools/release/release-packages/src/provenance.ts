@@ -1,3 +1,4 @@
+import { bytesToHex } from '@noble/hashes/utils.js'
 import { bundleFromJSON, bundleToJSON, type SerializedBundle } from '@sigstore/bundle'
 import { decode, isValid, toUint8Array } from 'js-base64'
 import { verify as verifySigstoreBundle } from 'sigstore'
@@ -44,13 +45,17 @@ const versionSchema = v.object({
   dist: v.object({ integrity: v.string(), tarball: v.pipe(v.string(), v.url()) })
 })
 
-/** An npm version this release already published, as the registry serves it. */
-export interface PublishedReleaseVersion {
-  /** The workflow run that published it. */
-  run: string
+/** An npm version's tarball as the registry serves it. */
+export interface PublishedTarball {
   /** Subresource integrity of the tarball, `sha512-…`. */
   integrity: string
   tarball: string
+}
+
+/** An npm version this release already published, as the registry serves it. */
+export interface PublishedReleaseVersion extends PublishedTarball {
+  /** The workflow run that published it. */
+  run: string
 }
 
 /** The Sigstore bundle of the SLSA provenance in npm's attestations response for one version. */
@@ -78,7 +83,7 @@ export function releaseSignerIdentity(source: ReleaseSource): string {
 function integrityHex(integrity: string): string {
   const match = /^sha512-(.+)$/.exec(integrity)
   if (!match?.[1] || !isValid(match[1])) throw new Error(`unsupported integrity ${integrity}`)
-  return Array.from(toUint8Array(match[1]), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return bytesToHex(toUint8Array(match[1]))
 }
 
 /**
@@ -127,6 +132,15 @@ async function registryText(path: string): Promise<string> {
   return response.text()
 }
 
+/** The tarball npm serves for `name@version`. */
+export async function publishedTarball(name: string, version: string): Promise<PublishedTarball> {
+  const { dist } = v.parse(
+    v.pipe(v.string(), v.parseJson(), versionSchema),
+    await registryText(`${name.replace('/', '%2f')}/${version}`)
+  )
+  return { integrity: dist.integrity, tarball: dist.tarball }
+}
+
 /**
  * Checks that an already published `name@version` came from this release's tag through the release
  * workflow, so a rerun of that release can skip it instead of stopping. The provenance bundle's
@@ -140,10 +154,7 @@ export async function verifyPublishedFromRelease(
 ): Promise<PublishedReleaseVersion> {
   const spec = `${name}@${version}`
   const encoded = name.replace('/', '%2f')
-  const { dist } = v.parse(
-    v.pipe(v.string(), v.parseJson(), versionSchema),
-    await registryText(`${encoded}/${version}`)
-  )
+  const dist = await publishedTarball(name, version)
   const attestations = await registryText(`-/npm/v1/attestations/${encoded}@${version}`).catch(
     (error: unknown) => {
       if (error instanceof RegistryError && error.status === 404) {

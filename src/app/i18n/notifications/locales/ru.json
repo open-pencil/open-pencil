@@ -38,5 +38,9 @@
   "savingDocument": "Сохранение документа…",
   "saveFailedRetry": "Повторить сохранение",
   "fileChangedOnDisk": "Файл «{name}» изменился на диске. Несохранённые изменения сохранены; при сохранении файл будет заменён.",
-  "reloadDiscardingChanges": "Перезагрузить"
+  "reloadDiscardingChanges": "Перезагрузить",
+  "autosaveFailed": "Не удалось сохранить «{name}»: {error}",
+  "saveFailedTitle": "Не удалось сохранить «{name}»",
+  "notifySaveFailed": "Ошибки сохранения",
+  "notifySaveFailedHint": "Не удалось автоматически сохранить открытый документ."
 }

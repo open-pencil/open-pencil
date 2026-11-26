@@ -6,6 +6,7 @@ import { validateTargetManifests, type TargetManifest } from '#release/native/ma
 
 const identity: ReleaseIdentity = {
   tag: 'v0.15.0',
+  version: '0.15.0',
   sourceCommit: 'a'.repeat(40),
   workflowCommit: 'b'.repeat(40),
   runId: '123',
@@ -33,7 +34,7 @@ test.each([
   { ...identity, sourceCommit: 'e'.repeat(40) },
   { ...identity, workflowCommit: 'e'.repeat(40) },
   { ...identity, frontendSha256: 'e'.repeat(64) },
-  { ...identity, tag: 'v0.15.1' },
+  { ...identity, tag: 'v0.15.1', version: '0.15.1' },
   { ...identity, runId: '124' },
   { ...identity, runAttempt: '2' }
 ])('rejects mixed release identity %#', (other) => {

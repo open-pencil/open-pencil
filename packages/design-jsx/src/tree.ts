@@ -214,6 +214,17 @@ export type EllipseProps = {
   /** The hole as a share of the ellipse, from 0 (none) to 1. */
   innerRadius?: number
 }
+/** A `<Star>`'s points, and its inner radius as a share of the outer one. */
+export type StarProps = {
+  points?: number
+  innerRadius?: number
+}
+
+/** A `<Polygon>`'s number of sides. */
+export type PolygonProps = {
+  pointCount?: number
+}
+
 /** A `<Vector>`'s path, in SVG's syntax as `d` or as Figma's `vectorPaths`. */
 export type VectorProps = {
   /** Path data as SVG writes it, filled under `fillRule`; an open subpath fills only without a stroke. */

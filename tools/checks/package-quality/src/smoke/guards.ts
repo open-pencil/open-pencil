@@ -9,7 +9,7 @@ import {
   inspectTarball,
   type TarballDiagnostic
 } from '@open-pencil/package-artifacts-tools/tarball'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { installPackedPackages } from './install'
 import { evaluateRuntime, type RuntimeName } from './runtime'

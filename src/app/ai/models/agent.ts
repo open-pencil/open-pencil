@@ -1,6 +1,6 @@
 import { providerKind, type AIProviderID } from '@open-pencil/core/constants'
 
-import type { AIModelCapability, AIModelProfile } from './types'
+import type { AIModelCapability } from './types'
 
 /** ACP coding agents and Pi, which run on this computer and bring their own models. */
 export function isAgentProvider(providerID: AIProviderID): boolean {
@@ -26,9 +26,4 @@ export function agentCapabilities(
   return agentPromptsCarryImages(providerID) && requested.includes('vision')
     ? ['tools', 'vision']
     : ['tools']
-}
-
-/** The model an agent's profile names, as the agent knows it; empty keeps the agent's own. */
-export function agentModelID(profile: Pick<AIModelProfile, 'modelID' | 'customModelID'>): string {
-  return profile.customModelID.trim() || profile.modelID.trim()
 }

@@ -36,4 +36,4 @@ Ces composables fournissent l’état et les actions généralement nécessaires
 
 - [usePageList](./use-page-list)
 - [useExport](./use-export)
-- [useI18n](./use-i18n)
+- [useMessages](/developers/sdk/api/composables/use-messages)

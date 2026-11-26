@@ -42,6 +42,8 @@ export {
   type TreeNode,
   type BaseProps,
   type EllipseProps,
+  type PolygonProps,
+  type StarProps,
   type VectorProps,
   type ComponentProps,
   type InstanceProps,
@@ -64,10 +66,15 @@ export {
   glass,
   innerShadow,
   layerBlur,
+  noise,
+  texture,
   type BlurEffectOptions,
   type EffectColor,
   type GlassEffectOptions,
-  type ShadowEffectOptions
+  type NoiseEffectOptions,
+  type NoiseSize,
+  type ShadowEffectOptions,
+  type TextureEffectOptions
 } from './helpers/effects'
 
 export {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 import { provide } from 'vue'
 import IconCheck from '~icons/lucide/check'
 import IconClock from '~icons/lucide/clock'
@@ -9,6 +9,7 @@ import IconMonitorX from '~icons/lucide/monitor-x'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import { PORTAL_LEGAL } from '../layout/legal'
+import PortalAppApproval from './PortalAppApproval.vue'
 import PortalDeviceApproval from './PortalDeviceApproval.vue'
 import PortalNotice from './PortalNotice.vue'
 import PortalResetPassword from './PortalResetPassword.vue'
@@ -19,6 +20,7 @@ import PortalTwoFactor from './PortalTwoFactor.vue'
 const host = 'cloud.studio.example'
 const frame = (inner: string) => `<div class="h-180">${inner}</div>`
 const components = {
+  PortalAppApproval,
   PortalDeviceApproval,
   PortalNotice,
   PortalResetPassword,
@@ -66,7 +68,7 @@ const legalStory = (template: string): Story => ({
 })
 
 export const SignIn = story(
-  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
+  `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple', 'github']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" />`
 )
 export const SignInForTheDesktopApp = story(
   `<PortalSignIn :host="host" mode="sign-in" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" returns-to="desktop" />`
@@ -97,6 +99,13 @@ export const WaitingForApproval = story(`
     <template #icon><IconClock class="size-5" /></template>
     <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
   </PortalNotice>`)
+/** Apple's Hide My Email starts a new account, so the page says how to reach an existing one. */
+export const WaitingWithHiddenEmail = story(`
+  <PortalNotice :host="host" tone="waiting" heading="Your request is with an administrator" description="We email cg4k6dj97t@privaterelay.appleid.com when you can sign in. Nothing else to do for now.">
+    <template #icon><IconClock class="size-5" /></template>
+    <p class="text-center text-xs text-muted">Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.</p>
+    <template #actions><AppButton variant="ghost">Sign out</AppButton></template>
+  </PortalNotice>`)
 export const TwoStep = story(`<PortalTwoFactor :host="host" method="authenticator" passkeys />`)
 export const TwoStepRecoveryCode = story(
   `<PortalTwoFactor :host="host" method="recovery" error="This code was already used." />`
@@ -105,17 +114,46 @@ export const ForgotPassword = story(`<PortalResetPassword :host="host" step="req
 export const ChooseNewPassword = story(`<PortalResetPassword :host="host" step="choose" />`)
 export const ApproveDesktopSignIn: Story = {
   ...story(`<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`),
-  /** Approve waits for the code the app shows; another one, or none, leaves it off. */
+  /** The page shows the code from its link to compare with the app's; Approve is one click. */
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const field = canvas.getByRole('textbox', { name: 'Enter the code the app shows' })
-    const approve = canvas.getByRole('button', { name: 'Approve' })
-    await expect(approve).toBeDisabled()
-    await userEvent.type(field, 'ABCD-EFGH')
-    await expect(approve).toBeDisabled()
-    await userEvent.clear(field)
-    await userEvent.type(field, 'wdjb mjht')
-    await expect(approve).toBeEnabled()
+    await expect(canvas.getByText('WDJB-MJHT')).toBeVisible()
+    await expect(canvas.getByText('Check that the app shows this code')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Approve' })).toBeEnabled()
+  }
+}
+export const ConnectApp: Story = {
+  ...story(`<PortalAppApproval
+    :host="host"
+    :app="{ name: 'Studio Assistant', host: 'assistant.studio.example' }"
+    access="write"
+    offline
+    email="ana@studio.example"
+    :workspaces="[{ id: 'workspace-1', name: 'Studio' }]"
+    workspace="workspace-1"
+  />`),
+  /** One workspace is chosen already, so Allow is one click; the app's own address is text. */
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('It says it comes from assistant.studio.example.')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Allow' })).toBeEnabled()
+  }
+}
+export const ConnectAppWithoutWorkspace: Story = {
+  ...story(`<PortalAppApproval
+    :host="host"
+    :app="{ name: 'Studio Assistant', host: null }"
+    access="read"
+    :offline="false"
+    email="ana@studio.example"
+    :workspaces="[]"
+    workspace=""
+  />`),
+  /** An account in no workspace has nothing to give the app, so it can only deny. */
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('You need a workspace first')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Allow' })).toBeDisabled()
   }
 }
 export const DesktopSignInApproved = story(`

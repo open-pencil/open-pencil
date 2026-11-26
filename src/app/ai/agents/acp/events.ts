@@ -4,8 +4,8 @@ import { isEmptyObject, omit } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
+import type { JSONObject } from '@open-pencil/std/json'
 
 import { createReplyStream, type ReplyToolCall } from '@/app/ai/reply/stream'
 

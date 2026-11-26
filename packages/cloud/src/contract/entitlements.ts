@@ -36,3 +36,42 @@ export type AccountEntitlements = WorkspaceEntitlements
 export const accountEntitlementsResponseSchema = v.object({
   entitlements: accountEntitlementsSchema
 })
+
+/** A plan's values as a deployment or a billing service sets them; anything left out is the default. */
+const planPositiveIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(1))
+const planNonNegativeIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
+
+export const staticEntitlementsSchema = v.object({
+  documents: v.optional(
+    v.object({
+      maximumFileBytes: v.optional(planPositiveIntegerSchema),
+      revisionHistory: v.optional(v.boolean())
+    }),
+    {}
+  ),
+  storage: v.optional(v.object({ maximumBytes: v.optional(planPositiveIntegerSchema) }), {}),
+  sharing: v.optional(
+    v.object({
+      links: v.optional(v.boolean()),
+      guestView: v.optional(v.boolean()),
+      guestEdit: v.optional(v.boolean()),
+      guestPresence: v.optional(v.boolean())
+    }),
+    {}
+  ),
+  collaboration: v.optional(
+    v.object({
+      enabled: v.optional(v.boolean()),
+      maximumParticipants: v.optional(planPositiveIntegerSchema)
+    }),
+    {}
+  ),
+  services: v.optional(
+    v.object({
+      enabled: v.optional(v.boolean()),
+      monthlyCreditAllowance: v.optional(planNonNegativeIntegerSchema)
+    }),
+    {}
+  )
+})
+export type StaticEntitlements = v.InferOutput<typeof staticEntitlementsSchema>

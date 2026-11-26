@@ -4,49 +4,44 @@ import { runCommand } from '@open-pencil/package-artifacts-tools'
 export const CLOUD_TARGETS = ['staging', 'production'] as const
 export type CloudTarget = (typeof CLOUD_TARGETS)[number]
 
+export function isCloudTarget(value: string): value is CloudTarget {
+  return (CLOUD_TARGETS as readonly string[]).includes(value)
+}
+
 /** A release tag, as the release workflow pushes: `vX.Y.Z` or `vX.Y.Z-beta.N`. */
 const RELEASE_TAG = /^refs\/tags\/v\d+\.\d+\.\d+(-beta\.\d+)?$/
 const MASTER = 'refs/heads/master'
 
 /**
- * Why a target may not deploy the ref, or nothing when it may. Staging deploys master or a
- * release; production only a release, so what serves people is code a release names.
+ * Why a target may not be deployed from the ref, or nothing when it may: master or a release
+ * tag. Staging deploys that ref's commit; production promotes whatever staging runs
+ * (`commit.ts`), so the ref only names the workflow version that does it.
  */
 export function refusal(target: string, ref: string): string | undefined {
-  if (!(CLOUD_TARGETS as readonly string[]).includes(target)) {
+  if (!isCloudTarget(target)) {
     return `Unknown Cloud target ${target}; expected one of ${CLOUD_TARGETS.join(', ')}`
   }
-  if (RELEASE_TAG.test(ref)) return undefined
-  if (target === 'staging') {
-    return ref === MASTER ? undefined : `Staging deploys master or a release tag, not ${ref}`
-  }
-  return `Production deploys a release tag (vX.Y.Z), not ${ref}`
+  if (RELEASE_TAG.test(ref) || ref === MASTER) return undefined
+  return `Cloud deploys from master or a release tag (vX.Y.Z), not ${ref}`
 }
 
 /**
- * Whether the checked-out commit is on master, so a tag pushed on any other branch deploys
- * nothing. Needs master's history, as a checkout with `fetch-depth: 0` has.
+ * Whether a commit is on master, so a tag pushed on any other branch deploys nothing. Needs
+ * master's history, as a checkout with `fetch-depth: 0` has.
  */
-export async function isOnMaster(cwd: string, execute = runCommand): Promise<boolean> {
+export async function isOnMaster(
+  cwd: string,
+  commit = 'HEAD',
+  execute = runCommand
+): Promise<boolean> {
   try {
     await execute({
       command: 'git',
-      args: ['merge-base', '--is-ancestor', 'HEAD', 'origin/master'],
+      args: ['merge-base', '--is-ancestor', commit, 'origin/master'],
       cwd
     })
     return true
   } catch {
     return false
-  }
-}
-
-if (import.meta.main) {
-  const [target = ''] = process.argv.slice(2)
-  const reason =
-    refusal(target, process.env.GITHUB_REF ?? '') ??
-    ((await isOnMaster(process.cwd())) ? undefined : 'The commit to deploy is not on master')
-  if (reason) {
-    console.error(reason)
-    process.exit(1)
   }
 }

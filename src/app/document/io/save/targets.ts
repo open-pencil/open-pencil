@@ -2,6 +2,7 @@ import { save } from '@tauri-apps/plugin-dialog'
 
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
 import type { DocumentKind } from '@open-pencil/scene-graph'
+import { isAbortError } from '@open-pencil/std/errors'
 
 import { pickBrowserSaveFile } from '@/app/document/io/capability'
 import { documentFileName } from '@/app/document/io/names'
@@ -9,7 +10,8 @@ import { documentFileName } from '@/app/document/io/names'
 /** What the save dialog calls a document's file type. */
 const FILE_TYPE_NAMES: Readonly<Record<DocumentKind, string>> = {
   design: 'Figma file',
-  board: 'FigJam board'
+  board: 'FigJam board',
+  slides: 'Figma Slides deck'
 }
 
 export async function chooseTauriFigSavePath(kind: DocumentKind) {
@@ -31,7 +33,7 @@ export async function chooseBrowserFigSaveHandle(kind: DocumentKind) {
       ]
     })
   } catch (error) {
-    if ((error as Error).name === 'AbortError') return null
+    if (isAbortError(error)) return null
     throw error
   }
 }

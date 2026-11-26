@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { useCloudMessages, useCommonMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -36,9 +36,9 @@ const emit = defineEmits<{
 
 const trash = tv(trashTheme)
 const ui = trash()
-const t = useCloudMessages()
-const common = useCommonMessages()
-const { files } = useI18n()
+const t = useMessages('cloud/editor')
+const common = useMessages('common')
+const files = useMessages('files')
 </script>
 
 <template>
@@ -91,7 +91,13 @@ const { files } = useI18n()
         <span :class="ui.body()">
           <span :class="ui.name()">
             <span v-if="document.kind" class="sr-only">
-              {{ document.kind === 'board' ? files.createBoard : files.createDesign }},
+              {{
+                {
+                  design: files.createDesign,
+                  board: files.createBoard,
+                  slides: files.createSlides
+                }[document.kind ?? 'design']
+              }},
             </span>
             {{ document.name }}
           </span>

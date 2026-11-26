@@ -4,6 +4,7 @@ import {
   resendCloudVerification,
   signInToCloudWithEmail,
   signUpToCloudWithEmail,
+  type CloudAuthFailure,
   type CloudAuthResult,
   type CloudSocialProvider
 } from '@open-pencil/cloud/client'
@@ -12,6 +13,16 @@ import type { CloudDiscovery } from '@open-pencil/cloud/contract'
 import { cloudLocale } from '@/app/cloud/sessions/locale'
 
 const done = <T>(value: T): CloudAuthResult<T> => ({ ok: true, value })
+
+/**
+ * Why the server refused a desktop sign-in code. A code that is unknown, used, or expired is
+ * refused with a 4xx, the one answer that ends the sign-in; anything else can be tried again.
+ */
+function deviceFailure(error: object): CloudAuthFailure {
+  const status = 'status' in error && typeof error.status === 'number' ? error.status : undefined
+  if (status === 429) return 'rate-limited'
+  return status === undefined || (status >= 400 && status < 500) ? 'invalid-code' : 'unavailable'
+}
 
 /** Sign-in steps against the Cloud server the portal is served from. */
 export function createPortalAuth(discovery: CloudDiscovery, options: { captcha?: string } = {}) {
@@ -81,9 +92,10 @@ export function createPortalAuth(discovery: CloudDiscovery, options: { captcha?:
     async deviceRequest(
       userCode: string
     ): Promise<CloudAuthResult<'pending' | 'approved' | 'denied'>> {
-      const result = await auth.device({ query: { user_code: userCode } })
-      // An unknown or expired code is the only failure a person can act on: start again.
-      if (result.error || !result.data) return { ok: false, failure: 'invalid-code' }
+      const result = await auth.device({ query: { user_code: userCode } }).catch(() => null)
+      if (!result) return { ok: false, failure: 'unavailable' }
+      if (result.error) return { ok: false, failure: deviceFailure(result.error) }
+      if (!result.data) return { ok: false, failure: 'invalid-code' }
       const status = result.data.status
       return done(status === 'approved' || status === 'denied' ? status : 'pending')
     },
@@ -91,17 +103,8 @@ export function createPortalAuth(discovery: CloudDiscovery, options: { captcha?:
     async decideDevice(userCode: string, decision: 'approve' | 'deny'): Promise<CloudAuthResult> {
       const result = await auth.device[decision]({ userCode }).catch(() => null)
       if (!result) return { ok: false, failure: 'unavailable' }
-      const { error } = result
-      const status =
-        error && 'status' in error && typeof error.status === 'number' ? error.status : undefined
-      if (status === 429) return { ok: false, failure: 'rate-limited' }
-      // A code that is unknown, used, or expired is refused with a 4xx; anything else can be retried.
-      if (status !== undefined && (status < 400 || status >= 500)) {
-        return { ok: false, failure: 'unavailable' }
-      }
-      return error || !result.data?.success
-        ? { ok: false, failure: 'invalid-code' }
-        : done(undefined)
+      if (result.error) return { ok: false, failure: deviceFailure(result.error) }
+      return result.data?.success ? done(undefined) : { ok: false, failure: 'invalid-code' }
     },
 
     /** Ends this browser's session; a failure leaves it signed in, to try again. */

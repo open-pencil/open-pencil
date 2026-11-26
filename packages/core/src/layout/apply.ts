@@ -8,6 +8,7 @@ import type { LayoutNode } from '@open-pencil/taffy'
 
 import { keepsSavedLayout, usesDetachedDerivedLayout } from './derived'
 import { laidOutFlowBox } from './flow-edges'
+import { layoutPadding, ratioRoomShift } from './node'
 
 export type ComputeLayoutFn = (graph: SceneGraph, frameId: string) => void
 
@@ -315,13 +316,24 @@ export function applyComputedLayout(
 
   const children = graph.getChildren(frame.id)
   const box = laidOutFlowBox(layoutNode, frame)
+  const across = frame.layoutMode === 'VERTICAL' ? 'width' : 'height'
+  const padding = layoutPadding(frame)
+  const inner =
+    across === 'width'
+      ? layoutNode.layout.width - padding.left - padding.right
+      : layoutNode.layout.height - padding.top - padding.bottom
   let index = 0
   for (const child of children) {
     const item = box.node.children.at(index)
     if (!item) continue
     index++
 
-    updateChildFromLayout(graph, frame, child, item, box.origin, keepsSaved, computeLayout)
+    const shift = ratioRoomShift(item, child, frame, inner)
+    const origin =
+      across === 'width'
+        ? { x: box.origin.x + shift, y: box.origin.y }
+        : { x: box.origin.x, y: box.origin.y + shift }
+    updateChildFromLayout(graph, frame, child, item, origin, keepsSaved, computeLayout)
 
     if (!child.visible) continue
     if (preservesImportedInstanceInternals(child)) continue

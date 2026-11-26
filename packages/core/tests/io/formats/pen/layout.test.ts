@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { layoutAuthoredNodes } from '@open-pencil/core/layout'
 import { parsePenFile, type PenDocument, type PenIconSource, type PenNode } from '@open-pencil/pen'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { maxOf } from '@open-pencil/std/arrays'
 
 function parseLayoutDocument(
   children: PenNode[],

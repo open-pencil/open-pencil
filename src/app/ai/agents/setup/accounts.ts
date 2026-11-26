@@ -12,7 +12,7 @@ import type { AgentAuthMethod, AgentAuthStatus } from '@/app/ai/agents/acp/auth/
 import { startTerminalSignIn, type TerminalSignIn } from '@/app/ai/agents/acp/auth/terminal'
 import { linkOwnTools } from '@/app/ai/agents/acp/tools'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
-import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
+import { getMCPClientToken } from '@/app/automation/mcp/client-token'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
 /** What setup knows about the account a coding agent uses. */
@@ -180,7 +180,7 @@ export function createAgentAccounts(options: {
 /** Starts a session as a chat does: in the agent workspace, linked to OpenPencil's tools. */
 const chatTools: ToolsProbe = {
   cwd: agentWorkspace,
-  link: async () => linkOwnTools(await getAutomationAuthToken())
+  link: async () => linkOwnTools(await getMCPClientToken())
 }
 
 export const agentAccounts = createAgentAccounts({

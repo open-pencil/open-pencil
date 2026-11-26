@@ -1,3 +1,5 @@
+import { dimension, splitCSSValue } from '@open-pencil/scene-graph/css'
+
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { mergedStyle, pickStyle } from './css-values'
 import { elementDisplay, type ParentFlow } from './flow'
@@ -62,19 +64,16 @@ const TAG_LAYOUT_PROPERTIES = new Map<string, ReadonlySet<string>>([
 
 /** Lengths that take no room: every part of the value is zero, in whatever unit. */
 function isZeroLength(value: string): boolean {
-  return value
-    .trim()
-    .split(/\s+/)
-    .every((part) => /^[+-]?0*\.?0+([a-z]+|%)?$/.test(part))
+  return splitCSSValue(value).every((part) => dimension(part)?.number === 0)
 }
 
 const BOX_PROPERTIES = [...Object.keys(NO_BOX_VALUES), ...ZERO_LENGTH_PROPERTIES, 'border']
 
 /** A `border` shorthand draws nothing without a style or with no width, in whatever order. */
 function borderDraws(value: string): boolean {
-  return !value
-    .split(/\s+/)
-    .some((part) => part === 'none' || part === 'hidden' || isZeroLength(part))
+  return !splitCSSValue(value).some(
+    (part) => part === 'none' || part === 'hidden' || isZeroLength(part)
+  )
 }
 
 function drawsBox(property: string, value: string): boolean {

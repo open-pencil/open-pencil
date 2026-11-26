@@ -143,7 +143,7 @@ describe('node.effects', () => {
   })
 
   test('reports Figma effects OpenPencil does not model yet', () => {
-    expect(() => assign([{ type: 'NOISE' }])).toThrow('NOISE effects are not supported')
+    expect(() => assign([{ type: 'SHADER' }])).toThrow('SHADER effects are not supported')
   })
 })
 
@@ -213,7 +213,7 @@ describe('progressive blurs', () => {
     const api = new FigmaAPI(new SceneGraph())
     const collection = api.variables.createVariableCollection('Blur')
     const size = api.variables.createVariable('End', collection, 'FLOAT')
-    expect(api.variables.setBoundVariableForEffect(progressive, 'radius', size)).toEqual({
+    expect<unknown>(api.variables.setBoundVariableForEffect(progressive, 'radius', size)).toEqual({
       type: 'LAYER_BLUR',
       visible: true,
       radius: 10,
@@ -223,6 +223,154 @@ describe('progressive blurs', () => {
       startOffset: { x: 0.5, y: 0 },
       endOffset: { x: 0.5, y: 1 }
     })
+  })
+})
+
+// Recorded on 2026-11-15 by assigning these effects in live Figma 126 through its plugin API.
+describe('noise and texture effects', () => {
+  const black = { r: 0, g: 0, b: 0, a: 1 }
+  const noise = {
+    type: 'NOISE',
+    visible: true,
+    noiseType: 'MONOTONE',
+    color: black,
+    noiseSize: 1,
+    density: 0.5
+  } as const
+  const texture = {
+    type: 'TEXTURE',
+    visible: true,
+    noiseSize: 1,
+    radius: 4,
+    clipToShape: true
+  } as const
+  const message = (problem: string) =>
+    `in set_effects: Property "effects" failed validation: ${problem}`
+
+  test('read back in Figma field order, each noise type with its own field', () => {
+    const red = { r: 1, g: 0, b: 0, a: 1 }
+    // Figma's typings give noise a blend mode its plugin API never reads back.
+    expect<unknown>(
+      assign([
+        noise,
+        { ...noise, noiseType: 'DUOTONE', secondaryColor: red },
+        { ...noise, noiseType: 'MULTITONE', opacity: 0.4 },
+        texture
+      ]).effects
+    ).toEqual([
+      {
+        type: 'NOISE',
+        visible: true,
+        boundVariables: {},
+        noiseSize: 1,
+        noiseSizeVector: { x: 1, y: 1 },
+        noiseType: 'MONOTONE',
+        color: black,
+        density: 0.5
+      },
+      {
+        type: 'NOISE',
+        visible: true,
+        boundVariables: {},
+        noiseSize: 1,
+        noiseSizeVector: { x: 1, y: 1 },
+        noiseType: 'DUOTONE',
+        color: black,
+        secondaryColor: red,
+        density: 0.5
+      },
+      {
+        type: 'NOISE',
+        visible: true,
+        boundVariables: {},
+        noiseSize: 1,
+        noiseSizeVector: { x: 1, y: 1 },
+        noiseType: 'MULTITONE',
+        color: black,
+        opacity: 0.4,
+        density: 0.5
+      },
+      {
+        type: 'TEXTURE',
+        visible: true,
+        radius: 4,
+        boundVariables: {},
+        noiseSize: 1,
+        noiseSizeVector: { x: 1, y: 1 },
+        clipToShape: true
+      }
+    ])
+  })
+
+  test('keep a size or texture radius over 100 at 100, and take a grain wider than tall', () => {
+    const [big] = assign([{ ...texture, noiseSize: 1000, radius: 1000 }]).effects
+    expect<unknown>(big).toMatchObject({
+      noiseSize: 100,
+      noiseSizeVector: { x: 100, y: 100 },
+      radius: 100
+    })
+    const [wide] = assign([{ ...noise, noiseSize: 2, noiseSizeVector: { x: 2, y: 5 } }]).effects
+    expect<unknown>(wide).toMatchObject({ noiseSize: 2, noiseSizeVector: { x: 2, y: 5 } })
+  })
+
+  test('accept their own read-back, and keep only the first texture', () => {
+    const rect = assign([noise, texture, { ...texture, radius: 2 }])
+    expect(rect.effects.map((effect) => effect.type)).toEqual(['NOISE', 'TEXTURE'])
+    const before = rect.effects
+    Reflect.set(rect, 'effects', before)
+    expect(rect.effects).toEqual(before)
+  })
+
+  test('keep bindings on the effects they bind when a second texture is dropped', () => {
+    const api = new FigmaAPI(new SceneGraph())
+    const collection = api.variables.createVariableCollection('Grain')
+    const size = api.variables.createVariable('Size', collection, 'FLOAT')
+    const rect = api.createRectangle()
+    const dropped = api.variables.setBoundVariableForEffect(texture, 'radius', size)
+    Reflect.set(rect, 'effects', [texture, dropped, shadow])
+    expect(rect.effects.map((effect) => effect.type)).toEqual(['TEXTURE', 'DROP_SHADOW'])
+    expect(rect.effects.map((effect) => effect.boundVariables)).toEqual([{}, {}])
+  })
+
+  test('name the field Figma refuses', () => {
+    expect(() => assign([{ ...noise, density: 1.5 }])).toThrow(
+      message('Too big: expected number to be <=1 at [0].density')
+    )
+    expect(() => assign([{ ...noise, noiseSize: -1 }])).toThrow(
+      message('Too small: expected number to be >=0 at [0].noiseSize')
+    )
+    expect(() => assign([{ ...noise, secondaryColor: black }])).toThrow(
+      message('Unrecognized key: "secondaryColor" at index 0')
+    )
+    expect(() => assign([{ ...noise, blendMode: 'MULTIPLY' }])).toThrow(
+      message('Unrecognized key: "blendMode" at index 0')
+    )
+    expect(() => assign([{ ...texture, color: black }])).toThrow(
+      message('Unrecognized key: "color" at index 0')
+    )
+    expect(() => assign([{ ...noise, noiseType: 'DUOTONE' }])).toThrow('set_effects')
+    expect(() => assign([{ ...noise, noiseSizeVector: { x: 3, y: 3 } }])).toThrow(
+      'in set_effects: Effect noiseSize (1) does not match noiseSizeVector.x (3). ' +
+        'Ensure these values are consistent.'
+    )
+  })
+
+  test('bind only their radius', () => {
+    const api = new FigmaAPI(new SceneGraph())
+    const collection = api.variables.createVariableCollection('Grain')
+    const size = api.variables.createVariable('Size', collection, 'FLOAT')
+    expect<unknown>(api.variables.setBoundVariableForEffect(texture, 'radius', size)).toEqual({
+      type: 'TEXTURE',
+      visible: true,
+      radius: 4,
+      boundVariables: { radius: { type: 'VARIABLE_ALIAS', id: size.id } },
+      noiseSize: 1,
+      noiseSizeVector: { x: 1, y: 1 },
+      clipToShape: true
+    })
+    expect(() => api.variables.setBoundVariableForEffect(noise, 'spread', size)).toThrow(
+      'in setBoundVariableForEffect: Property "field" failed validation: Invalid input: expected "radius"'
+    )
   })
 })
 

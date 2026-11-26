@@ -77,7 +77,8 @@ export const Blocked: Story = {
     const dialog = await within(document.body).findByRole('dialog')
     await expect(within(dialog).queryByRole('textbox')).toBeNull()
     await expect(dialog.querySelector('button[type="submit"]')).toBeDisabled()
-    await expect(within(dialog).getByRole('alert')).toBeVisible()
+    // The dialog fades in, so what it says is visible once that ends.
+    await waitFor(() => expect(within(dialog).getByRole('alert')).toBeVisible())
   }
 }
 
@@ -87,7 +88,9 @@ export const LastAdministrator: Story = {
   play: async () => {
     const dialog = await within(document.body).findByRole('dialog')
     await expect(dialog.querySelector('button[type="submit"]')).toBeDisabled()
-    await expect(within(dialog).getByText('Make someone else a server admin first')).toBeVisible()
+    await waitFor(() =>
+      expect(within(dialog).getByText('Make someone else a server admin first')).toBeVisible()
+    )
   }
 }
 

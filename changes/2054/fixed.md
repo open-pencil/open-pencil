@@ -1,1 +1,0 @@
-- A reply's text no longer fades out and back in when the reply finishes, or when its thinking ends and the answer starts (#2054).

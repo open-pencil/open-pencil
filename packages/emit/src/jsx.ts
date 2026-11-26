@@ -36,6 +36,16 @@ export const container = (expression: SyntaxNode): SyntaxNode => ({
 /** Raw JSX text, printed as is. */
 export const whitespace = (value: string): SyntaxNode => ({ type: 'JSXText', value, raw: value })
 
+/**
+ * `{/* … *\/}`, a comment among an element's children. The printer writes comments only from
+ * parsed source positions, so it is printed as raw text, on one line, and a `*\/` inside the
+ * text is broken so it cannot end the comment early.
+ */
+export function comment(value: string): SyntaxNode {
+  const body = value.replace(/\s+/g, ' ').trim().replaceAll('*/', '* /')
+  return whitespace(`{/* ${body} */}`)
+}
+
 /** A string attribute value: quoted when JSX keeps it as written, an expression otherwise. */
 export const stringValue = (value: string): SyntaxNode =>
   LITERAL_ATTRIBUTE.test(value) ? literal(value) : container(literal(value))

@@ -22,8 +22,19 @@ import {
 export type EnrollmentStatus = 'pending' | 'approved' | 'rejected' | 'revoked'
 export type EnrollmentMode = 'open' | 'approval' | 'closed'
 
-export type EnrollmentRequestInput = { email: string; name?: string; reason?: string }
-export type EnrollmentReviewInput = { note?: string }
+export type EnrollmentRequestInput = {
+  email: string
+  name?: string
+  reason?: string
+}
+export type EnrollmentReviewInput = {
+  note?: string
+  /**
+   * The status the reviewer saw, checked under the row's lock: a request another administrator
+   * decided meanwhile is refused rather than decided again.
+   */
+  expectedStatus?: EnrollmentStatus
+}
 export type EnrollmentRecord = {
   id: string
   email: string
@@ -102,17 +113,20 @@ export function createEnrollmentService(
       .executeTakeFirst()
     return row?.status ?? null
   }
-  return {
-    async request(input: EnrollmentRequestInput): Promise<void> {
+  const service = {
+    /**
+     * Records a request, or leaves one that is waiting or approved as it is. Says which it did.
+     */
+    async request(input: EnrollmentRequestInput): Promise<'recorded' | 'unchanged'> {
       const emailNormalized = normalizeEnrollmentEmail(input.email)
-      await database.transaction().execute(async (transaction) => {
+      return database.transaction().execute(async (transaction) => {
         const existing = await transaction
           .selectFrom('enrollment')
           .selectAll()
           .where('emailNormalized', '=', emailNormalized)
           .forUpdate()
           .executeTakeFirst()
-        if (existing?.status === 'approved' || existing?.status === 'pending') return
+        if (existing?.status === 'approved' || existing?.status === 'pending') return 'unchanged'
         const revision = (existing?.requestRevision ?? 0) + 1
         const values = {
           name: input.name?.trim() || existing?.name || null,
@@ -150,6 +164,7 @@ export function createEnrollmentService(
           reason: row.reason ?? 'No reason provided.',
           revision
         })
+        return 'recorded'
       })
     },
     statusForEmail,
@@ -209,7 +224,10 @@ export function createEnrollmentService(
           .where('id', '=', enrollmentId)
           .forUpdate()
           .executeTakeFirstOrThrow()
-        if (!ALLOWED_TRANSITIONS[current.status].has(status)) {
+        if (
+          !ALLOWED_TRANSITIONS[current.status].has(status) ||
+          (input.expectedStatus !== undefined && current.status !== input.expectedStatus)
+        ) {
           throw new AdminDomainError(
             'invalid_enrollment_transition',
             `Enrollment cannot transition from ${current.status} to ${status}`
@@ -304,5 +322,6 @@ export function createEnrollmentService(
       return Number(row.count)
     }
   }
+  return service
 }
 export type EnrollmentService = ReturnType<typeof createEnrollmentService>

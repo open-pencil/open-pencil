@@ -22,24 +22,12 @@ import {
   validateLibraryRevision
 } from '@open-pencil/core/library'
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import { createKeyedMutex } from '@open-pencil/std/async'
 
-const catalogPublicationQueues = new Map<string, Promise<void>>()
+const catalogPublications = createKeyedMutex<string>()
 
-async function serializePublication<T>(root: string, operation: () => Promise<T>): Promise<T> {
-  const previous = catalogPublicationQueues.get(root) ?? Promise.resolve()
-  let release: (() => void) | undefined
-  const current = new Promise<void>((resolveQueue) => {
-    release = resolveQueue
-  })
-  const tail = previous.then(() => current)
-  catalogPublicationQueues.set(root, tail)
-  await previous
-  try {
-    return await operation()
-  } finally {
-    release?.()
-    if (catalogPublicationQueues.get(root) === tail) catalogPublicationQueues.delete(root)
-  }
+function serializePublication<T>(root: string, operation: () => Promise<T>): Promise<T> {
+  return catalogPublications.run(root, operation)
 }
 
 export class FileSystemLibraryCatalog implements LibraryCatalog {

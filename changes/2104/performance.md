@@ -1,1 +1,0 @@
-- Large `.fig` pages load about 15% sooner (#2104).

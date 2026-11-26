@@ -5,6 +5,7 @@ import { assertDraftReplacement, releaseChannelArgs } from '#release/native/draf
 
 const identity: ReleaseIdentity = {
   tag: 'v0.15.0',
+  version: '0.15.0',
   sourceCommit: 'a'.repeat(40),
   workflowCommit: 'b'.repeat(40),
   runId: '123',

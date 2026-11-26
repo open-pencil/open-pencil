@@ -1,1 +1,0 @@
-- Large and deeply nested documents no longer exceed the JavaScript argument or call-stack limits during scene-tree traversal.

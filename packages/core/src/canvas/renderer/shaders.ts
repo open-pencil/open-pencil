@@ -1,5 +1,6 @@
-import type { Blender, Canvas, CanvasKit, Paint, Rect, Shader } from '@open-pencil/canvaskit'
+import type { Blender, Canvas, CanvasKit, Image, Paint, Rect, Shader } from '@open-pencil/canvaskit'
 
+import { ResourceCache } from '#core/cache/resource'
 import {
   type CompiledProgram,
   compileProgram,
@@ -18,16 +19,27 @@ export interface CompiledShaders {
   programs: Map<SkslProgram, CompiledProgram>
   blenders: Map<SkslProgram, Blender>
   kept: Map<SkslProgram, KeptShader>
+  /** Images programs read, such as a noise's cell levels, by what they were built from. */
+  tiles: ResourceCache<string, Image>
 }
 
+/** Tiles kept at once; a document rarely uses more noise densities and seeds on one screen. */
+const KEPT_TILES = 8
+
 export function createCompiledShaders(): CompiledShaders {
-  return { programs: new Map(), blenders: new Map(), kept: new Map() }
+  return {
+    programs: new Map(),
+    blenders: new Map(),
+    kept: new Map(),
+    tiles: new ResourceCache({ maxEntries: KEPT_TILES, dispose: (tile) => tile.delete() })
+  }
 }
 
 export function releaseCompiledShaders(shaders: CompiledShaders): void {
   for (const { effect } of shaders.programs.values()) effect.delete()
   for (const blender of shaders.blenders.values()) blender.delete()
   for (const { shader } of shaders.kept.values()) shader.delete()
+  shaders.tiles.clear()
   shaders.programs.clear()
   shaders.blenders.clear()
   shaders.kept.clear()

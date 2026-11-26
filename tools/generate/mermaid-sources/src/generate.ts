@@ -10,7 +10,7 @@
 import { join } from 'node:path'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { checksums, CHECKSUMS_FILE } from './checksums'
 import { extractDeclarations, hasImports } from './extract'

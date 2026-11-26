@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/dom-css",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0",
   "license": "MIT",
   "type": "module",
   "imports": {
@@ -69,6 +69,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/dom-css"
   },
+  "funding": "https://ko-fi.com/dannote",
   "publishConfig": {
     "access": "public",
     "provenance": true
@@ -99,6 +100,7 @@
   "dependencies": {
     "@acemir/cssom": "^0.9.31",
     "@open-pencil/emit": "workspace:*",
+    "@open-pencil/std": "workspace:*",
     "css-tree": "^3.2.1",
     "cssesc": "^3.0.0",
     "dedent": "^1.7.2",

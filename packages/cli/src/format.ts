@@ -20,6 +20,8 @@ import type { TreeNode, ListItem, NodeData } from 'agentfmt'
 import { isEmptyObject } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
+import { errorMessage } from '@open-pencil/std/errors'
 
 export {
   ok,
@@ -96,32 +98,14 @@ function formatFill(node: SceneNode): string | null {
   if (!node.fills.length) return null
   const solid = node.fills.find((f) => f.type === 'SOLID' && f.visible)
   if (!solid?.color) return null
-  const { r, g, b } = solid.color
-  const hex =
-    '#' +
-    [r, g, b]
-      .map((c) =>
-        Math.round(c * 255)
-          .toString(16)
-          .padStart(2, '0')
-      )
-      .join('')
+  const hex = colorToHex(solid.color).toLowerCase()
   return solid.opacity < 1 ? `${hex} ${Math.round(solid.opacity * 100)}%` : hex
 }
 
 function formatStroke(node: SceneNode): string | null {
   if (!node.strokes.length) return null
   const s = node.strokes[0]
-  const { r, g, b } = s.color
-  const hex =
-    '#' +
-    [r, g, b]
-      .map((c) =>
-        Math.round(c * 255)
-          .toString(16)
-          .padStart(2, '0')
-      )
-      .join('')
+  const hex = colorToHex(s.color).toLowerCase()
   return `${hex} ${s.weight}px`
 }
 
@@ -219,6 +203,6 @@ export function formatNodeSingle(node: SceneNode): string {
 }
 
 export function printError(error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error)
+  const message = errorMessage(error)
   console.error(fail(message))
 }

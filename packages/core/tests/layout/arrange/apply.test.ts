@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import { connectorRoute, createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+import { minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { applyArrangement } from '#core/layout/arrange/apply'

@@ -116,7 +116,9 @@ function drawStop(
   canvas.drawRect(rect(0), paint)
   paint.setColorComponents(1, 1, 1, 1)
   canvas.drawRect(rect(2), paint)
-  paint.setColorComponents(color.r, color.g, color.b, color.a)
+  // The stop's own color, in the document's profile, as the gradient under it draws it.
+  const shown = r.renderColor(color)
+  paint.setColorComponents(shown.r, shown.g, shown.b, shown.a)
   canvas.drawRect(rect(3), paint)
 }
 

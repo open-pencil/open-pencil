@@ -1,6 +1,7 @@
 import { request } from 'node:http'
 import type { ClientRequest, RequestOptions } from 'node:http'
 
+import { CLIENT_RPC_DEADLINE_MS, SERVER_RPC_DEADLINE_MS } from '#mcp/transport/deadlines'
 import { readDiscoveryFile } from '#mcp/transport/discovery'
 import { getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
 
@@ -15,7 +16,7 @@ type StdioRPCBridgeOptions = {
 }
 
 // 35s gives a 5s margin over the worst case (10s app wait + 20s RPC timeout = 30s)
-const RPC_TIMEOUT = 35_000
+const RPC_TIMEOUT = CLIENT_RPC_DEADLINE_MS
 const DISCONNECTED_MESSAGE =
   'OpenPencil app is not connected. ' +
   'STOP and tell the user: "The OpenPencil desktop app is not running or no document is open. ' +
@@ -174,12 +175,12 @@ export function createStdioRPCBridge({
 
       req.on('error', reject)
       // Socket-level idle timeout to prevent indefinite hangs on
-      // unresponsive connections. Set 5s shorter than the outer RPC_TIMEOUT
-      // so this fires deterministically first, producing a clear "server
-      // unreachable" signal rather than racing with the outer timer.
-      // If the outer sendRPC timer already rejected, the error handler
-      // is a no-op (settled guard in attempt()).
-      req.setTimeout(RPC_TIMEOUT - 5_000, () => {
+      // unresponsive connections: the server's own deadline, shorter than
+      // the outer RPC_TIMEOUT, so this fires deterministically first,
+      // producing a clear "server unreachable" signal rather than racing
+      // with the outer timer. If the outer sendRPC timer already rejected,
+      // the error handler is a no-op (settled guard in attempt()).
+      req.setTimeout(SERVER_RPC_DEADLINE_MS, () => {
         req.destroy(new Error('Socket timeout'))
       })
       if (bodyJSON) req.write(bodyJSON)

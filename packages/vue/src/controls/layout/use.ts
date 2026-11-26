@@ -7,7 +7,7 @@ import {
   trackLabel
 } from '#vue/controls/layout/helpers'
 import { useEditor } from '#vue/editor/context'
-import { useI18n } from '#vue/i18n'
+import { useMessages } from '#vue/i18n'
 
 /**
  * Returns layout-related state and actions for the current selection.
@@ -17,7 +17,7 @@ import { useI18n } from '#vue/i18n'
  */
 export function useLayout() {
   const editor = useEditor()
-  const { panels } = useI18n()
+  const panels = useMessages('panels')
 
   const {
     node,

@@ -8,6 +8,25 @@ describe('Variables', () => {
     return graph.getPages()[0]?.id ?? ''
   }
 
+  test('a collection lists a variable while it is live, not once its deleted record replaces it', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Colors')
+    const accent = graph.createVariable('Accent', 'COLOR', collection.id)
+    graph.addVariable({ ...accent, deleted: true })
+    expect(collection.variableIds).toEqual([])
+    graph.addVariable(accent)
+    expect(collection.variableIds).toEqual([accent.id])
+  })
+
+  test('a deleted collection takes its variables out of the lists, but not out of reach', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Colors')
+    const accent = graph.createVariable('Accent', 'COLOR', collection.id)
+    graph.addCollection({ ...collection, deleted: true })
+    expect(graph.getLiveVariables()).toEqual([])
+    expect(graph.variables.get(accent.id)?.name).toBe('Accent')
+  })
+
   test('add and resolve color variable', () => {
     const graph = new SceneGraph()
     graph.addCollection({
@@ -81,7 +100,12 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
-    expect(graph.resolveColorVariable('v2')).toEqual({ r: 0, g: 0, b: 1, a: 1 })
+    expect(graph.resolveColorVariable('v2')).toEqual({
+      r: 0,
+      g: 0,
+      b: 1,
+      a: 1
+    })
   })
 
   test('a page mode switches what its layers resolve to', () => {
@@ -111,11 +135,26 @@ describe('Variables', () => {
 
     const page = graph.getPages()[0]
     const rect = graph.createNode('RECTANGLE', page.id)
-    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({
+      r: 1,
+      g: 1,
+      b: 1,
+      a: 1
+    })
     graph.updateNode(page.id, { variableModes: { col1: 'dark' } })
-    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 1
+    })
     // Without a node, a variable resolves in its collection's default mode.
-    expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    expect(graph.resolveColorVariable('v1')).toEqual({
+      r: 1,
+      g: 1,
+      b: 1,
+      a: 1
+    })
   })
 
   test('node variable modes inherit from the nearest ancestor', () => {
@@ -144,7 +183,9 @@ describe('Variables', () => {
     })
 
     const page = graph.addPage('Page')
-    const frame = graph.createNode('FRAME', page.id, { variableModes: { col1: 'dark' } })
+    const frame = graph.createNode('FRAME', page.id, {
+      variableModes: { col1: 'dark' }
+    })
     const child = graph.createNode('RECTANGLE', frame.id)
     const nestedOverride = graph.createNode('RECTANGLE', frame.id, {
       variableModes: { col1: 'light' }
@@ -206,7 +247,9 @@ describe('Variables', () => {
     })
 
     const page = graph.addPage('Page')
-    const frame = graph.createNode('FRAME', page.id, { variableModes: { theme: 'dark' } })
+    const frame = graph.createNode('FRAME', page.id, {
+      variableModes: { theme: 'dark' }
+    })
     const child = graph.createNode('RECTANGLE', frame.id)
 
     expect(graph.resolveColorVariableForNode(child.id, 'ink-fg')).toEqual({
@@ -242,7 +285,12 @@ describe('Variables', () => {
     const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
       variableModes: { col1: 'dark' }
     })
-    expect(graph.resolveColorVariableForNode(frame.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    expect(graph.resolveColorVariableForNode(frame.id, 'v1')).toEqual({
+      r: 1,
+      g: 1,
+      b: 1,
+      a: 1
+    })
   })
 
   test('explicit alias resolution preserves source mode', () => {
@@ -282,7 +330,12 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
-    expect(graph.resolveVariable('alias', 'dark')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    expect(graph.resolveVariable('alias', 'dark')).toEqual({
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 1
+    })
   })
 
   test('bind and unbind variable to node', () => {
@@ -306,7 +359,14 @@ describe('Variables', () => {
 
     const node = graph.createNode('RECTANGLE', pageId(graph), {
       name: 'Rect',
-      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          visible: true,
+          opacity: 1
+        }
+      ]
     })
 
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
@@ -343,7 +403,9 @@ describe('Variables', () => {
     const label = graph.createVariable('label', 'STRING', collection.id, 'Buy')
     const count = graph.createVariable('count', 'FLOAT', collection.id, 42.5)
     const flag = graph.createVariable('flag', 'BOOLEAN', collection.id, true)
-    const node = graph.createNode('TEXT', graph.getPages()[0].id, { text: 'Hello' })
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Hello'
+    })
 
     graph.bindVariable(node.id, 'text', count.id)
     expect(resolvedValueBindings(graph, node)).toMatchObject({ text: '42.50' })
@@ -380,7 +442,14 @@ describe('Variables', () => {
 
     const node = graph.createNode('RECTANGLE', pageId(graph), {
       name: 'Rect',
-      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          visible: true,
+          opacity: 1
+        }
+      ]
     })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     expect(node.boundVariables['fills/0/color']).toBe('v1')

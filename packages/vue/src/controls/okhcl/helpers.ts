@@ -2,16 +2,15 @@ import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import { BLACK } from '@open-pencil/core/constants'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode, ColorProfile } from '@open-pencil/scene-graph'
 import {
-  getFillOkHCL,
-  getStrokeOkHCL,
-  resolveOkHCLForPreview,
+  okhclInProfile,
+  paintOkHCL,
+  rememberPaintOkHCL,
   rgbaToOkHCL,
   setNodeFillOkHCL,
   setNodeStrokeOkHCL,
-  type OkHCLColor,
-  type OkHCLColorSpace
+  type OkHCLColor
 } from '@open-pencil/scene-graph/color'
 
 import type { ColorFieldFormat } from '#vue/controls/color-model/types'
@@ -22,23 +21,35 @@ function fieldKey(kind: ColorKind, nodeId: string, index: number) {
   return `${kind}:${nodeId}:${index}`
 }
 
-export function getFillOkHCLColor(node: SceneNode | null, index: number): OkHCLColor | null {
-  return node ? (getFillOkHCL(node, index)?.color ?? null) : null
+/** The OkHCL color a fill is edited in, while it still makes the fill's stored color. */
+export function getFillOkHCLColor(
+  node: SceneNode | null,
+  index: number,
+  profile: ColorProfile
+): OkHCLColor | null {
+  return node ? paintOkHCL(node, 'fill', index, profile) : null
 }
 
-export function getStrokeOkHCLColor(node: SceneNode | null, index: number): OkHCLColor | null {
-  return node ? (getStrokeOkHCL(node, index)?.color ?? null) : null
+/** The OkHCL color a stroke is edited in, while it still makes the stroke's stored color. */
+export function getStrokeOkHCLColor(
+  node: SceneNode | null,
+  index: number,
+  profile: ColorProfile
+): OkHCLColor | null {
+  return node ? paintOkHCL(node, 'stroke', index, profile) : null
 }
 
-function fallbackFillOkHCL(node: SceneNode, index: number, colorSpace: OkHCLColorSpace) {
+function fallbackFillOkHCL(node: SceneNode, index: number, profile: ColorProfile) {
   return (
-    getFillOkHCLColor(node, index) ?? rgbaToOkHCL(node.fills[index]?.color ?? BLACK, colorSpace)
+    getFillOkHCLColor(node, index, profile) ??
+    rgbaToOkHCL(node.fills[index]?.color ?? BLACK, profile)
   )
 }
 
-function fallbackStrokeOkHCL(node: SceneNode, index: number, colorSpace: OkHCLColorSpace) {
+function fallbackStrokeOkHCL(node: SceneNode, index: number, profile: ColorProfile) {
   return (
-    getStrokeOkHCLColor(node, index) ?? rgbaToOkHCL(node.strokes[index]?.color ?? BLACK, colorSpace)
+    getStrokeOkHCLColor(node, index, profile) ??
+    rgbaToOkHCL(node.strokes[index]?.color ?? BLACK, profile)
   )
 }
 
@@ -46,18 +57,23 @@ export function createOkHCLActions(editor: Editor) {
   // Colours are stored in the document's profile, so both directions use it.
   const colorSpace = () => editor.graph.documentColorSpace
 
+  // Picking the OkHCL format keeps the color it starts from without rewriting the paint.
   function ensureFillOkHCL(node: SceneNode, index: number) {
+    if (getFillOkHCLColor(node, index, colorSpace())) return
+    const color = fallbackFillOkHCL(node, index, colorSpace())
     editor.updateNodeWithUndo(
       node.id,
-      setNodeFillOkHCL(node, index, fallbackFillOkHCL(node, index, colorSpace()), colorSpace()),
+      rememberPaintOkHCL(node, 'fill', index, color),
       'Update fill color model'
     )
   }
 
   function ensureStrokeOkHCL(node: SceneNode, index: number) {
+    if (getStrokeOkHCLColor(node, index, colorSpace())) return
+    const color = fallbackStrokeOkHCL(node, index, colorSpace())
     editor.updateNodeWithUndo(
       node.id,
-      setNodeStrokeOkHCL(node, index, fallbackStrokeOkHCL(node, index, colorSpace()), colorSpace()),
+      rememberPaintOkHCL(node, 'stroke', index, color),
       'Update stroke color model'
     )
   }
@@ -83,20 +99,23 @@ export function createOkHCLActions(editor: Editor) {
   return { ensureFillOkHCL, ensureStrokeOkHCL, updateFillOkHCL, updateStrokeOkHCL }
 }
 
-export function createOkHCLPreviewHelpers(editor: Editor) {
+/**
+ * Whether an OkHCL color shows as itself: `shown` is the profile the canvas presents, so a color
+ * past it is clipped there, on a P3 canvas past P3, and in an sRGB fallback past sRGB.
+ */
+export function createOkHCLPreviewHelpers(editor: Editor, shown: () => ColorProfile) {
   function getPreviewInfo(okhcl: OkHCLColor | null) {
-    const documentColorSpace = editor.graph.documentColorSpace
-    if (!okhcl) return { previewColorSpace: documentColorSpace, clipped: false }
-    const resolved = resolveOkHCLForPreview(okhcl, { documentColorSpace })
-    return { previewColorSpace: resolved.targetSpace, clipped: resolved.clipped }
+    const previewColorSpace = shown()
+    if (!okhcl) return { previewColorSpace, clipped: false }
+    return { previewColorSpace, clipped: okhclInProfile(okhcl, previewColorSpace).clipped }
   }
 
   function getFillPreviewInfo(node: SceneNode | null, index: number) {
-    return getPreviewInfo(getFillOkHCLColor(node, index))
+    return getPreviewInfo(getFillOkHCLColor(node, index, editor.graph.documentColorSpace))
   }
 
   function getStrokePreviewInfo(node: SceneNode | null, index: number) {
-    return getPreviewInfo(getStrokeOkHCLColor(node, index))
+    return getPreviewInfo(getStrokeOkHCLColor(node, index, editor.graph.documentColorSpace))
   }
 
   return { getFillPreviewInfo, getStrokePreviewInfo }
@@ -105,16 +124,20 @@ export function createOkHCLPreviewHelpers(editor: Editor) {
 export function createOkHCLFieldFormats(
   fieldFormats: Ref<Map<string, ColorFieldFormat>>,
   ensureFillOkHCL: (node: SceneNode, index: number) => void,
-  ensureStrokeOkHCL: (node: SceneNode, index: number) => void
+  ensureStrokeOkHCL: (node: SceneNode, index: number) => void,
+  profile: () => ColorProfile
 ) {
   function getFieldFormat(node: SceneNode | null, index: number, kind: ColorKind) {
     if (!node) return 'rgb' as const
     const key = fieldKey(kind, node.id, index)
     const stored = fieldFormats.value.get(key)
     if (stored) return stored
-    return (kind === 'fill' ? getFillOkHCL(node, index) : getStrokeOkHCL(node, index))
-      ? 'okhcl'
-      : 'rgb'
+    // OkHCL is the default only while its color still makes the paint, as the fields read it.
+    const okhcl =
+      kind === 'fill'
+        ? getFillOkHCLColor(node, index, profile())
+        : getStrokeOkHCLColor(node, index, profile())
+    return okhcl ? 'okhcl' : 'rgb'
   }
 
   function setFillFieldFormat(node: SceneNode, index: number, format: ColorFieldFormat) {

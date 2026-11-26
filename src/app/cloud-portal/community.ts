@@ -7,6 +7,7 @@ import {
   type CloudDiscovery,
   type CommunityDocument
 } from '@open-pencil/cloud/contract'
+import { errorMessage } from '@open-pencil/std/errors'
 
 /** The gallery's documents as a page reads them: loading, read, or failed with a message. */
 export type CommunityListState =
@@ -26,7 +27,7 @@ export function useCommunityDocuments(discovery: CloudDiscovery) {
     } catch (error) {
       state.value = {
         status: 'failed',
-        error: error instanceof Error ? error.message : String(error)
+        error: errorMessage(error)
       }
     }
   }

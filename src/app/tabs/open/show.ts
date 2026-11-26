@@ -1,6 +1,7 @@
 import { createEventHook } from '@vueuse/core'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 import { nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -128,7 +129,7 @@ export function failPreparation(
   if (load.signal.aborted) return
   load.fail({
     code,
-    message: error instanceof Error ? error.message : String(error),
+    message: errorMessage(error),
     retryable: true
   })
 }

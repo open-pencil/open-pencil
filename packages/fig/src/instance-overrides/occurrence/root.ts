@@ -2,8 +2,8 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
-import type { AssignmentGroup, StructuralLayer } from '../layers'
-import { readOverrideKey, sameGuid, type InterpreterIndex } from '../source-index'
+import type { AssignmentGroup, Owner, StructuralLayer } from '../layers'
+import { idOf, readOverrideKey, sameGuid, type InterpreterIndex } from '../source-index'
 import type { ComponentPropAssignment } from '../types'
 
 type Sources = InterpreterIndex['sources']
@@ -19,6 +19,8 @@ export interface RootResolution {
   effective: GUID | undefined
   /** Components superseded on the way to `effective`, innermost decision first. */
   replaced: GUID[]
+  /** The owner whose swap chose `effective`, when a swap chose it. */
+  swappedBy: Owner | undefined
   groups: AssignmentGroup[]
   descendant: StructuralLayer[]
 }
@@ -56,13 +58,19 @@ export function resolveRoot(
   ]
   const isKey = (guid: GUID): boolean => keys.some((key) => sameGuid(key, guid))
   const groups: AssignmentGroup[] = [
-    { assignments: (source.componentPropAssignments ?? []) as ComponentPropAssignment[], rank }
+    {
+      assignments: (source.componentPropAssignments ?? []) as ComponentPropAssignment[],
+      rank,
+      ownerId: idOf(raw)
+    }
   ]
   const descendant: StructuralLayer[] = []
-  const swapRoot = (swap: GUID): void => {
+  let swappedBy: Owner | undefined
+  const swapRoot = (swap: GUID, owner: Owner): void => {
     if (!effective) throw new Error('Swap target is not an instance')
     if (!sameGuid(effective, swap)) replaced.push(effective)
     effective = swap
+    swappedBy = owner
     // Later layers may address the root through the replacement's identity.
     for (const key of componentKeys(sources, effective)) if (!isKey(key)) keys.push(key)
   }
@@ -72,9 +80,13 @@ export function resolveRoot(
       descendant.push(addressesRoot ? { ...layer, path: layer.path.slice(1) } : layer)
       continue
     }
-    if (layer.swap) swapRoot(layer.swap)
+    if (layer.swap) swapRoot(layer.swap, layer.owner)
     if (layer.assignments.length)
-      groups.push({ assignments: layer.assignments, rank: layer.owner.rank })
+      groups.push({
+        assignments: layer.assignments,
+        rank: layer.owner.rank,
+        ownerId: layer.owner.id
+      })
   }
-  return { effective, replaced, groups, descendant }
+  return { effective, replaced, swappedBy, groups, descendant }
 }

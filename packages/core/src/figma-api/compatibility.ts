@@ -161,8 +161,11 @@ type SlotSurfaceMatch = Expect<
 >
 const _slotSurfaceMatch: SlotSurfaceMatch = true
 
-// `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it.
-type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>
+// `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it. A
+// noise reads back as live Figma returns it (desktop 126), without the blend mode its typings
+// declare and its plugin API refuses.
+type ReadEffect = Exclude<FigmaNodeProxy['effects'][number], { type: 'NOISE' }>
+type EffectShapeMatch = Expect<Extends<ReadEffect, Effect>>
 const _effectShapeMatch: EffectShapeMatch = true
 
 // `Paint` here is Figma's plugin-typings union. `fills`, `strokes`, and `backgrounds` share one

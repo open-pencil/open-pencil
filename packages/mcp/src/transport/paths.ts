@@ -161,3 +161,10 @@ export function platformName(): 'macos' | 'linux' | 'windows' | 'other' {
   if (platform() === 'linux') return 'linux'
   return 'other'
 }
+
+export {
+  APP_RPC_DEADLINE_MS,
+  APP_WAIT_DEADLINE_MS,
+  CLIENT_RPC_DEADLINE_MS,
+  SERVER_RPC_DEADLINE_MS
+} from './deadlines'

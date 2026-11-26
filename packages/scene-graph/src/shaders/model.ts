@@ -1,11 +1,12 @@
 import { sha1 } from '@noble/hashes/legacy.js'
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 
+import { randomHex } from '@open-pencil/std/random'
+
 import { TRANSPARENT } from '../constants'
 import { imagePaintHashes } from '../images'
 import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
-import { randomHex } from '../random'
 import type { Fill, SceneNode } from '../types'
 import type { ShaderPaint, ShaderPreset } from './schema'
 

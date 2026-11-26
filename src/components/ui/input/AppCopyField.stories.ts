@@ -4,9 +4,9 @@ import AppCopyField from './AppCopyField.vue'
 
 interface Args {
   value: string
-  copyLabel: string
-  copiedLabel: string
-  look?: 'command' | 'plain'
+  copyLabel?: string
+  copiedLabel?: string
+  look?: 'command' | 'plain' | 'code'
 }
 
 const meta = {
@@ -29,4 +29,11 @@ type Story = StoryObj<typeof meta>
 export const Command: Story = {}
 export const Plain: Story = {
   args: { value: 'http://127.0.0.1:7600/mcp', look: 'plain' }
+}
+export const Code: Story = {
+  args: { value: 'WDJB-MJHT', look: 'code' }
+}
+/** A code shown only to compare, as on Cloud's desktop sign-in approval. */
+export const CodeWithoutCopy: Story = {
+  args: { value: 'WDJB-MJHT', look: 'code', copyLabel: undefined, copiedLabel: undefined }
 }

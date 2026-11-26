@@ -22,7 +22,7 @@ const noLocalJsonObjectAliases = {
         context.report({
           node,
           message:
-            'Import JsonObject from @open-pencil/scene-graph/primitives instead of declaring a local alias.'
+            'Import JSONObject from @open-pencil/std/json instead of declaring a local alias.'
         })
       }
     }

@@ -70,7 +70,7 @@ describe('MCP tool execution', () => {
       height: 400,
       name: 'Parent'
     }) as { id: string }
-    const text = findTool('create_shape').execute(api, {
+    const textArgs = {
       type: 'TEXT',
       x: 0,
       y: 0,
@@ -78,7 +78,9 @@ describe('MCP tool execution', () => {
       height: 20,
       parent_id: parent.id,
       name: 'Nested text'
-    }) as { id: string }
+    }
+    await findTool('create_shape').loadFonts(api, textArgs)
+    const text = findTool('create_shape').execute(api, textArgs) as { id: string }
     findTool('create_shape').execute(api, {
       type: 'RECTANGLE',
       x: 0,
@@ -184,7 +186,7 @@ describe('MCP tool execution', () => {
       name: 'Parent'
     }) as { id: string }
 
-    findTool('create_shape').execute(api, {
+    const textArgs = {
       type: 'TEXT',
       x: 0,
       y: 0,
@@ -192,7 +194,9 @@ describe('MCP tool execution', () => {
       height: 30,
       name: 'Child',
       parent_id: parent.id
-    })
+    }
+    await findTool('create_shape').loadFonts(api, textArgs)
+    findTool('create_shape').execute(api, textArgs)
 
     const tree = (await findTool('get_page_tree').execute(api, {})) as PageTreeResult
     const parentNode = expectDefined(

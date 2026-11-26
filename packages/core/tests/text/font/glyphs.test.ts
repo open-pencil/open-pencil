@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { corePackagePath } from '#core-tests/helpers/paths'
 
 import { fontManager } from '@open-pencil/core/text'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import {

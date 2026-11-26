@@ -88,6 +88,7 @@
   "supportDescription": "هل يعجبك OpenPencil؟ إنه مجاني ومفتوح المصدر، والتبرع يساعد على تسريع تطويره ويغطي الخوادم والخدمات التي يعمل عليها.",
   "supportNotNow": "ليس الآن",
   "supportDonate": "تبرّع",
+  "campaignNotNow": "ليس الآن",
   "sharingLocalData": "يحتفظ الاستخدام والتشخيصات بسجلاتهما على هذا الجهاز ولا يرسلانها أبدًا.",
   "reportError": "إبلاغ…",
   "reportErrorTitle": "الإبلاغ عن هذا الخطأ",

@@ -8,6 +8,7 @@ import {
   imageSize,
   type ImageMimeType
 } from '@open-pencil/scene-graph/images'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { graphOf } from '#core/figma-api/graph'
 import { invalid, parseFigma, received } from '#core/figma-api/validation'
@@ -147,7 +148,7 @@ export async function fetchImage(api: object, value: unknown, fetch: ImageFetch)
   const load = scheme === 'data:' ? globalThis.fetch : fetch
   const download = async () => {
     const response = await load(src).catch((error: unknown) => {
-      const reason = error instanceof Error ? error.message : String(error)
+      const reason = errorMessage(error)
       throw new Error(`Unable to fetch image: ${reason}`)
     })
     if (!response.ok) throw new Error(`Unable to fetch image. Response status: ${response.status}`)

@@ -1,14 +1,15 @@
 import type { Canvas, ImageFilter, MaskFilter, Path } from '@open-pencil/canvaskit'
-import { readEffectiveFigmaRawField } from '@open-pencil/fig'
-import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
-import { BLACK } from '#core/constants'
 
 import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
+import { withNoiseEffects } from './noise/render'
 import type { SkiaRenderer } from './renderer/skia'
+import { withLeafTexture } from './texture/render'
 
 /**
  * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across
@@ -138,76 +139,22 @@ export function applyClippedBlur(
   canvas.restore()
 }
 
-const MAX_RAW_NOISE_CELLS = 12_000
-
-interface RawNoiseEffect {
-  type: 'NOISE'
-  visible?: boolean
-  color?: Color
-  secondaryColor?: Color
-  opacity?: number
-  density?: number
-  noiseSize?: Vector
-  noiseType?: 'MONOTONE' | 'DUOTONE' | 'MULTITONE'
-}
-
-function rawNoiseEffects(node: SceneNode): RawNoiseEffect[] {
-  const source = (node as Partial<SceneNode>).source
-  const effects = source ? readEffectiveFigmaRawField(node, 'effects') : undefined
-  if (!Array.isArray(effects)) return []
-  return effects.filter(
-    (effect): effect is RawNoiseEffect =>
-      effect !== null &&
-      typeof effect === 'object' &&
-      'type' in effect &&
-      effect.type === 'NOISE' &&
-      ('visible' in effect ? effect.visible !== false : true)
-  )
-}
-
-function seededNoise(seed: number): number {
-  const x = Math.sin(seed * 12.9898) * 43758.5453
-  return x - Math.floor(x)
-}
-
-function renderNoiseEffect(
+/**
+ * Draws a shape or boolean with its own effects, as Figma layers them: shadows and background
+ * blur behind, inner shadows over the fills and under the strokes (`paint` calls `inner` between
+ * them), the texture roughening that content, and noise grains over it.
+ */
+export function renderLeafWithEffects(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  effect: RawNoiseEffect
+  graph: SceneGraph,
+  paint: (inner: () => void) => void
 ): void {
-  const density = Math.max(0, Math.min(1, effect.density ?? 0.3))
-  const requestedStep = Math.max(2, Math.round((effect.noiseSize?.x ?? 0.5) * 8))
-  const boundedStep = Math.ceil(Math.sqrt((node.width * node.height) / MAX_RAW_NOISE_CELLS))
-  const step = Math.max(requestedStep, boundedStep)
-  const color = effect.color ?? BLACK
-  const opacity = effect.opacity ?? color.a
-  const paint = new r.ck.Paint()
-  try {
-    paint.setAntiAlias(false)
-    canvas.save()
-    r.clipNodeShape(canvas, node)
-    for (let y = 0; y < node.height; y += step) {
-      for (let x = 0; x < node.width; x += step) {
-        const value = seededNoise((x + 1) * 73856093 + (y + 1) * 19349663)
-        if (value > density) continue
-        const alpha = Math.max(0, Math.min(1, opacity * (0.35 + value * 0.65)))
-        paint.setColorComponents(color.r, color.g, color.b, alpha)
-        canvas.drawRect(
-          r.ck.LTRBRect(x, y, Math.min(node.width, x + 1), Math.min(node.height, y + 1)),
-          paint
-        )
-      }
-    }
-    canvas.restore()
-  } finally {
-    paint.delete()
-  }
-}
-
-/** Draws the raw Figma noise effects a node carries, which the scene graph does not model. */
-export function renderNoiseEffects(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
-  for (const effect of rawNoiseEffects(node)) {
-    renderNoiseEffect(r, canvas, node, effect)
-  }
+  r.renderEffects(canvas, node, graph, 'behind')
+  const content = () => paint(() => r.renderEffects(canvas, node, graph, 'inner'))
+  const textured = () => withLeafTexture(r, canvas, node, content)
+  // A frame or group grains its fill with its children, around both, in `renderNode`.
+  if (isLayerContainer(node)) textured()
+  else withNoiseEffects(r, canvas, node, graph, textured)
 }

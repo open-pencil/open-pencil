@@ -6,7 +6,7 @@ import {
   DOCUMENT_REPORT_DESCRIPTION_MAX,
   type DocumentReportReason
 } from '@open-pencil/cloud/contract'
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
@@ -36,7 +36,7 @@ const emit = defineEmits<{
   send: [report: { reason: DocumentReportReason; description: string; replyEmail?: string }]
 }>()
 
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 // The opener fills these for each report: the reason, what to look at, and where to answer.
 const reason = defineModel<DocumentReportReason>('reason', { default: 'spam-phishing' })
 const description = defineModel<string>('description', { default: '' })

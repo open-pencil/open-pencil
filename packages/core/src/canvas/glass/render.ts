@@ -1,7 +1,7 @@
 import type { Canvas, ImageFilter, Path, Shader } from '@open-pencil/canvaskit'
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { isWholeEllipse } from '@open-pencil/scene-graph/outline'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { tracePath } from '#core/canvas/paths/verbs'
 import { compiledProgram } from '#core/canvas/renderer/shaders'

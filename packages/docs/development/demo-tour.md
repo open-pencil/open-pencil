@@ -1,6 +1,6 @@
 # Demo tour
 
-The `/demo` document is a tour of eight chapters on one page, each a section stacked top to bottom. It is built at development and build time from `tools/generate/demo/src/document/` into the ignored `public/demo.fig`, which the app opens like any `.fig` file; it is never generated in the browser.
+The `/demo` document is a tour of eight chapters on one page, each a section stacked top to bottom. It is built from `tools/generate/demo/src/document/` and lives only in OpenPencil Cloud's community gallery: the **Publish gallery examples** workflow builds and publishes it (see `cloud.md`), and the app and the docs landing download it from the official server's gallery and open it like any `.fig` file. The app has no copy of its own, and the tour is never generated in the browser.
 
 ## Document structure
 
@@ -14,8 +14,10 @@ The `/demo` document is a tour of eight chapters on one page, each a section sta
 
 The tour renders design JSX through `document/icons.ts`, which serves Lucide from the bundled icon JSON, so the build needs no Iconify API.
 
-`ensureDemoDocument` runs from `vite.config.ts`. It rebuilds only when the fingerprint of its inputs changes and runs the build in Bun; `bun run generate:demo` forces a rebuild. A chapter that needs something new from the engine adds that package's `src` to the fingerprint in `tools/generate/demo/src/ensure.ts`.
+`buildDemoDocument` (`tools/generate/demo/src/build.ts`) returns the tour's bytes; the publishing tool calls it. To look at a change locally, `bun run generate:demo <output.fig>` writes the tour to a file to open in the editor.
+
+The app opens the tour through `fetchOfficialTour` (`src/app/cloud/community/tour.ts`), which asks the official server for the gallery document its `[community] tour` names, as the version named for the app's release when there is one, else as it is now (`fetchCommunityTour` in `@open-pencil/cloud/client`). A build without Cloud has no tour.
 
 ## Shader stills
 
-Shader fills get their still frames from `tools/generate/demo/src/shaders/stills.ts`, which draws each preset in the Playwright Chromium with WebGPU, at the size and in the encoding the editor uses (`shaderFramePixels` and `shaderFrameEncoding` from `@open-pencil/scene-graph`). Install the browser locally with `bunx playwright install chromium`; the deploy and preview workflows install it. Without the browser, the build skips the stills. The editor then draws the frames when the demo opens, but only in a browser with WebGPU; elsewhere those shader fills stay without a frame. `ensureDemoDocument` runs the build in a child process and does not show its warning.
+Shader fills get their still frames from `tools/generate/demo/src/shaders/stills.ts`, which draws each preset in the Playwright Chromium with WebGPU, at the size and in the encoding the editor uses (`shaderFramePixels` and `shaderFrameEncoding` from `@open-pencil/scene-graph`). Install the browser locally with `bunx playwright install chromium`; the deploy and preview workflows install it. Without the browser, the build skips the stills. The editor then draws the frames when the demo opens, but only in a browser with WebGPU; elsewhere those shader fills stay without a frame. The publishing workflow installs the browser, so the published tour has its stills.

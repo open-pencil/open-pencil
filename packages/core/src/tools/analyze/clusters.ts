@@ -2,7 +2,7 @@ import { orderBy, sortBy } from 'es-toolkit/array'
 import { meanBy } from 'es-toolkit/math'
 import * as v from 'valibot'
 
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'

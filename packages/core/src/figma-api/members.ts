@@ -23,6 +23,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import type { SlideTransition } from '@open-pencil/scene-graph/slides'
 
 import type { TextRangeMethods } from './accessors/text/ranges'
 import type { VariableNodeMembers } from './accessors/variables'
@@ -163,6 +164,10 @@ export abstract class FigmaNodeMembers {
   declare authorVisible: boolean | undefined
   declare isWideWidth: boolean | undefined
   declare shapeType: ShapeWithTextType | undefined
+  /** On slides alone, as in Figma. */
+  declare isSkippedSlide: boolean | undefined
+  declare getSlideTransition: () => SlideTransition
+  declare setSlideTransition: (transition: SlideTransition) => void
   /** On pages alone, as in Figma. */
   declare loadAsync: () => Promise<void>
   declare resetOverrides: () => void

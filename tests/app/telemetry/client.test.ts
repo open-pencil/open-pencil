@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { ref } from 'vue'
 
 import type { Build } from '@open-pencil/feedback/contract'
+import { createDeferred } from '@open-pencil/std/async'
 
-import { createDeferred } from '@/app/runtime/deferred'
 import type { SharingPreferences } from '@/app/settings/preferences/store'
 import { createSharingClient, type SharingClientOptions } from '@/app/telemetry/client'
 import type { SharingState } from '@/app/telemetry/state'

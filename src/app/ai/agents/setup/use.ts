@@ -1,6 +1,11 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
-import { acpAgentFor, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
+import {
+  acpAgentFor,
+  type ACPAgentDef,
+  type ACPAgentID,
+  providerKind
+} from '@open-pencil/core/constants'
 
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 
@@ -56,7 +61,7 @@ export function useAgentSetup(
   }
 
   function piSetup(providerID: string): PiSetupState | undefined {
-    if (providerID !== 'harness:pi') return undefined
+    if (providerKind(providerID) !== 'harness') return undefined
     return {
       ...mcpServerSetup(),
       scanning: discovery.scanning.value || readingPi.value,
@@ -87,7 +92,7 @@ export function useAgentSetup(
   }
 
   async function installAgent(providerID: string): Promise<void> {
-    if (providerID === 'harness:pi') return discovery.setupHarness()
+    if (providerKind(providerID) === 'harness') return discovery.setupHarness()
     const detected = agentSetup(providerID).detected
     if (!detected) return
     await discovery.install(detected.definition.id)

@@ -7,6 +7,7 @@ import { createEditor } from '@open-pencil/core'
 import {
   createDefaultEffect,
   createEffectEditActions,
+  grainSizeChange,
   type EffectEditSnapshot
 } from '#vue/controls/effects/helpers'
 
@@ -51,5 +52,41 @@ describe('effect edits', () => {
     } finally {
       editor.dispose()
     }
+  })
+
+  test('a grain edit changes only its value on every selected layer, each keeping the rest', () => {
+    const editor = createEditor()
+    try {
+      const noise = (density: number, seed: number) => ({
+        ...createDefaultEffect(),
+        type: 'NOISE' as const,
+        noise: { noiseType: 'MONOTONE' as const, noiseSize: { x: 1, y: 1 }, density, seed }
+      })
+      const page = editor.state.currentPageId
+      const first = editor.graph.createNode('RECTANGLE', page, { effects: [noise(0.2, 1)] })
+      const second = editor.graph.createNode('RECTANGLE', page, { effects: [noise(0.8, 2)] })
+      const actions = createEffectEditActions(
+        editor,
+        shallowRef<Map<string, EffectEditSnapshot> | null>(null)
+      )
+      actions.commitEffect([first, second], 0, grainSizeChange(3))
+      expect(editor.graph.getNode(first.id)?.effects[0].noise).toEqual({
+        noiseType: 'MONOTONE',
+        noiseSize: { x: 3, y: 3 },
+        density: 0.2,
+        seed: 1
+      })
+      expect(editor.graph.getNode(second.id)?.effects[0].noise?.density).toBe(0.8)
+      expect(editor.graph.getNode(second.id)?.effects[0].noise?.seed).toBe(2)
+    } finally {
+      editor.dispose()
+    }
+  })
+
+  test('a size edit keeps the clipping of a texture that stores none', () => {
+    const texture = { ...createDefaultEffect(), type: 'TEXTURE' as const }
+    const change = grainSizeChange(6)
+    const patched = typeof change === 'function' ? change(texture) : change
+    expect(patched.texture).toEqual({ noiseSize: { x: 6, y: 6 }, clipToShape: true })
   })
 })

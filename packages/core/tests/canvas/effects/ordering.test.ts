@@ -43,15 +43,10 @@ describe('Renderer effect ordering (Behavioral)', () => {
 
     renderShapeUncached(r, asCanvas(canvas), node, graph as SceneGraph)
 
-    expect(callOrder).toEqual([
-      'renderEffects:behind',
-      'drawNodeFill',
-      'renderEffects:inner',
-      'renderEffects:front'
-    ])
+    expect(callOrder).toEqual(['renderEffects:behind', 'drawNodeFill', 'renderEffects:inner'])
   })
 
-  test('inner shadows render under strokes and noise over them, as in Figma', () => {
+  test('inner shadows render under strokes, as in Figma', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
     const node = createDefaultNode(() => 'node1', 'RECTANGLE', {
@@ -97,8 +92,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
     expect(callOrder).toEqual([
       'renderEffects:behind',
       'renderEffects:inner',
-      'drawStrokeWithAlign',
-      'renderEffects:front'
+      'drawStrokeWithAlign'
     ])
   })
 })

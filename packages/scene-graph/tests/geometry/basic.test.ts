@@ -41,4 +41,33 @@ describe('strokeOverflow at mitered corners', () => {
       strokeOverflow([stroke], 'NONE', chevron, { strokeJoin: 'MITER', strokeMiterLimit: 2 })
     ).toBe(5)
   })
+
+  test('reaches a miter where a vector’s regions meet at a junction', () => {
+    // Two regions split triangle ABC along A→(100, 30); region strokes join AB and AC around A.
+    const network = {
+      vertices: [
+        { x: 0, y: 30 },
+        { x: 100, y: 0 },
+        { x: 100, y: 60 },
+        { x: 100, y: 30 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
+        { start: 1, end: 3, tangentStart: zero, tangentEnd: zero },
+        { start: 3, end: 2, tangentStart: zero, tangentEnd: zero },
+        { start: 2, end: 0, tangentStart: zero, tangentEnd: zero },
+        { start: 0, end: 3, tangentStart: zero, tangentEnd: zero }
+      ],
+      regions: [
+        { windingRule: 'NONZERO' as const, loops: [[0, 1, 4]] },
+        { windingRule: 'NONZERO' as const, loops: [[4, 2, 3]] }
+      ]
+    }
+    const outside = { ...stroke, weight: 20, align: 'OUTSIDE' as const }
+    // The full weight over sin(θ/2), θ the 33.4° corner at A.
+    expect(strokeOverflow([outside], 'NONE', network, { strokeJoin: 'MITER' })).toBeCloseTo(
+      20 / Math.sin(Math.atan(0.3)),
+      6
+    )
+  })
 })

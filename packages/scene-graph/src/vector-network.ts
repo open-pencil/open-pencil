@@ -1,5 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import { isRecord } from '@open-pencil/std/records'
+
 import { cloneVectorNetwork, copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
 import type { VectorPathWindingRule } from './parse-path'
@@ -304,10 +306,6 @@ function isFiniteVector(value: unknown): value is Vector {
 
 function isInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value)
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 export type NormalizableVectorNetwork = Omit<VectorNetwork, 'regions'> & {

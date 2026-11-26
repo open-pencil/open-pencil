@@ -11,7 +11,11 @@ import { workspaceRoleCan } from '#cloud/server/auth/access-control'
 import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
-import { copyRevisionImages, revisionImageDownloads } from '#cloud/server/documents/images'
+import {
+  copyRevisionImages,
+  DOWNLOAD_LIFETIME_MS,
+  revisionImageDownloads
+} from '#cloud/server/documents/images'
 import { findDocument, insertDocument, workspaceRole } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import { logCloud, loggedError } from '#cloud/server/logging'
@@ -23,7 +27,6 @@ import type { Kysely, Transaction } from 'kysely'
 import { announceVersions, keepRevision } from './checkpoint'
 import { historyStart } from './history'
 
-const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const DEFAULT_PAGE_SIZE = 50
 const MAXIMUM_PAGE_SIZE = 100
 

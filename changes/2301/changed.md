@@ -1,0 +1,1 @@
+- The official Cloud editor no longer asks people to install the desktop beta, now that the stable release works with Cloud.

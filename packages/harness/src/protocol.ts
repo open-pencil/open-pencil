@@ -1,3 +1,4 @@
+import { isRecord } from '@open-pencil/std/records'
 export type JSONPrimitive = null | boolean | number | string
 export type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue }
 
@@ -87,10 +88,6 @@ export type HarnessSidecarMessage =
 
 export const MAX_PROTOCOL_LINE_BYTES = 1024 * 1024
 export const MAX_PROMPT_LENGTH = 256 * 1024
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 function requireString(record: Record<string, unknown>, key: string): string {
   const value = record[key]

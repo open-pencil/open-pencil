@@ -149,8 +149,9 @@ function alignmentShift(align: SceneNode['textAlignHorizontal'], before: number,
   return 0
 }
 
+/** A run's width by its glyphs: as Figma measures it, without the spacing after the last. */
 const runWidth = (run: Array<{ advance: number }>, spacing: number) =>
-  run.reduce((sum, glyph) => sum + glyph.advance + spacing, 0)
+  run.reduce((sum, glyph) => sum + glyph.advance + spacing, 0) - (run.length > 0 ? spacing : 0)
 
 /**
  * The part of the path aligned text may use, in px from the text path start along the direction
@@ -186,7 +187,8 @@ function fittingGlyphCount(run: Array<{ advance: number }>, spacing: number, roo
   let width = 0
   for (const [index, glyph] of run.entries()) {
     width += glyph.advance + spacing
-    if (index > 0 && width > room + 1e-6) return index
+    // A glyph fits when it does, without the spacing after it, as Figma fits path text.
+    if (index > 0 && width - spacing > room + 1e-6) return index
   }
   return run.length
 }

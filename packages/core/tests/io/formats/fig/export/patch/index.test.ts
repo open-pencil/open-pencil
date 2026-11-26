@@ -41,6 +41,28 @@ describe('writing an edited document into its archive', () => {
     expect(changed.map(([, record]) => record.name)).toEqual(['B renamed'])
   })
 
+  test('writes a dash an edit sets on a stroke, as the stroke panel does', async () => {
+    const { patched } = await exportBothWays((graph) => {
+      const layer = layerNamed(graph, 'A')
+      graph.updateNode(layer.id, {
+        strokes: [
+          {
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 1, a: 1 },
+            opacity: 1,
+            visible: true,
+            weight: 2,
+            align: 'INSIDE',
+            dashPattern: [6, 4]
+          }
+        ]
+      })
+    })
+    const reopened = layerNamed(await open(patched), 'A')
+    expect(reopened.dashPattern).toEqual([6, 4])
+    expect(reopened.strokes[0]?.dashPattern).toEqual([6, 4])
+  })
+
   test('still rewrites only the edited record once every page is loaded', async () => {
     const bytes = await fixtureBytes()
     const graph = await open(bytes)

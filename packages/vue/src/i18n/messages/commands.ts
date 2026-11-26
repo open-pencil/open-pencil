@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const commandMessageDefaults = {
   undo: 'Undo',
   redo: 'Redo',
@@ -72,5 +70,3 @@ export const commandMessageDefaults = {
   paletteNoCommands: 'No commands found.',
   paletteBack: 'Back'
 } as const
-
-export const commandMessages = i18n('commands', commandMessageDefaults)

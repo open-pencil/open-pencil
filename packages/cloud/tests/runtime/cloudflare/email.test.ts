@@ -48,6 +48,20 @@ describe('Cloudflare Email Service transport', () => {
     ])
   })
 
+  test('sends a reply address only when the deployment names one', async () => {
+    const sent: Array<{ replyTo?: string }> = []
+    const transport = createCloudflareEmailTransport({
+      async send(message) {
+        sent.push(message)
+        return { messageId: 'cloudflare-message-id' }
+      }
+    })
+    await transport.send({ ...envelope, replyTo: 'hello@openpencil.dev' })
+    await transport.send(envelope)
+    expect(sent.map((message) => message.replyTo)).toEqual(['hello@openpencil.dev', undefined])
+    expect('replyTo' in (sent[1] ?? {})).toBe(false)
+  })
+
   test('tells a delivery to stop, wait, or retry by the error code', async () => {
     const kinds = await Promise.all(
       ['E_RECIPIENT_SUPPRESSED', 'E_SENDER_NOT_VERIFIED', 'E_DAILY_LIMIT_EXCEEDED', undefined].map(

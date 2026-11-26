@@ -26,5 +26,9 @@
   "reload": "Recargar",
   "settingsSection": "Actualizaciones",
   "checkOnStartup": "Buscar actualizaciones al iniciar",
-  "checkOnStartupDescription": "Busca una versión nueva poco después de abrir la aplicación de escritorio. «Buscar actualizaciones…» del menú sigue funcionando cuando esto está desactivado."
+  "checkOnStartupDescription": "Busca una versión nueva poco después de abrir la aplicación de escritorio. «Buscar actualizaciones…» del menú sigue funcionando cuando esto está desactivado.",
+  "channel": "Canal de actualizaciones",
+  "channelDescription": "Las versiones nocturnas se generan cada noche con el código más reciente y pueden fallar. Al volver a Estable se instala la versión estable actual en la siguiente comprobación.",
+  "channelStable": "Estable",
+  "channelNightly": "Nocturna"
 }

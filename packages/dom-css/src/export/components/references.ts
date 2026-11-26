@@ -5,11 +5,11 @@ import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { behaviourOwner, findLayerByPath } from '@open-pencil/scene-graph/behaviours'
 import { findComponentPropertyTargets } from '@open-pencil/scene-graph/components'
 import { isIconModified, isNamedIcon, readIcon } from '@open-pencil/scene-graph/icons'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { drawsAsMain } from './drawn'
 import type { ComponentModel } from './model'

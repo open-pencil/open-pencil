@@ -1,7 +1,7 @@
 import { isEqual, noop } from 'es-toolkit'
 
-import type { Effect, SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
-import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
+import type { ColorProfile, Effect, SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
+import { toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -33,7 +33,7 @@ import { screenToWorld } from '#core/geometry/viewport'
 import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
-import * as RenderColors from './colors'
+import { releaseDocumentSurface, type DocumentSurface } from './document-surface'
 import { createChromeFonts, createTextFontState } from './fonts'
 import * as RendererFonts from './fonts'
 import { destroyRenderer, releaseLiveImages } from './lifecycle'
@@ -145,6 +145,8 @@ export class SkiaRenderer {
   viewportHeight = 0
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
   pageId: string | null = null
+  /** The slide on the stage, outside which nothing of the page is drawn; null shows the page. */
+  stagedSlideId: string | null = null
   pageColor = CANVAS_BG_COLOR
   /** The board grid the page's dots follow, in canvas units, or null for a page without dots. */
   pageDotGrid: number | null = null
@@ -154,8 +156,20 @@ export class SkiaRenderer {
   rulerTheme: RulerTheme | null = null
   /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */
   selectionTheme: SelectionTheme = DEFAULT_SELECTION_THEME
-  /** Colour space this renderer's surface presents; colours convert into it when painting. */
-  presentationColorSpace: RenderColorSpace = 'srgb'
+  /** The color space of the surface this renderer presents on, which the screen shows. */
+  presentationColorSpace: ColorProfile = 'srgb'
+  /**
+   * The color space of the document being drawn: the surfaces it is drawn on hold its colors in it,
+   * and its blend modes work in it. Set with {@link useDocumentColorSpace}.
+   */
+  documentColorSpace: ColorProfile = 'srgb'
+  /**
+   * The profile of the document the saved pictures were recorded from: a picture holds that
+   * document's colors as they read in it, so a document that takes another profile draws anew.
+   */
+  picturesColorSpace: ColorProfile = 'srgb'
+  /** A surface in the document's color space the size of the screen's, while the two differ. */
+  documentSurface: DocumentSurface | null = null
   navigationPhase: EditorState['navigation']['phase'] = 'idle'
   navigationGeneration = 0
   tracksSceneSettlement = true
@@ -356,6 +370,7 @@ export class SkiaRenderer {
   isRectangularType(type: string): boolean {
     return (
       type === 'FRAME' ||
+      type === 'SLIDE' ||
       type === 'RECTANGLE' ||
       type === 'ROUNDED_RECTANGLE' ||
       type === 'COMPONENT' ||
@@ -430,9 +445,10 @@ export class SkiaRenderer {
       // geometry maps and the node pictures that may have recorded them.
       releaseLiveImages(this)
       this.glassMaps.clear()
+      releaseDocumentSurface(this)
       this.invalidateAllPictures()
     }
-    this.surface.delete()
+    this.surface.dispose()
     this.surface = surface
     this.invalidateScenePicture()
   }
@@ -732,53 +748,27 @@ export class SkiaRenderer {
     return RenderText.buildParagraph(this, node, color, opts)
   }
 
-  resolveFillColorInfo(
-    fill: Fill,
-    fillIndex: number,
-    node: SceneNode,
-    graph: SceneGraph
-  ): ResolvedRenderColor {
-    return RenderColors.resolveFillColorInfo(
-      fill,
-      fillIndex,
-      node,
-      graph,
-      this.presentationColorSpace
-    )
+  /**
+   * A color stored in the document, such as an effect's, as Skia is given it: in extended sRGB,
+   * which Skia converts into the document's space of the surfaces the document is drawn on.
+   */
+  renderColor(color: Color): Color {
+    return toExtendedSRGB(color, this.documentColorSpace)
   }
 
-  resolveFillColor(fill: Fill, fillIndex: number, node: SceneNode, graph: SceneGraph): Color {
-    return RenderColors.resolveFillColor(fill, fillIndex, node, graph, this.presentationColorSpace)
+  /**
+   * Draws on surfaces in `space` from now on. Saved pictures and glass maps stay: pictures hold
+   * extended sRGB colors, which suit a surface in any space, and glass maps are kept per space.
+   */
+  useDocumentColorSpace(space: ColorProfile): void {
+    this.documentColorSpace = space
   }
 
-  resolveStrokeColorInfo(
-    stroke: Stroke,
-    strokeIndex: number,
-    node: SceneNode,
-    graph: SceneGraph
-  ): ResolvedRenderColor {
-    return RenderColors.resolveStrokeColorInfo(
-      stroke,
-      strokeIndex,
-      node,
-      graph,
-      this.presentationColorSpace
-    )
-  }
-
-  resolveStrokeColor(
-    stroke: Stroke,
-    strokeIndex: number,
-    node: SceneNode,
-    graph: SceneGraph
-  ): Color {
-    return RenderColors.resolveStrokeColor(
-      stroke,
-      strokeIndex,
-      node,
-      graph,
-      this.presentationColorSpace
-    )
+  /** Drops the saved pictures when the document they were recorded from took another profile. */
+  recordPicturesIn(space: ColorProfile): void {
+    if (space === this.picturesColorSpace) return
+    this.picturesColorSpace = space
+    this.invalidateAllPictures()
   }
 
   screenToCanvas(sx: number, sy: number): Vector {
@@ -838,8 +828,8 @@ export class SkiaRenderer {
     TextRender.renderText(this, canvas, node, fill)
   }
 
-  applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): boolean {
-    return Fills.applyFill(this, fill, node, graph, fillIndex)
+  applyFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
+    return Fills.applyFill(this, fill, node, graph)
   }
 
   drawNodeFill(canvas: Canvas, node: SceneNode, fill?: Fill): void {

@@ -23,7 +23,9 @@ export const brand = {
   tileRadius: 200,
   appScale: 0.82,
   tileScale: 0.88,
-  maskableScale: 0.66
+  maskableScale: 0.66,
+  /** How far from the center the mark may reach in the BIMI logo, which mail apps crop to a circle. */
+  bimiReach: 0.84
 } as const
 
 export const webFiles = [
@@ -33,6 +35,7 @@ export const webFiles = [
   'apple-touch-icon.png',
   'brand/app-icon.svg',
   'brand/app-icon-1024.png',
+  'brand/bimi.svg',
   'brand/mark.svg',
   'brand/mark-dark.svg',
   'brand/mark-micro.svg',

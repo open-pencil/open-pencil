@@ -1,0 +1,142 @@
+import { describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+
+import { imageHeader, svgDataURL } from '@open-pencil/scene-graph/images'
+import { FIXTURES } from '@open-pencil/test-support/paths'
+
+import { readHTMLDocument } from '#core/io/formats/html/import'
+
+describe('pictures in imported HTML', () => {
+  test('draws an SVG picture as vector layers at the size the page shows it', async () => {
+    const logo =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="#0969da"/></svg>'
+    const inline = svgDataURL(logo)
+    const { graph } = await readHTMLDocument(
+      `<img src="logo.svg" style="display:block;width:80px;height:40px"><img src="${inline}" style="display:block;width:40px;height:20px">`,
+      { readAsset: async (path) => (path === 'logo.svg' ? new TextEncoder().encode(logo) : null) }
+    )
+    const [linked, written] = graph.getChildren(graph.getPages()[0].id)
+    const vectors = (id: string) =>
+      graph
+        .flattenTree(id)
+        .filter(({ node }) => node.type === 'VECTOR' || node.type === 'RECTANGLE')
+
+    expect(linked).toMatchObject({ width: 80, height: 40 })
+    expect(vectors(linked.id).length).toBeGreaterThan(0)
+    expect(written).toMatchObject({ width: 40, height: 20 })
+    expect(vectors(written.id).length).toBeGreaterThan(0)
+  })
+  test('a page from the web reads no file from the computer', async () => {
+    const png = join(FIXTURES, 'absolute-constraint-figma.png')
+    const fileURL = pathToFileURL(png).href
+    const { graph } = await readHTMLDocument(
+      `<link rel="stylesheet" href="${fileURL}"><img src="${fileURL}">`,
+      { baseURL: 'https://site.example.test/' }
+    )
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image.fills.some((paint) => paint.type === 'IMAGE')).toBe(false)
+  })
+  test('a page on disk shows the pictures beside it', async () => {
+    const page = pathToFileURL(join(FIXTURES, 'page.html')).href
+    const { graph } = await readHTMLDocument('<img src="absolute-constraint-figma.png">', {
+      baseURL: page
+    })
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image.fills[0]?.type).toBe('IMAGE')
+  })
+  test('fills an image layer with the picture its page links', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const requested: string[] = []
+    const { graph } = await readHTMLDocument(
+      '<img src="photo.png"><img src="photo.png"><img src="missing.png">',
+      {
+        readAsset: async (path) => {
+          requested.push(path)
+          return path === 'photo.png' ? png : null
+        }
+      }
+    )
+    const [first, second, missing] = graph.getChildren(graph.getPages()[0].id)
+    const fill = first.fills[0]
+
+    expect(fill?.type).toBe('IMAGE')
+    expect(fill?.imageHash && graph.images.get(fill.imageHash)).toEqual(png)
+    expect(second.fills[0]?.imageHash).toBe(fill?.imageHash)
+    // A picture that cannot be read leaves its layer as the import made it.
+    expect(missing.fills.some((paint) => paint.type === 'IMAGE')).toBe(false)
+    // Each address is read once, however many images show it.
+    expect(requested.filter((path) => path === 'photo.png')).toHaveLength(1)
+  })
+
+  test('fills a box with the pictures its background layers show, where CSS places them', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const natural = imageHeader(png) ?? { width: 1, height: 1 }
+    const { graph } = await readHTMLDocument(
+      `<div class="cover"></div><div class="tile"></div><div class="icon"></div><div class="hero"></div>
+      <style>
+        body { margin: 0 }
+        div { width: 200px; height: 100px }
+        .cover { background: url(photo.png) center / cover, #2563eb }
+        .tile { background-image: url(photo.png); background-repeat: repeat }
+        .icon { width: 50px; height: 50px; background: url(photo.png) center / 50% auto no-repeat }
+        .hero { width: 400px; background: url(photo.png) 100% 50% / auto 100% no-repeat }
+      </style>`,
+      { readAsset: async (path) => (path === 'photo.png' ? png : null) }
+    )
+    const [cover, tile, icon, hero] = graph.getChildren(graph.getPages()[0].id)
+
+    // A picture covering its box crops into it over the color; a repeated one tiles it.
+    expect(cover.fills.map((fill) => fill.type)).toEqual(['SOLID', 'IMAGE'])
+    expect(cover.fills[1]).toMatchObject({ imageScaleMode: 'CROP' })
+    expect(cover.fills[1]?.imageHash && graph.images.get(cover.fills[1].imageHash)).toEqual(png)
+    expect(tile.fills).toEqual([expect.objectContaining({ type: 'IMAGE', imageScaleMode: 'TILE' })])
+    // One covering part of its box is a layer of its own, as large and where CSS draws it.
+    const [iconPicture] = graph.getChildren(icon.id)
+    const iconHeight = (25 * natural.height) / natural.width
+    expect(iconPicture).toMatchObject({ name: 'background image', width: 25, x: 12.5 })
+    expect(iconPicture?.height).toBeCloseTo(Math.min(50, iconHeight))
+    const [heroPicture] = graph.getChildren(hero.id)
+    const heroWidth = (100 * natural.width) / natural.height
+    expect(heroPicture?.height).toBeCloseTo(100)
+    expect(heroPicture?.x).toBeCloseTo(Math.max(0, 400 - heroWidth))
+  })
+
+  test('positions a background picture in its origin box, inside the border by default', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const { graph } = await readHTMLDocument(
+      `<div class="padding"></div><div class="content"></div>
+      <style>
+        body { margin: 0 }
+        div { box-sizing: border-box; width: 100px; height: 100px; border: 10px solid #000; padding: 10px }
+        .padding { background: url(photo.png) 0 0 / 20px 20px no-repeat }
+        .content { background: url(photo.png) 0 0 / 20px 20px no-repeat content-box }
+      </style>`,
+      { readAsset: async (path) => (path === 'photo.png' ? png : null) }
+    )
+    const [padding, content] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(graph.getChildren(padding.id)[0]).toMatchObject({ x: 10, y: 10, width: 20, height: 20 })
+    expect(graph.getChildren(content.id)[0]).toMatchObject({ x: 20, y: 20, width: 20, height: 20 })
+  })
+
+  test('draws the background picture of generated content', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const { graph } = await readHTMLDocument(
+      `<div class="badge"></div>
+      <style>
+        body { margin: 0 }
+        .badge::before { content: ''; display: block; width: 40px; height: 40px; background: url(photo.png) center / cover }
+      </style>`,
+      { readAsset: async (path) => (path === 'photo.png' ? png : null) }
+    )
+    const before = graph
+      .flattenTree(graph.getPages()[0].id)
+      .map(({ node }) => node)
+      .find((node) => node.name === '::before')
+
+    expect(before?.fills.map((fill) => fill.type)).toContain('IMAGE')
+  })
+})

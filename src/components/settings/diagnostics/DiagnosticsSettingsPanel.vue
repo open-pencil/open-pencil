@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { diagnostics } from '@/app/diagnostics'
 import { diagnosticsEnvironment } from '@/app/diagnostics/environment'
@@ -24,7 +24,8 @@ import { AppConfirmationDialog } from '@/components/ui/dialog'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { common, diagnostics: diagnosticMessages } = useI18n()
+const common = useMessages('common')
+const diagnosticMessages = useMessages('diagnostics')
 const clearOpen = ref(false)
 
 const { diagnosticsEnabled, diagnosticsRetention } = useDiagnosticsSettings()

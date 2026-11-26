@@ -3,7 +3,11 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { buildFigmaClipboardHTML } from '#core/clipboard'
 import type { EditorContext } from '#core/editor/types'
 
-import { captureClipboardSnapshot, type ClipboardSnapshot } from './snapshot'
+import {
+  captureClipboardSnapshot,
+  type ClipboardNodeTree,
+  type ClipboardSnapshot
+} from './snapshot'
 
 export type { ClipboardSnapshot } from './snapshot'
 
@@ -26,7 +30,7 @@ function graphForSnapshot(ctx: EditorContext, snapshot: ClipboardSnapshot): Scen
   const graph = new SceneGraph()
   graph.documentColorSpace = ctx.graph.documentColorSpace
   graph.images = snapshot.images
-  function index(node: SceneNode & { children?: SceneNode[] }) {
+  function index(node: ClipboardNodeTree) {
     graph.nodes.set(node.id, node)
     for (const child of node.children ?? []) index(child)
   }

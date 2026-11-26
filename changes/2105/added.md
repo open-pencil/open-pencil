@@ -1,1 +1,0 @@
-- HTML import keeps tables in auto layout as rows of cells, with `border-spacing` as their gaps and cells aligned by `vertical-align`, and centers text by `text-align` without turning auto layout off (#2105).

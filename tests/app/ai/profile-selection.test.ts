@@ -14,7 +14,8 @@ const labels = ref({
   latest: 'New',
   customModelGroup: 'Custom model',
   customModel: 'Custom',
-  agentDefaultModel: 'Agent default'
+  agentDefaultModel: 'Agent default',
+  thinkingLevel: 'Thinking level'
 })
 
 test('selection immediately applies loaded catalog metadata and display name', async () => {

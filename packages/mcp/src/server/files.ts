@@ -1,7 +1,10 @@
 import type { Context, Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 
-import { MAX_FILE_TRANSFER_BYTES, readInsideRoot, writeInsideRoot } from '#mcp/tool/output'
+import { MAX_REMOTE_FILE_BYTES } from '@open-pencil/core/io/remote'
+import { errorMessage } from '@open-pencil/std/errors'
+
+import { readInsideRoot, writeInsideRoot } from '#mcp/tool/output'
 
 /**
  * The path after `/files/`, one encoded segment per folder, so the URL ends in the file's name.
@@ -14,7 +17,7 @@ function filePath(c: Context): string {
 }
 
 function failure(c: Context, e: unknown) {
-  return c.json({ error: e instanceof Error ? e.message : String(e) }, 400)
+  return c.json({ error: errorMessage(e) }, 400)
 }
 
 /**
@@ -34,7 +37,7 @@ export function registerFileRoutes(app: Hono, root: string): void {
   app.put(
     '/files/*',
     bodyLimit({
-      maxSize: MAX_FILE_TRANSFER_BYTES,
+      maxSize: MAX_REMOTE_FILE_BYTES,
       onError: (c) => c.json({ error: 'File is too large' }, 413)
     }),
     async (c) => {

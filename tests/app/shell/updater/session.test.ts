@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import type { DownloadEvent } from '@tauri-apps/plugin-updater'
 
-import { createDeferred } from '@/app/runtime/deferred'
+import { createDeferred } from '@open-pencil/std/async'
+
 import {
   createUpdaterSession,
   type PendingUpdate,
@@ -87,6 +88,51 @@ describe('createUpdaterSession', () => {
     await session.check()
 
     expect(session.state.value).toEqual({ status: 'up-to-date' })
+  })
+
+  test('checks again when the channel changes, unless an update is already on its way', async () => {
+    const nightly = { ...fakeUpdate().update, version: '0.18.0-nightly.20261116' }
+    const stable = { ...fakeUpdate().update, version: '0.17.0' }
+    const offers = [nightly, stable]
+    const session = createUpdaterSession(fakeBackend(async () => offers.shift() ?? null).backend)
+    await session.check()
+    await session.recheck()
+    expect(session.state.value).toMatchObject({
+      status: 'available',
+      release: { version: '0.17.0' }
+    })
+
+    const busy = createUpdaterSession(fakeBackend(async () => fakeUpdate().update).backend)
+    await busy.check()
+    const release = { version: '0.16.0', currentVersion: '0.15.1', notes: '' }
+    busy.state.value = { status: 'installed', release }
+    await busy.recheck()
+    expect(busy.state.value).toEqual({ status: 'installed', release })
+  })
+
+  test('keeps the newest check’s update when an earlier one finishes after it', async () => {
+    const older = { ...fakeUpdate().update, version: '0.17.0' }
+    const earlier = createDeferred<typeof older>()
+    const closed: string[] = []
+    older.close = async () => {
+      closed.push(older.version)
+    }
+    const newer = { ...fakeUpdate().update, version: '0.18.0-nightly.20261116' }
+    const answers = [earlier.promise, Promise.resolve(newer)]
+    const session = createUpdaterSession(
+      fakeBackend(() => answers.shift() ?? Promise.resolve(null)).backend
+    )
+
+    const first = session.check()
+    await session.recheck()
+    earlier.resolve(older)
+    await first
+
+    expect(session.state.value).toMatchObject({
+      status: 'available',
+      release: { version: '0.18.0-nightly.20261116' }
+    })
+    expect(closed).toEqual(['0.17.0'])
   })
 
   test('retries a failed check', async () => {

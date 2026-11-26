@@ -43,6 +43,6 @@ Ombres extérieure et intérieure, flou du calque, d’arrière-plan ou de premi
 
 ## Cadres et sections
 
-Un cadre est un conteneur. Les objets déposés à l’intérieur deviennent ses enfants. Le découpage est désactivé par défaut. Les cadres prennent en charge la [disposition automatique](./auto-layout).
+Un cadre est un conteneur. Les objets déposés à l’intérieur deviennent ses enfants. Le découpage est désactivé par défaut. Les cadres prennent en charge la [disposition automatique](/user-guide/auto-layout).
 
 Une section est un conteneur de premier niveau qui adopte automatiquement les objets qu’elle recouvre lors de sa création.

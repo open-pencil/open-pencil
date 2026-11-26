@@ -1,7 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { buildVariantName } from '@open-pencil/scene-graph/variant-name'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/variants/set'

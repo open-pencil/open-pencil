@@ -1,16 +1,14 @@
 import { expect, test } from 'bun:test'
 
-import {
-  configurePresentation,
-  isHardwareRenderer,
-  type PresentationColorSpace
-} from '#vue/canvas/surface/color-space'
+import type { ColorProfile } from '@open-pencil/scene-graph'
+
+import { configurePresentation, isHardwareRenderer } from '#vue/canvas/surface/color-space'
 
 const RGBA8 = 32856
 const RGBA16F = 34842
 
 interface FakeContextOptions {
-  colorSpace?: PresentationColorSpace
+  colorSpace?: ColorProfile
   format?: number
   size?: [number, number]
   /** Model renderers that accept the call but keep the previous pixel format. */
@@ -23,7 +21,7 @@ function fakeContext(options: FakeContextOptions = {}) {
   const extensions = new Set(options.extensions ?? ['EXT_color_buffer_float', 'EXT_float_blend'])
   const size = options.size ?? [800, 600]
   const context = {
-    drawingBufferColorSpace: (options.colorSpace ?? 'srgb') as PresentationColorSpace,
+    drawingBufferColorSpace: (options.colorSpace ?? 'srgb') as ColorProfile,
     drawingBufferFormat: options.format ?? RGBA8,
     RGBA8,
     RGBA16F,
@@ -46,7 +44,7 @@ function fakeContext(options: FakeContextOptions = {}) {
   if (options.ignoreColorSpaceSetter) {
     // Model a browser that keeps its P3 buffer when asked for sRGB.
     Object.defineProperty(context, 'drawingBufferColorSpace', {
-      get: () => 'display-p3' as PresentationColorSpace,
+      get: () => 'display-p3' as ColorProfile,
       set: () => {
         /* ignored */
       }

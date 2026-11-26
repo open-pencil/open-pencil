@@ -125,8 +125,12 @@ async function startConfiguredServer(
     store: createCollaborationStateStore(database, objects),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
-    onError: (message, error) =>
-      void reportCloudError(reportError, message, error, { source: 'relay' }),
+    onError: (message, error, { userId, ...resources } = {}) =>
+      void reportCloudError(reportError, message, error, {
+        source: 'relay',
+        resources,
+        ...(userId && { userId })
+      }),
     ...relayDocumentLookups(database, policy, config.deployment)
   })
   const app = createCloudApp({
@@ -142,6 +146,8 @@ async function startConfiguredServer(
     onDocumentRestored: (documentId) => relay.startOver(documentId),
     onDocumentTakenDown: (documentId) => relay.closeDocument(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
+    onDocumentCommentsChanged: (documentId, threadId) =>
+      relay.announceComments(documentId, threadId),
     reportError,
     forwardedRequestId: proxyRequestId
   })
@@ -158,6 +164,8 @@ async function startConfiguredServer(
   const cloudServer = createCloudServer(app, {
     site: siteFiles(environment),
     indexingPolicy: config.indexingPolicy,
+    publicURL: config.publicURL,
+    embedding: config.embeddingEnabled ? { allowedOrigins: config.embeddingOrigins } : undefined,
     reportError,
     forwardedRequestId: proxyRequestId
   })

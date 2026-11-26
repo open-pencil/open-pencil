@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { graphOf } from '#core/figma-api/graph'
 import { arrangeLayers } from '#core/layout/arrange/layers'
 import { toolNumber, defineTool } from '#core/tools/schema'
@@ -80,7 +82,7 @@ Connectors between the layers are found automatically. A section given with all 
       })
       return { mode: args.mode, ...arranged }
     } catch (error) {
-      return { error: error instanceof Error ? error.message : String(error) }
+      return { error: errorMessage(error) }
     }
   }
 })

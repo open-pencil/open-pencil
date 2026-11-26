@@ -1,0 +1,51 @@
+// Figma's noise effect, drawn over a layer in its own units (`p`). `levels` holds each cell's
+// level, made on the CPU from a hash of the cell and the seed under Figma's measured shares: in
+// red, and for a duotone's second colour the level of the opposite value in green, 15 to a level.
+// It is sampled in cells of `cell` units, per axis for a grain wider than tall: as is for cells a
+// pixel wide, and through Catmull-Rom between larger ones, whose blend is stretched around the
+// mean level by `contrast` and clipped, as Figma sharpens large grains. `colors` gives a
+// multitone's cells their colours. A supersampled export draws finer than its pixels and averages
+// them, which would smooth the grains, so there each sample is taken at its output pixel's centre:
+// `toOutput*` maps the layer to the output's pixels and `fromOutput*` back.
+uniform shader levels;
+uniform shader colors;
+uniform float2 cell;
+uniform float contrast;
+uniform float center;
+uniform float mode;
+uniform half4 primary;
+uniform half4 secondary;
+uniform float opacity;
+uniform float snap;
+uniform float2 toOutputX;
+uniform float2 toOutputY;
+uniform float2 toOutputOrigin;
+uniform float2 fromOutputX;
+uniform float2 fromOutputY;
+uniform float2 fromOutputOrigin;
+
+/** A level, 0 to 1, stretched around the mean and quantised to Figma's 17 steps. */
+float shaped(float level) {
+  float v = clamp(center + (level - center) * contrast, 0.0, 1.0);
+  return floor(v * 16.0 + 0.5) / 16.0;
+}
+
+half4 main(float2 p) {
+  if (snap > 0.5) {
+    float2 q = floor(toOutputOrigin + p.x * toOutputX + p.y * toOutputY) + 0.5;
+    p = fromOutputOrigin + q.x * fromOutputX + q.y * fromOutputY;
+  }
+  float2 c = p / cell;
+  // 15 to a level in a byte: 255 / 240 turns a channel back into sixteenths.
+  half2 l = levels.eval(c).rg * half(255.0 / 240.0);
+  if (mode > 1.5) {
+    // Figma's multitone colours keep near grey: each channel strays 0.56 as far as a uniform one.
+    half3 rgb = half3(0.5) + (colors.eval(floor(c) + 0.5).rgb - half3(0.5)) * 0.56;
+    half a = half(shaped(l.r) * opacity);
+    return half4(rgb * a, a);
+  }
+  half a1 = half(shaped(l.r)) * primary.a;
+  if (mode < 0.5) return half4(primary.rgb * a1, a1);
+  half a2 = half(shaped(l.g)) * secondary.a;
+  return half4(primary.rgb * a1 + secondary.rgb * a2, min(half(1.0), a1 + a2));
+}

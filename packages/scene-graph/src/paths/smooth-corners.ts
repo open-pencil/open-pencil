@@ -1,4 +1,5 @@
-import { minOf } from '../arrays'
+import { minOf } from '@open-pencil/std/arrays'
+
 import type { SceneNode } from '../types'
 import type { PathSink } from './sink'
 

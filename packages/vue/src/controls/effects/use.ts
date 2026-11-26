@@ -1,7 +1,5 @@
 import { ref, shallowRef } from 'vue'
 
-import type { Effect } from '@open-pencil/scene-graph'
-
 import {
   effectOptions,
   createDefaultEffect,
@@ -9,8 +7,11 @@ import {
   createEffectControlActions,
   createEffectEditActions,
   blurKindChange,
+  grainSizeChange,
   isBlur,
+  noiseTypeChange,
   isShadow,
+  type EffectChange,
   type EffectEditSnapshot
 } from '#vue/controls/effects/helpers'
 import { useNodeProps } from '#vue/controls/node-props/use'
@@ -42,11 +43,13 @@ export function useEffectsControls() {
     isShadow,
     isBlur,
     blurKindChange,
+    noiseTypeChange,
+    grainSizeChange,
     /** Previews a change to one effect on every selected layer. */
-    scrubEffect: (index: number, changes: Partial<Effect>) =>
+    scrubEffect: (index: number, changes: EffectChange) =>
       editActions.scrubEffect(nodes.value, index, changes),
     /** Applies a change to one effect on every selected layer in one undo step. */
-    commitEffect: (index: number, changes: Partial<Effect>) =>
+    commitEffect: (index: number, changes: EffectChange) =>
       editActions.commitEffect(nodes.value, index, changes),
     ...controlActions
   }

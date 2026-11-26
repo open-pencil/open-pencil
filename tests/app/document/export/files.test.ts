@@ -23,6 +23,7 @@ describe('Tauri file actions', () => {
               extensions: [
                 'fig',
                 'jam',
+                'deck',
                 'pen',
                 'drawio',
                 'dio',

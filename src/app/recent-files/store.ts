@@ -117,9 +117,11 @@ export function recentDocumentView(id: string): RecentDocumentView | null {
   return parsed.success ? parsed.output : null
 }
 
-/** What a file on this device is by its name: a FigJam `.jam` is a board, anything else a design. */
+/** What a file on this device is by its name; a design when its extension says nothing else. */
 function localDocumentKind(path: string): DocumentKind {
-  return path.toLowerCase().endsWith(`.${DOCUMENT_EXTENSIONS.board}`) ? 'board' : 'design'
+  const lower = path.toLowerCase()
+  if (lower.endsWith(`.${DOCUMENT_EXTENSIONS.board}`)) return 'board'
+  return lower.endsWith(`.${DOCUMENT_EXTENSIONS.slides}`) ? 'slides' : 'design'
 }
 
 /**
@@ -169,6 +171,16 @@ export function forgetRecentFile(path: string): void {
 
 export function forgetRecentStorageDocument(binding: StorageDocumentBinding): void {
   forgetRecentDocument(storageDocumentId(binding))
+}
+
+/** Forgets the stored documents of one storage profile, such as a Cloud server signed out of. */
+export function forgetRecentStorageProfile(providerId: StorageProviderID, profileId: string): void {
+  recentDocuments.value = normalizedRecentDocuments().filter(
+    (document) =>
+      document.kind !== 'storage' ||
+      document.providerId !== providerId ||
+      storageProfileId(document) !== profileId
+  )
 }
 
 export async function clearRecentFiles(): Promise<void> {

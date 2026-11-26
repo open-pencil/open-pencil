@@ -1,7 +1,14 @@
 import { renderTransactionalEmail } from '#cloud/email'
 import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
-import type { CloudDatabase, TransactionalEmailStatus } from '#cloud/server/db'
+import {
+  isSendableEmailKind,
+  RETIRED_TRANSACTIONAL_EMAIL_KINDS,
+  type CloudDatabase,
+  type TransactionalEmailStatus
+} from '#cloud/server/db'
 import type { Kysely, Transaction } from 'kysely'
+
+import { backoffDelay, HOUR_MS, SECOND_MS, type Backoff } from '@open-pencil/std/timing'
 
 import { decryptTransactionalEmailPayload, encryptTransactionalEmailPayload } from './crypto'
 import type {
@@ -13,7 +20,8 @@ import type {
 } from './types'
 
 const DEFAULT_MAXIMUM_ATTEMPTS = 5
-const MAXIMUM_RETRY_DELAY_MS = 60 * 60_000
+/** Mail is retried patiently: a provider that refused it is rarely back within seconds. */
+const EMAIL_RETRY: Backoff = { baseMs: 30 * SECOND_MS, capMs: HOUR_MS, jitter: false }
 
 export type TransactionalEmailTransportErrorKind =
   | 'configuration'
@@ -49,7 +57,7 @@ function normalizedEmail(value: string): string {
 }
 
 function retryDelayMilliseconds(attemptCount: number): number {
-  return Math.min(MAXIMUM_RETRY_DELAY_MS, 2 ** Math.max(0, attemptCount - 1) * 30_000)
+  return backoffDelay(attemptCount - 1, EMAIL_RETRY)
 }
 
 function transportFailure(error: unknown): TransactionalEmailTransportError {
@@ -78,6 +86,8 @@ export function createTransactionalEmailService(
   options: {
     encryptionSecret: string
     from: string
+    /** Where replies go; mail clients answer `from` without it. */
+    replyTo?: string
     transport?: TransactionalEmailTransport
   }
 ): TransactionalEmailService {
@@ -165,6 +175,8 @@ export function createTransactionalEmailService(
             'attemptCount'
           ])
           .where('payloadEncrypted', 'is not', null)
+          // Retired kinds left pending stay as history; claiming them would take batch slots.
+          .where('kind', 'not in', RETIRED_TRANSACTIONAL_EMAIL_KINDS)
           .where((expression) =>
             expression.or([
               expression.and([
@@ -193,7 +205,8 @@ export function createTransactionalEmailService(
           )
           .execute()
         return candidates.filter(
-          (candidate): candidate is ClaimedTransactionalEmail => candidate.payloadEncrypted !== null
+          (candidate): candidate is ClaimedTransactionalEmail =>
+            candidate.payloadEncrypted !== null && isSendableEmailKind(candidate.kind)
         )
       })
 
@@ -217,6 +230,7 @@ export function createTransactionalEmailService(
           const sent = await options.transport.send({
             deliveryId: message.id,
             from: options.from,
+            replyTo: options.replyTo,
             to: message.recipientEmailNormalized,
             subject: rendered.subject,
             html: rendered.html,

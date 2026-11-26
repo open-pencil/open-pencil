@@ -8,6 +8,11 @@ export const workspaceSummarySchema = v.object({
   name: v.string(),
   slug: v.string(),
   role: workspaceRoleSchema,
+  /**
+   * Whether the signed-in account owns the workspace, and so pays for its plan and AI credits.
+   * Absent from servers released before it.
+   */
+  owner: v.optional(v.boolean()),
   createdAt: v.string(),
   updatedAt: v.string()
 })

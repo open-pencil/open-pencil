@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 
 import * as v from 'valibot'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import {

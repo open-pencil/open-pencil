@@ -1,8 +1,9 @@
+import { randomHex } from '@open-pencil/std/random'
+
 import type { SceneGraph } from '../graph'
 import { findInstanceAncestor, instanceMainComponent } from '../instances/main-component'
 import { assignmentOverrideField, setInstanceOverride } from '../instances/overrides'
 import { walkInstanceSources } from '../instances/source-walk'
-import { randomHex } from '../random'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,

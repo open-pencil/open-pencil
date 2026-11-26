@@ -17,7 +17,6 @@ import {
   setPaintBlendMode
 } from '#core/canvas/blend/modes'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
-import { renderNoiseEffects } from '#core/canvas/effects'
 import { renderGlassLight, renderGlassRefraction } from '#core/canvas/glass/render'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { nodeOrientationMatrix } from '#core/geometry'
@@ -50,9 +49,9 @@ function resetEffectLayerPaint(r: SkiaRenderer): void {
 
 /**
  * `behind` draws drop shadows, background blur, and glass refraction, `inner` inner shadows and
- * glass light over fills, `front` noise.
+ * glass light over fills. Noise wraps the whole content instead (`withNoiseEffects`).
  */
-export type EffectPass = 'behind' | 'inner' | 'front'
+export type EffectPass = 'behind' | 'inner'
 
 function shadowLayerBounds(
   r: SkiaRenderer,
@@ -96,7 +95,8 @@ function drawSilhouetteDropShadow(
   draw: () => void
 ): void {
   const ck = r.ck
-  const color = ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
+  const shadow = r.renderColor(effect.color)
+  const color = ck.Color4f(shadow.r, shadow.g, shadow.b, shadow.a)
   const sigma = blurSigma(effect.radius)
   const morphology = spreadFilter(r, spread)
   const filter = morphology
@@ -285,8 +285,9 @@ function drawSilhouetteInnerShadow(
     draw()
 
     r.effectLayerPaint.setBlendMode(ck.BlendMode.SrcIn)
+    const tint = r.renderColor(effect.color)
     tintFilter = ck.ColorFilter.MakeBlend(
-      ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a),
+      ck.Color4f(tint.r, tint.g, tint.b, tint.a),
       ck.BlendMode.SrcIn
     )
     r.effectLayerPaint.setColorFilter(tintFilter)
@@ -390,8 +391,6 @@ export function renderEffects(
   graph: SceneGraph,
   pass: EffectPass
 ): void {
-  if (pass === 'front') renderNoiseEffects(r, canvas, node)
-
   const ownShadows = !isLayerContainer(node)
   for (const effect of node.effects) {
     if (!effect.visible) continue
@@ -407,7 +406,7 @@ export function renderEffects(
       shape?.delete()
     }
 
-    if (effect.type === 'GLASS' && pass !== 'front') {
+    if (effect.type === 'GLASS') {
       const shape =
         node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
       if (pass === 'behind') renderGlassRefraction(r, canvas, node, effect, shape)

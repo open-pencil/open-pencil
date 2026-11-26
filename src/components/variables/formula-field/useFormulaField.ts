@@ -5,21 +5,13 @@ import {
   acceptCompletion,
   closeCompletion
 } from '@codemirror/autocomplete'
-import {
-  defaultKeymap,
-  history,
-  insertNewline,
-  isolateHistory,
-  redo,
-  undo
-} from '@codemirror/commands'
+import { defaultKeymap, history, insertNewline, isolateHistory } from '@codemirror/commands'
 import { Annotation, EditorSelection, Prec } from '@codemirror/state'
-import { EditorView, keymap, placeholder, tooltips } from '@codemirror/view'
-import { matchesKeyboardEvent } from '@tanstack/hotkeys'
+import { EditorView, keymap, placeholder } from '@codemirror/view'
 import { getCurrentInstance, watch, type Ref, type ShallowRef } from 'vue'
 
-import { editorCommandShortcuts } from '@open-pencil/vue/editor/commands'
-
+import { appHistoryKeys } from '@/components/code-editor/history'
+import { dialogTooltips } from '@/components/code-editor/tooltips'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { formulaEditorTheme } from '@/theme/code/formula'
 
@@ -47,20 +39,6 @@ interface FormulaFieldOptions {
 
 const externalUpdate = Annotation.define<boolean>()
 
-/**
- * The completion list lives in the surrounding dialog and keeps within it: the inspector scrolls
- * and would clip it, and a modal dialog takes no pointer events outside itself.
- */
-function completionPlacement(host: HTMLElement | null) {
-  const container = host?.closest<HTMLElement>('[role="dialog"]')
-  if (!container) return tooltips({ position: 'fixed' })
-  return tooltips({
-    position: 'absolute',
-    parent: container,
-    tooltipSpace: () => container.getBoundingClientRect()
-  })
-}
-
 /** CodeMirror owns document edits, atomic references, selection, composition and history. */
 export function useFormulaField(
   host: Readonly<ShallowRef<HTMLDivElement | null>>,
@@ -81,20 +59,11 @@ export function useFormulaField(
       resultDecoration,
       EditorView.lineWrapping,
       keymap.of(defaultKeymap),
+      appHistoryKeys(),
       Prec.highest(
         EditorView.domEventHandlers({
           keydown(event, editor) {
             if (event.isComposing) return false
-            const pressed = (id: 'edit.undo' | 'edit.redo') =>
-              editorCommandShortcuts(id).some((shortcut) => matchesKeyboardEvent(event, shortcut))
-            const redoing = pressed('edit.redo')
-            if (redoing || pressed('edit.undo')) {
-              event.preventDefault()
-              event.stopPropagation()
-              if (redoing) redo(editor)
-              else undo(editor)
-              return true
-            }
             // Line breaks are whitespace in both syntaxes, so long values can span lines.
             if (event.code === 'Enter' && event.shiftKey) {
               event.preventDefault()
@@ -135,7 +104,7 @@ export function useFormulaField(
       })
     ],
     reactive: [
-      () => completionPlacement(host.value),
+      () => dialogTooltips(host.value),
       () => EditorView.contentAttributes.of(options.attributes()),
       () => placeholder(options.placeholder()),
       () => formulaResult.of(options.result() ?? ''),

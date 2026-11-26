@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
 import {
   childMatching,

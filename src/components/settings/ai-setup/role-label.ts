@@ -1,4 +1,4 @@
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import { isOnboardingAgent, type PlannedRole } from '@/app/ai/models/settings/onboarding/plan'
@@ -6,7 +6,7 @@ import { useModelRoleLabels } from '@/components/settings/models/role-labels'
 
 /** Labels for the roles and the choices guided setup offers for them. */
 export function useRoleLabels() {
-  const { ai } = useI18n()
+  const ai = useMessages('ai')
   const roleLabel = useModelRoleLabels()
 
   function choiceLabel(choice: PlannedRole): string {

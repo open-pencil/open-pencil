@@ -8,35 +8,11 @@ import {
 import { currentOnboardingModels } from '@/app/ai/models/settings/onboarding/current'
 import { planOnboarding, type OnboardingAnswers } from '@/app/ai/models/settings/onboarding/plan'
 
-import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
+import { defaultModel, recommendedRoles } from '#tests/helpers/ai/model-catalog'
+import { freshInstallModelSettings } from '#tests/helpers/ai/settings'
 
-function freshInstall(): AIModelSettings {
-  return {
-    version: 1,
-    connections: [
-      {
-        id: 'connection-default',
-        providerID: 'openai-compatible',
-        customBaseURL: '',
-        customAPIType: 'completions',
-        credentialProfileId: 'default'
-      }
-    ],
-    models: [
-      {
-        id: 'model-default',
-        name: 'Design model',
-        connectionId: 'connection-default',
-        modelID: '',
-        customModelID: '',
-        maxOutputTokens: 16_384,
-        thinkingLevel: 'default',
-        capabilities: ['tools']
-      }
-    ],
-    assignments: { design: 'model-default', review: 'design', fast: 'design', vision: null }
-  }
-}
+const freshInstall = freshInstallModelSettings
+const openRouterRoles = recommendedRoles('openrouter')
 
 function configured(): AIModelSettings {
   return {
@@ -101,14 +77,20 @@ describe('applyOnboardingPlan', () => {
         modelID: defaultModel('openrouter'),
         capabilities: ['tools', 'vision']
       }),
-      expect.objectContaining({ id: 'model-id-3', connectionId: 'connection-id-1' })
+      // The models the provider recommends for reviews and for quick work.
+      expect.objectContaining({
+        id: 'model-id-3',
+        connectionId: 'connection-id-1',
+        modelID: openRouterRoles.review
+      }),
+      expect.objectContaining({ id: 'model-id-4', connectionId: 'connection-id-1' })
     ])
-    expect(isFastToolModel('openrouter', settings.models[1]?.modelID ?? '')).toBe(true)
+    expect(settings.models[2]?.modelID).toBe(openRouterRoles.fast)
     expect(settings.connections.map((connection) => connection.id)).toEqual(['connection-id-1'])
     expect(settings.assignments).toEqual({
       design: 'model-id-2',
-      review: 'design',
-      fast: 'model-id-3',
+      review: 'model-id-3',
+      fast: 'model-id-4',
       vision: 'design'
     })
     expect(connectionIds).toEqual({ openrouter: 'connection-id-1' })

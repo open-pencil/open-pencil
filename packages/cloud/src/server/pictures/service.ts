@@ -7,6 +7,8 @@ import { imageSize } from 'image-size'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
 /** Where pictures are served; a picture's address ends in its checksum, so a new one is new. */
 export const PICTURE_PATH = '/api/pictures'
 /** The longest side a stored picture may have; pages send 256 pixels. */
@@ -14,7 +16,7 @@ const PICTURE_MAX_SIDE = 1024
 /** How many hex digits of the checksum name a picture in its address. */
 const PICTURE_VERSION_LENGTH = 16
 /** How long a linked account's picture may take to fetch before sign-in goes on without it. */
-const PROVIDER_PICTURE_TIMEOUT_MS = 5000
+const PROVIDER_PICTURE_TIMEOUT_MS = DEADLINE_MS.request
 /** The hosts linked accounts serve pictures from; Google is the only provider that sends one. */
 const PROVIDER_PICTURE_HOSTS = ['googleusercontent.com']
 const PICTURE_FORMATS: Readonly<Record<string, UserPictureFormat>> = { png: 'png', jpg: 'jpeg' }

@@ -103,7 +103,7 @@ export const SignIn: Story = {
     choosing: false,
     server: {
       host: 'cloud.openpencil.dev',
-      methods: ['google', 'apple'],
+      methods: ['google', 'apple', 'github'],
       emailPassword: EMAIL_PASSWORD,
       approvalRequired: false
     }

@@ -10,8 +10,8 @@ import {
   type GlassEffectParams,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 

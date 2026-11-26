@@ -7,12 +7,24 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { declareVariableBindingUnits } from '../bindings/variables'
 import { applyDerivedEntry } from '../derived-symbol-data'
 import type { PropertyLayer } from '../layers'
-import { resolvesInSourceComponent, type InterpreterIndex } from '../source-index'
+import {
+  parentIdOf,
+  recordMatches,
+  resolvesInSourceComponent,
+  type InterpreterIndex
+} from '../source-index'
 import { completeClearedStyleClaim } from '../style/cleared'
 import { yieldToInheritedTextStyle } from '../style/inherited-text'
 import { invalidateInheritedTextData } from '../text-provenance'
 import type { DerivedSymbolOverride } from '../types'
-import { findSegment, isRootGuid, pathError, resolveOccurrencePath, SegmentError } from './path'
+import {
+  findSegment,
+  isRootGuid,
+  OCCURRENCE_TREE,
+  pathError,
+  resolveOccurrencePath,
+  SegmentError
+} from './path'
 import type { InstanceOccurrence, InterpretInstanceOptions } from './types'
 
 export interface ClaimContext {
@@ -22,13 +34,72 @@ export interface ClaimContext {
   readonly assignedFields: WeakMap<InstanceOccurrence, Map<string, number>>
   /** Components an occurrence expanded before an outer decision replaced them. */
   readonly replacedComponents: WeakMap<InstanceOccurrence, readonly GUID[]>
+  /** Instances repaired out of their definitions, which overrides may still address. */
+  readonly dropped: () => ReadonlySet<string>
 }
 
 export function createClaimContext(
   index: InterpreterIndex,
-  options: InterpretInstanceOptions
+  options: InterpretInstanceOptions,
+  dropped: () => ReadonlySet<string> = () => new Set()
 ): ClaimContext {
-  return { index, options, assignedFields: new WeakMap(), replacedComponents: new WeakMap() }
+  return {
+    index,
+    options,
+    assignedFields: new WeakMap(),
+    replacedComponents: new WeakMap(),
+    dropped
+  }
+}
+
+/** Whether `ancestorId` holds the record `id`, by the records' parents. */
+function holds(index: InterpreterIndex, ancestorId: string, id: string): boolean {
+  const parentOf = (child: string) => {
+    const record = index.sources.get(child)
+    return record && parentIdOf(record)
+  }
+  const seen = new Set<string>()
+  for (let current = parentOf(id); current !== undefined; current = parentOf(current)) {
+    if (current === ancestorId) return true
+    if (seen.has(current)) return false
+    seen.add(current)
+  }
+  return false
+}
+
+/**
+ * The records whose layers `searched` shows without crossing into another instance: the
+ * component it expands, or its own layers, and the content frames assigned to its slots.
+ */
+function shownRecords(searched: InstanceOccurrence): string[] {
+  const shown = [searched.mainComponentId ?? searched.sourceId]
+  const visit = (node: InstanceOccurrence): void => {
+    if (node.slotContentId !== undefined) shown.push(node.slotContentId)
+    if (OCCURRENCE_TREE.isInstance(node)) return
+    for (const child of node.children) visit(child)
+  }
+  for (const child of searched.children) visit(child)
+  return shown
+}
+
+/**
+ * Whether a path segment names an instance repaired out of what `searched` shows, as Figma
+ * deletes it. One left out anywhere else does not make the path valid.
+ */
+function isDroppedSegment(
+  { index, dropped }: ClaimContext,
+  searched: InstanceOccurrence,
+  segment: GUID
+): boolean {
+  const left = dropped()
+  if (left.size === 0) return false
+  const shown = shownRecords(searched)
+  for (const id of left) {
+    const record = index.sources.get(id)
+    if (record && recordMatches(record, segment) && shown.some((scope) => holds(index, scope, id)))
+      return true
+  }
+  return false
 }
 
 function applyPropertyClaim(
@@ -73,10 +144,11 @@ function applyPropertyClaim(
  * stale, not wrong: some outer decision replaced that subtree after it was written.
  */
 function isRemovedTarget(
-  { index, replacedComponents }: ClaimContext,
+  context: ClaimContext,
   owner: InstanceOccurrence,
   path: readonly GUID[]
 ): boolean {
+  const { index, replacedComponents } = context
   let current = owner
   for (const [position, segment] of path.entries()) {
     const rest = path.slice(position)
@@ -93,7 +165,7 @@ function isRemovedTarget(
       if (!(error instanceof SegmentError)) {
         throw error
       }
-      return false
+      return error.count === 0 && isDroppedSegment(context, current, segment)
     }
   }
   return false

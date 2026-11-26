@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
 
@@ -30,7 +30,7 @@ const {
   voice?: PresenceVoice
 }>()
 
-const messages = useCollaborationMessages()
+const messages = useMessages('collaboration')
 const ui = avatarStack()
 const voiceState = computed(() => {
   if (!voice) return 'none'

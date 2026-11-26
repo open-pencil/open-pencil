@@ -2,6 +2,9 @@ import { parseArgs } from 'node:util'
 
 import * as v from 'valibot'
 
+/** How long a newly active tab takes to draw before the oracle reads it. */
+const TAB_SETTLE_MS = 1500
+
 /**
  * Bring a Figma desktop tab to the front by its title. `figma-use` and the oracle captures
  * target the active document, so a reopened export must be the visible tab first. The tab
@@ -62,6 +65,6 @@ const result = await new Promise<unknown>((resolve, reject) => {
 if (result !== true)
   throw new Error(`No tab titled ${values.title}; open tabs: ${JSON.stringify(result)}`)
 await new Promise<void>((resolve) => {
-  setTimeout(resolve, 1500)
+  setTimeout(resolve, TAB_SETTLE_MS)
 })
 console.log(`activated ${values.title}`)

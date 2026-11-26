@@ -332,7 +332,7 @@ Discover available tools and their arguments from the connected server or browse
 ## Key tools for agents
 
 - **`query_nodes`** — XPath selectors to find specific nodes without fetching the full tree.
-- **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`.
+- **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`. Long JSX comes back outlined: deep layers are written with `keepChildren` and a comment naming their ID to read next, and rendering the outline with `replace_id` on that node keeps those layers' children.
 - **`diff_nodes`** — compare two nodes as an appliable patch of JSX attributes; `preview_patch` previews setting attributes and `apply_patch` applies a patch only if the nodes still match it.
 - **`diff_pixels`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.

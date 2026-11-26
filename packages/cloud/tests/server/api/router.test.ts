@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient } from '#cloud-tests/helpers/contract'
 import { createCloudAPIRouter, type CloudActor, type CloudAPIEnvironment } from '#cloud/server'
 import { Hono } from 'hono'
 
@@ -37,9 +38,13 @@ function services() {
       downloadShared: async () => {
         throw new Error('not used')
       },
+      downloadRetained: async () => {
+        throw new Error('not used')
+      },
       download: async () => {
         throw new Error('not used')
       },
+      update: async () => undefined,
       remove: async () => undefined,
       create: async () => {
         throw new Error('not used')
@@ -73,11 +78,29 @@ function services() {
       restore: notUsed,
       duplicate: notUsed
     },
+    comments: {
+      forMember: notUsed,
+      forShare: notUsed,
+      importThreads: notUsed,
+      markRead: notUsed,
+      people: notUsed,
+      notificationSettings: notUsed,
+      setNotificationSettings: notUsed,
+      list: notUsed,
+      get: notUsed,
+      createThread: notUsed,
+      updateThread: notUsed,
+      deleteThread: notUsed,
+      reply: notUsed,
+      updateComment: notUsed,
+      deleteComment: notUsed
+    },
     community: {
       enabled: false,
       list: notUsed,
       download: notUsed,
       imageLinks: notUsed,
+      object: notUsed,
       thumbnail: notUsed
     },
     reports: { file: notUsed },
@@ -153,12 +176,9 @@ describe('createCloudAPIRouter', () => {
       })
       .route('/', router)
 
-    const session = await app.request('/session')
-    expect(session.status).toBe(200)
-    expect(await session.json()).toEqual({ user: actor })
-
-    const workspaces = await app.request('/workspaces')
-    expect(workspaces.status).toBe(200)
-    expect(await workspaces.json()).toEqual({ workspaces: [] })
+    // Mounted at the root, so the contract's paths start there too.
+    const api = contractClient(app, {}, 'http://localhost')
+    expect(await api.session.session()).toEqual({ user: { ...actor, scopes: undefined } })
+    expect(await api.workspaces.list()).toEqual({ workspaces: [] })
   })
 })

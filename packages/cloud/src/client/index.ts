@@ -1,3 +1,4 @@
+export { createContractClient, type ServiceContractClientOptions } from './contract'
 export {
   CloudServiceError,
   CloudServiceInsecureEndpointError,
@@ -7,13 +8,14 @@ export {
   type CloudServicesClientOptions,
   type CloudServicesTokenSource
 } from './services'
-export {
-  CloudBillingError,
-  createCloudBillingClient,
-  type CloudBillingClient,
-  type CloudBillingClientOptions
-} from './billing'
 export { cloudEditorReturnURL, cloudRedirectPath, cloudSignInURL } from './auth/navigation'
+export * from './files'
+export {
+  fetchCommunityExample,
+  fetchCommunityTour,
+  type CommunityExample,
+  type CommunityTour
+} from './tour'
 export {
   CloudAPIError,
   createCloudAPIClient,
@@ -58,3 +60,13 @@ export {
   type CloudPortalClient,
   type CloudPortalClientOptions
 } from './portal/client'
+export type { CloudCommentRequests } from './comments'
+export { cloudRoomImages, sharedCloudRoomImages } from './rooms/images'
+export {
+  cloudTicketRelayJoin,
+  createCloudRelayJoin,
+  relayReconnectDelay,
+  ticketKeepsRoom,
+  type CloudRelayOptions,
+  type CloudRelayTicket
+} from './rooms/relay'

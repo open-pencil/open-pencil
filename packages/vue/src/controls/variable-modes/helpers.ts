@@ -47,16 +47,17 @@ export function variableModeChoices(editor: Editor, targets: SceneNode[]): Varia
   if (targets.length === 0) return []
   const { graph } = editor
   const holders = targets.every((target) => target.type === 'CANVAS' || isLayerContainer(target))
-  const used = holders
-    ? null
-    : collectionsBoundIn(
-        graph,
-        targets.map((target) => target.id)
-      )
+  let used: Set<string> | undefined
+  const bound = (id: string) =>
+    (used ??= collectionsBoundIn(
+      graph,
+      targets.map((target) => target.id)
+    )).has(id)
   const choices: VariableModeChoice[] = []
   for (const collection of graph.variableCollections.values()) {
     if (collection.modes.length < 2) continue
-    if (used && !used.has(collection.id)) continue
+    // A deleted collection is offered only where its variables are still bound, in what it holds.
+    if ((!holders || collection.deleted) && !bound(collection.id)) continue
     const inherited = shared(
       targets.map((target) =>
         target.parentId

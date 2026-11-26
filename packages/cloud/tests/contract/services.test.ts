@@ -20,7 +20,7 @@ const discovery = {
   apiURL: 'https://cloud.example.com/api',
   authURL: 'https://cloud.example.com/api/auth',
   authentication: { socialProviders: [], enterpriseSSO: false },
-  capabilities: { documents: true, workspaces: true, collaboration: true }
+  capabilities: { documents: true, workspaces: true, collaboration: true, embedding: false }
 }
 
 describe('Cloud services contract', () => {
@@ -63,6 +63,38 @@ describe('Cloud services contract', () => {
     expect(
       v.parse(serviceCatalogSchema, { ...catalog, search: { creditsPerRequest: 7 } }).search
     ).toEqual({ creditsPerRequest: 7 })
+  })
+
+  test('a catalog recommends only models it lists', () => {
+    const model = {
+      id: 'model',
+      label: 'Model',
+      creditsPerMillionInputTokens: 1,
+      creditsPerMillionOutputTokens: 1,
+      contextTokens: 1,
+      capabilities: { reasoning: false, vision: false, tools: true }
+    }
+    const catalog = {
+      models: [model],
+      defaultModelID: 'model',
+      roleModels: { design: 'model', review: 'model', fast: 'model', vision: null }
+    }
+    expect(v.is(serviceCatalogSchema, catalog)).toBe(true)
+    expect(
+      v.is(serviceCatalogSchema, {
+        ...catalog,
+        roleModels: { ...catalog.roleModels, review: 'missing' }
+      })
+    ).toBe(false)
+    // Fast tasks call tools, so a model without them can't be recommended for Fast.
+    const textOnly = { ...model, id: 'text', capabilities: { ...model.capabilities, tools: false } }
+    expect(
+      v.is(serviceCatalogSchema, {
+        ...catalog,
+        models: [model, textOnly],
+        roleModels: { ...catalog.roleModels, fast: 'text' }
+      })
+    ).toBe(false)
   })
 
   test('a search asks for a trimmed query and at most ten results, five by default', () => {

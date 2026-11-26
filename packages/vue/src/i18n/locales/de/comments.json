@@ -24,6 +24,13 @@
   "empty": "Noch keine Kommentare. Klicke auf die Arbeitsfläche, um einen zu hinterlassen.",
   "noMatches": "Keine passenden Kommentare.",
   "replyCount": "Antworten: {count}",
+  "clusterCount": "Kommentare: {count}",
   "commentDeleted": "Kommentar gelöscht",
-  "hideComments": "Kommentare ausblenden"
+  "hideComments": "Kommentare ausblenden",
+  "mentionPeople": "Personen zum Erwähnen",
+  "unread": "Ungelesen",
+  "notifyMention": "Erwähnungen in Kommentaren",
+  "notifyReply": "Antworten auf deine Kommentare",
+  "notifyReplyHint": "Jemand antwortet in einem Kommentar-Thread, in dem du geschrieben hast.",
+  "notifyTitle": "{author} · {document}"
 }

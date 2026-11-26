@@ -11,13 +11,20 @@ export interface PropertyListItemMap {
 export type PropertyListKey = keyof PropertyListItemMap
 export type PropertyListItemFor<K extends PropertyListKey> = PropertyListItemMap[K]
 export type PropertyListPatchFor<K extends PropertyListKey> = Partial<PropertyListItemFor<K>>
+/**
+ * A patch, or one made from each selected layer's own item, so a change to one field of a nested
+ * object leaves the rest of every layer's as it was.
+ */
+export type PropertyListChange<K extends PropertyListKey> =
+  | PropertyListPatchFor<K>
+  | ((current: PropertyListItemFor<K>) => PropertyListPatchFor<K>)
 export type PropertyListIdentity = string | number
 
 export interface PropertyListActions<K extends PropertyListKey> {
   add(item: PropertyListItemFor<K>): void
   remove(index: number): void
   update(index: number, item: PropertyListItemFor<K>): void
-  patch(index: number, changes: PropertyListPatchFor<K>): void
+  patch(index: number, changes: PropertyListChange<K>): void
   toggleVisibility(index: number): void
   reorder(fromIndex: number, toIndex: number): void
 }
@@ -60,7 +67,7 @@ export interface PropertyListRootSlots<K extends PropertyListKey> {
 
 export interface PropertyListItemActions<K extends PropertyListKey> {
   update(item: PropertyListItemFor<K>): void
-  patch(changes: PropertyListPatchFor<K>): void
+  patch(changes: PropertyListChange<K>): void
   remove(): void
   toggleVisibility(): void
 }

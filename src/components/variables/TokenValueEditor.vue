@@ -5,8 +5,9 @@ import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import { tokenNumberToCSS, variableUnit } from '@open-pencil/dom-css/export'
 import type { Variable, VariableLiteral, VariableValue } from '@open-pencil/scene-graph'
 import { colorToHex8 } from '@open-pencil/scene-graph/color'
-import { formulaSymbol } from '@open-pencil/scene-graph/variables'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { easingText, formulaSymbol, isEasing } from '@open-pencil/scene-graph/variables'
+import { errorMessage } from '@open-pencil/std/errors'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   referencePillName,
@@ -48,7 +49,7 @@ const emit = defineEmits<{
   addExpression: []
   removeExpression: []
 }>()
-const { variables } = useI18n()
+const variables = useMessages('variables/panel')
 const ui = computed(() => tv(valueEditorTheme)({ heading }))
 const fieldId = useId()
 const field = useTemplateRef<InstanceType<typeof TokenFormulaField>>('field')
@@ -100,6 +101,7 @@ function resultText(resolved: VariableLiteral | undefined) {
   if (typeof resolved === 'number') return tokenNumberToCSS(resolved, variableUnit(variable))
   if (typeof resolved === 'boolean') return String(resolved)
   if (typeof resolved === 'string') return JSON.stringify(resolved)
+  if (isEasing(resolved)) return easingText(resolved)
   if (typeof resolved === 'object') return colorToHex8(resolved)
   return '—'
 }
@@ -170,7 +172,7 @@ const preview = computed(() => {
   try {
     return { edit: parseTokenEditorText(variable, modeId, draft.value, formula), error: '' }
   } catch (error) {
-    return { edit: undefined, error: error instanceof Error ? error.message : String(error) }
+    return { edit: undefined, error: errorMessage(error) }
   }
 })
 const error = computed(() => commitError.value || (committed.value ? preview.value.error : ''))
@@ -262,7 +264,7 @@ function detach() {
     const { resolved } = formula.parse(modeId, formula.format(value.value))
     emit('apply', resolved)
   } catch (error) {
-    commitError.value = error instanceof Error ? error.message : String(error)
+    commitError.value = errorMessage(error)
   }
 }
 </script>

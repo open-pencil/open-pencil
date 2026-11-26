@@ -1,5 +1,6 @@
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 
+import { profileModelID } from '@/app/ai/models/language-model'
 import type {
   AIModelConnection,
   AIModelProfile,
@@ -39,10 +40,6 @@ export interface ApplyOnboardingResult {
   connectionIds: Partial<Record<OnboardingAccess, string>>
 }
 
-function effectiveModelID(profile: Pick<AIModelProfile, 'modelID' | 'customModelID'>): string {
-  return profile.customModelID || profile.modelID
-}
-
 function recommendedMaxOutputTokens(providerID: string, modelID: string): number {
   const provider = AI_PROVIDERS.find((definition) => definition.id === providerID)
   const model = provider?.models.find((candidate) => candidate.id === modelID)
@@ -50,7 +47,7 @@ function recommendedMaxOutputTokens(providerID: string, modelID: string): number
 }
 
 function isPlaceholder(settings: AIModelSettings, profile: AIModelProfile): boolean {
-  if (profile.id !== PLACEHOLDER_PROFILE_ID || effectiveModelID(profile)) return false
+  if (profile.id !== PLACEHOLDER_PROFILE_ID || profileModelID(profile)) return false
   const connection = settings.connections.find((candidate) => candidate.id === profile.connectionId)
   return connection?.providerID === ONBOARDING_SERVER_PROVIDER && !connection.customBaseURL
 }
@@ -137,7 +134,7 @@ export function applyOnboardingPlan({
     const existing = settings.models.find(
       (profile) =>
         profile.connectionId === connection.id &&
-        effectiveModelID(profile) === wanted &&
+        profileModelID(profile) === wanted &&
         model.capabilities.every((capability) => profile.capabilities.includes(capability))
     )
     if (existing) return existing.id

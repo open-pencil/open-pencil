@@ -42,6 +42,8 @@ export interface PropertyLayer {
 export interface AssignmentGroup {
   readonly assignments: readonly ComponentPropAssignment[]
   readonly rank: number
+  /** The record that declared the assignments. */
+  readonly ownerId?: string
 }
 
 /**

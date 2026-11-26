@@ -27,5 +27,13 @@ describe('deleteSelected', () => {
 
     expect(getNodeOrThrow(editor.graph, body.id).height).toBe(220)
     expect(getNodeOrThrow(editor.graph, footerA.id).y).toBe(260)
+
+    editor.undo.undo()
+    expect(getNodeOrThrow(editor.graph, body.id).height).toBe(180)
+    expect(getNodeOrThrow(editor.graph, footerB.id).y).toBe(260)
+
+    editor.undo.redo()
+    expect(getNodeOrThrow(editor.graph, body.id).height).toBe(220)
+    expect(getNodeOrThrow(editor.graph, footerA.id).y).toBe(260)
   })
 })

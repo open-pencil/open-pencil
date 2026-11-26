@@ -3,7 +3,9 @@ import { createMiddleware } from 'hono/factory'
 import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from 'jose'
 import * as v from 'valibot'
 
-const CERTS_TIMEOUT_MS = 10_000
+import { DEADLINE_MS } from '@open-pencil/std/timing'
+
+const CERTS_TIMEOUT_MS = DEADLINE_MS.request
 // Cloudflare rotates the signing key every six weeks and publishes the next one in advance, so
 // a short cache never misses a rotation for long.
 const CERTS_TTL_MS = 10 * 60 * 1000

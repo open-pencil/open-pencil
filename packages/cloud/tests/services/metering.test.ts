@@ -12,7 +12,7 @@ const model: ChatModel = {
   capabilities: { reasoning: false, vision: false, tools: true }
 }
 
-function stream(...chunks: string[]): ReadableStream<Uint8Array> {
+function stream(...chunks: string[]): ReadableStream<Uint8Array<ArrayBuffer>> {
   const encoder = new TextEncoder()
   return new ReadableStream({
     start(controller) {
@@ -50,5 +50,24 @@ describe('Services server metering', () => {
     )
     expect(usage).toEqual({ inputTokens: 5, outputTokens: 7 })
     expect(await meteredUsage(stream('data: {"choices":[]}\n\ndata: [DONE]'), true)).toBeNull()
+  })
+
+  test('joins an event whose data spans several lines, as the spec does', async () => {
+    const usage = await meteredUsage(
+      stream(
+        'data: {"choices":[],\n',
+        'data: "usage":{"prompt_tokens":5,"completion_tokens":7}}\n\n',
+        'data: [DONE]\n\n'
+      ),
+      true
+    )
+    expect(usage).toEqual({ inputTokens: 5, outputTokens: 7 })
+  })
+
+  test('gives up on an event that never ends rather than buffering it', async () => {
+    const line = `data: ${'x'.repeat(1023)}\n`
+    await expect(
+      meteredUsage(stream(...Array.from({ length: 1100 }, () => line)), true)
+    ).rejects.toThrow()
   })
 })

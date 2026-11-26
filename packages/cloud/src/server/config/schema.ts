@@ -2,9 +2,9 @@ import {
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   cloudEditorVersionSchema,
   RELAY_MINIMUM_MESSAGE_BYTES,
-  sendsTokenSafely
+  sendsTokenSafely,
+  staticEntitlementsSchema
 } from '#cloud/contract'
-import { staticEntitlementsSchema } from '#cloud/server/policy/schema'
 import * as v from 'valibot'
 
 import {
@@ -77,6 +77,10 @@ const rawCloudServerConfigSchema = v.object({
   trustedOrigins: v.optional(v.array(httpURLSchema), []),
   /** The server's editor works with files on this device without signing in to the server. */
   localEditor: v.optional(v.boolean(), true),
+  /** Other sites may show documents shared by link and community documents in a frame. */
+  embeddingEnabled: v.optional(v.boolean(), false),
+  /** The origins that may embed documents; any site when empty. */
+  embeddingOrigins: v.optional(v.array(httpURLSchema), []),
   authTrustedIPHeaders: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   authTrustedProxies: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
@@ -114,6 +118,8 @@ const rawCloudServerConfigSchema = v.object({
   appleTeamId: optionalTextSchema,
   appleKeyId: optionalTextSchema,
   applePrivateKey: optionalTextSchema,
+  githubClientId: optionalTextSchema,
+  githubClientSecret: optionalTextSchema,
   appleAppBundleIdentifier: optionalTextSchema,
   s3Endpoint: httpURLSchema,
   s3Region: v.pipe(v.string(), v.trim(), v.minLength(1)),
@@ -133,6 +139,7 @@ const rawCloudServerConfigSchema = v.object({
   smtpUser: optionalTextSchema,
   smtpPassword: optionalTextSchema,
   emailFrom: optionalTextSchema,
+  emailReplyTo: v.optional(v.pipe(v.string(), v.email())),
   emailTransport: v.optional(v.picklist(['none', 'smtp', 'cloudflare']), 'none'),
   emailBatchSize: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)), 50),
   emailIntervalMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 30_000),
@@ -172,6 +179,8 @@ const rawCloudServerConfigSchema = v.object({
   billingEndpoint: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** Whether people may connect apps through OAuth, with this server as their authorization server. */
+  oauthEnabled: v.optional(v.boolean(), false),
   /**
    * The operator's own terms, privacy policy, abuse contact, and minimum age; without it the
    * server shows none. With `requireAcceptance`, an account uses the server only once it accepted
@@ -191,7 +200,13 @@ const rawCloudServerConfigSchema = v.object({
    * The workspace whose documents anyone may open read-only, without signing in or a link: the
    * deployment's community gallery. Without it the server has none.
    */
-  community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
+  community: v.optional(
+    v.object({
+      workspaceId: v.pipe(v.string(), v.uuid()),
+      /** The gallery document editors open as their tour. */
+      tourDocumentId: v.optional(v.pipe(v.string(), v.uuid()))
+    })
+  ),
   /** How a self-hosted server names itself on its public pages. */
   branding: v.optional(
     v.object({
@@ -205,7 +220,9 @@ const rawCloudServerConfigSchema = v.object({
     v.object({
       provider: v.literal('posthog'),
       host: httpURLSchema,
-      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+      projectAPIKey: v.pipe(v.string(), v.trim(), v.minLength(1)),
+      /** Error reports name the account and records involved; off unless a deployment sets it. */
+      includeIds: v.optional(v.boolean(), false)
     })
   )
 })
@@ -266,6 +283,7 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     'appleKeyId',
     'applePrivateKey'
   ])
+  requireTogether(config, 'GitHub', ['githubClientId', 'githubClientSecret'])
 }
 
 function validateEmailConfig(config: CloudServerConfig): void {

@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaNodeProxy } from '#core/figma-api'

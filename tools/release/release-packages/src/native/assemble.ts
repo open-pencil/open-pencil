@@ -1,14 +1,15 @@
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { readReleaseNotes } from '#release/release-notes'
+import { readReleaseNotes, releaseChangelogPath } from '#release/release-notes/read'
 import { sourceMapsAssetName } from '#release/sourcemaps/bundle'
 import { isEqual } from 'es-toolkit'
 import { decode } from 'js-base64'
 import * as v from 'valibot'
 
+import { nightlyNotes } from '../nightly/notes.ts'
 import { desktopAssets } from './catalog.ts'
-import { createReleaseContext } from './context.ts'
+import { createReleaseContext, isNightly } from './context.ts'
 import { digestFile, validateTargetManifests } from './manifest.ts'
 import { minisignPublicKey, verifyMinisign } from './minisign.ts'
 import { assertSignedVersion } from './signature.ts'
@@ -25,9 +26,13 @@ const manifests = validateTargetManifests(
   identity
 )
 
+const nightly = isNightly(identity)
 const notes = await readFile(paths.notes, 'utf8')
-const sourceNotes = await readReleaseNotes(join(paths.root, 'CHANGELOG.md'), version)
-if (notes !== sourceNotes) throw new Error('Release notes do not match the source changelog')
+// A nightly has no changelog section; its notes name the commit it builds.
+const sourceNotes = nightly
+  ? nightlyNotes(version, identity.sourceCommit, repository)
+  : await readReleaseNotes(await releaseChangelogPath(), version)
+if (notes !== sourceNotes) throw new Error('Release notes do not match their source')
 const config = v.parse(
   v.object({ plugins: v.object({ updater: v.object({ pubkey: v.string() }) }) }),
   JSON.parse(await readFile(paths.tauriConfig, 'utf8'))
@@ -91,8 +96,11 @@ await writeFile(
   JSON.stringify({ version, notes, pub_date: pubDate, platforms }, null, 2)
 )
 
-const packageFiles = (await readdir(paths.packages)).filter((name) => name.endsWith('.tgz')).sort()
-if (packageFiles.length === 0) throw new Error('Missing npm artifacts')
+// Nightlies publish no npm packages.
+const packageFiles = nightly
+  ? []
+  : (await readdir(paths.packages)).filter((name) => name.endsWith('.tgz')).sort()
+if (!nightly && packageFiles.length === 0) throw new Error('Missing npm artifacts')
 
 const packages = await Promise.all(
   packageFiles.map(async (name) => ({ name, ...(await digestFile(join(paths.packages, name))) }))

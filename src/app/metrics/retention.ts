@@ -1,7 +1,7 @@
 import { sumBy } from 'es-toolkit'
 
 import type { MetricsUsage } from '@open-pencil/feedback/contract'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 /** Installs first seen on `cohort`, then how many opened the app again each day after. */
 export type RetentionCohort = MetricsUsage['retention'][number]

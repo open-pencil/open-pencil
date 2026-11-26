@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -14,7 +14,7 @@ const { host } = defineProps<{ host: string }>()
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ signUp: []; signIn: []; saveOnDevice: [] }>()
 
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 </script>
 
 <template>

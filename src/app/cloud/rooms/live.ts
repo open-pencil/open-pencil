@@ -2,20 +2,16 @@ import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
 import { effectScope, onScopeDispose, shallowRef, watch } from 'vue'
 
-import {
-  cloudPresenceSchema,
-  RELAY_SERVER_PEER,
-  type CollaborationTicket
-} from '@open-pencil/cloud/contract'
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { cloudRoomImages, cloudTicketRelayJoin } from '@open-pencil/cloud/client'
+import { cloudPresenceSchema } from '@open-pencil/cloud/contract'
+import { type JoinCollabRoom, RELAY_SERVER_PEER, type RoomImageStore } from '@open-pencil/collab'
+import { minOf } from '@open-pencil/std/arrays'
 
-import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
 import type { RoomIdentity, RoomSession } from '@/app/collab/session'
-import type { JoinCollabRoom } from '@/app/collab/transport'
-import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
 import type { EditorStore } from '@/app/editor/session'
 import { createStorageAdapter } from '@/app/integrations/storage'
+import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import {
   adoptStoredVersion,
@@ -26,12 +22,12 @@ import {
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 import { allTabs, getTabForStore, getTabsSnapshot, reloadStorageDocumentInTab } from '@/app/tabs'
 
+import { cloudCommentsChanged } from '../comments/followers'
 import { isCloudBinding } from '../documents/status'
 import { cloudConnection, cloudConnections, type CloudSessionState } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
 import { versionsChanged } from '../versions/history'
 import { accountRoomIdentity } from './identity'
-import { cloudRoomImages } from './images'
 import { onceOnServer, shareRoomUploads, uploadStoredDocument } from './upload'
 
 /** Each Cloud tab's permission in its room, for the status beside the name. */
@@ -258,6 +254,8 @@ export function openCloudDocumentRoom(
     followRelay(store, session)
     // Someone named, renamed, or saved a checkpoint anywhere: an open history loads it again.
     onScopeDispose(session.onVersionsChanged(() => versionsChanged(store)))
+    // Someone changed a comment thread: the tab fetches it from the server, which keeps them.
+    onScopeDispose(session.onCommentsChanged((threadId) => cloudCommentsChanged(store, threadId)))
     const stopSynced = session.onSynced((peerId) => {
       if (peerId !== RELAY_SERVER_PEER) return
       stopSynced()
@@ -293,47 +291,6 @@ export function openCloudDocumentRoom(
     upload: uploads.upload,
     stop: () => scope.stop()
   }
-}
-
-/**
- * The relay connection for a room, presenting the ticket just issued first and a fresh one from
- * `next` before each expires.
- */
-/**
- * Whether a refreshed ticket keeps the tab in the room it joined as it joined it. A restore
- * moves the document to a new room, and access that changed, as when the owner fills or frees
- * their storage, needs the room joined again with it; either ends this one.
- */
-export function keepsRoom(
-  first: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>,
-  next: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>
-): boolean {
-  return (
-    next.roomId === first.roomId &&
-    next.permission === first.permission &&
-    next.readOnly === first.readOnly
-  )
-}
-
-export function cloudRelayTransport(
-  url: string,
-  first: CollaborationTicket,
-  next: () => Promise<CollaborationTicket>,
-  events: { onRestored?: () => void; onRefused?: () => void } = {}
-): JoinCollabRoom {
-  let unused: CollaborationTicket | null = first
-  return createCloudRelayJoin({
-    url,
-    async ticket() {
-      const ticket = unused ?? (await next())
-      unused = null
-      if (!keepsRoom(first, ticket)) return null
-      return { token: ticket.token, expiresAt: ticket.expiresAt }
-    },
-    onRestored: events.onRestored,
-    onRefused: events.onRefused,
-    heartbeat: first.relayHeartbeat
-  })
 }
 
 type LiveRoom = Pick<ReturnType<typeof openCloudDocumentRoom>, 'stop' | 'upload'>
@@ -457,13 +414,18 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
         ? accountRoomIdentity(() => cloudConnection(target.server.id).account ?? account)
         : undefined,
       roomId: first.roomId,
-      transport: cloudRelayTransport(first.serverURL, first, nextTicket, {
+      transport: cloudTicketRelayJoin(first.serverURL, first, nextTicket, {
         onRestored: restart,
         onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: true })
       }),
       permission: first.permission,
       readOnly: first.readOnly,
-      images: cloudRoomImages(target.client, binding.documentId, first.permission === 'edit'),
+      images: cloudRoomImages({
+        client: target.client,
+        documentId: binding.documentId,
+        canStore: first.permission === 'edit',
+        objectFetch: storageFetch
+      }),
       roomIsCurrent: async () => (await nextTicket()).roomId === first.roomId,
       onRestored: restart
     })
@@ -514,7 +476,13 @@ async function rejoinCloudRoom(store: EditorStore): Promise<void> {
  * Sessions that ended for good, unlike a check in progress or a server out of reach for now; one
  * whose terms changed ends until they are accepted, and its rooms with it.
  */
-const ENDED: ReadonlySet<CloudSessionState> = new Set(['signed-out', 'expired', 'closed', 'terms'])
+const ENDED: ReadonlySet<CloudSessionState> = new Set([
+  'signed-out',
+  'expired',
+  'closed',
+  'two-step',
+  'terms'
+])
 
 /**
  * Whether the tab's room was joined as someone the server no longer has signed in here: a session

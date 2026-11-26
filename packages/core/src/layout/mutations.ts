@@ -33,6 +33,18 @@ export function createLayoutRunner(getGraph: () => SceneGraph) {
     }
   }
 
+  /**
+   * Lays out the parents whose children were added, removed, reordered, shown, or hidden. Only an
+   * auto layout places its children, so other parents are skipped: laying out a page reaches every
+   * frame on it. Hugging auto layout ancestors still follow, as `runLayoutForNode` walks up.
+   */
+  function runLayoutForParents(parentIds: Iterable<string>) {
+    const graph = getGraph()
+    for (const id of uniq([...parentIds])) {
+      if (graph.getNode(id)?.layoutMode !== 'NONE') runLayoutForNode(id)
+    }
+  }
+
   function compactLayoutScope(impact: SceneMutationImpact): string[] {
     const graph = getGraph()
     const candidates = new Set(mutationLayoutScopeIds(impact).filter((id) => graph.getNode(id)))
@@ -101,5 +113,5 @@ export function createLayoutRunner(getGraph: () => SceneGraph) {
     })
   }
 
-  return { runLayoutForNode, runLayoutForImpact, runMutationWithLayout }
+  return { runLayoutForNode, runLayoutForParents, runLayoutForImpact, runMutationWithLayout }
 }

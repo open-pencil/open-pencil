@@ -7,7 +7,7 @@ import {
 } from 'reka-ui'
 
 import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
@@ -43,7 +43,7 @@ const emit = defineEmits<{
   selectLayers: []
 }>()
 defineSlots<{ thumbnail?(props: { id: string }): unknown }>()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const menu = useMenuUI({ content: 'min-w-40' })
 const item = menuItem({ justify: 'start' })
 </script>

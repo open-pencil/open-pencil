@@ -34,12 +34,12 @@ The repository also keeps integration/oracle coverage under `packages/core/tests
 
 ## Runtime model
 
-Use the browser runtime as the high-fidelity source of truth whenever a DOM is available. It uses native parsing and `getComputedStyle()` inside an isolated sandbox. Prefer `sandbox: 'iframe'` for production-style conversion because it isolates authored CSS from host-page styles:
+Use the browser runtime as the high-fidelity source of truth whenever a DOM is available. It uses native parsing and `getComputedStyle()` inside a sandboxed frame, which isolates authored CSS from host-page styles and runs no script: markup is laid out and measured, and its script elements, event handler attributes, and `javascript:` URLs never execute, so it is safe to give it HTML you did not write:
 
 ```ts
 import { createBrowserCSSRuntime } from '@open-pencil/dom-css'
 
-const runtime = createBrowserCSSRuntime({ sandbox: 'iframe' })
+const runtime = createBrowserCSSRuntime()
 const document = runtime.parseHTML('<article class="card">OpenPencil</article>')
 const styled = await runtime.computeStyles(document, '.card { width: calc(10rem + 16px); }')
 ```
@@ -84,7 +84,7 @@ const graph = await jsxToSceneGraph(
   </article>,
   {
     cssText: '.card { display: flex; width: 320px; padding: 24px; }',
-    runtime: createBrowserCSSRuntime({ sandbox: 'iframe' })
+    runtime: createBrowserCSSRuntime()
   }
 )
 ```
@@ -102,8 +102,7 @@ const graph = await browserJSXToSceneGraph(
     <h1>OpenPencil</h1>
   </article>,
   {
-    cssText: '.card { display: flex; width: 320px; padding: 24px; }',
-    sandbox: 'iframe'
+    cssText: '.card { display: flex; width: 320px; padding: 24px; }'
   }
 )
 ```
@@ -126,8 +125,7 @@ import tailwindCSS from './generated-tailwind.css?raw'
 const graph = await browserHTMLToSceneGraph(
   '<article class="flex w-80 rounded-xl bg-white p-6">OpenPencil</article>',
   {
-    cssText: tailwindCSS,
-    sandbox: 'iframe'
+    cssText: tailwindCSS
   }
 )
 ```
@@ -143,8 +141,7 @@ import tailwindCSS from './generated-tailwind.css?raw'
 const graph = await browserJSXToSceneGraph(
   <article class="flex w-80 rounded-xl bg-white p-6">OpenPencil</article>,
   {
-    cssText: tailwindCSS,
-    sandbox: 'iframe'
+    cssText: tailwindCSS
   }
 )
 ```
@@ -161,8 +158,7 @@ const graph = await browserTailwindHTMLToSceneGraph(
   `<article class="${classes.join(' ')}">OpenPencil</article>`,
   classes,
   {
-    css: await fetch('/tailwind-source.css').then((response) => response.text()),
-    sandbox: 'iframe'
+    css: await fetch('/tailwind-source.css').then((response) => response.text())
   }
 )
 ```
@@ -181,8 +177,7 @@ const graph = await browserTailwindHTMLToSceneGraph(
     loadStylesheet: async (id) => {
       const url = id === 'tailwindcss' ? '/tailwindcss/index.css' : `/tailwindcss/${id}`
       return fetch(url).then((response) => response.text())
-    },
-    sandbox: 'iframe'
+    }
   }
 )
 ```

@@ -1,6 +1,7 @@
 import { MCP_AGENT_HEADER, OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
 
-import { getAutomationAuthToken, getMCPServerURL } from '@/app/automation/mcp/spawn'
+import { getMCPClientToken } from '@/app/automation/mcp/client-token'
+import { getMCPServerURL } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordMCPConnectionFailure } from '@/app/diagnostics'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 
@@ -39,7 +40,7 @@ export async function buildPiMCPServers(options?: {
   const authorizationToken =
     options && 'authorizationToken' in options
       ? options.authorizationToken
-      : await getAutomationAuthToken()
+      : await getMCPClientToken()
   const entries = await Promise.all(
     enabledMCPConnections.value.map(
       async (connection) => [connection.name, await externalPiMCPServer(connection)] as const

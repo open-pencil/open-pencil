@@ -1,6 +1,7 @@
 import { noModuleMockingRule } from '#oxlint-plugin/rules/quality/module-mocking'
 import {
   noConditionalObjectSpreads,
+  noInlineDelay,
   noMathRandom,
   noReflectDeleteGlobalThisOutsideTests,
   noSilentCatch
@@ -12,6 +13,7 @@ export default definePlugin({
   meta: { name: '@open-pencil/runtime' },
   rules: {
     'no-conditional-object-spreads': noConditionalObjectSpreads,
+    'no-inline-delay': noInlineDelay,
     'no-math-random': noMathRandom,
     'no-module-mocking': noModuleMockingRule,
     'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,

@@ -116,4 +116,31 @@ describe('icon sets', () => {
     expect([...(await provider.previews(['lucide:a', 'font-set:b'])).keys()]).toEqual(['lucide:a'])
     await expect(provider.icons(['font-set:b'], 24)).rejects.toThrow('offline')
   })
+
+  test('fails the catalogue when the fallback fails and the rest are listed only as unavailable', async () => {
+    const unavailable: IconProvider = {
+      ...fake(['apple'], []),
+      collections: async () => [
+        {
+          prefix: 'apple',
+          name: 'apple',
+          total: 0,
+          category: null,
+          license: null,
+          multicolor: false,
+          unavailable: 'host'
+        }
+      ]
+    }
+    const provider = createIconSetsProvider({
+      sources: [{ prefixes: ['apple'], provider: unavailable }],
+      fallback: {
+        ...fake(['lucide'], []),
+        collections: async () => {
+          throw new Error('offline')
+        }
+      }
+    })
+    await expect(provider.collections()).rejects.toThrow('offline')
+  })
 })

@@ -1,5 +1,7 @@
 import { getCurrentInstance, provide, ref } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { provideTabEditorStore } from '@/app/editor/active-store'
 import { createTab, switchTab } from '@/app/tabs'
@@ -48,7 +50,7 @@ export function useStageDocument(scene: SceneBuilder) {
     } catch (error) {
       preparation.fail({
         code: 'layout-failed',
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
         retryable: false
       })
     }

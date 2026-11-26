@@ -1,10 +1,10 @@
 import { countBy, groupBy } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { instanceSwapPropertyIds, resolvedReferences } from '@open-pencil/scene-graph/transfer'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { componentSyncOrder } from '#core/editor/components/sync'
 import {

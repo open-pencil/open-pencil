@@ -135,11 +135,14 @@ openpencil export [file] [options]
 
 ## import
 
-Import HTML/CSS/Tailwind into an editable OpenPencil document.
+Import HTML/CSS/Tailwind, from a file or a web address, into an editable OpenPencil document.
 
 ```sh
 openpencil import page.html [options]
+openpencil import https://example.com [options]
 ```
+
+A web address is fetched with the stylesheets, fonts, and pictures its page links, and laid out as the HTML engine lays it out; the page's scripts do not run, so a page that builds itself with JavaScript imports as the HTML its server sends. An address that holds something other than a page, such as an image or a PDF, says what it holds and imports nothing.
 
 | Option | Alias | Description |
 |--------|-------|-------------|
@@ -151,11 +154,15 @@ openpencil import page.html [options]
 | `--tailwind-file` | | File containing Tailwind utility candidates |
 | `--page-name` | | Scene graph page name (default: `DOM/CSS`) |
 | `--json` | | Print a machine-readable summary |
+| `--no-icon-names` | | Don't match inline SVG to the Iconify icons it draws |
+
+Inline SVG marked with `data-icon` becomes that icon, and other inline SVG that draws an Iconify icon from a popular set becomes that icon, as in the app. Matching downloads an icon index from jsDelivr and asks the Iconify API for the candidate icons by name, never sending the SVG; `--no-icon-names` turns matching off, and SVG named by `data-icon` still becomes its icon.
 
 Examples:
 
 ```sh
 openpencil import card.html --css card.css -o card.fig
+openpencil import https://example.com -o example.fig
 openpencil import card.html --tailwind "flex flex-col gap-3 w-80 p-6 rounded-xl bg-white" -o card.fig
 ```
 

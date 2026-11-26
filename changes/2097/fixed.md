@@ -1,1 +1,0 @@
-- `export_image` and other image exports include text right after a document comes to the front, instead of leaving every text layer out until its canvas loads its fonts (#1169).

@@ -4,11 +4,13 @@ import {
   collectionVariables,
   defaultModeCondition,
   modeAttribute,
+  timingToCSS,
   tokenNumberToCSS,
   variableCSSNames,
   variableUnit
 } from '@open-pencil/dom-css/export'
 import type {
+  Easing,
   SceneGraph,
   Variable,
   VariableCollection,
@@ -18,8 +20,12 @@ import type {
   VariableLiteral
 } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { parseCSSTime } from '@open-pencil/scene-graph/css'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
+  easingText,
+  formulaTypeOf,
+  isEasing,
   tokenNumberFromUnit,
   tokenNumberInUnit,
   variableValueReferences,
@@ -32,6 +38,8 @@ export interface TokenModeValue {
   modeId: string
   css: string
   color?: Color
+  /** An easing's curve or spring, which the panel draws beside its name. */
+  easing?: Easing
   /** A formula as it reads, with variable names; `css` holds what it gives in this mode. */
   formula?: string
   /** The aliased variable's name, when the value points at another token. */
@@ -73,7 +81,7 @@ function colorExpressionMode(
   value: VariableColorExpression
 ): TokenModeValue {
   const resolved = graph.resolveVariable(variable.id, modeId)
-  const color = typeof resolved === 'object' ? resolved : undefined
+  const color = typeof resolved === 'object' && 'r' in resolved ? resolved : undefined
   const base =
     'aliasId' in value.color
       ? (graph.variables.get(value.color.aliasId)?.name ?? value.color.aliasId)
@@ -86,8 +94,15 @@ function colorExpressionMode(
   return { modeId, css: label, alias: label, color }
 }
 
+/** A literal as the table writes it: a number in its unit, a timing in ms, an easing by name. */
+function literalText(variable: Variable, value: number | Easing): string {
+  if (isEasing(value)) return easingText(value)
+  if (variable.type === 'TIMING') return timingToCSS(value)
+  return tokenNumberToCSS(value, variableUnit(variable))
+}
+
 function aliasResult(variable: Variable, resolved: VariableValue | undefined) {
-  if (typeof resolved === 'number') return tokenNumberToCSS(resolved, variableUnit(variable))
+  if (typeof resolved === 'number' || isEasing(resolved)) return literalText(variable, resolved)
   if (typeof resolved === 'boolean' || typeof resolved === 'string') return String(resolved)
   return undefined
 }
@@ -106,7 +121,7 @@ function formulaMode(
     css: (color ? colorToHex(color) : aliasResult(variable, resolved)) ?? '',
     color,
     formula: printFormula(value.value, (id) => graph.variables.get(id)?.name ?? id, {
-      type: (id) => graph.variables.get(id)?.type
+      type: (id) => formulaTypeOf(graph.variables.get(id)?.type)
     })
   }
 }
@@ -135,12 +150,13 @@ function modeValue(
       alias: target?.name,
       result: aliasResult(variable, resolved),
       color,
+      easing: isEasing(resolved) ? resolved : undefined,
       expression
     }
   }
+  if (isEasing(value)) return { modeId, css: literalText(variable, value), easing: value }
   if (typeof value === 'object') return { modeId, css: colorToHex(value), color: value, expression }
-  if (typeof value === 'number')
-    return { modeId, css: tokenNumberToCSS(value, variableUnit(variable)), expression }
+  if (typeof value === 'number') return { modeId, css: literalText(variable, value), expression }
   return { modeId, css: value === undefined ? '' : String(value), expression }
 }
 
@@ -200,6 +216,7 @@ export function modeAttributeText(collection: VariableCollection, modeId: string
  */
 export function parseTokenValueText(variable: Variable, text: string): VariableValue | undefined {
   if (variable.type === 'STRING') return text
+  if (variable.type === 'TIMING') return parseTimingText(text)
   if (variable.type !== 'FLOAT') return undefined
   const number = Number(text)
   return text.trim() && Number.isFinite(number)
@@ -207,8 +224,22 @@ export function parseTokenValueText(variable: Variable, text: string): VariableV
     : undefined
 }
 
-/** A number or text value as it is typed back, numbers in the token's unit. */
+/**
+ * A timing as typed, in seconds: a plain number is milliseconds, as the list shows timings, and
+ * `0.25s` or `250ms` say their unit.
+ */
+function parseTimingText(text: string): number | undefined {
+  const trimmed = text.trim()
+  if (!trimmed) return undefined
+  const ms = Number(trimmed)
+  const seconds = Number.isFinite(ms) ? ms / 1000 : parseCSSTime(trimmed)
+  return seconds === null || seconds < 0 ? undefined : seconds
+}
+
+/** A number or text value as it is typed back, numbers in the token's unit and timings in ms. */
 export function tokenValueText(variable: Variable, value: VariableValue | undefined): string {
+  if (variable.type === 'TIMING' && typeof value === 'number')
+    return String(Number((value * 1000).toFixed(2)))
   if (typeof value === 'number')
     return String(Number(tokenNumberInUnit(value, variableUnit(variable)).toFixed(6)))
   return typeof value === 'object' ? '' : String(value ?? '')
@@ -334,7 +365,7 @@ export function cssReferenceCandidates(
   variable: Variable
 ): CSSReferenceCandidate[] {
   const names = variableCSSNames(collectionVariables(graph))
-  return [...graph.variables.values()].flatMap((candidate) => {
+  return graph.getLiveVariables().flatMap((candidate) => {
     const cssName = names.get(candidate.id)
     if (candidate.id === variable.id || candidate.type !== 'FLOAT' || !cssName) return []
     const number = graph.resolveNumberVariable(candidate.id)
@@ -392,7 +423,7 @@ function referenceCandidates(
   variable: Variable,
   types: readonly Variable['type'][]
 ): AliasCandidate[] {
-  return [...graph.variables.values()].flatMap((candidate) => {
+  return graph.getLiveVariables().flatMap((candidate) => {
     if (!types.includes(candidate.type) || aliasesTo(graph, candidate.id, variable.id)) return []
     const number =
       candidate.type === 'FLOAT' ? graph.resolveNumberVariable(candidate.id) : undefined

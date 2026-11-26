@@ -1,10 +1,12 @@
 import type { DocumentSummary } from '#cloud/contract'
 import type { DocumentDatabase, DocumentSummaryRow } from '#cloud/server/documents/repository'
 
-const SUMMARY_COLUMNS = [
+/** The columns a document summary reads. */
+export const SUMMARY_COLUMNS = [
   'id',
   'workspaceId',
   'name',
+  'description',
   'kind',
   'currentRevisionId',
   'version',
@@ -34,5 +36,20 @@ export async function getDocumentSummaryRow(
     .where('id', '=', documentId)
     .where('deletedAt', 'is', null)
     .where('disabledAt', 'is', null)
+    .executeTakeFirst()
+}
+
+/**
+ * A document the server still keeps, even one in Trash or taken down, which only a deployment
+ * administrator may reach; ordinary access goes through `getDocumentSummaryRow`.
+ */
+export async function getRetainedDocumentSummaryRow(
+  database: DocumentDatabase,
+  documentId: string
+): Promise<DocumentSummaryRow | undefined> {
+  return database
+    .selectFrom('document')
+    .select(SUMMARY_COLUMNS)
+    .where('id', '=', documentId)
     .executeTakeFirst()
 }

@@ -1,4 +1,4 @@
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { createOffscreenRenderer, type SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { setPageBackgrounds } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
@@ -25,14 +25,17 @@ const INTER_STYLES = ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']
 /** The one page the tour is on. */
 export const PAGE_NAME = 'Tour'
 
-/** A renderer on a 1×1 surface, for measuring text while laying the document out. */
-export async function measuringRenderer() {
-  const ck = await getCanvasKit()
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) throw new Error('CanvasKit could not create a surface')
-  const renderer = new SkiaRenderer(ck, surface)
-  await renderer.loadFonts()
-  return { ck, renderer }
+/** Runs `job` with a renderer that measures text while the document is laid out, then frees it. */
+export async function withMeasuringRenderer<T>(
+  job: (renderer: SkiaRenderer) => Promise<T>
+): Promise<T> {
+  const renderer = await createOffscreenRenderer(await getCanvasKit())
+  if (!renderer) throw new Error('CanvasKit could not create a surface')
+  try {
+    return await job(renderer)
+  } finally {
+    renderer.destroy()
+  }
 }
 
 /** Runs `build` with Inter loaded and text measured by `renderer`, as demo layout needs. */
@@ -97,8 +100,9 @@ export function buildDemoGraph(renderer: SkiaRenderer): Promise<SceneGraph> {
 
 /** The demo document as `.fig` bytes, as `/demo` opens it. */
 export async function buildDemoDocument(): Promise<Uint8Array> {
-  const { ck, renderer } = await measuringRenderer()
-  const graph = await buildDemoGraph(renderer)
-  await drawShaderStills(graph)
-  return exportFigFile(graph, { ck, renderer })
+  return withMeasuringRenderer(async (renderer) => {
+    const graph = await buildDemoGraph(renderer)
+    await drawShaderStills(graph)
+    return exportFigFile(graph, { ck: renderer.ck, renderer })
+  })
 }

@@ -54,6 +54,30 @@ const EVENT_DESCRIPTIONS: {
   donate_clicked: {
     description: 'The donation page was opened; whether a donation followed is not known.',
     properties: { source: 'Where: the question the app asks, the File menu, or Settings.' }
+  },
+  campaign_shown: {
+    description: 'One of our messages, such as an offer to try OpenPencil Cloud, was shown.',
+    properties: {
+      campaign:
+        'Which of our messages, by the name the server gave it; only names it still serves are kept.',
+      placement: 'Where it showed: the corner prompt, a Settings tab, or the share dialog.'
+    }
+  },
+  campaign_dismissed: {
+    description: 'One of our messages was closed or put off with Not now.',
+    properties: {
+      campaign:
+        'Which of our messages, by the name the server gave it; only names it still serves are kept.',
+      placement: 'Where it showed: the corner prompt, a Settings tab, or the share dialog.'
+    }
+  },
+  campaign_acted: {
+    description: "One of our messages' button was followed; what happened after is not known.",
+    properties: {
+      campaign:
+        'Which of our messages, by the name the server gave it; only names it still serves are kept.',
+      placement: 'Where it showed: the corner prompt, a Settings tab, or the share dialog.'
+    }
   }
 }
 

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
+import { CONFIRM_PAGE } from '@/app/cloud-portal/navigation'
 import PortalConsoleLayout from '@/components/cloud-portal/layout/PortalConsoleLayout.vue'
 import { PORTAL_SECTION_ICONS } from '@/components/cloud-portal/layout/sections'
 import AccessTokensSection from '@/components/cloud-portal/sections/AccessTokensSection.vue'
@@ -16,15 +17,25 @@ import AdminPeopleSection from '@/components/cloud-portal/sections/AdminPeopleSe
 import AdminPersonSection from '@/components/cloud-portal/sections/AdminPersonSection.vue'
 import AdminReportsSection from '@/components/cloud-portal/sections/AdminReportsSection.vue'
 import AdminRequestsSection from '@/components/cloud-portal/sections/AdminRequestsSection.vue'
+import ConnectedAppsSection from '@/components/cloud-portal/sections/ConnectedAppsSection.vue'
+import NotificationsSection from '@/components/cloud-portal/sections/NotificationsSection.vue'
 import PlanSection from '@/components/cloud-portal/sections/PlanSection.vue'
 import ProfileSection from '@/components/cloud-portal/sections/ProfileSection.vue'
 import SecuritySection from '@/components/cloud-portal/sections/SecuritySection.vue'
 import SessionsSection from '@/components/cloud-portal/sections/SessionsSection.vue'
 import type { PortalSection } from '@/components/cloud-portal/types'
 
-const ACCOUNT_SECTIONS = ['profile', 'plan', 'security', 'sessions', 'tokens'] as const
+const ACCOUNT_SECTIONS = [
+  'profile',
+  'plan',
+  'notifications',
+  'security',
+  'sessions',
+  'tokens',
+  'apps'
+] as const
 /** Every section, and a few people's pages, stay loaded while others are shown. */
-const SECTIONS_KEPT = 12
+const SECTIONS_KEPT = 14
 const ADMIN_SECTIONS = [
   'overview',
   'requests',
@@ -49,7 +60,10 @@ function isAdminSection(value: unknown): value is AdminSectionId {
 const portal = usePortal()
 const route = useRoute()
 const router = useRouter()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const planMessages = useMessages('cloud/portal/plan')
+const tokenMessages = useMessages('cloud/portal/tokens')
+const appMessages = useMessages('cloud/portal/apps')
 const waiting = ref(0)
 const openReports = ref(0)
 const peopleTotal = ref<number | null>(null)
@@ -81,11 +95,17 @@ const sections = computed<PortalSection[]>(() => {
           {
             id: 'plan',
             icon: PORTAL_SECTION_ICONS.plan,
-            label: value.plan,
+            label: planMessages.value.plan,
             group: value.sectionAccount
           }
         ]
       : []),
+    {
+      id: 'notifications',
+      icon: PORTAL_SECTION_ICONS.notifications,
+      label: value.notifications,
+      group: value.sectionAccount
+    },
     {
       id: 'security',
       icon: PORTAL_SECTION_ICONS.security,
@@ -101,9 +121,20 @@ const sections = computed<PortalSection[]>(() => {
     {
       id: 'tokens',
       icon: PORTAL_SECTION_ICONS.tokens,
-      label: value.accessTokens,
+      label: tokenMessages.value.accessTokens,
       group: value.sectionAccount
-    }
+    },
+    // Only a server that accepts apps has any connected.
+    ...(portal.discovery.capabilities.apps
+      ? [
+          {
+            id: 'apps',
+            icon: PORTAL_SECTION_ICONS.apps,
+            label: appMessages.value.connectedApps,
+            group: value.sectionAccount
+          }
+        ]
+      : [])
   ]
   if (!admin.value) return account
   return [
@@ -163,10 +194,12 @@ const description = computed(() => {
   const value = messages.value
   const descriptions: Record<SectionId, string | null> = {
     profile: value.profileDescription({ host: portal.host }),
-    plan: value.planDescription,
+    plan: planMessages.value.planDescription,
     security: value.securityDescription({ host: portal.host }),
+    notifications: value.notificationsDescription,
     sessions: value.sessionsDescription,
-    tokens: value.accessTokensDescription,
+    tokens: tokenMessages.value.accessTokensDescription,
+    apps: appMessages.value.connectedAppsDescription,
     overview: portal.host,
     requests: value.accessRequestsDescription,
     reports: value.reportsDescription,
@@ -203,6 +236,26 @@ async function signOut() {
 }
 
 onMounted(() => void refreshWaiting())
+
+// The server's pages ask an administrator's session to have proved its second step lately; one
+// that has not, and has a second step, proves it first and comes back.
+const adminPage = computed(() => personId.value !== null || isAdminSection(active.value))
+watch(
+  () => adminPage.value && route.fullPath,
+  async (page, _, onCleanup) => {
+    if (!page) return
+    // An answer that comes after the person moved on, or left the console, decides nothing.
+    let current = true
+    onCleanup(() => {
+      current = false
+    })
+    const mfa = (await portal.api.mfaStatus().catch(() => null))?.mfa
+    if (current && route.fullPath === page && mfa?.required && mfa.enabled) {
+      await router.replace({ path: CONFIRM_PAGE, query: { redirect: page } })
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -227,8 +280,10 @@ onMounted(() => void refreshWaiting())
       <ProfileSection v-if="active === 'profile'" />
       <PlanSection v-else-if="active === 'plan'" />
       <SecuritySection v-else-if="active === 'security'" />
+      <NotificationsSection v-else-if="active === 'notifications'" />
       <SessionsSection v-else-if="active === 'sessions'" />
       <AccessTokensSection v-else-if="active === 'tokens'" />
+      <ConnectedAppsSection v-else-if="active === 'apps'" />
       <AdminOverviewSection v-else-if="active === 'overview'" @open="select" />
       <AdminRequestsSection v-else-if="active === 'requests'" @changed="refreshWaiting" />
       <AdminReportsSection v-else-if="active === 'reports'" @changed="refreshWaiting" />
@@ -238,6 +293,7 @@ onMounted(() => void refreshWaiting())
         :key="personId"
         :user-id="personId"
         @back="select('people')"
+        @deleted="(userId) => userId === personId && select('people')"
       />
       <AdminPeopleSection
         v-else-if="active === 'people'"

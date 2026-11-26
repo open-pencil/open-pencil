@@ -1,5 +1,9 @@
 import * as v from 'valibot'
 
+import type { DesignResourceFetch } from '@open-pencil/dom-css'
+import { createMutex } from '@open-pencil/std/async'
+import { DEADLINE_MS, untilAborted } from '@open-pencil/std/timing'
+
 import { imageStandIn, rasterImageSize } from './images'
 import { captureSchema, requestsSchema, type HTMLEngineCapture } from './schema'
 
@@ -27,29 +31,13 @@ type EngineExports = Record<(typeof EXPORTS)[number], (...args: number[]) => num
 }
 
 /** A resource the document asked for, as the host fetched it: its final URL and its bytes. */
-export interface HTMLEngineResource {
-  url: string
-  bytes: Uint8Array
-  /** The resource's media type, such as `text/css`, when the host knows it. */
-  contentType?: string
-}
-
-/**
- * Fetches a stylesheet, font, or image the document refers to; null when it cannot. `signal`
- * aborts when the request runs out of time, and the layout goes on without it.
- */
-export type HTMLEngineFetch = (
-  url: string,
-  signal: AbortSignal
-) => Promise<HTMLEngineResource | null>
-
 export interface HTMLEngineLayoutOptions {
   /** The document's URL, which relative URLs in it resolve against. */
   baseURL?: string
   /** In whole CSS pixels. */
   viewport: { width: number; height: number }
   /** Answers the document's requests; without one, every request fails. */
-  fetch?: HTMLEngineFetch
+  fetch?: DesignResourceFetch
   /** How long one request may take before the layout goes on without it. */
   requestTimeoutMs?: number
 }
@@ -58,7 +46,7 @@ export interface HTMLEngineLayoutOptions {
  * How long a request may take by default: as long as the browser runtime waits for an image, so
  * one request that never ends cannot hold this layout, or the ones queued behind it, forever.
  */
-const REQUEST_TIMEOUT_MS = 10_000
+const REQUEST_TIMEOUT_MS = DEADLINE_MS.request
 
 /** The largest viewport side the module takes, as a signed 32-bit length. */
 const MAX_VIEWPORT = 0x7fffffff
@@ -71,12 +59,9 @@ function checkViewport({ width, height }: HTMLEngineLayoutOptions['viewport']): 
   }
 }
 
-/** A fetch that gives up, answering null, once `signal` aborts. */
+/** A fetch that gives up, answering null, once it fails or `signal` aborts. */
 function withDeadline<T>(request: Promise<T>, signal: AbortSignal): Promise<T | null> {
-  const expired = new Promise<null>((resolve) => {
-    signal.addEventListener('abort', () => resolve(null), { once: true })
-  })
-  return Promise.race([request.catch(() => null), expired])
+  return untilAborted(request, signal).catch(() => null)
 }
 
 /** Blitz's wasm-bindgen imports, which no capture calls: they trap with their name instead. */
@@ -142,7 +127,7 @@ export class HTMLEngine {
   readonly #exports: EngineExports
   readonly #encoder = new TextEncoder()
   readonly #decoder = new TextDecoder()
-  #queue: Promise<unknown> = Promise.resolve()
+  #layouts = createMutex()
 
   private constructor(exports: EngineExports) {
     this.#exports = exports
@@ -275,8 +260,6 @@ export class HTMLEngine {
 
   /** Lays the document out once every resource it asks for is answered, and captures it. */
   layout(html: string, options: HTMLEngineLayoutOptions): Promise<HTMLEngineCapture> {
-    const run = this.#queue.then(() => this.#layout(html, options))
-    this.#queue = run.catch(() => undefined)
-    return run
+    return this.#layouts.run(() => this.#layout(html, options))
   }
 }

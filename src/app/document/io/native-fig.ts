@@ -15,7 +15,7 @@ export function installNativeFigArchives(): void {
     body.set(parts.kiwiData, parts.schemaDeflated.byteLength)
     const headers: Record<string, string> = {
       'x-fig-schema-length': String(parts.schemaDeflated.byteLength),
-      'x-fig-board': String(parts.kind === 'board')
+      'x-fig-kind': parts.kind
     }
     if (parts.figKiwiVersion !== undefined) headers['x-fig-version'] = String(parts.figKiwiVersion)
     if (parts.compressionLevel !== undefined) {

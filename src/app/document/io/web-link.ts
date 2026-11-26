@@ -5,6 +5,8 @@
 // redirect. Nothing else is reachable: no `http:`, no `file:`, no other extension.
 import { omit } from 'es-toolkit'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { clamp, searchLinkedNode } from '@/app/document/io/deep-link'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { openBrowserFileFromURL } from '@/app/shell/menu/files'
@@ -68,7 +70,7 @@ export async function openWebLink(
   try {
     await io.open(target.file)
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorMessage(error)
     // Host, status text and filename all come from the link: clamp both halves.
     actions.notify(
       messages.openFileFailed({ name: clamp(target.file.host), error: clamp(detail) }),

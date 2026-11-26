@@ -1,4 +1,5 @@
 import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import { applyFigGraphEdits } from '#core/kiwi/fig/population/edits'
@@ -89,7 +90,7 @@ async function answerArchiveRequest(request: ArchiveRequest): Promise<void> {
     respond({
       type: 'archive-error',
       requestId,
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage(error)
     })
   }
 }
@@ -132,7 +133,7 @@ function handleRequest(request: FigSessionRequest): void {
         request.type === 'populate' || request.type === 'load-components'
           ? request.requestId
           : undefined,
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage(error)
     })
   }
 }
@@ -163,6 +164,6 @@ self.onmessage = async (event: MessageEvent<FigSessionOpenRequest>) => {
       mainThreadArchive ? [mainThreadArchive] : []
     )
   } catch (error) {
-    respond({ type: 'graph', error: error instanceof Error ? error.message : String(error) })
+    respond({ type: 'graph', error: errorMessage(error) })
   }
 }

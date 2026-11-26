@@ -1,4 +1,4 @@
-import { releaseTagSchema } from '#release/version'
+import { isNightlyVersion, releaseVersionSchema } from '#release/version'
 import * as v from 'valibot'
 
 /**
@@ -59,9 +59,21 @@ export interface DesktopAsset {
   signed: boolean
 }
 
-/** Required OpenPencil release outputs, not a discovery or packaging implementation. */
+/**
+ * What a nightly bundles: every format but the MSI, whose version must be numbers only, so
+ * Windows nightlies install and update through NSIS. Tauri drops the formats a platform lacks.
+ */
+export const NIGHTLY_BUNDLES = ['app', 'dmg', 'nsis', 'appimage', 'deb', 'rpm'] as const
+
+/**
+ * Required OpenPencil release outputs, not a discovery or packaging implementation. A nightly's
+ * files say `nightly` where a release's say the version, so the rolling release keeps the same
+ * download links from one night to the next and the download page can link to them.
+ */
 export function desktopAssets(target: DesktopTarget, version: string): DesktopAsset[] {
-  v.parse(releaseTagSchema, `v${version}`)
+  const nightly = isNightlyVersion(version)
+  if (!nightly) v.parse(releaseVersionSchema, version)
+  const label = nightly ? 'nightly' : version
 
   if (target.endsWith('apple-darwin')) {
     const arch = target.startsWith('aarch64') ? 'aarch64' : 'x64'
@@ -69,7 +81,7 @@ export function desktopAssets(target: DesktopTarget, version: string): DesktopAs
     return [
       {
         source: `OpenPencil_${version}_${arch}.dmg`,
-        name: `OpenPencil_${version}_${arch}.dmg`,
+        name: `OpenPencil_${label}_${arch}.dmg`,
         updaterKeys: [],
         signed: false
       },
@@ -84,16 +96,19 @@ export function desktopAssets(target: DesktopTarget, version: string): DesktopAs
   if (target.endsWith('windows-msvc')) {
     const arch = target.startsWith('aarch64') ? 'arm64' : 'x64'
     const platform = target.startsWith('aarch64') ? 'windows-aarch64' : 'windows-x86_64'
+    const nsis = {
+      source: `OpenPencil_${version}_${arch}-setup.exe`,
+      name: `OpenPencil_${label}_${arch}-setup.exe`,
+      // Without an MSI, a nightly's NSIS installer also answers the platform's own updater key.
+      updaterKeys: nightly ? [platform, `${platform}-nsis`] : [`${platform}-nsis`],
+      signed: true
+    }
+    if (nightly) return [nsis]
     return [
-      {
-        source: `OpenPencil_${version}_${arch}-setup.exe`,
-        name: `OpenPencil_${version}_${arch}-setup.exe`,
-        updaterKeys: [`${platform}-nsis`],
-        signed: true
-      },
+      nsis,
       {
         source: `OpenPencil_${version}_${arch}_en-US.msi`,
-        name: `OpenPencil_${version}_${arch}_en-US.msi`,
+        name: `OpenPencil_${label}_${arch}_en-US.msi`,
         updaterKeys: [platform, `${platform}-msi`],
         signed: true
       }
@@ -102,19 +117,19 @@ export function desktopAssets(target: DesktopTarget, version: string): DesktopAs
   return [
     {
       source: `OpenPencil_${version}_amd64.AppImage`,
-      name: `OpenPencil_${version}_amd64.AppImage`,
+      name: `OpenPencil_${label}_amd64.AppImage`,
       updaterKeys: ['linux-x86_64', 'linux-x86_64-appimage'],
       signed: true
     },
     {
       source: `OpenPencil_${version}_amd64.deb`,
-      name: `OpenPencil_${version}_amd64.deb`,
+      name: `OpenPencil_${label}_amd64.deb`,
       updaterKeys: ['linux-x86_64-deb'],
       signed: true
     },
     {
       source: `OpenPencil-${version}-1.x86_64.rpm`,
-      name: `OpenPencil-${version}-1.x86_64.rpm`,
+      name: `OpenPencil-${label}-1.x86_64.rpm`,
       updaterKeys: ['linux-x86_64-rpm'],
       signed: true
     }

@@ -23,10 +23,15 @@ const { width, height } = useElementSize(host)
 // The frames of the canvas this island is drawn over, or of its editor outside any canvas.
 const frames = useShaderFrames(useEditor())
 
-function draw(source: CanvasImageSource) {
+function draw(source: CanvasImageSource | null) {
   const target = canvas.value
   const context = target?.getContext('2d')
   if (!target || !context) return
+  // Its player stopped: the still frame underneath shows again.
+  if (!source) {
+    context.clearRect(0, 0, target.width, target.height)
+    return
+  }
   const ratio = window.devicePixelRatio || 1
   const w = Math.max(1, Math.round(width.value * ratio))
   const h = Math.max(1, Math.round(height.value * ratio))

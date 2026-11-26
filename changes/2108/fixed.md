@@ -1,1 +1,0 @@
-- Design JSX draws an inline `<svg>` and an `<Icon>` at the size their layer takes: `width` and `height` scale the artwork as `w` and `h` do, an `<svg>` accepts `width="20"` as its markup writes it, and an icon sized with `w` and `h` fits its box (#2078).

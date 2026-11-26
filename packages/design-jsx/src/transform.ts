@@ -1,6 +1,8 @@
 import { parse } from 'acorn'
 import { transform } from 'sucrase'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 const options = {
   transforms: ['typescript', 'jsx'] as Array<'typescript' | 'jsx'>,
   jsxPragma: '__h',
@@ -59,7 +61,7 @@ function transformProgram(source: string, withLines: boolean): DesignJSXProgram 
   try {
     code = transformBody(trimmed, withLines)
   } catch (error) {
-    throw new Error(`${RULE}: ${error instanceof Error ? error.message : String(error)}`, {
+    throw new Error(`${RULE}: ${errorMessage(error)}`, {
       cause: error
     })
   }

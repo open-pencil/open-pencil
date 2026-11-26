@@ -3,13 +3,15 @@ import * as v from 'valibot'
 
 /**
  * Where an account stands: it may use the server, waits for an administrator, was refused or had
- * its access taken back, or has to accept the server's current terms first.
+ * its access taken back, has to prove its second step in this session, as after signing in through
+ * a linked account such as Google, or has to accept the server's current terms first.
  */
 export const cloudAccountStateSchema = v.picklist([
   'active',
   'pending',
   'rejected',
   'revoked',
+  'two-step',
   'terms'
 ])
 export const cloudIdentitySchema = v.object({
@@ -29,23 +31,64 @@ export const cloudAccountStatusResponseSchema = v.object({
 /** Accepting the server's terms: the version the person read, which must be the current one. */
 export const cloudTermsAcceptanceSchema = v.object({ version: v.pipe(v.string(), v.minLength(1)) })
 
-export const cloudAuthenticationProviderSchema = v.picklist(['credential', 'google', 'apple'])
+/**
+ * The providers a person can sign in with besides a password, which this editor has buttons for,
+ * in the order it shows them. Every list of providers in Cloud derives from this one.
+ */
+export const CLOUD_SOCIAL_PROVIDERS = ['google', 'apple', 'github'] as const
+export const cloudSocialProviderSchema = v.picklist(CLOUD_SOCIAL_PROVIDERS)
+export type CloudSocialProvider = v.InferOutput<typeof cloudSocialProviderSchema>
+/** Each provider's name, as its owner writes it in every language. */
+export const CLOUD_SOCIAL_PROVIDER_NAMES: Record<CloudSocialProvider, string> = {
+  google: 'Google',
+  apple: 'Apple',
+  github: 'GitHub'
+}
+export const cloudAuthenticationProviderSchema = v.picklist([
+  'credential',
+  ...CLOUD_SOCIAL_PROVIDERS
+])
 export const cloudAuthenticationMethodSchema = v.object({
   id: v.string(),
   provider: cloudAuthenticationProviderSchema,
   createdAt: v.string(),
   canUnlink: v.boolean()
 })
+
+/** Whether this editor knows `provider`, so a newer server's other providers can be left out. */
+export function isKnownSocialProvider(provider: string): provider is CloudSocialProvider {
+  return (CLOUD_SOCIAL_PROVIDERS as readonly string[]).includes(provider)
+}
+
+/** Whether `provider` is a way to sign in this editor knows: a password or a known provider. */
+export function isKnownAuthenticationProvider(
+  provider: string
+): provider is CloudAuthenticationProvider {
+  return provider === 'credential' || isKnownSocialProvider(provider)
+}
+
+/**
+ * A newer server may list a provider this editor has no words or button for: those entries are
+ * left out rather than failing the whole response, and anything else malformed still fails.
+ */
 export const cloudAuthenticationMethodsResponseSchema = v.object({
-  methods: v.array(cloudAuthenticationMethodSchema),
-  availableSocialProviders: v.array(v.picklist(['google', 'apple']))
+  methods: v.pipe(
+    v.array(v.looseObject({ provider: v.string() })),
+    v.filterItems((method) => isKnownAuthenticationProvider(method.provider)),
+    v.array(cloudAuthenticationMethodSchema)
+  ),
+  availableSocialProviders: v.pipe(
+    v.array(v.string()),
+    v.filterItems(isKnownSocialProvider),
+    v.array(cloudSocialProviderSchema)
+  )
 })
 export const cloudPasswordChangeSchema = v.object({
   currentPassword: v.string(),
   newPassword: v.string()
 })
 export const cloudSocialLinkSchema = v.object({
-  provider: v.picklist(['google', 'apple']),
+  provider: cloudSocialProviderSchema,
   callbackURL: v.pipe(v.string(), v.url())
 })
 export const cloudSocialLinkResponseSchema = v.object({ url: v.pipe(v.string(), v.url()) })
@@ -57,6 +100,7 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'last_authentication_method',
   'session_not_fresh',
   'authentication_method_failed',
+  'code_invalid',
   'email_unchanged',
   'email_change_unavailable',
   'current_session',
@@ -101,6 +145,17 @@ export const cloudPasskeyDeleteSchema = v.object({ id: v.string() })
  * changes how the account is reached, makes other tokens, or reaches administration.
  */
 export const CLOUD_ACCESS_TOKEN_PREFIX = 'opc_'
+
+/**
+ * What a token may do with documents, for personal access tokens and apps alike: `read` lists
+ * and downloads, `write` also creates, saves, shares, and deletes. Writing includes reading.
+ */
+export const CLOUD_TOKEN_SCOPES = ['documents:read', 'documents:write'] as const
+export type CloudTokenScope = (typeof CLOUD_TOKEN_SCOPES)[number]
+export const cloudTokenScopeSchema = v.picklist(CLOUD_TOKEN_SCOPES)
+/** The scopes a personal access token is made with: reading alone, or reading and writing. */
+export const CLOUD_ACCESS_TOKEN_ACCESS = ['read', 'write'] as const
+export type CloudAccessTokenAccess = (typeof CLOUD_ACCESS_TOKEN_ACCESS)[number]
 export const CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH = 64
 export const CLOUD_ACCESS_TOKEN_MAX_DAYS = 365
 export const cloudAccessTokenSchema = v.object({
@@ -110,7 +165,8 @@ export const cloudAccessTokenSchema = v.object({
   start: v.nullable(v.string()),
   createdAt: v.string(),
   expiresAt: v.nullable(v.string()),
-  lastUsedAt: v.nullable(v.string())
+  lastUsedAt: v.nullable(v.string()),
+  access: v.picklist(CLOUD_ACCESS_TOKEN_ACCESS)
 })
 export const cloudAccessTokensResponseSchema = v.object({
   tokens: v.array(cloudAccessTokenSchema)
@@ -127,7 +183,8 @@ export const cloudAccessTokenCreateSchema = v.object({
     v.integer(),
     v.minValue(1),
     v.maxValue(CLOUD_ACCESS_TOKEN_MAX_DAYS)
-  )
+  ),
+  access: v.picklist(CLOUD_ACCESS_TOKEN_ACCESS)
 })
 /** A new token, the only time the whole of it is shown. */
 export const cloudAccessTokenCreatedResponseSchema = v.object({
@@ -206,21 +263,27 @@ export const cloudEmailChangeSchema = v.object({
 })
 
 /** How a sign-in was made: the method it used, or the desktop app's approved code. */
-export const cloudSignInMethodSchema = v.picklist([
+const SIGN_IN_METHODS = [
   'password',
-  'google',
-  'apple',
+  ...CLOUD_SOCIAL_PROVIDERS,
   'passkey',
   'two-step',
   'email-link',
   'desktop',
   'other'
-])
+] as const
+export const cloudSignInMethodSchema = v.picklist(SIGN_IN_METHODS)
+/** A method a newer server names that this editor does not know reads as `other`; a value that is
+ * not a method name at all still fails. */
+const signInMethodResponseSchema = v.pipe(
+  v.string(),
+  v.transform((method) => (v.is(cloudSignInMethodSchema, method) ? method : ('other' as const)))
+)
 export const cloudAccountSessionSchema = v.object({
   id: v.string(),
   /** The session this request was made with. */
   current: v.boolean(),
-  method: v.nullable(cloudSignInMethodSchema),
+  method: v.nullable(signInMethodResponseSchema),
   ipAddress: v.nullable(v.string()),
   /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
   browser: v.nullable(v.string()),
@@ -235,7 +298,7 @@ export const cloudAccountSessionsResponseSchema = v.object({
 export const cloudSessionRevokeSchema = v.object({ sessionId: v.pipe(v.string(), v.minLength(1)) })
 export const cloudSignInSchema = v.object({
   id: v.string(),
-  method: cloudSignInMethodSchema,
+  method: signInMethodResponseSchema,
   ipAddress: v.nullable(v.string()),
   /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
   browser: v.nullable(v.string()),

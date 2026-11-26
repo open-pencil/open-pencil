@@ -1,15 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import { unusedAuthAdapter } from '#cloud-tests/helpers/auth'
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
-import {
-  servicesTokenClaimsSchema,
-  servicesTokenSchema,
-  CLOUD_SERVICES_JWKS_PATH,
-  CLOUD_SERVICES_TOKEN_AUDIENCE
-} from '#cloud/contract'
+import { servicesTokenClaimsSchema, CLOUD_SERVICES_TOKEN_AUDIENCE } from '#cloud/contract'
 import {
   CLOUD_FEATURE_KEYS,
   CloudConfigError,
@@ -19,6 +15,7 @@ import {
   StaticEntitlementSource,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import {
   createLocalJWKSet,
   exportPKCS8,
@@ -93,13 +90,10 @@ async function testApp(options: {
     entitlementSource: new StaticEntitlementSource(options.entitlements ?? {}),
     servicesSigningKey: await loadServicesSigningKey(config)
   })
-  const requestToken = () =>
-    app.request('/api/services/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workspaceId })
-    })
-  return { runtime, app, workspaceId, requestToken }
+  const client = testClient(app)
+  const api = contractClient(app)
+  const requestToken = () => api.session.servicesToken({ body: { workspaceId } })
+  return { runtime, client, workspaceId, requestToken }
 }
 
 describe('Service tokens', () => {
@@ -112,12 +106,10 @@ describe('Service tokens', () => {
       }
     })
     try {
-      const response = await context.requestToken()
-      expect(response.status).toBe(200)
-      const { token, expiresAt } = await responseJSON(response, servicesTokenSchema)
+      const { token, expiresAt } = await context.requestToken()
 
       const keys = await responseJSON(
-        await context.app.request(CLOUD_SERVICES_JWKS_PATH),
+        await context.client['.well-known']['jwks.json'].$get(),
         jwksSchema
       )
       const { payload, protectedHeader } = await jwtVerify(token, createLocalJWKSet(keys), {
@@ -141,7 +133,7 @@ describe('Service tokens', () => {
   test('a workspace without the entitlement is refused, and one with no allowance gets null', async () => {
     const refused = await testApp({ actor: member })
     try {
-      expect((await refused.requestToken()).status).toBe(403)
+      expect(await outcome(refused.requestToken())).toMatchObject({ status: 403 })
     } finally {
       await refused.runtime.close()
     }
@@ -150,9 +142,9 @@ describe('Service tokens', () => {
       entitlements: { [CLOUD_FEATURE_KEYS.cloudServices]: true }
     })
     try {
-      const { token } = await responseJSON(await unlimited.requestToken(), servicesTokenSchema)
+      const { token } = await unlimited.requestToken()
       const keys = await responseJSON(
-        await unlimited.app.request(CLOUD_SERVICES_JWKS_PATH),
+        await unlimited.client['.well-known']['jwks.json'].$get(),
         jwksSchema
       )
       const { payload } = await jwtVerify(token, createLocalJWKSet(keys))
@@ -168,7 +160,7 @@ describe('Service tokens', () => {
       entitlements: { [CLOUD_FEATURE_KEYS.cloudServices]: true }
     })
     try {
-      expect((await context.requestToken()).status).toBe(404)
+      expect(await outcome(context.requestToken())).toMatchObject({ status: 404 })
     } finally {
       await context.runtime.close()
     }
@@ -181,8 +173,8 @@ describe('Service tokens', () => {
       entitlements: { [CLOUD_FEATURE_KEYS.cloudServices]: true }
     })
     try {
-      expect((await context.app.request(CLOUD_SERVICES_JWKS_PATH)).status).toBe(404)
-      expect((await context.requestToken()).status).toBe(404)
+      expect((await context.client['.well-known']['jwks.json'].$get()).status).toBe(404)
+      expect(await outcome(context.requestToken())).toMatchObject({ status: 404 })
     } finally {
       await context.runtime.close()
     }

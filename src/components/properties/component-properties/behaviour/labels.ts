@@ -1,13 +1,13 @@
 import { computed } from 'vue'
 
 import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph/behaviours'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 /** Translated names of behaviour kinds, values, parts, and interaction states. */
 export function useBehaviourLabels() {
-  const { panels } = useI18n()
+  const behaviours = useMessages('panels/behaviours')
   return computed(() => {
-    const p = panels.value
+    const p = behaviours.value
     const kinds: Record<BehaviourKind, { label: string; description: string }> = {
       button: { label: p.behaviourButton, description: p.behaviourButtonDescription },
       textField: { label: p.behaviourTextField, description: p.behaviourTextFieldDescription },

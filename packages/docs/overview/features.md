@@ -38,7 +38,7 @@ Context-sensitive Design | Code | AI | Lint tabs:
 Skia (CanvasKit WASM) — the same rendering engine as Figma:
 
 - Gradient fills (linear, radial, angular, diamond)
-- Image fills with scale modes
+- Image fills with scale modes and adjustments (exposure, contrast, saturation, temperature, tint, highlights, shadows)
 - Effects with per-node caching
 - Arc data (partial ellipses, donuts)
 - Viewport culling and paint reuse
@@ -132,7 +132,7 @@ P2P via WebRTC — no server required. Share a link and edit together.
 
 **Desktop** — Tauri v2, ~7 MB. macOS (signed & notarized), Windows, Linux. Native menus, offline, autosave.
 
-**Web** — runs at [app.openpencil.dev](https://app.openpencil.dev), installable as a PWA on mobile with touch-optimized UI.
+**Web** — runs at [cloud.openpencil.dev](https://cloud.openpencil.dev), installable as a PWA on mobile with touch-optimized UI.
 
 **Homebrew:**
 

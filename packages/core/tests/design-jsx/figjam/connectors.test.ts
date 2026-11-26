@@ -239,7 +239,7 @@ return <Frame name="Flow" w={800} h={400}>
       '<Frame name="Flow" w={400} h={200}><Frame name="A" w={50} h={50} /><Connector from={5} to="A" stroke="nope" strokeWidth={0} /></Frame>'
     )
     expect(result.warnings).toEqual([
-      'Invalid from 5 on <connector> is ignored; expected a layer name, a ref(), or { x, y }.',
+      'Invalid from 5 on <connector> is ignored; expected a layer name, a ref(), { id }, or { x, y }.',
       'Invalid stroke "nope" on <connector> is ignored; expected a colour.',
       'Invalid strokeWidth 0 on <connector> is ignored; expected >0.',
       '<Connector> from="5" names no layer.'

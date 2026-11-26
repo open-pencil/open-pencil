@@ -1,11 +1,11 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   createShapeWithText,
   SHAPE_WITH_TEXT_CORNER_RADIUS,
   SHAPE_WITH_TEXT_SIZE,
   shapeWithTextLabel
 } from '@open-pencil/scene-graph/generated'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { SHAPE_KIND } from '../enums'
 import { collectFillProps, collectStrokeProps } from '../export/paints'

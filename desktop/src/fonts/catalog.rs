@@ -2,14 +2,27 @@
 //! files the platform reports.
 
 use fontique::{Blob, Collection, CollectionOptions, FontInfo, FontStyle, FontWidth, SourceCache};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
-use super::names::{face_names, spelling, typographic_family, FaceNames};
+use super::names::{face_names, spelling, FaceNames};
 use super::style::{named_weight, names_weight, names_width, requested_face, style_name};
 
 struct Catalog {
     collection: Collection,
     cache: SourceCache,
+    /// What the fonts the collection lists name themselves, read once per collection.
+    scan: Option<Arc<Scan>>,
+    /// Counts the collections made, so a scan of one that was replaced is not kept.
+    generation: u64,
+}
+
+/// The installed families and the faces listed under another family, from one read of each
+/// face's names.
+pub struct Scan {
+    pub families: Vec<(String, Vec<ListedFace>)>,
+    pub elsewhere: Vec<ListedElsewhere>,
+    /// The collection the scan read, whose positions `elsewhere` holds.
+    generation: u64,
 }
 
 /// A face Windows lists under a family other than the one its font names, as it lists a variable
@@ -22,16 +35,21 @@ pub struct ListedElsewhere {
 }
 
 static CATALOG: OnceLock<Mutex<Catalog>> = OnceLock::new();
-static LISTED_ELSEWHERE: OnceLock<Vec<ListedElsewhere>> = OnceLock::new();
+
+fn system_collection() -> Collection {
+    Collection::new(CollectionOptions {
+        shared: false,
+        system_fonts: true,
+    })
+}
 
 fn with_catalog<T>(f: impl FnOnce(&mut Catalog) -> T) -> T {
     let catalog = CATALOG.get_or_init(|| {
         Mutex::new(Catalog {
-            collection: Collection::new(CollectionOptions {
-                shared: false,
-                system_fonts: true,
-            }),
+            collection: system_collection(),
             cache: SourceCache::default(),
+            scan: None,
+            generation: 0,
         })
     });
     let mut catalog = catalog
@@ -172,35 +190,100 @@ fn names_of(font: &FontInfo) -> FaceNames {
         .unwrap_or_default()
 }
 
-/// Visible family names with each face they list, by the names their fonts give them.
+/// Visible families with each face they list, by the names their fonts give them.
 pub fn families() -> Vec<(String, Vec<ListedFace>)> {
+    scan().families.clone()
+}
+
+/// Lists the system fonts again, as installed now: the next listing or load reads them anew.
+pub fn rescan() {
     with_catalog(|catalog| {
-        let names: Vec<String> = catalog
-            .collection
-            .family_names()
-            .filter(|name| !name.starts_with('.'))
-            .map(String::from)
-            .collect();
-        names
-            .into_iter()
-            .filter_map(|name| {
-                let family = catalog.collection.family_by_name(&name)?;
-                let mut faces: Vec<ListedFace> = Vec::new();
-                for font in family.fonts() {
-                    for face in listed_faces(&FaceTraits::of(font), &names_of(font)) {
-                        // An upright and an italic file may each name an instance "Bold".
-                        if !faces.iter().any(|listed| {
-                            spelling(&listed.style) == spelling(&face.style)
-                                && listed.italic == face.italic
-                        }) {
-                            faces.push(face);
-                        }
-                    }
-                }
-                Some((name, faces))
-            })
-            .collect()
+        catalog.collection = system_collection();
+        catalog.cache = SourceCache::default();
+        catalog.scan = None;
+        catalog.generation += 1;
+    });
+}
+
+/// The scan of the current collection. Each face's names are read after the catalog lock is
+/// let go, so faces keep loading meanwhile.
+fn scan() -> Arc<Scan> {
+    let listed = with_catalog(|catalog| match &catalog.scan {
+        Some(scan) => Err(scan.clone()),
+        None => Ok((catalog.generation, listed_families(&mut catalog.collection))),
+    });
+    let (generation, listed) = match listed {
+        Ok(listed) => listed,
+        Err(scan) => return scan,
+    };
+    let faces = listed
+        .into_iter()
+        .map(|(name, fonts)| {
+            let faces = fonts
+                .iter()
+                .map(|font| (FaceTraits::of(font), names_of(font)))
+                .collect();
+            (name, faces)
+        })
+        .collect();
+    let scan = Arc::new(Scan {
+        generation,
+        ..scan_of(faces)
+    });
+    with_catalog(|catalog| {
+        if catalog.generation != generation {
+            return scan;
+        }
+        catalog.scan.get_or_insert(scan).clone()
     })
+}
+
+/// The families by the names their fonts give them, and the faces listed under another family,
+/// in listed family name order, so a family's faces come in the same order on every launch.
+pub fn scan_of(mut listed: Vec<(String, Vec<(FaceTraits, FaceNames)>)>) -> Scan {
+    listed.sort_by(|a, b| a.0.cmp(&b.0));
+    let elsewhere = index_listed_elsewhere(listed.clone(), |(_, names)| names.family.clone());
+    Scan {
+        families: families_by_own_name(listed),
+        elsewhere,
+        generation: 0,
+    }
+}
+
+/// Faces grouped by the family their font names, as Figma lists them, else by the family the
+/// platform lists them under, in the order first listed. Windows lists a family by weight,
+/// width, and slant alone, so it lists each optical size of Segoe UI Variable as a family of its
+/// own ("Segoe UI Variable Display"), each holding the file's every named instance; the font
+/// names one family, "Segoe UI Variable", whose faces are those instances once each.
+pub fn families_by_own_name(
+    listed: Vec<(String, Vec<(FaceTraits, FaceNames)>)>,
+) -> Vec<(String, Vec<ListedFace>)> {
+    let mut families: Vec<(String, Vec<ListedFace>)> = Vec::new();
+    for (listed_name, fonts) in listed {
+        for (traits, names) in fonts {
+            let family = names.family.clone().unwrap_or_else(|| listed_name.clone());
+            let index = match families
+                .iter()
+                .position(|(name, _)| spelling(name) == spelling(&family))
+            {
+                Some(index) => index,
+                None => {
+                    families.push((family, Vec::new()));
+                    families.len() - 1
+                }
+            };
+            let faces = &mut families[index].1;
+            for face in listed_faces(&traits, &names) {
+                // An upright and an italic file may each name an instance "Bold".
+                if !faces.iter().any(|listed| {
+                    spelling(&listed.style) == spelling(&face.style) && listed.italic == face.italic
+                }) {
+                    faces.push(face);
+                }
+            }
+        }
+    }
+    families
 }
 
 /// The face of `family` that `style` names, as `choose_named_face` picks it: among the faces
@@ -214,12 +297,18 @@ pub fn load_face(family: &str, style: &str) -> Option<Face> {
             .unwrap_or_default();
         named_face(catalog, &listed, style)
     })
-    .or_else(|| {
-        let index = listed_elsewhere_index();
-        with_catalog(|catalog| {
-            let elsewhere = fonts_listed_elsewhere(catalog, index, family);
-            named_face(catalog, &elsewhere, style)
-        })
+    .or_else(|| loop {
+        let scan = scan();
+        // A rescan meanwhile lists other fonts at the positions the scan read: scan it again.
+        let found = with_catalog(|catalog| {
+            (catalog.generation == scan.generation).then(|| {
+                let elsewhere = fonts_listed_elsewhere(catalog, &scan.elsewhere, family);
+                named_face(catalog, &elsewhere, style)
+            })
+        });
+        if let Some(found) = found {
+            break found;
+        }
     })
 }
 
@@ -256,18 +345,6 @@ pub fn listed_elsewhere_of<'a>(
     index
         .iter()
         .filter(move |face| spelling(&face.family) == wanted)
-}
-
-/// Read from every font file once, after the catalog lock is let go, so faces listed under their
-/// own family keep loading while the files are read.
-fn listed_elsewhere_index() -> &'static [ListedElsewhere] {
-    LISTED_ELSEWHERE.get_or_init(|| {
-        let families = with_catalog(|catalog| listed_families(&mut catalog.collection));
-        index_listed_elsewhere(families, |font| {
-            font.load(None)
-                .and_then(|data| typographic_family(data.as_ref(), font.index()))
-        })
-    })
 }
 
 fn listed_families(collection: &mut Collection) -> Vec<(String, Vec<FontInfo>)> {
@@ -419,6 +496,7 @@ mod tests {
 
     fn named(style: &str) -> FaceNames {
         FaceNames {
+            family: None,
             style: Some(style.to_string()),
             instances: Vec::new(),
         }
@@ -467,6 +545,7 @@ mod tests {
     #[test]
     fn chooses_a_variable_face_by_one_of_its_instances() {
         let variable = FaceNames {
+            family: None,
             style: Some("Regular".to_string()),
             instances: vec![
                 NamedInstance {
@@ -487,6 +566,7 @@ mod tests {
     #[test]
     fn loads_a_variable_face_by_its_own_name_beside_its_instances() {
         let variable = FaceNames {
+            family: None,
             style: Some("Text".to_string()),
             instances: vec![NamedInstance {
                 name: "Display".to_string(),
@@ -502,6 +582,7 @@ mod tests {
     fn loads_the_font_the_listing_takes_a_name_from() {
         // An earlier variable font lists "Display" as an instance; a later font is named so.
         let variable = FaceNames {
+            family: None,
             style: Some("Text".to_string()),
             instances: vec![NamedInstance {
                 name: "Display".to_string(),
@@ -518,6 +599,7 @@ mod tests {
     #[test]
     fn keeps_a_variable_face_s_default_when_no_instance_names_it() {
         let variable = FaceNames {
+            family: None,
             style: Some("Text".to_string()),
             instances: vec![NamedInstance {
                 name: "Display".to_string(),
@@ -532,8 +614,100 @@ mod tests {
     }
 
     #[test]
+    fn one_scan_lists_families_and_the_faces_listed_under_another_family() {
+        let names = |family: Option<&str>, style: &str| FaceNames {
+            family: family.map(String::from),
+            ..named(style)
+        };
+        let scan = scan_of(vec![
+            (
+                "Sitka Text".to_string(),
+                vec![(face(400.0, false), names(Some("Sitka"), "Text"))],
+            ),
+            (
+                "Sitka Banner".to_string(),
+                vec![(face(400.0, false), names(Some("Sitka"), "Banner"))],
+            ),
+            (
+                "Arial".to_string(),
+                vec![(face(400.0, false), names(Some("Arial"), "Regular"))],
+            ),
+        ]);
+        let families: Vec<(&str, Vec<&str>)> = scan
+            .families
+            .iter()
+            .map(|(family, faces)| {
+                (
+                    family.as_str(),
+                    faces.iter().map(|face| face.style.as_str()).collect(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            families,
+            vec![
+                ("Arial", vec!["Regular"]),
+                ("Sitka", vec!["Banner", "Text"])
+            ]
+        );
+        assert_eq!(
+            scan.elsewhere,
+            vec![
+                listed("Sitka", "Sitka Banner", 0),
+                listed("Sitka", "Sitka Text", 0)
+            ]
+        );
+    }
+
+    #[test]
+    fn lists_faces_under_the_family_their_font_names_once_each() {
+        let variable = |listed: &str| {
+            let names = FaceNames {
+                family: Some("Segoe UI Variable".to_string()),
+                style: Some("Regular".to_string()),
+                instances: ["Bold Display", "Regular", "Light Small"]
+                    .iter()
+                    .map(|name| NamedInstance {
+                        name: name.to_string(),
+                        weight: None,
+                    })
+                    .collect(),
+            };
+            (listed.to_string(), vec![(face(400.0, false), names)])
+        };
+        let unnamed = (
+            "Plain Sans".to_string(),
+            vec![(face(400.0, false), named("Book"))],
+        );
+        let families = families_by_own_name(vec![
+            variable("Segoe UI Variable Display"),
+            unnamed,
+            variable("Segoe UI Variable Text"),
+        ]);
+        let listed: Vec<(String, Vec<String>)> = families
+            .into_iter()
+            .map(|(family, faces)| (family, faces.into_iter().map(|face| face.style).collect()))
+            .collect();
+        assert_eq!(
+            listed,
+            vec![
+                (
+                    "Segoe UI Variable".to_string(),
+                    vec![
+                        "Bold Display".to_string(),
+                        "Regular".to_string(),
+                        "Light Small".to_string()
+                    ]
+                ),
+                ("Plain Sans".to_string(), vec!["Book".to_string()]),
+            ]
+        );
+    }
+
+    #[test]
     fn lists_a_variable_face_by_its_instances_and_a_static_one_by_its_name() {
         let variable = FaceNames {
+            family: None,
             style: Some("Retina".to_string()),
             instances: vec![NamedInstance {
                 name: "Retina".to_string(),

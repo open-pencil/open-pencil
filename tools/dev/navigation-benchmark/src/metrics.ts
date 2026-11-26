@@ -1,4 +1,4 @@
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import type { Distribution, NavigationMetrics, NavigationRecordingFile, TraceEvent } from './types'
 

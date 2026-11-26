@@ -6,6 +6,7 @@ import { IS_CLOUD_SITE } from '@/constants'
 
 import { isCloudSiteServer, rememberCloudAccount } from '../servers/store'
 import { cloudServerFetch, forgetCloudConnection } from './connection'
+import { forgetCloudAccountCopies } from './forget'
 import { clearCloudSessionToken } from './token'
 
 export type CloudSignOutDependencies = {
@@ -20,7 +21,8 @@ const defaults: CloudSignOutDependencies = {
 
 /**
  * Ends the session on the server first, so a failed sign-out keeps the token to try again
- * rather than leaving a live session behind, then forgets it here. Signing out of the server
+ * rather than leaving a live session behind, then forgets it here, along with the account's recent
+ * documents and uploaded copies (`forgetCloudAccountCopies`). Signing out of the server
  * that serves this editor leaves it as a visit without an account would (`leaveAfterSignOut`).
  */
 export async function signOutOfCloud(
@@ -32,5 +34,10 @@ export async function signOutOfCloud(
   await dependencies.clear(serverId)
   rememberCloudAccount(serverId, null)
   forgetCloudConnection(serverId)
+  // The session is over either way. Recent is cleared first, and a copy this could not remove is
+  // listed only in its own account's workspaces.
+  await forgetCloudAccountCopies(serverId).catch((error: unknown) => {
+    console.warn('[Cloud] Could not forget the account on this device', error)
+  })
   if (IS_CLOUD_SITE && isCloudSiteServer(serverId)) leaveAfterSignOut(discovery.localEditor)
 }

@@ -1,6 +1,8 @@
 import { promiseTimeout, usePreferredReducedMotion } from '@vueuse/core'
 import { onScopeDispose, reactive, ref } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { EditorStore } from '@/app/editor/active-store'
 
 import type { EditorCommand } from './terminal-commands'
@@ -56,7 +58,7 @@ export function useTerminalSession(store: EditorStore, onProgress: () => void) {
       entry.output = await command.run(store)
     } catch (error) {
       entry.failed = true
-      entry.output = error instanceof Error ? error.message : String(error)
+      entry.output = errorMessage(error)
     } finally {
       busy.value = false
       onProgress()

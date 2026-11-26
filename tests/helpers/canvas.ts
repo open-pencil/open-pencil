@@ -1,14 +1,8 @@
 import type { Page, Locator } from '@playwright/test'
 
-import { OFFICIAL_CLOUD_URL } from '@/constants'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { CanvasPointer } from './canvas/pointer'
-
-/**
- * The app asks the official Cloud server whether Cloud is open yet and carries on without an
- * answer, so a request to it that fails is the network's, not the app's.
- */
-const OFFICIAL_CLOUD_ORIGIN = new URL(OFFICIAL_CLOUD_URL).origin
 
 export class CanvasHelper extends CanvasPointer {
   readonly page: Page
@@ -22,7 +16,6 @@ export class CanvasHelper extends CanvasPointer {
     page.on('pageerror', (err) => this.errors.push(err.message))
     page.on('console', (msg) => {
       if (msg.type() !== 'error') return
-      if (msg.location().url.startsWith(OFFICIAL_CLOUD_ORIGIN)) return
       this.errors.push(msg.text())
     })
   }
@@ -96,6 +89,37 @@ export class CanvasHelper extends CanvasPointer {
     )
   }
 
+  async setView(view: { panX: number; panY: number; zoom: number }) {
+    await this.page.evaluate((next) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) {
+        throw new Error('OpenPencil store not initialized')
+      }
+      Object.assign(store.state, next)
+      store.requestRepaint()
+    }, view)
+    await this.waitForRender()
+  }
+
+  async screenPositionOf(point: Vector): Promise<Vector> {
+    return this.page.evaluate((scenePoint) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) {
+        throw new Error('OpenPencil store not initialized')
+      }
+      const canvas = document.querySelector('[data-test-id="scene-canvas-element"]')
+      if (!canvas) {
+        throw new Error('scene canvas not found')
+      }
+      const box = canvas.getBoundingClientRect()
+      const { panX, panY, zoom } = store.state
+      return {
+        x: Math.round(box.x + panX + scenePoint.x * zoom),
+        y: Math.round(box.y + panY + scenePoint.y * zoom)
+      }
+    }, point)
+  }
+
   async screenshotCanvas() {
     return this.canvas.screenshot()
   }
@@ -162,6 +186,11 @@ export class CanvasHelper extends CanvasPointer {
   async redo() {
     await this.pressKey('Meta+Shift+z')
     await this.waitForRender()
+  }
+
+  /** As in a freshly opened document: nothing to undo yet. */
+  async clearHistory() {
+    await this.page.evaluate(() => window.openPencil?.getStore?.().undo.clear())
   }
 
   async selectAll() {

@@ -1,4 +1,4 @@
-import { randomIndex } from './random'
+import { randomIndex } from '@open-pencil/std/random'
 
 /** Figma reads both parts of a GUID as signed 32-bit integers and drops records beyond them. */
 const MAX_ID_SESSION = 0x7fffffff

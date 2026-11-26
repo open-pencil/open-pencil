@@ -6,12 +6,14 @@ import type { TransactionalEmailService } from '#cloud/server/email'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import type { Kysely } from 'kysely'
 
+import { DAY_MS } from '@open-pencil/std/timing'
+
 /**
  * How many reports one person, or guest, may file about one link in a day, and how many a link
  * may gather from everyone, since a guest names themselves and could otherwise flood the queue.
  */
 export const DOCUMENT_REPORT_BUDGET = {
-  windowMs: 24 * 60 * 60 * 1000,
+  windowMs: DAY_MS,
   perReporter: 3,
   perShare: 50
 } as const

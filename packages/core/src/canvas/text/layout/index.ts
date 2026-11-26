@@ -43,6 +43,23 @@ const MAX_DRAWN_FRACTIONS = 4
  * `Paragraph` queries the renderer, measurement, and the text editor ask, in indices of the
  * whole text and coordinates of the whole layout.
  */
+/**
+ * The line of `block` holding paragraph index `at`, or -1 past its text. Skia's own
+ * `getLineNumberAt` reads a UTF-8 index, while line metrics count UTF-16 units as text indices do.
+ */
+function lineNumberIn(block: TextLayoutBlock, at: number): number {
+  const lines = block.metrics
+  if (at >= (lines.at(-1)?.endIncludingNewline ?? 0)) return -1
+  let low = 0
+  let high = lines.length - 1
+  while (low < high) {
+    const middle = (low + high) >>> 1
+    if (at < lines[middle].endIncludingNewline) high = middle
+    else low = middle + 1
+  }
+  return low
+}
+
 export class TextLayout {
   private lines: LineMetrics[] = []
   private lineOffsets: number[] = []
@@ -287,12 +304,20 @@ export class TextLayout {
       const metrics = block.metrics
       const boxes = this.placements.get(block)?.boxes
       const blockEnd = block.start + block.length
+      // Skia starts the empty line after a closing line break at that break; a line starts where
+      // the one before it ends, its line break included.
+      let previousEnd = block.start
       for (const [lineIndex, line] of metrics.entries()) {
         const lastOfBlock = lineIndex === metrics.length - 1
         const endsAtNewline = lastOfBlock && blockIndex < visible.length - 1
         // A first-line indent is room before the text, not part of the line.
         const indent = lineIndex === 0 ? block.leadWidth : 0
         const box = boxes?.[lineIndex]
+        const startIndex = Math.max(previousEnd, this.toTextIndex(block, line.startIndex))
+        const endIncludingNewline = endsAtNewline
+          ? blockEnd + 1
+          : this.toTextIndex(block, line.endIncludingNewline)
+        previousEnd = endIncludingNewline
         this.lines.push({
           ...line,
           ...(box && {
@@ -300,12 +325,13 @@ export class TextLayout {
             descent: box.height - box.ascent,
             height: box.height
           }),
-          startIndex: this.toTextIndex(block, line.startIndex),
-          endIndex: this.toTextIndex(block, line.endIndex),
-          endExcludingWhitespaces: this.toTextIndex(block, line.endExcludingWhitespaces),
-          endIncludingNewline: endsAtNewline
-            ? blockEnd + 1
-            : this.toTextIndex(block, line.endIncludingNewline),
+          startIndex,
+          endIndex: Math.max(startIndex, this.toTextIndex(block, line.endIndex)),
+          endExcludingWhitespaces: Math.max(
+            startIndex,
+            this.toTextIndex(block, line.endExcludingWhitespaces)
+          ),
+          endIncludingNewline,
           isHardBreak: endsAtNewline || line.isHardBreak,
           width: block.empty ? 0 : line.width - indent,
           left: line.left + block.x + (block.rtl ? 0 : indent),
@@ -355,9 +381,7 @@ export class TextLayout {
     const found = this.blockAt(index)
     if (!found) return -1
     const { block, order } = found
-    const local = block.empty
-      ? 0
-      : block.paragraph.getLineNumberAt(index - block.start + block.lead)
+    const local = block.empty ? 0 : lineNumberIn(block, index - block.start + block.lead)
     const isLast = order === this.lineOffsets.length - 1
     if (local < 0) {
       if (isLast) return local

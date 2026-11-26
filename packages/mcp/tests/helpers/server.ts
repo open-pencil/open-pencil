@@ -9,7 +9,7 @@ import { executeRPCCommand } from '@open-pencil/core/rpc'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { randomHex } from '@open-pencil/std/random'
 
 const toolDescriptorSchema = v.looseObject({ name: v.string(), enabled: v.boolean() })
 

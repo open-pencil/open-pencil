@@ -15,7 +15,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { PenDocument, PenNumber, PenVariable, PenVariableScalar } from './schema'
 
-type Theme = Record<string, string>
+export type Theme = Record<string, string>
 
 /**
  * A document's variables, resolved in the theme of the layer being read. pen.dev themes are axes,

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import { useSelectionLayout } from '@open-pencil/vue/controls/selection-layout'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 const layout = useSelectionLayout()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>

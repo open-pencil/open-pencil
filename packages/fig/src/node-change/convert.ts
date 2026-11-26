@@ -17,6 +17,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
+import { isBlobIndexField } from './blobs'
 import { importCanvasGuides } from './canvas-guides'
 import { convertFigmaDerivedTextGlyphs } from './derived-text/glyphs'
 import { convertFontFeatures } from './font/features'
@@ -33,6 +34,7 @@ import {
   extractPluginRelaunchData,
   readNodeChangePluginData
 } from './plugin-data'
+import { extractSlideSettings } from './slides'
 import { extractNodeStatus } from './status'
 import { styleRefId } from './style/refs'
 import { importStyleRuns } from './style/runs'
@@ -95,7 +97,7 @@ import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 import type { FigVariableModeMap } from './variable/maps'
 
@@ -134,6 +136,9 @@ const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   CONNECTOR: 'CONNECTOR',
   SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT',
   STICKY: 'STICKY',
+  SLIDE: 'SLIDE',
+  SLIDE_ROW: 'SLIDE_ROW',
+  SLIDE_GRID: 'SLIDE_GRID',
   // Map to TEXT while retaining a format-neutral text path for rendering/editing.
   TEXT_PATH: 'TEXT'
 }
@@ -752,22 +757,27 @@ function withFiniteNumbers(nc: NodeChange): NodeChange {
     typeof value === 'number' &&
     !Number.isFinite(value) &&
     !(Number.isNaN(value) && MEANINGFUL_NAN_FIELDS.has(key))
-  if (!Object.entries(nc).some(([key, value]) => dropped(value, key))) return nc
+  // Nearly every record is finite, so look before copying: this runs once per layer.
+  const fields: Readonly<Record<string, unknown>> = nc
+  if (!Object.keys(fields).some((key) => dropped(fields[key], key))) return nc
   return omitBy(nc, dropped)
 }
+
+/** A node change as scene node properties, with the kind of node it makes. */
+export type NodeChangeProps = Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' }
 
 export function nodeChangeToProps(
   record: NodeChange,
   blobs: Uint8Array[],
   metadata: 'source' | 'occurrence' = 'source'
-): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
+): NodeChangeProps {
   const nc = withFiniteNumbers(record)
   const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
   const textPathData = convertTextPathData(nc, blobs)
 
-  const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
+  const props: NodeChangeProps = {
     nodeType,
     name: nc.name ?? nodeType,
     source:
@@ -827,6 +837,7 @@ export function nodeChangeToProps(
     variableModes: extractVariableModes(nc),
     exportSettings: extractExportSettings(nc),
     status: extractNodeStatus(nc),
+    slide: extractSlideSettings(nc),
     pluginData: extractPluginData(nc),
     librarySource: extractLibrarySource(nc),
     libraryLayerId: extractLibraryLayerId(nc),
@@ -1161,6 +1172,8 @@ function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['
     fig: {
       ...extractFigmaRawGeometry(nc, blobs),
       ...extractFigmaSymbolMetadata(nc, blobs),
+      // The reader fills these in once it knows which slots the instance's layers show.
+      hiddenSlotAssignments: [],
       layout: extractFigmaLayoutMetadata(nc)
     }
   }
@@ -1205,7 +1218,7 @@ function preserveFigmaPayloadBlobs(value: unknown, blobs: Uint8Array[]): unknown
   if (!value || typeof value !== 'object') return value
   const result: Record<string, unknown> = {}
   for (const [key, child] of Object.entries(value)) {
-    if ((key === 'commandsBlob' || key === 'vectorNetworkBlob') && typeof child === 'number') {
+    if (isBlobIndexField(key) && typeof child === 'number') {
       const blob: unknown = blobs[child]
       if (blob == null) {
         result[key] = child
@@ -1319,6 +1332,8 @@ export const FIGMA_RAW_NODE_FIELD_KEYS = [
   'codeSyntax',
   'lockMode',
   'slideThemeMap',
+  'objectAnimations',
+  'slideSpeakerNotes',
   'isSoftDeleted',
   'brushType',
   'scatterStrokeSettings',

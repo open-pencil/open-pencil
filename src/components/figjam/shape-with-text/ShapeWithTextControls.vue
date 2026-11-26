@@ -10,7 +10,7 @@ import type {
   FigJamTypeface
 } from '@open-pencil/scene-graph/figjam'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import { useFigJamMessages, useShapeMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { typefaceModel, useFigJamTextOptions } from '@/components/figjam/text-options'
@@ -49,8 +49,8 @@ const emit = defineEmits<{
   'update:typeface': [value: FigJamTypeface]
 }>()
 
-const shapes = useShapeMessages()
-const figjam = useFigJamMessages()
+const shapes = useMessages('shapes')
+const figjam = useMessages('figjam')
 const label = useShapeKindLabels()
 const { sizeOptions, typefaceOptions } = useFigJamTextOptions()
 const styles = tv(theme)()

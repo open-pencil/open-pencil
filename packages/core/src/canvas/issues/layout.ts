@@ -1,8 +1,11 @@
+import { sumBy } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { groupMarks, marksOverlap } from '#core/canvas/marks/group'
 import {
   ISSUE_EDGE_ARROW,
   ISSUE_EDGE_MERGE_GAP,
@@ -84,15 +87,6 @@ function intersect(a: Rect, b: Rect): Rect | null {
   const bottom = Math.min(a.y + a.height, b.y + b.height)
   if (right < x || bottom < y) return null
   return { x, y, width: right - x, height: bottom - y }
-}
-
-function overlaps(a: Rect, b: Rect, gap: number): boolean {
-  return (
-    a.x < b.x + b.width + gap &&
-    b.x < a.x + a.width + gap &&
-    a.y < b.y + b.height + gap &&
-    b.y < a.y + a.height + gap
-  )
 }
 
 /** The axis-aligned world box of a layer's rotated rectangle. */
@@ -212,6 +206,26 @@ interface Candidate {
   anchor: Vector
 }
 
+/**
+ * The marker for issues merged into one, led by the first: its layers in order, its severity, and
+ * the issues they all count.
+ */
+function mergedMarker(
+  items: readonly { marker: DesignIssueMarker }[],
+  key: string,
+  rect: Rect,
+  anchor: Vector
+): PlacedIssueMarker {
+  return {
+    key,
+    nodeIds: items.map((item) => item.marker.nodeId),
+    severity: items[0].marker.severity,
+    count: sumBy(items, (item) => item.marker.count),
+    rect,
+    anchor
+  }
+}
+
 interface EdgeCandidate {
   marker: DesignIssueMarker
   /** Where the ray toward the layer leaves the viewport. */
@@ -247,7 +261,7 @@ function edgePoint(
 function avoidObstacles(rect: Rect, area: Rect, obstacles: readonly Rect[]): Rect {
   let placed = rect
   for (const obstacle of obstacles) {
-    if (!overlaps(placed, obstacle, ISSUE_MARKER_GAP)) continue
+    if (!marksOverlap(placed, obstacle, ISSUE_MARKER_GAP)) continue
     const onHorizontalEdge =
       placed.y <= area.y + 1 || placed.y + placed.height >= area.y + area.height - 1
     if (onHorizontalEdge) {
@@ -296,38 +310,22 @@ function layoutEdgePins(
     const rect = { x: Math.round(x), y: Math.round(y), width, height: ISSUE_MARKER_HEIGHT }
     return avoidObstacles(rect, area, obstacles)
   }
-  type Pin = PlacedIssueMarker & { point: Vector; order: Map<string, [number, number]> }
-  const pins: Pin[] = []
-  for (const { marker, point, direction, distance } of candidates) {
-    const rect = rectAt(point, marker.count)
-    const pin = pins.find((existing) => overlaps(existing.rect, rect, ISSUE_EDGE_MERGE_GAP))
-    if (pin) {
-      pin.nodeIds.push(marker.nodeId)
-      pin.order.set(marker.nodeId, [SEVERITY_RANK[marker.severity], distance])
-      pin.count += marker.count
-      pin.rect = rectAt(pin.point, pin.count)
-      continue
-    }
-    pins.push({
-      key: `edge:${marker.nodeId}`,
-      nodeIds: [marker.nodeId],
-      severity: marker.severity,
-      count: marker.count,
-      rect,
-      anchor: point,
-      direction,
-      point,
-      order: new Map([[marker.nodeId, [SEVERITY_RANK[marker.severity], distance]]])
-    })
-  }
-  const rank = (order: Pin['order'], id: string) => order.get(id) ?? [0, 0]
-  return pins.map(({ point: _point, order, ...pin }) => ({
-    ...pin,
-    nodeIds: pin.nodeIds.toSorted((a, b) => {
-      const [severityA, distanceA] = rank(order, a)
-      const [severityB, distanceB] = rank(order, b)
-      return severityB - severityA || distanceA - distanceB
-    })
+  const groups = groupMarks(
+    candidates.map((candidate) => ({
+      item: candidate,
+      rect: rectAt(candidate.point, candidate.marker.count)
+    })),
+    ISSUE_EDGE_MERGE_GAP,
+    (items) =>
+      rectAt(
+        items[0].point,
+        sumBy(items, (item) => item.marker.count)
+      )
+  )
+  // Candidates arrive most severe first, then nearest, so each pin lists its layers that way.
+  return groups.map(({ items, rect }) => ({
+    ...mergedMarker(items, `edge:${items[0].marker.nodeId}`, rect, items[0].point),
+    direction: items[0].direction
   }))
 }
 
@@ -390,25 +388,18 @@ export function placeIssueMarkers(
     return { x: Math.round(x), y: Math.round(y), width, height: ISSUE_MARKER_HEIGHT }
   }
 
-  const placed: PlacedIssueMarker[] = []
-  for (const { marker, anchor } of candidates) {
-    const rect = rectAt(anchor, marker.count)
-    const target = placed.find((existing) => overlaps(existing.rect, rect, ISSUE_MARKER_GAP))
-    if (target) {
-      target.nodeIds.push(marker.nodeId)
-      target.count += marker.count
-      target.rect = rectAt(target.anchor, target.count)
-      continue
-    }
-    placed.push({
-      key: marker.nodeId,
-      nodeIds: [marker.nodeId],
-      severity: marker.severity,
-      count: marker.count,
-      rect,
-      anchor
-    })
-  }
+  const placed = groupMarks(
+    candidates.map((candidate) => ({
+      item: candidate,
+      rect: rectAt(candidate.anchor, candidate.marker.count)
+    })),
+    ISSUE_MARKER_GAP,
+    (items) =>
+      rectAt(
+        items[0].anchor,
+        sumBy(items, (item) => item.marker.count)
+      )
+  ).map(({ items, rect }) => mergedMarker(items, items[0].marker.nodeId, rect, items[0].anchor))
   const edgePins = layoutEdgePins(edgeCandidates, edgeArea, options.obstacles ?? [], measureText)
   return [...placed, ...edgePins]
 }

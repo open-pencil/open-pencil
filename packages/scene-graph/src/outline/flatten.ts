@@ -1,4 +1,5 @@
-import { appendAll } from '../arrays'
+import { appendAll } from '@open-pencil/std/arrays'
+
 import { cubicPoint } from '../cubic'
 import { GeometryCommand, readGeometryBlob } from '../geometry'
 import { buildChains } from '../paths/network'

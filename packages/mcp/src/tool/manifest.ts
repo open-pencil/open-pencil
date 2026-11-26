@@ -1,6 +1,6 @@
 import type { ToolCapability, ToolDef } from '@open-pencil/core/tools'
 import { ALL_TOOLS, toolChangesDocument, isToolExposed } from '@open-pencil/core/tools'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { ToolAvailability, ToolDescriptor, ToolEffect } from '#mcp/tool/metadata'
 
@@ -46,7 +46,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     {
       name: 'save_document',
       description:
-        'Save the current document to a .fig file, or a .jam file for a board. An optional path must stay inside the configured MCP root.',
+        'Save the current document to a .fig file, a .jam file for a board, or a .deck file for slides. An optional path must stay inside the configured MCP root.',
       effect: 'write',
       availability: 'default',
       capabilities: ['document:read', 'filesystem:write'],

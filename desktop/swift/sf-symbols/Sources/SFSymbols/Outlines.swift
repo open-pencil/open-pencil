@@ -7,12 +7,15 @@ struct Outline {
   var opacity: CGFloat
   /// The fill's lightness, which is what a soft mask reads.
   var gray: CGFloat
+  /// The fill's colour components, red, green, and blue, as the page sets them.
+  var color: [CGFloat]
 }
 
 /// What `q` saves and `Q` restores.
 private struct GraphicsState {
   var transform = CGAffineTransform.identity
   var gray: CGFloat = 0
+  var color: [CGFloat] = [0, 0, 0]
   var opacity: CGFloat = 1
   /// Where a soft mask hides what is drawn, cut out of every later fill.
   var knockout: CGPath?
@@ -44,7 +47,10 @@ private final class Reader {
   func fill(_ rule: CGPathFillRule) {
     var shape: CGPath = path.normalized(using: rule)
     if let knockout = state.knockout { shape = shape.subtracting(knockout) }
-    if !shape.isEmpty { outlines.append(Outline(path: shape, opacity: state.opacity, gray: state.gray)) }
+    if !shape.isEmpty {
+      outlines.append(
+        Outline(path: shape, opacity: state.opacity, gray: state.gray, color: state.color))
+    }
     path = CGMutablePath()
   }
 }
@@ -95,6 +101,9 @@ private func formOutlines(
 ) -> [Outline] {
   let nested = Reader()
   nested.state.transform = matrix(form).concatenating(transform)
+  // A form starts with the colour in effect where it is drawn, as PDF's graphics state does.
+  nested.state.gray = reader.state.gray
+  nested.state.color = reader.state.color
   guard let dictionary = CGPDFStreamGetDictionary(form) else { return [] }
   var resources: CGPDFDictionaryRef?
   CGPDFDictionaryGetDictionary(dictionary, "Resources", &resources)
@@ -191,7 +200,11 @@ private let operators: CGPDFOperatorTableRef = {
   on("F") { _, info in reader(info).fill(.winding) }
   on("f*") { _, info in reader(info).fill(.evenOdd) }
   // A soft mask's gray is all that matters: black hides, white shows.
-  on("g") { scanner, info in reader(info).state.gray = numbers(scanner, 1)[0] }
+  on("g") { scanner, info in
+    let reader = reader(info)
+    reader.state.gray = numbers(scanner, 1)[0]
+    reader.state.color = Array(repeating: reader.state.gray, count: 3)
+  }
   // A gray colour space sets one component, an RGB one three.
   on("sc") { scanner, info in
     let reader = reader(info)
@@ -199,8 +212,12 @@ private let operators: CGPDFOperatorTableRef = {
     var value: CGPDFReal = 0
     while CGPDFScannerPopNumber(scanner, &value) { n.insert(value, at: 0) }
     switch n.count {
-    case 1: reader.state.gray = n[0]
-    case 3: reader.state.gray = 0.2126 * n[0] + 0.7152 * n[1] + 0.0722 * n[2]
+    case 1:
+      reader.state.gray = n[0]
+      reader.state.color = [n[0], n[0], n[0]]
+    case 3:
+      reader.state.gray = 0.2126 * n[0] + 0.7152 * n[1] + 0.0722 * n[2]
+      reader.state.color = n
     default: break
     }
   }

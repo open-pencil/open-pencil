@@ -14,6 +14,7 @@ import type {
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
 } from './schema'
+import CommentNotification from './templates/CommentNotification.vue'
 import DocumentBlocked from './templates/DocumentBlocked.vue'
 import DocumentInvitation from './templates/DocumentInvitation.vue'
 import DocumentReport from './templates/DocumentReport.vue'
@@ -123,6 +124,18 @@ const EMAILS: {
   'document-report-decided': {
     component: DocumentReportDecided,
     subject: (payload, t) => t.reportDecidedSubject({ document: payload.documentName })
+  },
+  'comment-notification': {
+    component: CommentNotification,
+    subject: (payload, t) => {
+      const words = {
+        author: payload.authorName ?? t.commentSomeone,
+        document: payload.documentName
+      }
+      return payload.reason === 'mention'
+        ? t.commentMentionSubject(words)
+        : t.commentReplySubject(words)
+    }
   }
 }
 

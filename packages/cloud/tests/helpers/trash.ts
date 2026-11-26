@@ -1,7 +1,7 @@
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
-import { trashSchema, type WorkspaceRole } from '#cloud/contract'
+import type { WorkspaceRole } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -9,7 +9,6 @@ import {
   type CloudActor,
   type CloudErrorReporter
 } from '#cloud/server'
-import * as v from 'valibot'
 
 export const DAY_MS = 24 * 60 * 60_000
 
@@ -30,9 +29,6 @@ export const people = {
   bob: { userId: crypto.randomUUID(), email: 'bob@example.com', name: 'Bob' },
   carol: { userId: crypto.randomUUID(), email: 'carol@example.com', name: 'Carol' }
 } satisfies Record<string, CloudActor>
-
-const CreatedDocument = v.object({ document: v.object({ id: v.string() }) })
-const ListedDocuments = v.object({ documents: v.array(v.object({ id: v.string() })) })
 
 export type TrashAppOptions = {
   /** Bob and Carol join the workspace with these roles. */
@@ -62,6 +58,7 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
     resolveSession: async () => actor,
     reportError
   })
+  const api = contractClient(app)
   await runtime.database
     .insertInto('user')
     .values(
@@ -73,14 +70,7 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
       }))
     )
     .execute()
-  const workspace = await responseJSON(
-    await app.request('/api/workspaces', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Studio', slug: 'studio' })
-    }),
-    v.object({ workspace: v.object({ id: v.string() }) })
-  )
+  const workspace = await api.workspaces.create({ body: { name: 'Studio', slug: 'studio' } })
   const workspaceId = workspace.workspace.id
   for (const person of ['bob', 'carol'] as const) {
     const role = roles[person]
@@ -99,32 +89,26 @@ export async function trashApp({ roles = {}, purgeGraceMs, reportError }: TrashA
       actor = people[person]
     },
     async create(name: string): Promise<string> {
-      const created = await responseJSON(
-        await app.request(`/api/workspaces/${workspaceId}/documents`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        }),
-        CreatedDocument
-      )
-      return created.document.id
+      return (await api.documents.create({ params: { workspaceId }, body: { name } })).document.id
     },
     async remove(documentId: string) {
-      const response = await app.request(`/api/documents/${documentId}`, { method: 'DELETE' })
-      if (response.status !== 204) throw new Error(`Deleting answered ${response.status}`)
+      await api.documents.remove({ params: { documentId } })
     },
     async trash() {
-      return (await responseJSON(await app.request('/api/trash'), trashSchema)).documents
+      return (await api.documents.listTrash()).documents
     },
     async listed() {
-      const response = await app.request(`/api/workspaces/${workspaceId}/documents`)
-      return (await responseJSON(response, ListedDocuments)).documents.map((entry) => entry.id)
+      return (await api.documents.list({ params: { workspaceId } })).documents.map(
+        (entry) => entry.id
+      )
     },
+    /** How restoring the document ended: `'ok'`, or the refusal's status and code. */
     restore(documentId: string) {
-      return app.request(`/api/trash/${documentId}/restore`, { method: 'POST' })
+      return outcome(api.documents.restore({ params: { documentId } }))
     },
+    /** How deleting the document for good ended. */
     purge(documentId: string) {
-      return app.request(`/api/trash/${documentId}`, { method: 'DELETE' })
+      return outcome(api.documents.purge({ params: { documentId } }))
     },
     /** The workspace's recorded storage usage, in bytes. */
     async usage(): Promise<number> {

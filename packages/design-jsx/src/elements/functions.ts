@@ -2,6 +2,8 @@ import {
   node,
   type BaseProps,
   type EllipseProps,
+  type PolygonProps,
+  type StarProps,
   type VectorProps,
   type ComponentProps,
   type InstanceProps,
@@ -48,17 +50,11 @@ export function Line(props: BaseProps, ...children: Child[]): TreeNode {
   return withChildren('line', props, children)
 }
 
-export function Star(
-  props: BaseProps & { points?: number; innerRadius?: number },
-  ...children: Child[]
-): TreeNode {
+export function Star(props: BaseProps & StarProps, ...children: Child[]): TreeNode {
   return withChildren('star', props, children)
 }
 
-export function Polygon(
-  props: BaseProps & { pointCount?: number },
-  ...children: Child[]
-): TreeNode {
+export function Polygon(props: BaseProps & PolygonProps, ...children: Child[]): TreeNode {
   return withChildren('polygon', props, children)
 }
 

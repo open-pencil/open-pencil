@@ -1,14 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
 import { unusedAuthAdapter } from '#cloud-tests/helpers/auth'
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   billingTokenClaimsSchema,
-  billingTokenSchema,
   CLOUD_BILLING_TOKEN_AUDIENCE,
-  CLOUD_SERVICES_JWKS_PATH,
   CLOUD_SERVICES_TOKEN_AUDIENCE
 } from '#cloud/contract'
 import {
@@ -17,6 +16,7 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import {
   createLocalJWKSet,
   exportPKCS8,
@@ -63,19 +63,19 @@ async function testApp(options: { billing: boolean }) {
     resolveSession: async () => person,
     servicesSigningKey: await loadServicesSigningKey(config)
   })
-  const requestToken = () => app.request('/api/billing/token', { method: 'POST' })
-  return { runtime, app, requestToken }
+  const client = testClient(app)
+  const api = contractClient(app)
+  const requestToken = () => api.session.billingToken()
+  return { runtime, app, client, requestToken }
 }
 
 describe('Billing tokens', () => {
   test('name the signed-in account, for billing only, under the published keys', async () => {
     const context = await testApp({ billing: true })
     try {
-      const response = await context.requestToken()
-      expect(response.status).toBe(200)
-      const { token, expiresAt } = await responseJSON(response, billingTokenSchema)
+      const { token, expiresAt } = await context.requestToken()
       const keys = createLocalJWKSet(
-        await responseJSON(await context.app.request(CLOUD_SERVICES_JWKS_PATH), jwksSchema)
+        await responseJSON(await context.client['.well-known']['jwks.json'].$get(), jwksSchema)
       )
       const { payload } = await jwtVerify(token, keys, {
         issuer: 'http://localhost:8787',
@@ -98,7 +98,7 @@ describe('Billing tokens', () => {
   test('are not found where the deployment sells nothing', async () => {
     const context = await testApp({ billing: false })
     try {
-      expect((await context.requestToken()).status).toBe(404)
+      expect(await outcome(context.requestToken())).toMatchObject({ status: 404 })
     } finally {
       await context.runtime.close()
     }

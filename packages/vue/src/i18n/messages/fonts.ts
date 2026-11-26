@@ -1,7 +1,5 @@
 import { count, params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const fontsMessageDefaults = {
   settingsTitle: 'Font settings',
   issueFound: '1 font face is unavailable or substituted',
@@ -46,5 +44,3 @@ export const fontsMessageDefaults = {
   downloadedFontCacheClearFailed: 'Could not clear downloaded font cache.',
   clearCache: 'Clear cache'
 } as const
-
-export const fontsMessages = i18n('fonts', fontsMessageDefaults)

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import PortalNotice from '@/components/cloud-portal/auth/PortalNotice.vue'
 
 /** Where a verification link started in the editor lands: the editor finishes the sign-in. */
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 </script>
 
 <template>

@@ -7,7 +7,8 @@ import theme from '@/theme/figjam/swatches'
 /** A swatch for one colour of a palette, as sticky notes and shapes pick theirs. */
 export interface Swatch<T extends string> {
   value: T
-  hex: string
+  /** The swatch's color as CSS, shown in the document's profile. */
+  css: string
   label: string
 }
 
@@ -55,7 +56,7 @@ function pickNone() {
       :aria-label="swatch.label"
       :data-swatch="swatch.value"
       :class="styles({ active: !none?.active && swatch.value === selected }).swatch()"
-      :style="{ backgroundColor: swatch.hex }"
+      :style="{ backgroundColor: swatch.css }"
       @click="pick(swatch.value)"
     />
     <button

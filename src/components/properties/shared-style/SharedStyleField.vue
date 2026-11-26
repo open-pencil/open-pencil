@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SharedStyleKind } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useSharedStylePicker } from '@/components/properties/shared-style/useSharedStylePicker'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -9,7 +9,8 @@ import AppPickerField from '@/components/ui/select/AppPickerField.vue'
 
 const { kind, label } = defineProps<{ kind: SharedStyleKind; label: string }>()
 const { visible, value, options, update } = useSharedStylePicker(kind)
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 </script>
 
 <template>

@@ -4,11 +4,12 @@ import type { SessionUpdate, ToolCallUpdate } from '@agentclientprotocol/sdk/uns
 import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
-import { agentTurnUsage, buildCrashChunks, formatConnectionError } from '@/app/ai/transports/acp'
+import { formatConnectionError } from '@/app/ai/agents/acp/session'
+import { agentTurnUsage, buildCrashChunks } from '@/app/ai/transports/acp'
 import { classifyToolState } from '@/components/chat/tool/state'
 const TEXT_ID = 'text-1'
 

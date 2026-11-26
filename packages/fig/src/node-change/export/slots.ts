@@ -1,9 +1,10 @@
-import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
+import { DEFAULT_SLOT_CONTENT, type ComponentPropAssignment } from '#fig/instance-overrides/types'
 
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 
@@ -83,6 +84,25 @@ export function slotContentAssignment(
   markSlotContent(root)
   appendAll(sink, records)
   return { defID, varValue: slotContentValue(root.guid) }
+}
+
+/**
+ * The saved slot assignments of an instance whose content none of its layers shows, written back
+ * as the file had them unless the instance now writes that property itself or names another
+ * component, whose properties they may not belong to.
+ */
+export function hiddenSlotAssignments(
+  instance: SceneNode,
+  written: ReadonlyArray<{ defID?: GUID }>
+): ComponentPropAssignment[] {
+  if (instance.source.editedFields.includes('componentId')) return []
+  const shown = new Set(written.flatMap(({ defID }) => (defID ? [guidToString(defID)] : [])))
+  return (instance.source.fig.hiddenSlotAssignments as ComponentPropAssignment[]).flatMap(
+    (assignment) =>
+      assignment.defID && !shown.has(guidToString(assignment.defID))
+        ? [structuredClone(assignment)]
+        : []
+  )
 }
 
 /** A content frame holds the content; the binding that made its source a slot stays behind. */

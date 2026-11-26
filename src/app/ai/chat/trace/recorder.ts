@@ -1,6 +1,8 @@
 import { APICallError, asSchema } from 'ai'
 import type { StepResult, ToolSet, UIMessage } from 'ai'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { scrubDiagnosticText } from '@/app/diagnostics/scrub'
 
 import { fingerprint } from './fingerprint'
@@ -28,7 +30,7 @@ export interface RunRecording {
  */
 function traceError(error: unknown): TraceError {
   const name = error instanceof Error ? error.name : 'Error'
-  const message = scrubDiagnosticText(error instanceof Error ? error.message : String(error))
+  const message = scrubDiagnosticText(errorMessage(error))
   if (!APICallError.isInstance(error)) return { name, message }
   return {
     name,

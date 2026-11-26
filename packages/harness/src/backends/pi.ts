@@ -5,6 +5,8 @@ import type { HarnessAgentResumeSessionState, HarnessAgentSession } from '@ai-sd
 import { createJustBashSandbox } from '@ai-sdk/sandbox-just-bash'
 import type { TextStreamPart, ToolSet } from 'ai'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { HarnessSessionConfiguration, JSONValue } from '../protocol'
 import type { BackendEvent, BackendSession, HarnessBackend, HarnessResumeState } from './types'
 
@@ -88,7 +90,7 @@ function mapPart(part: TextStreamPart<ToolSet>): BackendEvent | undefined {
   if (part.type === 'error') {
     return {
       type: 'error',
-      message: part.error instanceof Error ? part.error.message : String(part.error)
+      message: errorMessage(part.error)
     }
   }
   return undefined

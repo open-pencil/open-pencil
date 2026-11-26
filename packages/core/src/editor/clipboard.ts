@@ -30,9 +30,11 @@ import {
   resolvePasteTarget
 } from './clipboard/paste/target'
 import { createClipboardPlacementActions, type ClipboardPlacement } from './clipboard/placement'
+import type { ClipboardNodeTree } from './clipboard/snapshot'
 import { createClipboardWebActions } from './clipboard/web'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
+import { fitEnclosingGroupsWithUndo } from './structure/group/bounds'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -58,6 +60,11 @@ export function duplicateNode(
 
 export function createClipboardActions(ctx: EditorContext) {
   function duplicateSelected(selectedNodes: SceneNode[]) {
+    // One undo step for the copies and any slot they claim.
+    ctx.undo.runBatch('Duplicate', () => duplicateLayers(selectedNodes))
+  }
+
+  function duplicateLayers(selectedNodes: SceneNode[]) {
     const prevSelection = new Set(ctx.state.selectedIds)
     const selectedSet = new Set(selectedNodes.map((n) => n.id))
     const stackIndex = (node: SceneNode) =>
@@ -105,13 +112,9 @@ export function createClipboardActions(ctx: EditorContext) {
     const stack = () => {
       for (const { id, parentId, index } of stacking) ctx.graph.insertChildAt(id, parentId, index)
     }
-    // Auto layout parents lay out again, so a copy joins the flow and a hugging parent resizes.
-    // Undo and redo do it too, because neither stores the parent's layout. Other parents, such
-    // as the page, are skipped: laying out a page reaches every frame on it.
-    const parentIds = uniq(parents).filter((id) => ctx.graph.getNode(id)?.layoutMode !== 'NONE')
-    const relayoutParents = () => {
-      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
-    }
+    // A copy joins its parent's flow and a hugging parent resizes, on undo and redo too, since
+    // neither stores the parent's layout.
+    const relayoutParents = () => ctx.runLayoutForParents(parents)
     stack()
 
     if (newRootIds.length > 0) {
@@ -240,11 +243,11 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   function pasteOpenPencilNodes(
-    nodes: Array<SceneNode & { children?: SceneNode[] }>,
+    nodes: Array<ClipboardNodeTree>,
     placement: ClipboardPlacement,
     images: Map<string, Uint8Array>,
     applied: AppliedBoundPaints,
-    dependencies: Array<SceneNode & { children?: SceneNode[] }> = [],
+    dependencies: Array<ClipboardNodeTree> = [],
     cursorPos?: Vector,
     options: PasteOptions = {}
   ) {
@@ -254,7 +257,7 @@ export function createClipboardActions(ctx: EditorContext) {
 
     const created: string[] = []
     const copiedIds = new Map<string, string>()
-    const createNodeTree = (source: SceneNode & { children?: SceneNode[] }, parentId: string) => {
+    const createNodeTree = (source: ClipboardNodeTree, parentId: string) => {
       const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
       const node = ctx.graph.createNode(source.type, parentId, {
         ...structuredClone(rest),
@@ -408,11 +411,7 @@ export function createClipboardActions(ctx: EditorContext) {
     )
     for (const entry of entries) entry.subtree = snapshotSubtree(ctx.graph, entry.id)
 
-    const relayoutParents = () => {
-      for (const parentId of new Set(entries.map((entry) => entry.parentId))) {
-        ctx.runLayoutForNode(parentId)
-      }
-    }
+    const relayoutParents = () => ctx.runLayoutForParents(entries.map((entry) => entry.parentId))
 
     const prevSelection = new Set(ctx.state.selectedIds)
     for (const { id } of entries) ctx.graph.deleteNode(id)
@@ -433,6 +432,12 @@ export function createClipboardActions(ctx: EditorContext) {
         ctx.setSelectedIds(prevSelection)
       }
     })
+    // Groups shrink to the layers left in them, and one left empty goes, in the same undo step,
+    // which `deleteNodes` batches.
+    fitEnclosingGroupsWithUndo(
+      ctx,
+      entries.map((entry) => entry.parentId)
+    )
     ctx.setSelectedIds(new Set(selectionAfter))
   }
 

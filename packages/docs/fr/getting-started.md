@@ -2,7 +2,11 @@
 
 ## Version web
 
-OpenPencil fonctionne directement dans le navigateur et ne nécessite aucune installation. Ouvrez [app.openpencil.dev](https://app.openpencil.dev) pour commencer à créer.
+OpenPencil fonctionne directement dans le navigateur et ne nécessite aucune installation. Ouvrez [cloud.openpencil.dev](https://cloud.openpencil.dev) pour commencer à créer.
+
+::: tip Anciennement app.openpencil.dev
+L’application web a déménagé de app.openpencil.dev vers cloud.openpencil.dev. Les fichiers que vous gardiez dans le navigateur là-bas restent sur [app.openpencil.dev](https://app.openpencil.dev) jusqu’à ce que cette adresse redirige ici : ouvrez-la pour les enregistrer dans Cloud ou les télécharger.
+:::
 
 Si vous souhaitez développer votre propre produit avec OpenPencil plutôt que vous limiter à l'application par défaut, consultez la section [Automatisation](/developers/) et la documentation du [Vue SDK](/developers/sdk/).
 

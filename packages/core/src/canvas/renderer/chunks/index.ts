@@ -1,7 +1,7 @@
 import RBush from 'rbush'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { appendAll, maxOf, minOf } from '@open-pencil/std/arrays'
 
 import { backdropReach, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 

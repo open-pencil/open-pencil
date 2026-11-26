@@ -1,3 +1,5 @@
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { FigmaAPI } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 import { storeImage } from '#core/figma-api/images'
@@ -73,7 +75,7 @@ async function downloadPhoto(
   try {
     results = await provider.search(request.query, { perPage, orientation, targetDim })
   } catch (err) {
-    return { id: request.id, error: err instanceof Error ? err.message : String(err) }
+    return { id: request.id, error: errorMessage(err) }
   }
 
   if (results.length === 0) return { id: request.id, error: `No photos for "${request.query}"` }
@@ -86,7 +88,7 @@ async function downloadPhoto(
   } catch (err) {
     return {
       id: request.id,
-      error: `Download: ${err instanceof Error ? err.message : String(err)}`
+      error: `Download: ${errorMessage(err)}`
     }
   }
 }
@@ -118,7 +120,7 @@ export async function applyPhotos(
       ]
     } catch (error) {
       // One target that refuses its photo, such as a library's, leaves the others theirs.
-      return { id: request.id, error: error instanceof Error ? error.message : String(error) }
+      return { id: request.id, error: errorMessage(error) }
     }
     applied.push(photo)
     return {

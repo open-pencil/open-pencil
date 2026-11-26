@@ -229,6 +229,36 @@ describe('exportAsync', () => {
     expect([jpg[0], jpg[1]]).toEqual([0xff, 0xd8])
   })
 
+  test("passes the export color profile to the image export, the document's for DOCUMENT", async () => {
+    const figma = createAPI()
+    const profiles: unknown[] = []
+    figma.exportImage = (ids, options) => {
+      profiles.push(options.colorSpace)
+      return headlessRenderNodes(
+        graphOf(figma),
+        options.pageId ?? figma.currentPageId,
+        ids,
+        options
+      )
+    }
+    const rect = figma.createRectangle()
+    for (const colorProfile of ['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'] as const) {
+      await rect.exportAsync({ format: 'PNG', colorProfile })
+    }
+    expect(profiles).toEqual([undefined, 'srgb', 'display-p3'])
+  })
+
+  test("writes SVG in the requested color profile, the document's by default", async () => {
+    const figma = createAPI()
+    graphOf(figma).documentColorSpace = 'display-p3'
+    const rect = figma.createRectangle()
+    rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }]
+    expect(await rect.exportAsync({ format: 'SVG_STRING' })).toContain('color(display-p3 1 0 0)')
+    const srgb = await rect.exportAsync({ format: 'SVG_STRING', colorProfile: 'SRGB' })
+    expect(srgb).not.toContain('display-p3')
+    expect(srgb).toMatch(/fill="#[0-9A-F]{6}"/)
+  })
+
   test('exports a layer that draws nothing as one blank pixel, and refuses it as a vector', async () => {
     const figma = createAPI()
     const codec = createCanvasKitRasterCodec(await getCanvasKit())

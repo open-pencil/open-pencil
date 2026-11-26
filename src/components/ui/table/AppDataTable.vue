@@ -10,11 +10,12 @@ import AppTableHead from './AppTableHead.vue'
 import AppTableHeader from './AppTableHeader.vue'
 import AppTablePlaceholder from './AppTablePlaceholder.vue'
 import AppTableRow from './AppTableRow.vue'
-import { tableColumnMeta } from './columns'
+import { tableColumnMeta, type TableColumnMeta } from './columns'
 
 /**
  * A TanStack table drawn with the table parts: each column renders its own header and cells, and
- * its `meta` (`TableColumnMeta`) gives their classes; `hidden` leaves columns out. Before its first
+ * its `meta` gives their classes, read by `columnMeta` (`TableColumnMeta` itself unless a table
+ * gives its own reading, as console tables give theirs); `hidden` leaves columns out. Before its first
  * rows load it shows placeholders in its columns, and while newer rows load it keeps the old ones.
  */
 const {
@@ -22,7 +23,8 @@ const {
   label,
   hidden = [],
   loading = false,
-  loadingLabel
+  loadingLabel,
+  columnMeta = tableColumnMeta
 } = defineProps<{
   table: Table<Features, Row>
   /** What the table lists, for assistive technology. */
@@ -31,6 +33,8 @@ const {
   loading?: 'first' | 'refresh' | false
   /** What assistive technology announces while the table loads, such as “Loading…”. */
   loadingLabel?: string
+  /** Reads a column's `meta` into its classes. */
+  columnMeta?: (meta: unknown) => TableColumnMeta
 }>()
 defineSlots<{ empty?: () => unknown; footer?: () => unknown }>()
 
@@ -49,7 +53,7 @@ const rows = computed(() =>
 )
 const columns = computed(() =>
   (headers.value.at(-1)?.headers ?? []).map((header) => {
-    const meta = tableColumnMeta(header.column.columnDef.meta)
+    const meta = columnMeta(header.column.columnDef.meta)
     return { id: header.column.id, class: meta.class, actions: meta.actions }
   })
 )
@@ -63,8 +67,8 @@ const columns = computed(() =>
           v-for="header in group.headers"
           :key="header.id"
           :colspan="header.colSpan"
-          :label-hidden="tableColumnMeta(header.column.columnDef.meta).actions"
-          :class="tableColumnMeta(header.column.columnDef.meta).class"
+          :label-hidden="columnMeta(header.column.columnDef.meta).actions"
+          :class="columnMeta(header.column.columnDef.meta).class"
         >
           <FlexRender v-if="!header.isPlaceholder" :header="header" />
         </AppTableHead>
@@ -76,7 +80,7 @@ const columns = computed(() =>
         <AppTableCell
           v-for="cell in cells"
           :key="cell.id"
-          :class="tableColumnMeta(cell.column.columnDef.meta).class"
+          :class="columnMeta(cell.column.columnDef.meta).class"
         >
           <FlexRender :cell="cell" />
         </AppTableCell>

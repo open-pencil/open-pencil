@@ -144,3 +144,80 @@ describe('reconcileRenderedLayers', () => {
     expect([link?.connectorStart?.nodeId, link?.connectorEnd?.nodeId]).toEqual([card?.id, copy?.id])
   })
 })
+
+describe('reconcileRenderedLayers with keepChildren', () => {
+  const card: Layer = {
+    type: 'FRAME',
+    name: 'Card',
+    width: 100,
+    children: [
+      { type: 'TEXT', name: 'Title' },
+      { type: 'FRAME', name: 'Body', children: [{ type: 'RECTANGLE', name: 'Image' }] }
+    ]
+  }
+
+  test('updates a kept layer and leaves its children alone', () => {
+    const graph = new SceneGraph()
+    const before = build(graph, card)
+    const body = children(graph, before)[1]
+    const image = children(graph, body.id)[0]
+    const after = build(graph, {
+      type: 'FRAME',
+      name: 'Card',
+      width: 200,
+      children: [
+        { type: 'TEXT', name: 'Title' },
+        { type: 'FRAME', name: 'Body', width: 50 }
+      ]
+    })
+    const keptBody = children(graph, after)[1]
+
+    reconcileRenderedLayers(graph, [before], [after], [keptBody.id])
+
+    expect(graph.getNode(before)?.width).toBe(200)
+    expect(graph.getNode(body.id)?.width).toBe(50)
+    expect(children(graph, body.id).map((node) => node.id)).toEqual([image.id])
+    expect(graph.getNode(after)).toBeUndefined()
+  })
+
+  test('keeps a kept root layer’s children', () => {
+    const graph = new SceneGraph()
+    const before = build(graph, card)
+    const childIds = children(graph, before).map((node) => node.id)
+    const after = build(graph, { type: 'FRAME', name: 'Card', width: 300 })
+
+    reconcileRenderedLayers(graph, [before], [after], [after])
+
+    expect(graph.getNode(before)?.width).toBe(300)
+    expect(children(graph, before).map((node) => node.id)).toEqual(childIds)
+  })
+
+  test('refuses a kept layer that pairs with none, before changing anything', () => {
+    const graph = new SceneGraph()
+    const before = build(graph, card)
+    const after = build(graph, {
+      type: 'FRAME',
+      name: 'Card',
+      width: 200,
+      children: [
+        { type: 'TEXT', name: 'Title' },
+        { type: 'TEXT', name: 'Body' }
+      ]
+    })
+    const keptBody = children(graph, after)[1]
+
+    expect(() => reconcileRenderedLayers(graph, [before], [after], [keptBody.id])).toThrow(
+      'keepChildren on "Body" matches no existing layer'
+    )
+    expect(graph.getNode(before)?.width).toBe(100)
+    expect(children(graph, before).map((node) => node.name)).toEqual(['Title', 'Body'])
+  })
+
+  test('refuses a kept layer with nothing to reconcile against', () => {
+    const graph = new SceneGraph()
+    const after = build(graph, { type: 'FRAME', name: 'Card' })
+    expect(() => reconcileRenderedLayers(graph, [], [after], [after])).toThrow(
+      'keepChildren on "Card"'
+    )
+  })
+})

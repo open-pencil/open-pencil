@@ -1,12 +1,12 @@
 import { isEqual, omitBy, pick } from 'es-toolkit'
 
 import type { ArcData, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
 import { counterAxisSpacingOf, layoutSizing } from '@open-pencil/scene-graph/layout'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { BLEND_MODE, TEXT_ALIGN, TEXT_ALIGN_VERTICAL, TEXT_CASE, TEXT_DECORATION } from '../enums'
 import { textLengthJSX } from '../overrides/text'

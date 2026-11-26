@@ -1,3 +1,4 @@
+import type { Campaign } from '#feedback/contract'
 import type {
   D1Database,
   Fetcher,
@@ -72,4 +73,6 @@ export type FeedbackEnv = {
 export interface FeedbackServices {
   fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
   now: () => Date
+  /** The campaigns pings answer with; `src/campaigns/catalog.ts` unless a test passes its own. */
+  campaigns?: readonly Campaign[]
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
@@ -18,7 +18,7 @@ const open = defineModel<boolean>('open', { default: false })
 const name = defineModel<string>('name', { default: '' })
 const emit = defineEmits<{ create: [name: string] }>()
 
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const trimmed = computed(() => name.value.trim())
 </script>
 

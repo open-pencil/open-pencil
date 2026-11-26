@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted, useTemplateRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import {
@@ -17,7 +17,9 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
-const { ai, collaboration, common } = useI18n()
+const ai = useMessages('ai')
+const collaboration = useMessages('collaboration')
+const common = useMessages('common')
 const editing = defineModel<boolean>('editing', { default: false })
 const editingProfileId = ref<string>()
 const editor = useTemplateRef('editor')
@@ -114,6 +116,8 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
             </AppButton>
           </template>
 
+          <!-- A campaign's note, such as an offer of Cloud's AI to someone without a key. -->
+          <slot name="campaign" />
           <div class="flex flex-col gap-1.5" data-test-id="settings-model-list">
             <AppActionRow
               v-for="profile in profiles"

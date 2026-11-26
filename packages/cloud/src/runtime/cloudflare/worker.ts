@@ -30,6 +30,7 @@ import { cloudflareRayId } from './logging'
 import { inMaintenance, maintenanceResponse } from './maintenance'
 import { createCloudflareRelayObject, relayFor, relayRoute } from './relay'
 import { assetSiteFiles } from './site'
+import { provideXMLParser } from './xml'
 
 function emailTransport({ config }: PreparedCloudflareCloud, env: CloudflareCloudEnvironment) {
   if (config.emailTransport !== 'cloudflare') return undefined
@@ -73,6 +74,7 @@ function cloudServices(
   const queued = createTransactionalEmailService(database, {
     encryptionSecret: config.authSecret,
     from: config.emailFrom ?? '',
+    replyTo: config.emailReplyTo,
     transport
   })
   // Mail is sent once the request is done rather than by a polling worker, so sign-in links
@@ -164,6 +166,7 @@ export function createCloudflareCloud(
   configSource: string,
   { relayJurisdiction }: CloudflareCloudOptions = {}
 ) {
+  provideXMLParser()
   const { prepare, reporter } = cloudflareCloudSetup(configSource)
   const relay = (env: CloudflareCloudEnvironment, documentId: string) =>
     relayFor(env, documentId, relayJurisdiction)
@@ -198,12 +201,19 @@ export function createCloudflareCloud(
             runInBackground(relay(c.env, documentId).closeDocument(documentId)),
           onDocumentVersionsChanged: (documentId) =>
             runInBackground(relay(c.env, documentId).announceVersions(documentId)),
+          onDocumentCommentsChanged: (documentId, threadId) =>
+            runInBackground(relay(c.env, documentId).announceComments(documentId, threadId)),
+          runInBackground,
           reportError: services.reporter,
           forwardedRequestId: cloudflareRayId
         })
         return await createCloudServer(app, {
           site: assetSiteFiles(c.env.ASSETS),
           indexingPolicy: config.indexingPolicy,
+          publicURL: config.publicURL,
+          embedding: config.embeddingEnabled
+            ? { allowedOrigins: config.embeddingOrigins }
+            : undefined,
           reportError: services.reporter
         }).fetch(c.req.raw)
       } finally {

@@ -3,10 +3,10 @@ import { afterEach, expect, test } from 'bun:test'
 import type { Channel } from '@tauri-apps/api/core'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { installAgentAdapter, lookupAgents } from '@/app/ai/agents/setup/native'
-import { createDeferred } from '@/app/runtime/deferred'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 

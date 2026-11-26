@@ -1,3 +1,5 @@
+import { errorMessage } from '@open-pencil/std/errors'
+
 import type { SandboxRunRequest, SandboxRunResult } from '@/app/code/sandbox/schema'
 import type { DesignJSXHelperDescriptor } from '@/app/code/sandbox/types'
 import { validateStructuredData } from '@/app/code/sandbox/validate'
@@ -123,6 +125,6 @@ export function runDesignJSX({
     validateStructuredData(runtime.collections, limits, validateStructuredData(value, limits))
     return { id, ok: true, value, collections: runtime.collections }
   } catch (error) {
-    return { id, ok: false, error: error instanceof Error ? error.message : String(error) }
+    return { id, ok: false, error: errorMessage(error) }
   }
 }

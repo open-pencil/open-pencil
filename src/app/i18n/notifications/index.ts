@@ -45,6 +45,10 @@ export const notificationMessageDefaults = {
   savingDocument: 'Saving document…',
   operationFailed: params('Operation failed: {error}'),
   saveFailedRetry: 'Retry save',
+  autosaveFailed: params('Could not save “{name}”: {error}'),
+  saveFailedTitle: params('Could not save “{name}”'),
+  notifySaveFailed: 'Failed saves',
+  notifySaveFailedHint: 'An open document could not be saved automatically.',
   fileChangedOnDisk: params(
     '“{name}” changed on disk. Your unsaved changes are kept; saving replaces the file.'
   ),

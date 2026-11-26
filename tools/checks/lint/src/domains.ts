@@ -1,5 +1,7 @@
 import { noHandRolledColor, noHardcodedColorConstants } from '#lint/rules/data/color.ts'
 import { noHandRolledDataURLRule } from '#lint/rules/data/data-url.ts'
+import { noProviderIdChecks } from '#lint/rules/data/provider-kind.ts'
+import { noHandRolledStdHelpers } from '#lint/rules/data/std-helpers.ts'
 import {
   noDirectGraphEmitterSubscriptions,
   noDirectOpenPencilBrowserStore,
@@ -79,7 +81,9 @@ export const domains = {
   data: {
     'no-hand-rolled-color': noHandRolledColor,
     'no-hand-rolled-data-url': noHandRolledDataURLRule,
-    'no-hardcoded-color-constants': noHardcodedColorConstants
+    'no-hand-rolled-std-helpers': noHandRolledStdHelpers,
+    'no-hardcoded-color-constants': noHardcodedColorConstants,
+    'no-provider-id-checks': noProviderIdChecks
   },
   types: {
     'no-inline-named-types': noInlineNamedTypes,

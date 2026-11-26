@@ -1,6 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import { colorToHex8 } from '@open-pencil/scene-graph/color'
 import {
   createSticky,
   isWideSticky,
@@ -9,6 +8,7 @@ import {
   stickySublayers
 } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { readElementProps, stickyPropsSchema } from '../schema'
 import { textContentText } from '../text-content'
@@ -54,8 +54,8 @@ export function renderStickyNode(
 
 /** The colour as `<Sticky>` writes it: its palette name, or a hex colour off the palette. */
 function colorName(color: Color): string {
-  const hex = colorToHex(color)
-  const named = Object.entries(STICKY_COLORS).find(([, value]) => colorToHex(value) === hex)
+  const hex = colorToHex8(color)
+  const named = Object.entries(STICKY_COLORS).find(([, value]) => colorToHex8(value) === hex)
   return named ? named[0] : hex
 }
 

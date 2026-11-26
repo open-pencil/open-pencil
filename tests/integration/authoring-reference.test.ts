@@ -7,7 +7,7 @@ import { pixelLength } from '@open-pencil/scene-graph/text'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { makeSceneGraph } from '@open-pencil/test-support/scene'
 
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 function exampleGraph() {
   const graph = makeSceneGraph()
   graph.addCollection({
@@ -86,7 +86,7 @@ test('shared bound example retains bindings and resolves the initial inherited m
 test('public exports and runtime prompts use the same authoring reference', () => {
   expect(BARREL_CODEGEN).toBe(CODEGEN_PROMPT)
   expect(CODEGEN_PROMPT).toContain(JSX_REFERENCE)
-  expect(SYSTEM_PROMPT).toContain(JSX_REFERENCE)
+  expect(systemPrompt()).toContain(JSX_REFERENCE)
   expect(CODEGEN_PROMPT.split(JSX_REFERENCE)).toHaveLength(2)
-  expect(SYSTEM_PROMPT.split(JSX_REFERENCE)).toHaveLength(2)
+  expect(systemPrompt().split(JSX_REFERENCE)).toHaveLength(2)
 })

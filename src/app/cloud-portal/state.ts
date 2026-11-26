@@ -58,7 +58,9 @@ export function usePortalLoad<T>(load: () => Promise<T>, initial: T) {
 /**
  * A change the page makes. `busy` is true while it runs and `subject` names what it runs on, its
  * first argument; a thrown failure is put in words, and `fail` reports one the change found itself.
- * Each run clears the previous failure, and so does `clear`.
+ * Each run clears the previous failure, and so does `clear`. `abandon` lets go of a run still
+ * under way, as when the person leaves the page: it is no longer busy, and its failure is not
+ * reported; a later run is reported as usual.
  */
 export function usePortalAction<Args extends unknown[]>(
   action: (...args: Args) => Promise<unknown>
@@ -66,21 +68,25 @@ export function usePortalAction<Args extends unknown[]>(
   const failures = usePortalFailureMessages()
   const subject = shallowRef<Args[0] | null>(null)
   const reported = shallowRef<string | null>(null)
+  const abandoned = shallowRef(false)
   const { isLoading, error, execute } = useAsyncState(
     (...args: Args) => {
       subject.value = args[0] ?? null
       reported.value = null
+      abandoned.value = false
       return action(...args)
     },
     undefined,
     { immediate: false, onError: noop }
   )
+  const busy = computed(() => isLoading.value && !abandoned.value)
   return {
-    busy: isLoading,
-    subject: computed(() => (isLoading.value ? subject.value : null)),
-    error: computed(
-      () => reported.value ?? (error.value === undefined ? null : failures.api(error.value))
-    ),
+    busy,
+    subject: computed(() => (busy.value ? subject.value : null)),
+    error: computed(() => {
+      if (abandoned.value) return null
+      return reported.value ?? (error.value === undefined ? null : failures.api(error.value))
+    }),
     run: async (...args: Args) => {
       await execute(0, ...args)
     },
@@ -90,6 +96,9 @@ export function usePortalAction<Args extends unknown[]>(
     clear() {
       reported.value = null
       error.value = undefined
+    },
+    abandon() {
+      abandoned.value = true
     }
   }
 }

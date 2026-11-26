@@ -12,7 +12,9 @@ export type FigReaderDiagnostic =
       diagnostic: Parameters<Handler<'onUnsupportedVariableExpression'>>[0]
     }
   | { kind: 'component'; diagnostic: Parameters<Handler<'onMissingComponent'>>[0] }
+  | { kind: 'cycle'; diagnostic: Parameters<Handler<'onCyclicComponent'>>[0] }
   | { kind: 'slot-content'; diagnostic: Parameters<Handler<'onMissingSlotContent'>>[0] }
+  | { kind: 'variable-type'; diagnostic: Parameters<Handler<'onUnsupportedVariableType'>>[0] }
 
 /** Each sink's entries, so a record reported again is not listed twice. */
 const reported = new WeakMap<FigReaderDiagnostic[], Set<string>>()
@@ -37,9 +39,11 @@ function report(sink: FigReaderDiagnostic[], entry: FigReaderDiagnostic): void {
  * Figma retains override and binding records that address nodes it later deleted, and
  * instances of deleted components, and the reader has no replacement to guess at. Opening
  * a file skips those records, keeps such instances childless, and reports both, including a
- * swap whose target layer is gone. A slot whose assigned content frame is gone keeps its
- * component's content. An ambiguous address means the path is wrong, not stale,
- * and still fails.
+ * swap whose target layer is gone. An instance whose component would contain itself is left
+ * out, as Figma leaves it out, and reported. A slot whose assigned content frame is gone keeps its
+ * component's content. A variable of a type OpenPencil does not model, such as PAINT, stays out
+ * of the graph and in the file, and is reported. An ambiguous address means the path is wrong,
+ * not stale, and still fails.
  */
 export function readerSessionOptions(sink: FigReaderDiagnostic[]): DocumentAssemblyOptions {
   return {
@@ -50,6 +54,9 @@ export function readerSessionOptions(sink: FigReaderDiagnostic[]): DocumentAssem
     onUnsupportedVariableExpression: (diagnostic) =>
       report(sink, { kind: 'variable-expression', diagnostic }),
     onMissingComponent: (diagnostic) => report(sink, { kind: 'component', diagnostic }),
-    onMissingSlotContent: (diagnostic) => report(sink, { kind: 'slot-content', diagnostic })
+    onCyclicComponent: (diagnostic) => report(sink, { kind: 'cycle', diagnostic }),
+    onMissingSlotContent: (diagnostic) => report(sink, { kind: 'slot-content', diagnostic }),
+    onUnsupportedVariableType: (resource) =>
+      report(sink, { kind: 'variable-type', diagnostic: resource })
   }
 }

@@ -1,5 +1,5 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import type { NodePreview } from './nodes/preview'
 import type { EditorContext } from './types'

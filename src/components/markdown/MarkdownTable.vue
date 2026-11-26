@@ -2,7 +2,7 @@
 import type { ElementNode } from 'comark'
 import { renderMarkdown } from 'comark/render'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { parsedElement } from '@/app/shell/markdown/animate'
 import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
@@ -13,7 +13,7 @@ const { __node: node } = defineProps<{
   __node?: ElementNode
 }>()
 
-const common = useCommonMessages()
+const common = useMessages('common')
 
 async function markdown(): Promise<string> {
   // A streaming reply renders the table with an element per word; copy the table as written.

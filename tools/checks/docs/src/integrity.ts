@@ -103,6 +103,19 @@ function validateMarkdownLinks(docsRoot: string, markdownFiles: string[]): strin
   return errors
 }
 
+/** What a redirect from `from` would hide here: a page, or a section's pages for `/section/*`. */
+function shadowedBy(docsRoot: string, from: string): string | null {
+  const section = from.endsWith('/*') ? from.slice(0, -'*'.length) : null
+  if (section) {
+    return existsSync(join(docsRoot, section))
+      ? `Redirect source '${from}' still has pages and would shadow them.`
+      : null
+  }
+  return routeExists(docsRoot, from)
+    ? `Redirect source '${from}' still has a page and would shadow it.`
+    : null
+}
+
 function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
   if (!existsSync(redirectsPath)) return [`Missing redirects file '${redirectsPath}'.`]
 
@@ -121,8 +134,16 @@ function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
     if (!REDIRECT_STATUSES.has(status)) {
       errors.push(`Redirect '${redirect.from}' has unsupported status '${status}'.`)
     }
-    if (!redirect.from.startsWith('/') || !redirect.to.startsWith('/')) {
+    // A page that moved to another site, such as Cloud's pricing to its billing service, goes
+    // there by its HTTPS address; there is no page here to check it against.
+    const elsewhere = URL.canParse(redirect.to) && new URL(redirect.to).protocol === 'https:'
+    if (!redirect.from.startsWith('/') || (!redirect.to.startsWith('/') && !elsewhere)) {
       errors.push(`Redirect '${redirect.from}' must use root-relative paths.`)
+      continue
+    }
+    if (elsewhere) {
+      const shadowing = shadowedBy(docsRoot, redirect.from)
+      if (shadowing) errors.push(shadowing)
       continue
     }
     // `/old/*` to `/new/:splat` moves a whole section: the new folder must exist and the old must not.
@@ -239,6 +260,31 @@ function localeSuspectPages(
   )
 }
 
+const GUIDE_IMAGE = /<GuideImage\b[^>]*>/g
+
+/** Guide pictures need alt text, and a file for each theme of every picture they name. */
+function validateGuideImages(docsRoot: string, markdownFiles: readonly string[]): string[] {
+  const errors: string[] = []
+  for (const file of markdownFiles) {
+    const page = relative(docsRoot, file)
+    // The tags the page renders, not those its code examples show.
+    const markup: string[] = []
+    visit(fromMarkdown(readFileSync(file, 'utf8')) as Root, 'html', (node) =>
+      markup.push(node.value)
+    )
+    for (const [tag] of markup.join('\n').matchAll(GUIDE_IMAGE)) {
+      if (!/\salt="[^"]+"/.test(tag)) errors.push(`${page} has a guide picture without alt text.`)
+      for (const [, name] of tag.matchAll(/\s(?:name|other)="([^"]+)"/g)) {
+        for (const theme of ['light', 'dark']) {
+          const image = `public/guide/${name}/${theme}.webp`
+          if (!existsSync(join(docsRoot, image))) errors.push(`${page} shows missing '${image}'.`)
+        }
+      }
+    }
+  }
+  return errors
+}
+
 function validateSidebarLinks(docsRoot: string, sidebarLinks: readonly string[]): string[] {
   const errors: string[] = []
   for (const link of new Set(sidebarLinks)) {
@@ -271,6 +317,7 @@ export function checkDocsIntegrity(options: DocsIntegrityOptions): DocsIntegrity
     ...validateMarkdownLinks(docsRoot, markdownFiles),
     ...validateSidebarLinks(docsRoot, options.sidebarLinks),
     ...validateRedirects(docsRoot, options.redirectsPath),
+    ...validateGuideImages(docsRoot, markdownFiles),
     ...placeholderErrors,
     ...suspectErrors
   ].sort()

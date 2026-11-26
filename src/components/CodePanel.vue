@@ -16,7 +16,7 @@ import { resolveEditorProfile } from '@open-pencil/core'
 import { JSX_REFERENCE } from '@open-pencil/design-jsx'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { useEditorEvent } from '@open-pencil/vue/editor/events'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   commitDOMCodeSession,
@@ -54,7 +54,8 @@ const { active = true, initialSource = 'design-jsx' } = defineProps<{
 }>()
 const store = useEditorStore()
 const editorActive = computed(() => active)
-const { code, common } = useI18n()
+const code = useMessages('code')
+const common = useMessages('common')
 const source = ref<CodeSource>(initialSource)
 const draft = ref('')
 /** The person has written in the code since it was generated for the current selection. */

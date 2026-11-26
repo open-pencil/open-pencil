@@ -2,7 +2,7 @@ import { join } from 'node:path'
 
 import { readPackageJSON } from 'pkg-types'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf } from '@open-pencil/std/arrays'
 
 import { readPackageManifest } from '../manifest/read'
 import type { PackageManifest, WorkspacePackage } from '../manifest/types'

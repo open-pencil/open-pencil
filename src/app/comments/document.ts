@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from 'vue'
+import { ref, shallowRef, watch, type Ref } from 'vue'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
 import {
@@ -13,6 +13,36 @@ import {
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
+
+import type { MentionPerson } from './mentions/links'
+
+/**
+ * How a server keeps a document's comments, as Cloud does: whether this tab may write them,
+ * which threads someone else wrote in since this account read them, and whom it may name.
+ */
+export type KeptComments = {
+  canComment: boolean
+  unread: ReadonlySet<string>
+  markRead(threadId: string): void
+  people(): Promise<readonly MentionPerson[]>
+  /** Whether this tab may delete the thread, or one comment of it, as the server allows. */
+  canDelete(threadId: string, commentId?: string): boolean
+}
+
+/** Documents whose comments a server keeps: its copy is the one to show. */
+export const commentsKeptElsewhere = shallowRef<ReadonlyMap<EditorStore, KeptComments>>(new Map())
+
+/**
+ * Says a server keeps the document's comments, or no longer does. Its copy then replaces the
+ * document's as it arrives, rather than being merged with what this session showed: what the
+ * server refused or deleted must not come back.
+ */
+export function setCommentsKeptElsewhere(store: EditorStore, kept: KeptComments | null): void {
+  const next = new Map(commentsKeptElsewhere.value)
+  if (kept) next.set(store, kept)
+  else next.delete(store)
+  commentsKeptElsewhere.value = next
+}
 
 /**
  * The comments of whichever document `storeRef` holds: read from it, written to it, and kept in
@@ -52,7 +82,7 @@ export function followDocumentComments(
   function reconcile() {
     if (!bound) return
     const incoming = readComments(bound.graph)
-    if (!hasNewerComments(threads.value, incoming)) {
+    if (commentsKeptElsewhere.value.has(bound) || !hasNewerComments(threads.value, incoming)) {
       show(incoming)
       return
     }

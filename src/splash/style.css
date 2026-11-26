@@ -34,6 +34,11 @@ body {
 #app:not(:empty) ~ #boot-splash {
   display: none;
 }
+/* Until the app runs its own wheel handling, a sideways trackpad swipe would leave the loading
+   page. Chrome and Firefox follow this; Safari starts its swipe regardless. */
+html:has(#app:empty) {
+  overscroll-behavior-x: none;
+}
 #boot-splash::before {
   content: '';
   width: 40px;

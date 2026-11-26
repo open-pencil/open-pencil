@@ -8,6 +8,7 @@
   "sideEffects": false,
   "exports": {
     "./assert": "./src/assert.ts",
+    "./collab/memory-transport": "./src/collab/memory-transport.ts",
     "./dom-css": "./src/dom-css.ts",
     "./doubles": "./src/doubles.ts",
     "./fetch": "./src/fetch.ts",
@@ -35,6 +36,7 @@
   },
   "peerDependencies": {
     "@acemir/cssom": "^0.9.31",
+    "@open-pencil/collab": "workspace:*",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/fig": "workspace:*",
@@ -45,6 +47,9 @@
   },
   "peerDependenciesMeta": {
     "@acemir/cssom": {
+      "optional": true
+    },
+    "@open-pencil/collab": {
       "optional": true
     },
     "@open-pencil/core": {

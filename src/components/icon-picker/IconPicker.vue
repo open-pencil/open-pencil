@@ -2,17 +2,20 @@
 import { compact } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
+import type { IconCollection } from '@open-pencil/core/icons'
 import { iconNames } from '@open-pencil/scene-graph/icons'
 import { useIconSearch } from '@open-pencil/vue/controls/icon'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icons/history'
 import { formatNumber } from '@/app/i18n/number'
+import ExternalLink from '@/components/links/ExternalLink.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import type { AppComboboxOption } from '@/components/ui/select/AppCombobox.vue'
 import AppPicker from '@/components/ui/select/AppPicker.vue'
 import type { AppPickerItem } from '@/components/ui/select/AppPicker.vue'
+import { SF_SYMBOLS_DOCS_URL } from '@/constants'
 
 import IconPreview from './IconPreview.vue'
 
@@ -43,8 +46,9 @@ const ALL_SETS = '*'
 const open = defineModel<boolean>('open', { default: false })
 
 const store = useEditorStore()
-const panels = usePanelMessages()
-const common = useCommonMessages()
+const panels = useMessages('panels')
+const pickerMessages = useMessages('panels/pickers')
+const common = useMessages('common')
 const search = useIconSearch()
 const { query, visible, hasMore, loadMore, loading, failed, previews, setsLoading } = search
 
@@ -72,15 +76,26 @@ watch(open, (isOpen) => {
 
 /** Sets by prefix, for their names and licenses in the footer. */
 const setsByPrefix = computed(() => new Map(search.sets.value.map((info) => [info.prefix, info])))
+/** Why the chosen set shows nothing, when this host cannot draw it. */
+const unavailableSet = computed(() =>
+  search.set.value ? (setsByPrefix.value.get(search.set.value)?.unavailable ?? null) : null
+)
+
 const setOptions = computed<AppComboboxOption[]>(() => [
-  { value: ALL_SETS, label: panels.value.allIconSets },
+  { value: ALL_SETS, label: pickerMessages.value.allIconSets },
   ...search.sets.value.map((info) => ({
     value: info.prefix,
     label: info.name,
-    meta: formatNumber(info.total),
-    group: info.category ?? panels.value.otherIconSets
+    meta: info.unavailable ? unavailableLabel(info.unavailable) : formatNumber(info.total),
+    // A set this host cannot draw says where it is offered; choosing it says why in full.
+    group: info.category ?? pickerMessages.value.otherIconSets
   }))
 ])
+
+/** Where a set this host cannot draw is offered, short enough for the set menu. */
+function unavailableLabel(reason: NonNullable<IconCollection['unavailable']>) {
+  return reason === 'host' ? panels.value.iconSetMacAppOnly : panels.value.iconSetNeedsNewerMacOS
+}
 const chosenSet = computed({
   get: () => search.set.value ?? ALL_SETS,
   set: (value: string) => {
@@ -106,9 +121,15 @@ function item(name: string, group?: string): AppPickerItem {
  * only when there are several.
  */
 const items = computed<AppPickerItem[]>(() => {
+  // A set this host cannot draw lists nothing, not even its icons in the file, so the picker says
+  // where it is offered instead.
+  if (unavailableSet.value) return []
   if (query.value.trim()) return visible.value.map((name) => item(name))
   const prefix = search.set.value
-  const inSet = (name: string) => !prefix || name.startsWith(`${prefix}:`)
+  // Icons from a set this host cannot draw, such as SF Symbols in the browser, are left out.
+  const inSet = (name: string) =>
+    (!prefix || name.startsWith(`${prefix}:`)) &&
+    !setsByPrefix.value.get(name.slice(0, name.indexOf(':')))?.unavailable
   const inFile = placed.value.filter(inSet)
   const recent = recentIcons.value.filter((name) => inSet(name) && !inFile.includes(name))
   const shown = new Set([...inFile, ...recent])
@@ -116,8 +137,8 @@ const items = computed<AppPickerItem[]>(() => {
   const named = [inFile, recent, rest].filter((group) => group.length > 0).length > 1
   const setLabel = named && prefix ? search.setName(`${prefix}:`) : undefined
   return [
-    ...inFile.map((name) => item(name, panels.value.iconsInFile)),
-    ...recent.map((name) => item(name, panels.value.recentIcons)),
+    ...inFile.map((name) => item(name, pickerMessages.value.iconsInFile)),
+    ...recent.map((name) => item(name, pickerMessages.value.recentIcons)),
     ...rest.map((name) => item(name, setLabel))
   ]
 })
@@ -128,12 +149,12 @@ const summary = computed(() => {
     if (loading.value) return ''
     const count = search.found.value
     return search.capped.value
-      ? panels.value.iconResultCountCapped({ count })
-      : panels.value.iconResultCount(count)
+      ? pickerMessages.value.iconResultCountCapped({ count })
+      : pickerMessages.value.iconResultCount(count)
   }
   const info = search.set.value ? setsByPrefix.value.get(search.set.value) : undefined
   if (info) return compact([info.name, info.license, formatNumber(info.total)]).join(' · ')
-  return panels.value.iconSearchHint
+  return pickerMessages.value.iconSearchHint
 })
 /** The set and license of a highlighted icon. */
 function details(name: string) {
@@ -142,13 +163,18 @@ function details(name: string) {
 }
 
 const emptyLabel = computed(() => {
-  if (failed.value) return panels.value.iconSearchFailed
+  if (failed.value) return pickerMessages.value.iconSearchFailed
+  // A set opened for an icon from it, such as one being swapped, says why it shows nothing.
+  if (unavailableSet.value === 'host') return panels.value.sfSymbolsNeedMacApp
+  if (unavailableSet.value === 'system') return panels.value.sfSymbolsNeedNewerMacOS
   // Typing searches; choosing a set loads it.
   if (loading.value)
-    return query.value.trim() ? panels.value.searchingIcons : panels.value.loadingIcons
+    return query.value.trim()
+      ? pickerMessages.value.searchingIcons
+      : pickerMessages.value.loadingIcons
   return query.value.trim() || search.set.value
-    ? panels.value.noIconsFound
-    : panels.value.iconSearchHint
+    ? pickerMessages.value.noIconsFound
+    : pickerMessages.value.iconSearchHint
 })
 
 function pick(name: string) {
@@ -172,7 +198,7 @@ function pick(name: string) {
     :tooltip-side="tooltipSide"
     :side="side"
     :align="align"
-    :search-placeholder="panels.searchIcons"
+    :search-placeholder="pickerMessages.searchIcons"
     :empty-label="emptyLabel"
     :close-label="common.close"
     @select="pick"
@@ -188,9 +214,9 @@ function pick(name: string) {
       <AppCombobox
         v-model="chosenSet"
         :options="setOptions"
-        :label="panels.iconSet"
-        :search-placeholder="panels.searchIconSets"
-        :empty-label="setsLoading ? panels.loadingIconSets : panels.noIconSetsFound"
+        :label="pickerMessages.iconSet"
+        :search-placeholder="pickerMessages.searchIconSets"
+        :empty-label="setsLoading ? pickerMessages.loadingIconSets : pickerMessages.noIconSetsFound"
         :result-limit="setOptions.length"
         align="end"
         :ui="{
@@ -205,6 +231,10 @@ function pick(name: string) {
           <span class="shrink-0 text-muted tabular-nums">{{ option.meta }}</span>
         </template>
       </AppCombobox>
+    </template>
+    <template v-if="unavailableSet && !failed" #empty>
+      {{ emptyLabel }}
+      <ExternalLink :href="SF_SYMBOLS_DOCS_URL">{{ common.learnMore }}</ExternalLink>
     </template>
     <template #leading="{ item: entry }">
       <IconPreview :svg="previews.get(entry.value)" class="size-5 text-surface" />

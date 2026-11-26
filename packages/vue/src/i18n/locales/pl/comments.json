@@ -24,6 +24,13 @@
   "empty": "Brak komentarzy. Kliknij obszar roboczy, aby dodać komentarz.",
   "noMatches": "Brak pasujących komentarzy.",
   "replyCount": "Odpowiedzi: {count}",
+  "clusterCount": "Komentarze: {count}",
   "commentDeleted": "Usunięto komentarz",
-  "hideComments": "Ukryj komentarze"
+  "hideComments": "Ukryj komentarze",
+  "mentionPeople": "Osoby do wspomnienia",
+  "unread": "Nieprzeczytane",
+  "notifyMention": "Wzmianki w komentarzach",
+  "notifyReply": "Odpowiedzi na Twoje komentarze",
+  "notifyReplyHint": "Ktoś odpowiada w wątku komentarzy, w którym bierzesz udział.",
+  "notifyTitle": "{author} · {document}"
 }

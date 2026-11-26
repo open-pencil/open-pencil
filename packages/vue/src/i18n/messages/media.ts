@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const mediaMessageDefaults = {
   vectorization: 'Image vectorization',
   vectorizationDescription:
@@ -27,5 +25,3 @@ export const mediaMessageDefaults = {
   photoKeyUnreachable: params('Couldn’t reach {service}. Check your network connection.'),
   photoKeyCheckFailed: params('{service} didn’t answer the test. Try again later.')
 } as const
-
-export const mediaMessages = i18n('media', mediaMessageDefaults)

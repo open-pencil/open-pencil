@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit'
+
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { MaterializedComponentOccurrence } from '../instance-overrides/source-children'
@@ -28,6 +30,11 @@ export interface FigSessionCheckpoint {
   components: Array<[string, ComponentCheckpoint]>
   /** Saved variants, by the set's layer, of the sets with variants no load has built. */
   savedVariants?: Array<[string, SavedVariant[]]>
+  /**
+   * Instances left out of their definitions because their component would contain itself. They
+   * never became layers, and a save drops their records, as Figma's repair deletes them.
+   */
+  droppedRecordIds?: string[]
 }
 
 /**
@@ -153,7 +160,11 @@ export function createFigDocumentSession(
           id,
           checkpointComponent(component)
         ]),
-        savedVariants: savedVariants.bySetLayer()
+        savedVariants: savedVariants.bySetLayer(),
+        droppedRecordIds: uniq([
+          ...(resume?.checkpoint.droppedRecordIds ?? []),
+          ...archive.reader.droppedRecords()
+        ])
       } satisfies FigSessionCheckpoint)
     },
     /** The saved variants of the set a layer is, when a load has left some of them unbuilt. */
@@ -181,7 +192,9 @@ export function createFigDocumentSession(
     archiveRecordInfo(): FigArchiveRecordInfo {
       recordInfo ??= figArchiveRecordInfo({
         records: archive.records,
-        blobCount: archive.blobs.length,
+        resources: archive.reader.resources,
+        slotContent: archive.reader.slotContent,
+        blobs: archive.blobs,
         imageHashes: archive.images.map(([hash]) => hash)
       })
       return recordInfo

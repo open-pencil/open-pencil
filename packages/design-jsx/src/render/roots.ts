@@ -15,6 +15,11 @@ export interface RenderResult {
   name: string
   type: NodeType
   childIds: string[]
+  /**
+   * Layers written with `keepChildren`, which stand for a layer already in the document and keep
+   * its children: only a render that replaces that layer can keep them (`reconcileRenderedLayers`).
+   */
+  keepChildrenIds?: string[]
   warnings?: string[]
 }
 
@@ -113,6 +118,7 @@ async function renderInto<Artwork>(
   const eventsByRoot: Array<Array<[TreeNode, SceneNode]>> = []
   const connectorsByRoot: Array<Array<{ node: SceneNode; tree: TreeNode }>> = []
   const { refs } = context
+  const keepChildrenIds: string[] = []
   for (const index of context.order.of(roots)) {
     const events: Array<[TreeNode, SceneNode]> = []
     const connectors: Array<{ node: SceneNode; tree: TreeNode }> = []
@@ -121,6 +127,13 @@ async function renderInto<Artwork>(
     const onNode = (element: TreeNode, node: SceneNode) => {
       if (element.type === CONNECTOR_ELEMENT) connectors.push({ node, tree: element })
       else refs.mark(element.props.ref, node)
+      if (element.props.keepChildren === true) {
+        if (element.children.some(isTreeNode))
+          throw new Error(
+            `"${node.name}" has keepChildren and children of its own; write one or the other`
+          )
+        keepChildrenIds.push(node.id)
+      }
       events.push([element, node])
     }
     const node = await renderNode(
@@ -157,6 +170,7 @@ async function renderInto<Artwork>(
     name: node.name,
     type: node.type,
     childIds: node.childIds,
+    ...(keepChildrenIds.length > 0 && { keepChildrenIds }),
     ...(warnings.length > 0 && { warnings })
   }))
 }

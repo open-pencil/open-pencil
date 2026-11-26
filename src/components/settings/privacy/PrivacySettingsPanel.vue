@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useSharingSettings } from '@/app/telemetry/settings'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -10,7 +10,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { PRIVACY_URL } from '@/constants'
 
-const { diagnostics } = useI18n()
+const diagnostics = useMessages('diagnostics')
 const { dailyPing, usageStats, unofficialBuild, disabledByEnvironment } = useSharingSettings()
 </script>
 

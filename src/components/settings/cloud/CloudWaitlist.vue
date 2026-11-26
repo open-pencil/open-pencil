@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { useStorageMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useWaitlistSignup } from '@/app/cloud/waitlist/signup'
 import { openExternalLink } from '@/app/shell/ui'
@@ -18,7 +18,7 @@ import { cloudServers } from './ui'
  * app signs up here; the desktop app opens the website, since Turnstile runs only on the sites
  * the service accepts.
  */
-const storage = useStorageMessages()
+const storage = useMessages('storage')
 const ui = cloudServers()
 const turnstile = useTemplateRef<HTMLElement>('turnstile')
 const { email, status, submitting, confirming, edit, submit } = useWaitlistSignup(turnstile)

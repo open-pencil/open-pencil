@@ -98,6 +98,31 @@ describe('editor hit testing', () => {
     expect([...editor.state.selectedIds]).toEqual([frame.id])
   })
 
+  test('selectAtPoint returns its hit and keeps the selection on a miss when asked', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const rect = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 100,
+      y: 100,
+      width: 40,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    editor.setCanvasKit(
+      {} as Parameters<typeof editor.setCanvasKit>[0],
+      {} as Parameters<typeof editor.setCanvasKit>[1]
+    )
+
+    expect(editor.selectAtPoint(120, 120, undefined, { keepSelectionOnMiss: true })?.id).toBe(
+      rect.id
+    )
+    expect(editor.selectAtPoint(500, 500, undefined, { keepSelectionOnMiss: true })).toBeNull()
+    expect([...editor.state.selectedIds]).toEqual([rect.id])
+
+    editor.selectAtPoint(500, 500)
+    expect([...editor.state.selectedIds]).toEqual([])
+  })
+
   test('selectAtPoint inside an entered board frame selects its child', () => {
     const editor = createEditor()
     editor.setDocumentKind('board')

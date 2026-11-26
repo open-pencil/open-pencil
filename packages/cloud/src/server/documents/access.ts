@@ -88,6 +88,23 @@ export async function resolveDocumentAccess(
   }
 }
 
+/**
+ * What the user may do with a live document's comments, or undefined when they may not read it:
+ * everyone who can read may comment, and those who can edit may delete anyone's comments.
+ */
+export async function resolveDocumentCommentAccess(
+  database: AccessDatabase,
+  userId: string,
+  documentId: string
+): Promise<{ canComment: boolean; canModerate: boolean } | undefined> {
+  const grants = await documentAccessGrants(database, userId, documentId)
+  if (!grantsAllow(grants, { document: ['read'] })) return undefined
+  return {
+    canComment: grantsAllow(grants, { document: ['comment'] }),
+    canModerate: grantsAllow(grants, { document: ['moderate'] })
+  }
+}
+
 export function canEditDocument(access: DocumentAccess): boolean {
   return access.permission === 'edit'
 }

@@ -134,6 +134,36 @@ describe('shader paints', () => {
 
     expect(read().strokes[0]).toMatchObject({ type: 'IMAGE', weight: 3, align: 'CENTER' })
   })
+
+  test('a shader keeps the colour or gradient it replaced, for switching back', () => {
+    const { editor, id, read } = setup()
+    editor.setShaderPaint([id], 'fills', 0, AURORA)
+    expect(read().fills[0].color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+
+    const stops = [
+      { position: 0, color: { r: 0, g: 0, b: 1, a: 1 } },
+      { position: 1, color: { r: 0, g: 1, b: 0, a: 1 } }
+    ]
+    const gradientTransform = { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
+    editor.updateNodeWithUndo(id, {
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 1, a: 1 },
+          opacity: 1,
+          visible: true,
+          gradientStops: stops,
+          gradientTransform
+        }
+      ]
+    })
+    editor.setShaderPaint([id], 'fills', 0, SWIRL)
+    expect(read().fills[0]).toMatchObject({
+      type: 'IMAGE',
+      gradientStops: stops,
+      gradientTransform
+    })
+  })
 })
 
 describe('shader frames on page preparation', () => {

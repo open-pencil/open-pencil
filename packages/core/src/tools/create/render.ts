@@ -9,7 +9,7 @@ export const render = defineTool({
   name: 'render',
 
   description:
-    'Render JSX to design nodes. Draw a shape of your own as one layer with <Vector d="M2 12 L22 12" stroke="#000" />, styled like any layer; inline <svg> is for artwork copied from elsewhere and draws its shapes, without its text. Use replace_id to replace a placeholder while preserving its position.',
+    'Render JSX to design nodes. Draw a shape of your own as one layer with <Vector d="M2 12 L22 12" stroke="#000" />, styled like any layer; inline <svg> is for artwork copied from elsewhere and draws its shapes, without its text. Use replace_id to replace a placeholder while preserving its position, or to edit a layer in place from its get_jsx: it keeps its id, and layers written with keepChildren keep their children.',
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     replace_id: v.optional(
@@ -39,8 +39,8 @@ export const render = defineTool({
 
     const placement = resolveRenderPlacement(graphOf(figma), args, figma.currentPageId)
     prepareSlotInsertion(graphOf(figma), placement.parentId, 'render')
-    const results = await renderJSX(graphOf(figma), args.jsx, placement)
-    finishRenderPlacement(graphOf(figma), results, placement)
+    const rendered = await renderJSX(graphOf(figma), args.jsx, placement)
+    const results = finishRenderPlacement(graphOf(figma), rendered, placement)
     const result = results[0]
 
     const response: {

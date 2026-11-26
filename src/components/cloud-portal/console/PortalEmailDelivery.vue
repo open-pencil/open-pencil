@@ -3,7 +3,7 @@ import { createColumnHelper } from '@tanstack/vue-table'
 import { computed, h } from 'vue'
 
 import type { CloudAdminEmailFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -28,7 +28,7 @@ const { load, busy = null } = defineProps<{
 }>()
 const emit = defineEmits<{ retry: [id: string] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const tones = {
   sent: 'success',
   waiting: 'neutral',
@@ -47,6 +47,8 @@ const kindLabels = computed<Record<string, string>>(() => ({
   'enrollment-requested': messages.value.emailKindEnrollmentRequested,
   'admin-enrollment-notification': messages.value.emailKindAdminNotification,
   'enrollment-approved': messages.value.emailKindEnrollmentApproved,
+  // The beta's invitation letter, no longer sent; the ones kept in the outbox approved a request.
+  'enrollment-invited': messages.value.emailKindEnrollmentApproved,
   'enrollment-rejected': messages.value.emailKindEnrollmentRejected,
   'enrollment-revoked': messages.value.emailKindEnrollmentRevoked,
   'email-verification': messages.value.emailKindVerification,
@@ -82,12 +84,12 @@ const emails = usePortalList<CloudAdminEmailFilter, PortalEmail>({
     }),
     column.accessor('recipient', {
       header: () => messages.value.columnRecipient,
-      meta: { class: 'hidden text-muted @xl/table:table-cell' }
+      meta: { role: 'text' }
     }),
     column.display({
       id: 'status',
       header: () => messages.value.columnStatus,
-      meta: { class: 'w-32' },
+      meta: { role: 'tag', always: true },
       cell: ({ row: { original: email } }) =>
         h(PortalStatusCell, {
           statuses: [{ label: statusLabels.value[email.status], tone: tones[email.status] }],
@@ -96,12 +98,12 @@ const emails = usePortalList<CloudAdminEmailFilter, PortalEmail>({
     }),
     column.accessor('when', {
       header: () => messages.value.columnWhen,
-      meta: { class: 'hidden w-44 whitespace-nowrap text-muted @2xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: email } }) =>
         email.status === 'failed'
           ? h(

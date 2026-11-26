@@ -1,5 +1,7 @@
 import { computed, inject, ref } from 'vue'
 
+import { errorMessage, isAbortError } from '@open-pencil/std/errors'
+
 import { getActiveEditorStoreOrNull, useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { focusNodesOnTheirPage } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -47,10 +49,10 @@ export function useToolNodes(ids: () => string[]) {
       await focusNodesOnTheirPage(store, [id])
     } catch (error) {
       // A newer page switch supersedes this one.
-      if (error instanceof Error && error.name === 'AbortError') return
+      if (isAbortError(error)) return
       toast.error(
         notificationMessages.get().operationFailed({
-          error: error instanceof Error ? error.message : String(error)
+          error: errorMessage(error)
         })
       )
     }

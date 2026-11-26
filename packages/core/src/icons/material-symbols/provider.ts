@@ -6,6 +6,7 @@ import {
 } from '#core/icons/material-symbols/catalogue'
 import {
   fetchMaterialSymbolsFont,
+  isMaterialSymbolsName,
   isMaterialSymbolsPrefix,
   MATERIAL_SYMBOLS_OPTIONS,
   MATERIAL_SYMBOLS_PREFIXES,
@@ -76,6 +77,10 @@ export function createMaterialSymbolsProvider(
     for (const name of names) {
       const parsed = parseIconName(name)
       if (!parsed || !isMaterialSymbolsPrefix(parsed.prefix) || loaded.has(name)) continue
+      if (!isMaterialSymbolsName(parsed.iconName)) {
+        loaded.set(name, null)
+        continue
+      }
       const request = pending.get(name)
       if (request) waiting.add(request)
       else wanted.set(parsed.prefix, [...(wanted.get(parsed.prefix) ?? []), parsed.iconName])
@@ -102,7 +107,8 @@ export function createMaterialSymbolsProvider(
     const glyph = loaded.get(name)
     const parsed = parseIconName(name)
     if (!glyph || !parsed) return null
-    const axes = materialSymbolsOptions(options)
+    // The optical size follows the size an icon is drawn at unless it is set, as Google advises.
+    const axes = materialSymbolsOptions({ opsz: size, ...options })
     return {
       prefix: parsed.prefix,
       name: parsed.iconName,

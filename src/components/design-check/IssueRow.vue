@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 
@@ -13,7 +13,7 @@ const emit = defineEmits<{
   fix: []
 }>()
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const styles = designCheck()
 </script>
 

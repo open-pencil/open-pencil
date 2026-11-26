@@ -1,3 +1,5 @@
+import { anySignal } from '@open-pencil/std/timing'
+
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
 
@@ -20,7 +22,7 @@ function stallWatch(external: AbortSignal | null, stallTimeoutMs: number) {
   let timer: ReturnType<typeof setTimeout> | undefined
   const stop = () => clearTimeout(timer)
   return {
-    signal: external ? AbortSignal.any([external, controller.signal]) : controller.signal,
+    signal: anySignal([external, controller.signal]),
     restart() {
       stop()
       timer = setTimeout(() => controller.abort(timedOut()), stallTimeoutMs)

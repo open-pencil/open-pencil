@@ -45,3 +45,93 @@ test('pages and layers panels scroll inside splitter panes', async ({ page }) =>
   await expect.poll(() => layersScroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
   canvas.assertNoErrors()
 })
+
+for (const direction of ['ltr', 'rtl'] as const) {
+  test(`selecting a deep layer scrolls the layers sideways to its depth (${direction})`, async ({
+    page
+  }) => {
+    await page.goto(direction === 'rtl' ? '/?test&dir=rtl' : '/?test')
+    const canvas = new CanvasHelper(page)
+    await canvas.waitForInit()
+    canvas.errors.length = 0
+    await canvas.clearCanvas()
+
+    const ids = await page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      let parentId = store.state.currentPageId
+      const created: string[] = []
+      for (let i = 0; i < 16; i++) {
+        parentId = store.graph.createNode('FRAME', parentId, {
+          name: `Nested frame ${i + 1}`,
+          width: 200,
+          height: 200
+        }).id
+        created.push(parentId)
+      }
+      const leaf = store.graph.createNode('RECTANGLE', parentId, {
+        name: 'Deep layer with a long name',
+        width: 20,
+        height: 20
+      })
+      created.push(leaf.id)
+      store.requestRender()
+      return created
+    })
+    await canvas.waitForRender()
+
+    const select = (id: string) =>
+      page.evaluate((nodeId) => window.openPencil?.getStore?.()?.select([nodeId]), id)
+    const scroller = page.getByTestId('layers-scroll')
+    const leafRow = page.locator(`[data-node-id="${ids.at(-1)}"] [data-slot="row"]`)
+
+    await select(ids.at(-1) ?? '')
+    await expect.poll(() => scroller.evaluate((el) => Math.abs(el.scrollLeft))).toBeGreaterThan(0)
+
+    // The deep layer's icon and the start of its name are in view, and its buttons sit inside
+    // the panel's edge rather than past the end of the scrolled row.
+    const bounds = await leafRow.evaluate((row) => {
+      const viewport = row.closest('[data-test-id="layers-scroll"]')
+      const icon = row.querySelector('[data-slot="icon"]')
+      const trailing = row.querySelector('[data-slot="trailing"]')
+      if (!viewport || !icon || !trailing) throw new Error('Layer row parts missing')
+      const box = (el: Element) => {
+        const rect = el.getBoundingClientRect()
+        return { left: rect.left, right: rect.right }
+      }
+      return { viewport: box(viewport), icon: box(icon), trailing: box(trailing) }
+    })
+    for (const part of [bounds.icon, bounds.trailing]) {
+      expect(part.left).toBeGreaterThanOrEqual(bounds.viewport.left)
+      expect(part.right).toBeLessThanOrEqual(bounds.viewport.right)
+    }
+
+    // A longer name widens the list, so scrolled to its end the new name ends in view, uncut.
+    await page.evaluate(
+      (id) =>
+        window.openPencil?.getStore?.()?.renameNode(id, 'Deep layer renamed to a much longer name'),
+      ids.at(-1) ?? ''
+    )
+    await expect(leafRow).toContainText('much longer name')
+    const name = await leafRow.evaluate((row) => {
+      const viewport = row.closest<HTMLElement>('[data-test-id="layers-scroll"]')
+      const text = row.querySelector('[data-slot="label"] > span')
+      if (!viewport || !text) throw new Error('Layer row parts missing')
+      // Toward the end is negative scrollLeft in a right-to-left list; the browser clamps it.
+      const end = getComputedStyle(viewport).direction === 'rtl' ? -1 : 1
+      viewport.scrollLeft = end * viewport.scrollWidth
+      const rect = text.getBoundingClientRect()
+      const view = viewport.getBoundingClientRect()
+      const rtl = end < 0
+      return {
+        truncated: text.scrollWidth > text.clientWidth,
+        endInView: rtl ? rect.left >= view.left : rect.right <= view.right
+      }
+    })
+    expect(name).toEqual({ truncated: false, endInView: true })
+
+    await select(ids[0])
+    await expect.poll(() => scroller.evaluate((el) => Math.abs(el.scrollLeft))).toBe(0)
+    canvas.assertNoErrors()
+  })
+}

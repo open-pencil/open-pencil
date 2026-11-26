@@ -1,0 +1,1 @@
+- Choose a document's color profile, sRGB or Display P3, in the Design panel's Document section with nothing selected: assign it to keep color values, or convert to keep colors, as in Figma (#2244).

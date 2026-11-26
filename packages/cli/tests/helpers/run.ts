@@ -11,6 +11,8 @@ export interface CLIRunOptions {
   stdin?: string
   /** Variables added to the test's own environment. */
   env?: Record<string, string>
+  /** The directory the CLI runs in, which relative output paths land in. */
+  cwd?: string
 }
 
 /**
@@ -23,7 +25,8 @@ export async function runCLI(args: string[], options: CLIRunOptions = {}): Promi
     stdout: 'pipe',
     stderr: 'pipe',
     stdin: options.stdin === undefined ? undefined : Buffer.from(options.stdin),
-    env: options.env ? { ...process.env, ...options.env } : undefined
+    env: options.env ? { ...process.env, ...options.env } : undefined,
+    cwd: options.cwd
   })
   const [stdout, stderr] = await Promise.all([
     new Response(proc.stdout).text(),

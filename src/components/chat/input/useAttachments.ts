@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import { isSVGFile } from '@open-pencil/scene-graph/images'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import {
   createImagePreviewURL,
@@ -68,7 +69,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
         }
         images.value.push({ file: image, previewURL: createImagePreviewURL(image) })
       } catch (error) {
-        options.reportError(error instanceof Error ? error.message : String(error))
+        options.reportError(errorMessage(error))
       }
     }
     resetImageDialog()

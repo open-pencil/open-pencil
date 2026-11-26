@@ -8,6 +8,7 @@ import {
 } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
+import { createPlaceMenuActions } from '@/app/document/io/place'
 import { useEditorStore } from '@/app/editor/active-store'
 import { clearRecentFiles, forgetRecentFile, recentLocalFileAt } from '@/app/recent-files'
 import { runFocusedCommand } from '@/app/shell/commands/focused'
@@ -74,6 +75,7 @@ export function useEditorMenu() {
   const actions: Partial<Record<string, () => void>> = {
     ...createTabMenuActions(),
     ...createSaveMenuActions(),
+    ...createPlaceMenuActions(),
     'export-selection': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
     },

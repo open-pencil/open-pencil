@@ -1,6 +1,6 @@
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch, type Ref } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import {
@@ -33,7 +33,7 @@ export function useDesignCheckPanel(options: {
   initialScope?: DesignCheckScope
 }) {
   const store = useEditorStore()
-  const messages = useDesignCheckMessages()
+  const messages = useMessages('design-check')
   const presetLabels = usePresetLabels()
   const check = store.designCheck
 

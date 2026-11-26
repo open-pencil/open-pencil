@@ -35,6 +35,7 @@ export const ROOT_MARKDOWN_ALLOWLIST = new Set([
   'AGENTS.md',
   'CHANGELOG.md',
   'CONTRIBUTING.md',
+  'MAINTAINING.md',
   'README.md',
   'SECURITY.md'
 ])

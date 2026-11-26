@@ -6,9 +6,9 @@ mod macos;
 mod names;
 mod sfnt;
 mod style;
+pub mod watch;
 
 use serde::Serialize;
-use std::sync::OnceLock;
 
 /// A family and its faces, each by the name its font gives it, with its weight and slant.
 #[derive(Serialize, Clone)]
@@ -16,8 +16,6 @@ pub struct FontFamily {
     family: String,
     faces: Vec<catalog::ListedFace>,
 }
-
-static FONT_CACHE: OnceLock<Vec<FontFamily>> = OnceLock::new();
 
 fn enumerate_system_fonts() -> Vec<FontFamily> {
     let mut families: Vec<FontFamily> = catalog::families()
@@ -29,17 +27,12 @@ fn enumerate_system_fonts() -> Vec<FontFamily> {
     families
 }
 
+/// The installed families, read once until the fonts change (`watch`).
 #[tauri::command]
 pub async fn list_system_fonts() -> Vec<FontFamily> {
-    if let Some(cached) = FONT_CACHE.get() {
-        return cached.clone();
-    }
-
-    let families = tauri::async_runtime::spawn_blocking(enumerate_system_fonts)
+    tauri::async_runtime::spawn_blocking(enumerate_system_fonts)
         .await
-        .unwrap_or_default();
-    let _ = FONT_CACHE.set(families.clone());
-    families
+        .unwrap_or_default()
 }
 
 #[derive(Debug, Serialize)]

@@ -11,7 +11,7 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import type { PlacedIssueMarker } from '@open-pencil/core/canvas'
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { issueDetail, ruleTitle } from '@/app/editor/design-check/format'
@@ -32,7 +32,7 @@ const { marker, canvas } = defineProps<{
 
 const store = useEditorStore()
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const styles = issueTooltip()
 
 const reference = computed(() => {

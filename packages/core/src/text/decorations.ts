@@ -6,8 +6,8 @@ import type {
   SceneNode,
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from './character/style'
 import { fontDecorationMetricsSync, type FontDecorationMetrics } from './font/glyphs'

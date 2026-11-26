@@ -1,5 +1,5 @@
 import type { ClipboardImageResolution, Editor } from '@open-pencil/core'
-import { filesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
 
@@ -8,7 +8,7 @@ export function notifyClipboardImageResolution({
   missing,
   fetchAttempted
 }: ClipboardImageResolution) {
-  const messages = filesMessages.get()
+  const messages = messageStores.files.get()
   if (!fetchAttempted) {
     toast.warning(
       total === 1

@@ -239,6 +239,84 @@ describe('@open-pencil/dom-css conversion', () => {
     }
   })
 
+  it('sizes a box by the ratio of a computed aspect ratio that keeps its auto', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: { 'aspect-ratio': 'auto 16 / 9', width: '320px' },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    expect([box.width, box.height]).toEqual([320, 180])
+  })
+
+  it('sizes the content box by an aspect ratio beside auto, whatever the box sizing', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: {
+            'aspect-ratio': 'auto 16 / 9',
+            'box-sizing': 'border-box',
+            width: '320px',
+            padding: '10px'
+          },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    // A 300 px content box is 168.75 tall, inside 10 px of padding each way.
+    expect([box.width, box.height]).toEqual([320, 188.75])
+  })
+
+  it('leaves an empty content box when padding is wider than a box sized by its ratio', () => {
+    const sized = (computedStyle: Record<string, string>) => {
+      const graph = designDocumentToSceneGraph({
+        type: 'document',
+        children: [{ type: 'element', tagName: 'div', attrs: {}, computedStyle, children: [] }]
+      })
+      const [box] = graph.getChildren(graph.getPages()[0].id)
+      return [box.width, box.height]
+    }
+    const style = { 'aspect-ratio': 'auto 1', 'box-sizing': 'border-box' }
+
+    // The box grows to hold its padding around the empty content box.
+    expect(sized({ ...style, width: '10px', padding: '0px 20px' })).toEqual([40, 0])
+    expect(sized({ ...style, height: '10px', padding: '20px 0px' })).toEqual([0, 40])
+  })
+
+  it('gives each side of a box its value in a padding shorthand of several values', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: { padding: '1px 3px 5px', 'background-color': 'rgb(255, 0, 0)' },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    expect([box.paddingTop, box.paddingRight, box.paddingBottom, box.paddingLeft]).toEqual([
+      1, 3, 5, 3
+    ])
+  })
+
   it('maps data URL images, object fit, and aspect ratio', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',

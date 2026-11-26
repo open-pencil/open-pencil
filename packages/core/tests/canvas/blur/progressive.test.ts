@@ -5,8 +5,8 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI, type FigmaFrameNode } from '@open-pencil/core/figma-api'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { blurReach } from '@open-pencil/scene-graph/geometry'
+import { maxOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {

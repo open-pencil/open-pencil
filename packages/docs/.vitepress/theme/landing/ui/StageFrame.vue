@@ -39,6 +39,8 @@ const live = ref(fingerprint.value === null)
 /** The stage is loading its engine and scene, which it does as it nears the viewport. */
 const loading = ref(false)
 const ready = ref(false)
+// A capture takes the stills; drawing the last ones over the stage would put them in the new ones.
+const capturing = ref(false)
 // Decided after hydration, so the server-rendered poster and the client's first render agree.
 const waiting = ref(false)
 
@@ -49,8 +51,10 @@ function start(): void {
 
 onMounted(() => {
   if (live.value) return
-  if (isPosterCapture()) start()
-  else if (window.matchMedia('(pointer: coarse)').matches) waiting.value = true
+  if (isPosterCapture()) {
+    capturing.value = true
+    start()
+  } else if (window.matchMedia('(pointer: coarse)').matches) waiting.value = true
   else if (document.readyState === 'complete') start()
   else useEventListener(window, 'load', start, { once: true })
 })
@@ -71,7 +75,7 @@ onMounted(() => {
     <!-- The live stage is already drawn underneath, so the still fades into it. -->
     <Transition name="stage-poster">
       <StagePoster
-        v-if="fingerprint && !ready"
+        v-if="fingerprint && !ready && !capturing"
         :kind="kind"
         :fingerprint="fingerprint"
         :locale="localeIndex"

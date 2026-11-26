@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
 import type { VariableCollection } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   CONDITION_KINDS,
@@ -13,7 +13,7 @@ import { modeConditionPlaceholder } from '@/app/editor/tokens/model'
 
 /** Plain-language names for mode conditions, shared by the collection inspector and the list. */
 export function useConditionLabels() {
-  const { variables } = useI18n()
+  const variables = useMessages('variables/panel')
 
   const kindLabels = computed<Record<ConditionKind, string>>(() => ({
     manual: variables.value.conditionManual,

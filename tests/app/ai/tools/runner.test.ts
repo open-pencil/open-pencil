@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, mock, spyOn, test } from 'bun:test'
 import type { IconData } from '@open-pencil/core/icons'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { Run } from '@/app/ai/reply/run'
@@ -13,7 +14,6 @@ import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import * as fonts from '@/app/editor/fonts'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
-import { createDeferred } from '@/app/runtime/deferred'
 let store: EditorStore
 
 beforeEach(() => {

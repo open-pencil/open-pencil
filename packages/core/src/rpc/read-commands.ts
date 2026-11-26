@@ -1,6 +1,7 @@
 import { sumBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import { ELLIPSIS } from '#core/text/ellipsis'
 import type { DocumentFontStatus } from '#core/text/font/status'
@@ -273,7 +274,7 @@ export const queryCommand: RPCCommand<QueryArgs, QueryNodeResult[] | { error: st
         height: Math.round(n.height)
       }))
     } catch (err) {
-      return { error: `XPath error: ${err instanceof Error ? err.message : String(err)}` }
+      return { error: `XPath error: ${errorMessage(err)}` }
     }
   }
 }

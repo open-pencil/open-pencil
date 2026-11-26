@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { createDeferred } from '@/app/runtime/deferred'
+import { createDeferred } from '@open-pencil/std/async'
+
 import { announceReload, onBeforeReload } from '@/app/shell/reload'
 
 test('an announced reload waits for every step, even after one fails', async () => {

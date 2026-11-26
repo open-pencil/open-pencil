@@ -1,1 +1,0 @@
-- `createPostHogErrorReporter`, `ErrorReporter`, `ErrorReportContext`, and `PostHogErrorReporterOptions` move from `@open-pencil/cloud/server` to `@open-pencil/cloud/errors` (#2013).

@@ -130,6 +130,23 @@ describe('textNodeToOutlineLayout', () => {
     ).toBe(2)
   })
 
+  test('fits and sizes a spaced line by its glyphs, without the spacing after the last', () => {
+    const spaced = { text: 'Hold', letterSpacing: { value: 10, unit: 'PIXELS' as const } }
+    const glyphs = oneLineWidth(spaced)
+    expect(glyphs).toBeCloseTo(oneLineWidth({ text: 'Hold' }) + 30, 2)
+    expect(lineCount(text({ ...spaced, width: Math.ceil(glyphs), textAutoResize: 'HEIGHT' }))).toBe(
+      1
+    )
+  })
+
+  test('fits a spaced line ending in a glyph drawn for several characters by that glyph', () => {
+    const spaced = { text: 'ab->', letterSpacing: { value: 10, unit: 'PIXELS' as const } }
+    const glyphs = oneLineWidth(spaced)
+    expect(lineCount(text({ ...spaced, width: Math.ceil(glyphs), textAutoResize: 'HEIGHT' }))).toBe(
+      1
+    )
+  })
+
   test('places a line taller than its box past the side away from its alignment', () => {
     const baseline = (textAlignVertical: SceneNode['textAlignVertical']) =>
       textNodeToOutlineLayout(

@@ -4,9 +4,10 @@ import type { Editor } from '@open-pencil/core'
 
 /**
  * Draws one fresh frame of a shader. The source is a WebGPU canvas that keeps the frame only
- * until the current task ends, so it is drawn from at once, never kept.
+ * until the current task ends, so it is drawn from at once, never kept. Null means its player
+ * stopped, as when the system asks for reduced motion: show the still frame again.
  */
-export type ShaderFrameListener = (source: CanvasImageSource) => void
+export type ShaderFrameListener = (source: CanvasImageSource | null) => void
 
 /**
  * Where a canvas's shader playback hands each frame it draws, by the image its paint shows, to
@@ -15,7 +16,7 @@ export type ShaderFrameListener = (source: CanvasImageSource) => void
  */
 export interface ShaderFrames {
   listen(image: string, listener: ShaderFrameListener): () => void
-  publish(image: string, source: CanvasImageSource): void
+  publish(image: string, source: CanvasImageSource | null): void
 }
 
 /**

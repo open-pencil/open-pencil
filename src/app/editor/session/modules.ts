@@ -80,6 +80,8 @@ export function createEditorStoreModules(
     renameDocument: documentIO.renameDocument,
     /** Calls back with each name the person gives the document. */
     onDocumentRenamed: documentIO.onDocumentRenamed,
+    /** Calls back with the error of each automatic save that failed. */
+    onAutosaveFailed: documentIO.onAutosaveFailed,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
     /** Counts the document changed by something outside its history, so it gets saved. */

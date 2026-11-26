@@ -183,25 +183,25 @@ describe('MCP get_jsx', () => {
     expect(rendered.childIds).toHaveLength(tiles)
   })
 
-  test('with a root, inline JSX stays cut and says how to get all of it', async () => {
+  test('with a root, inline JSX stays outlined and says how to get all of it', async () => {
     const { id, app } = board()
     const { call } = await server({ get_jsx: app })
 
     const result = parsed(await call('get_jsx', { id }))
     const note = await coreNote(app, id)
-    expect(String(result.jsx)).toHaveLength(12_000)
+    expect(String(result.jsx)).toContain('keepChildren')
     expect(result.truncated).toBe(true)
     expect(String(result.note)).toStartWith(note)
     expect(String(result.note).length).toBeGreaterThan(note.length)
   })
 
-  test('without a root, a path is dropped and the JSX stays cut, with no promise of a file', async () => {
+  test('without a root, a path is dropped and the JSX stays outlined, with no promise of a file', async () => {
     const { id, app } = board()
     const { sent, call } = await server({ get_jsx: app }, { withRoot: false })
 
     const result = parsed(await call('get_jsx', { id, path: 'board.jsx' }))
     expect(sent).toEqual([{ id }])
-    expect(String(result.jsx)).toHaveLength(12_000)
+    expect(String(result.jsx)).toContain('keepChildren')
     expect(result.truncated).toBe(true)
     expect(result.note).toBe(await coreNote(app, id))
   })

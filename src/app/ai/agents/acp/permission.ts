@@ -31,12 +31,15 @@ function removeEntry(entry: PendingPermission) {
 /**
  * Queues the request for the permission dialog. One left unanswered for a few seconds calls
  * `onUnanswered`, which notifies the person, as one answered at once needs no notification; it is
- * rejected once it times out.
+ * rejected once it times out. Aborting `signal`, as stopping the turn that asked does, takes it
+ * off the dialog and answers it cancelled, as ACP asks of a client once a turn is cancelled.
  */
 export function requestPermissionFromUser(
   params: RequestPermissionRequest,
-  onUnanswered?: () => void
+  onUnanswered?: () => void,
+  signal?: AbortSignal
 ): Promise<RequestPermissionResponse> {
+  if (signal?.aborted) return Promise.resolve({ outcome: { outcome: 'cancelled' } })
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
       removeEntry(entry)
@@ -51,6 +54,15 @@ export function requestPermissionFromUser(
 
     const entry: PendingPermission = { request: params, resolve, timer, notice }
     permissionQueue.value = [...permissionQueue.value, entry]
+    signal?.addEventListener(
+      'abort',
+      () => {
+        if (!permissionQueue.value.includes(entry)) return
+        removeEntry(entry)
+        resolve({ outcome: { outcome: 'cancelled' } })
+      },
+      { once: true }
+    )
   })
 }
 

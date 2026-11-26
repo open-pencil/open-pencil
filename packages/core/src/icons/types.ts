@@ -20,10 +20,16 @@ export interface IconData {
   options?: IconOptions
 }
 
-/** A control for how a set's icons are drawn: a range, such as a font axis, or a choice. */
-export type IconOption =
+/**
+ * A control for how a set's icons are drawn: a range, such as a font axis, a choice, or a color
+ * as `#RRGGBB`. One with `when` applies only while another option has that value, as a palette's
+ * colors do while the rendering is palette.
+ */
+export type IconOption = (
   | { key: string; name: string; min: number; max: number; default: number; step: number }
   | { key: string; name: string; values: readonly string[]; default: string }
+  | { key: string; name: string; color: true; default: string }
+) & { when?: { key: string; value: string } }
 
 export interface IconSearchResult {
   icons: string[]
@@ -44,6 +50,11 @@ export interface IconCollection {
   multicolor: boolean
   /** How the set's icons can be drawn, for a set we draw ourselves. */
   options?: readonly IconOption[]
+  /**
+   * Listed only to say why this host cannot draw the set: `host` when it never can, such as SF
+   * Symbols outside the Mac app, and `system` when its system is too old. Such a set has no icons.
+   */
+  unavailable?: 'host' | 'system'
 }
 
 export interface IconPathInfo {

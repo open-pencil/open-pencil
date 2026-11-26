@@ -1,6 +1,7 @@
 import { lstat, remove, rename, writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
 
-import { randomHex } from '@open-pencil/scene-graph/random'
+import { createMutex } from '@open-pencil/std/async'
+import { randomHex } from '@open-pencil/std/random'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { storageLocationOf } from '@/app/integrations/storage/location'
@@ -151,7 +152,7 @@ export function createDocumentWriter({
   }
 
   /** A save waits for the one before it, so two never write the same file at once. */
-  let queue: Promise<unknown> = Promise.resolve()
+  const writes = createMutex()
 
   /**
    * Writes the `.fig` as `stream` produces it: the archive is never held whole, and a failure
@@ -163,8 +164,6 @@ export function createDocumentWriter({
       filePath: getFilePath(),
       fileHandle: getFileHandle()
     }
-    const run = queue.catch(() => undefined).then(() => writeNow(stream, version, target))
-    queue = run
-    return run
+    return writes.run(() => writeNow(stream, version, target))
   }
 }

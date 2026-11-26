@@ -3,7 +3,7 @@ import { PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger } from 'rek
 import { computed, ref, watch } from 'vue'
 
 import type { SlotDefinitionControl, SlotInstanceOption } from '@open-pencil/vue/controls/slots'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -30,7 +30,8 @@ const emit = defineEmits<{
   setPreferred: [componentId: string, preferred: boolean]
 }>()
 defineSlots<{ thumbnail?(props: { id: string }): unknown }>()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const { open: popupOpen, portalActive } = useRetainedPopup()
 const styles = usePopoverUI({
   content: 'w-64 max-w-[calc(100vw-1rem)]',

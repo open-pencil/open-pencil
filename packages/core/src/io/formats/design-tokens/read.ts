@@ -2,7 +2,7 @@ import { isPlainObject } from 'es-toolkit/predicate'
 import { basename, dirname, join, normalize } from 'pathe'
 import * as v from 'valibot'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { pathName } from './paths'
 import { OPENPENCIL_EXTENSION } from './types'
@@ -56,8 +56,7 @@ const COMPOSITE_TYPES = new Set([
   'border',
   'gradient',
   'transition',
-  'strokeStyle',
-  'cubicBezier'
+  'strokeStyle'
 ])
 
 const documentSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))

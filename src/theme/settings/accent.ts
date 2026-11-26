@@ -1,4 +1,4 @@
-import { focusStyles } from '../focus/styles'
+import { focusStyles } from '@open-pencil/theme'
 
 /** Accent color swatches in Settings › General › Appearance. */
 export default {

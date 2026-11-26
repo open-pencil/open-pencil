@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseCSSColor, parseCSSNumber } from '@open-pencil/scene-graph/css'
+import {
+  parseCSSColor,
+  parseCSSNumber,
+  parseCSSURLReferences,
+  parseFragmentReference
+} from '@open-pencil/scene-graph/css'
 
 describe('parseCSSNumber', () => {
   test.each([
@@ -32,4 +37,28 @@ describe('parseCSSColor', () => {
       expect(parseCSSColor(value)).toBeNull()
     }
   )
+})
+
+describe('parseFragmentReference', () => {
+  test('reads the id a reference points to in its own document, decoded', () => {
+    expect(parseFragmentReference('#mark')).toBe('mark')
+    expect(parseFragmentReference(' #a%20b ')).toBe('a b')
+  })
+
+  test('refuses a reference to another file or without an id', () => {
+    expect(parseFragmentReference('sprite.svg#icon')).toBeNull()
+    expect(parseFragmentReference('https://example.test/a.svg#icon')).toBeNull()
+    expect(parseFragmentReference('?v=2#icon')).toBeNull()
+    expect(parseFragmentReference('#')).toBeNull()
+    expect(parseFragmentReference(undefined)).toBeNull()
+  })
+})
+
+describe('parseCSSURLReferences', () => {
+  test("lists a value's local url() ids, quoted or not, and leaves out other files", () => {
+    expect(parseCSSURLReferences('url(#clip) url("#mask%201") url(other.svg#x)')).toEqual([
+      'clip',
+      'mask 1'
+    ])
+  })
 })

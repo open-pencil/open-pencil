@@ -1,1 +1,0 @@
-- A new profile opens documents with design-issue markers off. View → Design issues still turns them on, and a profile that already shows them keeps that choice.

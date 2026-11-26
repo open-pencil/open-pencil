@@ -10,6 +10,7 @@ import {
   toolImage,
   toolNodeIds,
   toolSource,
+  toolDisplayName,
   toolSummary,
   toolWebResults,
   type ChatMessagePart,
@@ -211,6 +212,14 @@ describe('toolHasInput', () => {
     expect(toolHasInput(call({ type: 'tool-get_node', input: { id: '1:2' } }))).toBe(true)
     expect(toolHasInput(call({ type: 'tool-get_selection', input: {} }))).toBe(false)
     expect(toolHasInput(call({ type: 'tool-get_selection', input: undefined }))).toBe(false)
+  })
+})
+
+describe('toolDisplayName', () => {
+  test('drops the MCP server, however the agent writes its name', () => {
+    expect(toolDisplayName(call({ type: 'tool-mcp__open-pencil__get_nodes' }))).toBe('Get Nodes')
+    // Pi writes OpenPencil's server as `open_pencil`.
+    expect(toolDisplayName(call({ type: 'tool-mcp__open_pencil__get_nodes' }))).toBe('Get Nodes')
   })
 })
 

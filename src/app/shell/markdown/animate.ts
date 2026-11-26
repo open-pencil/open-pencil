@@ -1,6 +1,6 @@
 import type { ElementNode, Node } from 'comark'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 /** The class of a word that fades in as a reply streams (`src/theme/markdown/markdown.css`). */
 export const STREAMING_WORD_CLASS = 'markdown-word'

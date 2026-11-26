@@ -3,9 +3,12 @@ export { parseCSSGridTracks } from './grid'
 export {
   parseCSSAlignItems,
   parseCSSAlignSelf,
+  parseCSSAspectRatio,
   parseCSSFlexDirection,
-  parseCSSJustifyContent
+  parseCSSJustifyContent,
+  type CSSAspectRatio
 } from './layout'
+export { parseCSSEasing, parseCSSTime } from './motion'
 export { parseCSSShadows } from './shadows'
 export {
   CSS_GENERIC_FONT_FAMILIES,
@@ -24,4 +27,14 @@ export {
   type CSSTransformBox,
   type CSSTransformStyle
 } from './transform'
-export { dimension, parseCSSColor, parseCSSNumber, splitCSSValue } from './values'
+export {
+  dimension,
+  parseCSSColor,
+  parseCSSNumber,
+  parseCSSURLReferences,
+  parseCSSURLs,
+  parsePaintFallback,
+  parseFragmentReference,
+  splitCSSLayers,
+  splitCSSValue
+} from './values'

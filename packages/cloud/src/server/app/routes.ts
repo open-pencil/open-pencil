@@ -11,9 +11,15 @@ import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
 import { createTermsService } from '#cloud/server/account/terms'
 import { createAccessTokenRoutes } from '#cloud/server/account/tokens'
-import { createCloudAPIRouter, createPublicCloudAPIRouter } from '#cloud/server/api'
+import {
+  createCloudAPIRouter,
+  createPublicCloudAPIRouter,
+  type CloudAPIEnvironment
+} from '#cloud/server/api'
 import { createAuthenticationEmailService } from '#cloud/server/auth'
+import { signInProviders } from '#cloud/server/auth/methods'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
+import { createOAuthRoutes, createOAuthService } from '#cloud/server/oauth'
 import { Hono } from 'hono'
 
 import type { createRequestChecks, createRequestResolvers } from './checks'
@@ -30,7 +36,7 @@ export function createAppRouters(
   allowedOrigins: ReadonlySet<string>
 ) {
   const { config, database } = services
-  const { resolveIdentity, resolveSession } = resolvers
+  const { resolveIdentity, resolveSession, twoStepConfirmed } = resolvers
   const admin = createCloudAdminRoutes(
     {
       email: createAdminEmailService(database, services.transactionalEmail, {
@@ -39,6 +45,8 @@ export function createAppRouters(
       enrollment: app.enrollment,
       users: createAdminUserService(database, services.auth, {
         requireMFA: config.deploymentAdminMFARequired,
+        approval: config.enrollmentMode === 'approval',
+        signInProviders: signInProviders(config),
         pictures: app.pictures,
         notify: services.transactionalEmail
           ? createAuthenticationEmailService(services.transactionalEmail, config.publicURL)
@@ -49,14 +57,18 @@ export function createAppRouters(
       documents: createAdminDocumentService(database, {
         closeRooms: services.onDocumentTakenDown,
         purgeGraceMs: config.documentPurgeGraceMs,
+        communityWorkspaceId: config.community?.workspaceId ?? null,
+        objects: services.objects,
+        documents: app.documents,
         email: services.transactionalEmail,
         publicURL: config.publicURL,
         contactEmail: config.legal?.abuseEmail
       }),
-      reports: createAdminReportService(database, {
-        email: services.transactionalEmail,
-        contactEmail: config.legal?.abuseEmail
-      })
+      reports: createAdminReportService(
+        database,
+        { email: services.transactionalEmail, contactEmail: config.legal?.abuseEmail },
+        { communityWorkspaceId: config.community?.workspaceId ?? null }
+      )
     },
     allowedOrigins,
     {
@@ -76,6 +88,7 @@ export function createAppRouters(
     deletion: createAccountDeletionService(database),
     resolveIdentity,
     resolveSession,
+    twoStepConfirmed,
     requireActiveSession: checks.requireActiveSession,
     requireAccountSession: checks.requireAccountSession,
     authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
@@ -86,10 +99,26 @@ export function createAppRouters(
     requireActiveSession: checks.requireActiveSession,
     authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
   })
+  const oauth = services.auth.oauth
+  const appConnections = oauth
+    ? createOAuthRoutes({
+        publicURL: config.publicURL,
+        service: createOAuthService({
+          database,
+          publicURL: config.publicURL,
+          secret: config.authSecret,
+          steps: oauth.steps
+        }),
+        serverMetadata: oauth.serverMetadata,
+        requireActiveSession: checks.requireActiveSession,
+        authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
+      })
+    : new Hono<CloudAPIEnvironment>()
   const shared = {
     collaboration: app.collaboration,
     documents: app.documents,
     versions: app.versions,
+    comments: app.comments,
     community: app.community,
     entitlements: app.entitlements,
     sharing: app.sharing,
@@ -110,5 +139,5 @@ export function createAppRouters(
   const internalAPI = config.internalServiceToken
     ? createInternalRoutes(createInternalService(database), config.internalServiceToken)
     : new Hono()
-  return { admin, account, accessTokens, cloudAPI, publicCloudAPI, internalAPI }
+  return { admin, account, accessTokens, appConnections, cloudAPI, publicCloudAPI, internalAPI }
 }

@@ -135,6 +135,7 @@ Security defaults:
 - Unix socket and discovery files are created with owner-only permissions on macOS and Linux.
 - TCP binds to `127.0.0.1` and uses port 7600 by default.
 - Authentication is enabled by default with a generated token stored in the private discovery file.
+- The discovery file holds two tokens. `authToken` is the server's own: the app, the CLI, and the stdio server use it, and it also opens `/rpc` and `/files`, which the tool settings do not limit. `clientToken` opens `/mcp` only, and other routes answer it with `403 insufficient_scope`. Give an MCP client you connect over HTTP the `clientToken`, so it gets the tools as configured and nothing else; the app does the same for the coding agents it starts.
 - `eval` is disabled.
 - File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to the current working directory) and reject symlink escapes.
 - The browser app reaches those files through the server: `open_document` reads one, and `save_document` or `create_document` with a path writes a copy, so a document opened in the browser keeps saving where it did before.
@@ -144,9 +145,9 @@ Set `PORT=0` to disable TCP on macOS and Linux. Windows requires TCP. Set `OPENP
 
 Endpoints are available over both active transports:
 
-- `GET /health` — server and app connection status; never returns the auth token.
-- `POST /rpc` — authenticated live-app automation.
-- `POST /mcp` — MCP Streamable HTTP. Sessions use the `mcp-session-id` header.
+- `GET /health` — server and app connection status; never returns a token.
+- `POST /rpc` — live-app automation for the CLI and the stdio server. Takes the server's token only, and runs raw commands, `eval` among them, whatever tools are enabled.
+- `POST /mcp` — MCP Streamable HTTP. Takes the client token or the server's. Sessions use the `mcp-session-id` header.
 
 ## Workflow
 

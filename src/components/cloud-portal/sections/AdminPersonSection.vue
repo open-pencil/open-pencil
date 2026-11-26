@@ -2,7 +2,7 @@
 import { computed, watch } from 'vue'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
@@ -20,9 +20,10 @@ import { portalSession, portalSignIn } from './sessions'
 
 /** One account's page in the console, and what administrators do about it from there. */
 const { userId } = defineProps<{ userId: string }>()
-const emit = defineEmits<{ back: [] }>()
+const emit = defineEmits<{ back: []; deleted: [userId: string] }>()
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const personMessages = useMessages('cloud/portal/person')
 const dates = useDateFormat()
 
 const loaded = usePortalLoad(async () => {
@@ -40,8 +41,10 @@ const detail = computed<PortalPersonDetail | null>(() => {
     person: portalPerson(value.user, portal.account.value?.user.userId, dates),
     emailVerified: value.user.emailVerified,
     methods: value.methods.map((method) => ({
+      id: method.id,
       provider: method.provider,
-      linkedOn: dates.format(method.createdAt, 'date')
+      linkedOn: dates.format(method.createdAt, 'date'),
+      canRemove: method.canRemove
     })),
     authenticator: value.authenticator,
     passkeyCount: value.passkeyCount,
@@ -51,15 +54,29 @@ const detail = computed<PortalPersonDetail | null>(() => {
   }
 })
 
+// A change can take effect and still fail after, as a removal whose email can't be sent does, so
+// the page reads the account again either way; the error still shows.
 const action = usePortalAction(async (change: () => Promise<unknown>) => {
-  await change()
-  await loaded.reload()
+  try {
+    await change()
+  } finally {
+    await loaded.reload()
+  }
 })
 const error = computed(() => action.error.value)
 
 function act(kind: PortalPersonAction, reason?: string) {
   const person = detail.value?.person
-  if (person) void action.run(() => personAction(portal.api, person, kind, reason))
+  if (!person) return
+  void action.run(async () => {
+    await personAction(portal.api, person, kind, reason)
+    // A deleted account has no page left; the parent leaves it if it is still the one shown.
+    if (kind === 'delete') emit('deleted', person.id)
+  })
+}
+
+function removeMethod(methodId: string) {
+  void action.run(() => portal.api.removeSignInMethod(userId, methodId))
 }
 
 watch(
@@ -79,14 +96,14 @@ watch(
     <AppPlaceholder
       v-if="loaded.data.value === 'missing'"
       size="page"
-      :label="messages.personNotFound"
-      :description="messages.personNotFoundDescription"
+      :label="personMessages.personNotFound"
+      :description="personMessages.personNotFoundDescription"
       :ui="{ root: 'rounded-lg border border-dashed border-border' }"
     >
       <template #icon><icon-lucide-user-x class="size-5" /></template>
       <template #action>
         <AppButton size="sm" variant="outline" @click="emit('back')">
-          {{ messages.backToPeople }}
+          {{ personMessages.backToPeople }}
         </AppButton>
       </template>
     </AppPlaceholder>
@@ -95,6 +112,7 @@ watch(
       :detail="detail"
       :busy="action.busy.value"
       @act="act"
+      @remove-method="removeMethod"
       @back="emit('back')"
     />
     <PortalPageSkeleton v-else-if="loaded.status.value === 'loading'" avatar :groups="[5, 2]" />

@@ -38,5 +38,9 @@
   "savingDocument": "Dokument wird gespeichert…",
   "saveFailedRetry": "Erneut speichern",
   "fileChangedOnDisk": "„{name}“ wurde auf dem Datenträger geändert. Deine nicht gespeicherten Änderungen bleiben erhalten; Speichern ersetzt die Datei.",
-  "reloadDiscardingChanges": "Neu laden"
+  "reloadDiscardingChanges": "Neu laden",
+  "autosaveFailed": "„{name}“ konnte nicht gespeichert werden: {error}",
+  "saveFailedTitle": "„{name}“ konnte nicht gespeichert werden",
+  "notifySaveFailed": "Fehlgeschlagene Speichervorgänge",
+  "notifySaveFailedHint": "Ein geöffnetes Dokument konnte nicht automatisch gespeichert werden."
 }

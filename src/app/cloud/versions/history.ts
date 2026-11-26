@@ -1,9 +1,9 @@
 import { ref, shallowReactive, shallowRef } from 'vue'
 
+import { downloadCloudDocument } from '@open-pencil/cloud/client'
 import type { DocumentVersion } from '@open-pencil/cloud/contract'
 
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
-import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { readFigBytes } from '@/app/tabs'
 

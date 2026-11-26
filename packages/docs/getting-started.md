@@ -2,7 +2,11 @@
 
 ## Try Online
 
-OpenPencil runs in the browser — no installation required. Open [app.openpencil.dev](https://app.openpencil.dev) to start designing.
+OpenPencil runs in the browser — no installation required. Open [cloud.openpencil.dev](https://cloud.openpencil.dev) to start designing.
+
+::: tip Moved from app.openpencil.dev
+The web app moved from app.openpencil.dev to cloud.openpencil.dev. Files you kept in your browser there stay at [app.openpencil.dev](https://app.openpencil.dev) until that address starts redirecting here: open it to save them to Cloud or download them.
+:::
 
 If you want to build on top of it instead of only using the default app, see the [Programmable](/developers/) section and the [Vue SDK](/developers/sdk/).
 

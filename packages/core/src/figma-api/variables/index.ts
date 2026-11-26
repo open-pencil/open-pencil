@@ -3,7 +3,7 @@ import type {
   VariableBindableEffectField
 } from '@figma/plugin-typings/plugin-api-standalone'
 
-import type { Effect, SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph } from '@open-pencil/scene-graph'
 import {
   EFFECT_BINDING_PROPERTIES,
   effectBindableProperties,
@@ -12,6 +12,10 @@ import {
 } from '@open-pencil/scene-graph/variables'
 
 import { boundEffectCopy, type FigmaEffect } from '#core/figma-api/effects'
+import type { FigmaRectangleNode } from '#core/figma-api/node-types'
+
+/** An effect as a layer's `effects` holds it, Figma's typings and OpenPencil's read-back alike. */
+type FigmaNodeEffect = FigmaRectangleNode['effects'][number]
 
 import { FIGMA_DEFAULT_VALUES, variableAlias, type FigmaVariableAlias } from './values'
 import { FigmaVariable, FigmaVariableCollection, assertVariableName } from './variable'
@@ -28,7 +32,7 @@ export {
   type FigmaBindableField
 } from './bindings'
 
-/** Figma's variable types, including the motion types OpenPencil does not model. */
+/** Figma's variable types. */
 const FIGMA_TYPES = ['BOOLEAN', 'COLOR', 'FLOAT', 'STRING', 'EASING', 'TIMING'] as const
 export type FigmaVariableResolvedType = (typeof FIGMA_TYPES)[number]
 
@@ -40,10 +44,6 @@ function assertType(method: string, type: unknown): FigmaVariableResolvedType {
     )
   }
   return type as FigmaVariableResolvedType
-}
-
-function isModelledType(type: FigmaVariableResolvedType): type is VariableType {
-  return Object.hasOwn(FIGMA_DEFAULT_VALUES, type)
 }
 
 /** A solid paint as `setBoundVariableForPaint` takes and returns it. */
@@ -80,7 +80,8 @@ export class FigmaVariablesAPI {
 
   getLocalVariables(type?: FigmaVariableResolvedType): FigmaVariable[] {
     const wanted = type === undefined ? undefined : assertType('getLocalVariables', type)
-    return [...this.#graph.variables.values()]
+    return this.#graph
+      .getLiveVariables()
       .filter((variable) => wanted === undefined || variable.type === wanted)
       .map((variable) => new FigmaVariable(this.#graph, variable.id))
   }
@@ -90,9 +91,9 @@ export class FigmaVariablesAPI {
   }
 
   getLocalVariableCollections(): FigmaVariableCollection[] {
-    return [...this.#graph.variableCollections.keys()].map(
-      (id) => new FigmaVariableCollection(this.#graph, id)
-    )
+    return this.#graph
+      .getLiveCollections()
+      .map((collection) => new FigmaVariableCollection(this.#graph, collection.id))
   }
 
   async getLocalVariableCollectionsAsync(): Promise<FigmaVariableCollection[]> {
@@ -106,8 +107,6 @@ export class FigmaVariablesAPI {
     resolvedType: FigmaVariableResolvedType
   ): FigmaVariable {
     const type = assertType('createVariable', resolvedType)
-    if (!isModelledType(type))
-      throw new Error(`in createVariable: OpenPencil does not support ${type} variables`)
     const collectionId = typeof collection === 'string' ? collection : collection.id
     if (!this.#graph.variableCollections.has(collectionId)) {
       throw new Error('in createVariable: Could not find variable collection')
@@ -162,11 +161,12 @@ export class FigmaVariablesAPI {
    * layer. As in Figma, the copy's values are not resolved yet, a shadow's spread reads 0, and
    * `null` unbinds every property of the effect, not only `field`.
    */
-  setBoundVariableForEffect(
-    effect: PluginEffect,
+  setBoundVariableForEffect<E extends PluginEffect | FigmaEffect>(
+    effect: E,
     field: VariableBindableEffectField,
     variable: { readonly id: string } | null
-  ): FigmaEffect {
+  ): Extract<FigmaNodeEffect, { type: E['type'] }> {
+    // Typed as a layer's effects are, from Figma's typings, so the copy can be set on a layer.
     return boundEffectCopy('setBoundVariableForEffect', effect, (modelled) => {
       const property = assertEffectField(modelled.type, field)
       if (variable === null) return {}
@@ -180,7 +180,7 @@ export class FigmaVariablesAPI {
         )
       }
       return { ...modelled.boundVariables, [property]: variableAlias(variable.id) }
-    })
+    }) as Extract<FigmaNodeEffect, { type: E['type'] }>
   }
 }
 

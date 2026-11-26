@@ -1,11 +1,11 @@
 import { createDesignJSXRenderer, type SVGSource } from '@open-pencil/design-jsx'
+import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { defaultIcons, placeIcon, type IconProvider } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
 import { extractSVGContent, extractSVGContentFromElements } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
-import { parseSVGViewBoxValue } from '#core/io/formats/svg/metadata'
 import { layoutAuthoredNodes } from '#core/layout'
 import { markdownText } from '#core/text/markdown'
 import { prepareGraphFonts } from '#core/text/prepare'
@@ -40,8 +40,8 @@ function svgIconData({ body, elements, props }: SVGSource, box: Size): IconData 
 
 function createRenderer(icons: IconProvider) {
   return createDesignJSXRenderer<IconData>({
-    async icon(name, size) {
-      const icon = (await icons.icons([name], size)).get(name)
+    async icon(name, size, options) {
+      const icon = (await icons.icons([name], size, options)).get(name)
       return icon && icon.paths.length > 0 ? icon : null
     },
     svg: svgIconData,

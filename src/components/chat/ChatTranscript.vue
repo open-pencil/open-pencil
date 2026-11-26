@@ -3,7 +3,7 @@ import type { ChatStatus, UIMessage } from 'ai'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, provide, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
@@ -74,23 +74,17 @@ const emit = defineEmits<{
   removeQueued: [id: string]
   fixReview: [messageId: string]
 }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 provide(
   CHAT_NODES_LIVE,
   computed(() => nodesLive)
 )
 const running = computed(() => status === 'submitted' || status === 'streaming')
-const isThinking = computed(() => {
-  if (sending !== null && !compacting) return true
-  if (!running.value) return false
-  const last = messages.at(-1)
-  if (!last || last.role !== 'assistant') return true
-  const part = last.parts.at(-1)
-  if (!part || part.type === 'step-start') return true
-  if ('toolCallId' in part && (part.state === 'output-available' || part.state === 'output-error'))
-    return true
-  return status === 'submitted'
-})
+/**
+ * The AI is at work for the whole turn, not only until its first words: agents go quiet while
+ * they think, and most send no thinking text, or send it only once a stretch of it ends.
+ */
+const isThinking = computed(() => (sending !== null && !compacting) || running.value)
 const idle = computed(() => interactive && (status === 'ready' || status === 'error'))
 // A request that failed before any reply is the last message; it is retried, not an older reply.
 const lastMessage = computed(() => messages.at(-1))
@@ -235,7 +229,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           {{ ai.reviewing }}
         </p>
 
-        <!-- Thinking indicator: shown when AI is working but no visible activity -->
+        <!-- Shown while the AI works, below whatever it has sent so far. -->
         <div v-if="isThinking" data-test-id="chat-typing-indicator" class="flex gap-2">
           <div
             class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted/20 text-3xs font-bold text-muted"

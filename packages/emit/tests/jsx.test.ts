@@ -105,3 +105,15 @@ describe('numbers', () => {
     expect(() => es.number(Number.NaN)).toThrow()
   })
 })
+
+describe('JSX comments', () => {
+  test('print among children on their own line', () => {
+    const code = jsx.printJSX(jsx.element('Card', [], [jsx.comment('3 layers inside 1:2')], 0))
+    expect(code).toBe('<Card>\n  {/* 3 layers inside 1:2 */}\n</Card>')
+  })
+
+  test('cannot be ended early by their text', () => {
+    const code = card([], [jsx.comment('Evil */}<Frame />{/* layer\nname')])
+    expect(code).toBe('<Card>{/* Evil * /}<Frame />{/* layer name */}</Card>')
+  })
+})

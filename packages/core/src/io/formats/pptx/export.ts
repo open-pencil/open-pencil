@@ -1,11 +1,12 @@
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import { slideSettings } from '@open-pencil/scene-graph/slides'
+import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
   hasUnsupportedTransform,
@@ -131,7 +132,12 @@ export async function renderNodesToPPTX(
       stats
     }
 
-    if (root.type !== 'FRAME') {
+    // A deck's slide keeps its speaker notes, and one presenting skips stays as a hidden slide.
+    const settings = slideSettings(root)
+    if (settings?.notes) slide.addNotes(settings.notes)
+    if (settings?.skipped) slide.hidden = true
+
+    if (root.type !== 'FRAME' && root.type !== 'SLIDE') {
       // Non-frame root: export as a single image on its own slide.
       await addFallbackImage(ctx, root, root.opacity, `root node type ${root.type}`)
       continue
@@ -245,7 +251,8 @@ function rootRasterReason(root: SceneNode): string | null {
   // visible — rasterizing the whole slide for it would only cost editability.
   if (root.effects.some((e) => e.visible && e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW'))
     return 'blur effect'
-  const shadowReason = getShadowFallbackReason(root)
+  // A deck's slide wears its shadows only to stand out in the grid, so they are not its paint.
+  const shadowReason = root.type === 'SLIDE' ? null : getShadowFallbackReason(root)
   if (shadowReason) return shadowReason
   if (hasAsymmetricCorners(root)) return 'asymmetric corners'
   if (root.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
@@ -461,27 +468,12 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
 function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGenJS.TextProps[] {
   const text = applyTextCase(node.text, node.textCase)
 
-  interface Seg {
-    start: number
-    end: number
-    style: Partial<SceneNode> & { fills?: Fill[] }
-  }
-  const segs: Seg[] = []
-  const sorted = [...node.styleRuns].sort((a, b) => a.start - b.start)
-  let cursor = 0
-  for (const run of sorted) {
-    const start = Math.max(run.start, cursor)
-    const end = Math.min(run.start + run.length, text.length)
-    if (start > cursor) segs.push({ start: cursor, end: start, style: {} })
-    if (end > start) segs.push({ start, end, style: run.style })
-    cursor = Math.max(cursor, end)
-  }
-  if (cursor < text.length) segs.push({ start: cursor, end: text.length, style: {} })
-  if (segs.length === 0) segs.push({ start: 0, end: text.length, style: {} })
+  const pieces = styleRunPieces(node.styleRuns, text.length)
+  const segs = pieces.length > 0 ? pieces : [{ start: 0, end: 0, style: null }]
 
   const baseFill = firstVisibleFill(node)
   return segs.map((seg) => {
-    const s = seg.style
+    const s = seg.style ?? {}
     const fill = s.fills?.find((f) => f.visible && f.type === 'SOLID') ?? baseFill
     const fontSize = s.fontSize ?? node.fontSize
     const weight = s.fontWeight ?? node.fontWeight

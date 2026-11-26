@@ -7,7 +7,7 @@ import IconMousePointerClick from '~icons/lucide/mouse-pointer-click'
 import IconWand from '~icons/lucide/wand-sparkles'
 
 import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'

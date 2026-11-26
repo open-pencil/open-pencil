@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const updatesMessageDefaults = {
   upToDate: 'OpenPencil is up to date',
   windowTitle: 'Software Update',
@@ -31,7 +29,10 @@ export const updatesMessageDefaults = {
   settingsSection: 'Updates',
   checkOnStartup: 'Check for updates on startup',
   checkOnStartupDescription:
-    'Looks for a new version shortly after the desktop app opens. Check for Updates in the menu still runs when this is off.'
+    'Looks for a new version shortly after the desktop app opens. Check for Updates in the menu still runs when this is off.',
+  channel: 'Update channel',
+  channelDescription:
+    'Nightly builds come from the newest code every night and can break. Switching back to Stable installs the current stable release at the next check.',
+  channelStable: 'Stable',
+  channelNightly: 'Nightly'
 } as const
-
-export const updatesMessages = i18n('updates', updatesMessageDefaults)

@@ -2,11 +2,12 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { useHead } from '@unhead/vue'
-import { useEventListener, whenever } from '@vueuse/core'
+import { whenever } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { errorMessage } from '@open-pencil/std/errors'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   aiSetupDialogOpen,
@@ -16,6 +17,7 @@ import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { offerCampaignPrompt, startCampaignClock } from '@/app/campaigns'
 import { openingCloudLink, shownEditorStore, versionPreviewKey } from '@/app/cloud/integration'
 import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
@@ -24,7 +26,6 @@ import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
-import { offerDonationPrompt, startDonationClock } from '@/app/donation'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -33,6 +34,7 @@ import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { useEditorMenu } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
+import { useEditorWheelGuard } from '@/app/shell/wheel/use'
 import {
   activeTab,
   createHomeTab,
@@ -49,8 +51,10 @@ import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import {
+  CloudCreditsBanner,
   CloudCommunityBanner,
   CloudEditorUpdateBanner,
+  CloudMovingBanner,
   CloudVersionDialog
 } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
@@ -103,7 +107,7 @@ watch(
 const opensCloudLink = ['documentId', 'shareId', 'invitationId'].some(
   (param) => typeof route.params[param] === 'string'
 )
-const { collaboration } = useI18n()
+const collaboration = useMessages('collaboration')
 const joinRoomFromInput = useJoinRoom()
 
 /**
@@ -131,7 +135,7 @@ function openFirstTab(): Tab {
       toast.error(
         notificationMessages.get().openFileFailed({
           name: 'Demo',
-          error: error instanceof Error ? error.message : String(error)
+          error: errorMessage(error)
         })
       )
     })
@@ -144,12 +148,13 @@ const welcomeShown =
     ? offerAISetupOnFirstRun({ inTour: route.meta.demo === true })
     : false
 const sharingStarted = startSharing()
-// Release builds ask for donations; development and test runs would only be interrupted.
-const asksForDonations = import.meta.env.PROD && !appRuntimeConfig.test
+// Release builds show campaigns, such as the donation ask; development and test runs would only
+// be interrupted.
+const showsCampaigns = import.meta.env.PROD && !appRuntimeConfig.test
 // One question per launch: a first run is asked about usage stats once the welcome closes, and
-// a later launch about usage stats if still unanswered, otherwise about a donation once it is due.
+// a later launch about usage stats if still unanswered, otherwise shows a campaign that is due.
 if (welcomeShown) {
-  startDonationClock()
+  startCampaignClock()
   whenever(
     () => !aiSetupDialogOpen.value,
     async () => {
@@ -165,7 +170,7 @@ if (welcomeShown) {
     async () => {
       await sharingStarted
       offerUsageStatsPrompt('prompt')
-      if (asksForDonations && !usageStatsPrompt.value) offerDonationPrompt()
+      if (showsCampaigns && !usageStatsPrompt.value) void offerCampaignPrompt()
     },
     { once: true, immediate: true }
   )
@@ -182,14 +187,7 @@ exposeCollaborationActions(collab, joinRoomFromInput)
 exposeAutomationTestRequests()
 syncTabAddress(router, route)
 
-useEventListener(
-  document,
-  'wheel',
-  (event: WheelEvent) => {
-    if (event.ctrlKey || event.metaKey) event.preventDefault()
-  },
-  { passive: false }
-)
+useEditorWheelGuard()
 
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 const roomLinksCleanup = ref<(() => void) | null>(null)
@@ -204,7 +202,7 @@ function reportOpenFailure(error: unknown): void {
   console.error('[Open With]', error)
   toast.error(
     notificationMessages.get().openQueuedFilesFailed({
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage(error)
     })
   )
 }
@@ -305,9 +303,11 @@ onUnmounted(() => {
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+    <CloudMovingBanner />
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
+    <CloudCreditsBanner />
     <CloudEditorUpdateBanner />
     <CloudCommunityBanner />
     <RenameSelectionDialog />

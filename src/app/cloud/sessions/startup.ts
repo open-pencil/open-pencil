@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 
+import { appRuntimeConfig } from '@/app/runtime/config'
 import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
 
 import { checkCloudAvailability } from '../availability'
@@ -69,7 +70,8 @@ export async function startCloudSessions(options: {
   followCloudLocale()
   try {
     if (IS_CLOUD_SITE) await addCloudSiteServer()
-    void checkCloudAvailability(globalThis.location.href)
+    // A test run never asks the official server, so no spec depends on it being up.
+    if (!appRuntimeConfig.test) void checkCloudAvailability(globalThis.location.href)
     const address = new URL(globalThis.location.href)
     const link = readCloudLink(address)
     const documentLink = readCloudDocumentLink(address)

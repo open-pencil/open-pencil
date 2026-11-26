@@ -6,7 +6,7 @@ import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
 import { zip } from 'es-toolkit/array'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { extractImageAssets, type ExportHTMLFile } from '../bundle'
 import { serializedElements, serializeHTML } from '../html'

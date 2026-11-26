@@ -4,8 +4,9 @@ import { computed } from 'vue'
 import { colorToHexRaw, parseColor } from '@open-pencil/scene-graph/color'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShaderComponent } from '@open-pencil/scene-graph/shaders'
+import { provideColorSpace } from '@open-pencil/vue/controls/color-model'
 import type { ShaderEffect, ShaderPropControl } from '@open-pencil/vue/controls/shader'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { inputChecked } from '@open-pencil/vue/shared/dom-events'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
@@ -25,7 +26,9 @@ const { effect, component } = defineProps<{
   component: ShaderComponent
 }>()
 const emit = defineEmits<{ set: [key: string, value: unknown] }>()
-const { panels } = useI18n()
+const panels = useMessages('panels')
+// A shader's colors are sRGB hex, drawn into an sRGB frame, whatever the document's profile.
+provideColorSpace('srgb')
 
 /** A run of numbers, which pair up in a grid, or one other prop. */
 type Block = { key: string; numbers: ShaderPropControl[] } | ShaderPropControl

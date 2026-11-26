@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
+import { getTool, runTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
 import * as v from 'valibot'
 
 import { toolJSONSchema } from '@open-pencil/core/tools'
@@ -33,6 +33,80 @@ describe('create_shape', () => {
     expect(node.y).toBe(200)
     expect(node.width).toBe(300)
     expect(node.height).toBe(400)
+  })
+
+  async function createText(size: { width?: number; height?: number }, inAutoLayout = false) {
+    const { figma } = setupToolTest()
+    const frame = inAutoLayout ? figma.createFrame() : null
+    if (frame) frame.layoutMode = 'VERTICAL'
+    const parent = frame ? { parent_id: frame.id } : {}
+    const args = { type: 'TEXT', x: 0, y: 0, ...size, ...parent }
+    const result = (await runTool(figma, 'create_shape', args)) as ToolResult
+    const id = expectDefined(result.id, 'created text id')
+    return { figma, frame, node: expectDefined(figma.getNodeById(id), 'created text') }
+  }
+
+  function setLabel({ figma, node }: Awaited<ReturnType<typeof createText>>, text: string) {
+    return runTool(figma, 'set_text', { id: node.id, text })
+  }
+
+  const LONG_LABEL = 'A label long enough to take more than one line when it wraps'
+
+  test('text without a size grows with its characters', async () => {
+    const created = await createText({})
+    expect(created.node.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    await setLabel(created, 'Hi')
+    const { width, height } = created.node
+    await setLabel(created, LONG_LABEL)
+    expect(created.node.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    expect(created.node.width).toBeGreaterThan(width)
+    expect(created.node.height).toBe(height)
+  })
+
+  test('text given its initial height keeps that height', async () => {
+    const { height } = setupToolTest().figma.createText()
+    const created = await createText({ width: 80, height })
+    expect(created.node.textAutoResize).toBe('NONE')
+    await setLabel(created, LONG_LABEL)
+    expect(created.node.width).toBe(80)
+    expect(created.node.height).toBe(height)
+  })
+
+  test('text with only a width wraps in it', async () => {
+    const created = await createText({ width: 120 })
+    expect(created.node.textAutoResize).toBe('HEIGHT')
+    await setLabel(created, 'Hi')
+    const { height } = created.node
+    await setLabel(created, LONG_LABEL)
+    expect(created.node.width).toBe(120)
+    expect(created.node.height).toBeGreaterThan(height)
+  })
+
+  test('text with a width and a height keeps both', async () => {
+    const created = await createText({ width: 120, height: 30 })
+    await setLabel(created, LONG_LABEL)
+    expect(created.node.textAutoResize).toBe('NONE')
+    expect([created.node.width, created.node.height]).toEqual([120, 30])
+  })
+
+  test('text without a size stays auto width in an auto layout frame', async () => {
+    const created = await createText({}, true)
+    await setLabel(created, 'Hi')
+    expect(created.node.parent?.id).toBe(expectDefined(created.frame, 'parent frame').id)
+    expect(created.node.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    expect(created.node.width).toBeLessThan(100)
+  })
+
+  test.each([
+    [{ type: 'TEXT', height: 30 }, 'width'],
+    [{ type: 'RECTANGLE', height: 30 }, 'width'],
+    [{ type: 'FRAME', width: 30 }, 'height'],
+    [{ type: 'LINE' }, 'width']
+  ])('refuses %j, naming the missing size, and creates nothing', (args, missing) => {
+    const { figma } = setupToolTest()
+    const result = getTool('create_shape').execute(figma, { x: 0, y: 0, ...args })
+    expect(result).toMatchObject({ error: expect.stringContaining(`needs a ${missing}`) })
+    expect(figma.currentPage.children).toHaveLength(0)
   })
 
   test('names every supported node type in the tool description', () => {

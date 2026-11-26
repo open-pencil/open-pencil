@@ -25,6 +25,8 @@ const replaceAt = <T>(items: readonly T[], index: number, item: T) =>
 /** Which of a layer's paint lists a shader is set in. */
 export type ShaderPaintList = 'fills' | 'strokes'
 
+const KEPT_PAINT_FIELDS = ['color', 'gradientStops', 'gradientTransform'] as const
+
 interface NodeActions {
   updateNodeWithUndo(id: string, changes: Partial<SceneNode>, label?: string): void
 }
@@ -47,7 +49,13 @@ export function createShaderActions(ctx: EditorContext, nodes: NodeActions) {
     const { paint, shader } = existing
       ? { paint: previous, shader: { image: existing.image, preset: structuredClone(preset) } }
       : createShaderPaint(preset)
-    const shown = { ...paint, opacity: previous.opacity, visible: previous.visible }
+    // Like an image paint, it keeps the colour or gradient it replaced, for switching back.
+    const shown = {
+      ...paint,
+      ...pick(previous, KEPT_PAINT_FIELDS),
+      opacity: previous.opacity,
+      visible: previous.visible
+    }
     const fills = list === 'fills' ? replaceAt(node.fills, index, shown) : node.fills
     // A stroke keeps its weight and geometry; only its paint changes.
     const strokes =

@@ -1,8 +1,9 @@
+import type { JoinCollabRoom } from '@open-pencil/collab'
+
 import { appRuntimeConfig } from '@/app/runtime/config'
 
 import { joinTestCollabRoom } from './test'
 import { joinTrysteroCollabRoom } from './trystero'
-import type { JoinCollabRoom } from './types'
 
 function usesTestTransport(): boolean {
   return import.meta.env.DEV && appRuntimeConfig.collaborationTransport === 'test'
@@ -10,5 +11,3 @@ function usesTestTransport(): boolean {
 
 export const joinCollabRoom: JoinCollabRoom = (roomId) =>
   usesTestTransport() ? joinTestCollabRoom(roomId) : joinTrysteroCollabRoom(roomId)
-
-export type { CollabActionReceiver, CollabRoomTransport, JoinCollabRoom } from './types'

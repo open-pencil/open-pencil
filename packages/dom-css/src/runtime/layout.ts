@@ -1,9 +1,9 @@
 import { sum } from 'es-toolkit'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { dimension, parseCSSNumber } from '@open-pencil/scene-graph/css'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { DesignElement, DesignLayout } from '../types'
 

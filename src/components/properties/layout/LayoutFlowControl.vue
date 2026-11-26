@@ -5,7 +5,7 @@ import type { VNode } from 'vue'
 import type { LayoutMode } from '@open-pencil/scene-graph'
 import { MIXED } from '@open-pencil/vue/controls/node-props'
 import { useSelectionLayout } from '@open-pencil/vue/controls/selection-layout'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
@@ -13,7 +13,7 @@ import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 defineSlots<{ default?(): VNode[] }>()
 
 const layout = useSelectionLayout()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 const layoutModes = computed<Array<{ value: LayoutMode; label: string }>>(() => [
   { value: 'NONE', label: panels.value.freeform },

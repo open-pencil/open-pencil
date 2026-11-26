@@ -1,11 +1,11 @@
 import type { LintFix, LintFixRequest } from '@open-pencil/core/lint'
-import type { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import type { MessagesOf } from '@open-pencil/vue/i18n'
 
 import { formatNumber } from '@/app/i18n/number'
 
 import type { DesignIssue } from './issues'
 
-export type DesignCheckMessages = ReturnType<typeof useDesignCheckMessages>['value']
+export type DesignCheckMessages = MessagesOf<'design-check'>
 type Messages = DesignCheckMessages
 
 type StringKey = {

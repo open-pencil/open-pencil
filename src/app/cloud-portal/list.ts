@@ -9,9 +9,17 @@ import {
   type Updater
 } from '@tanstack/vue-table'
 import { refDebounced } from '@vueuse/core'
-import { computed, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import {
+  computed,
+  ref,
+  shallowRef,
+  toValue,
+  watch,
+  type MaybeRefOrGetter,
+  type WatchSource
+} from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalLoad } from './state'
 
@@ -20,11 +28,27 @@ export const PORTAL_PAGE_SIZE = 50
 /** How long typing pauses before a search asks the server. */
 const SEARCH_DELAY_MS = 250
 
-/** What console tables can do: the server pages them, and columns carry their own classes. */
+/**
+ * What a console table's column holds, which alone sets its width and when a narrow table hides
+ * it (`portalColumnMeta`). The column without one is what each row is, such as a document or a
+ * person: it takes the width the others leave and always shows.
+ * - `subject`: who or what a row concerns besides, such as an owner or an administrator.
+ * - `text`: words that need room, such as a reason or a recipient.
+ * - `tag`: a word or two, such as a status, a role, or who can open something.
+ * - `date`: a day or a time.
+ * - `count`: a number.
+ * - `actions`: the row's menu or buttons.
+ */
+export type PortalColumnRole = 'subject' | 'text' | 'tag' | 'date' | 'count' | 'actions'
+
+/** A console column's `meta`: its role, and `always` for one a narrow table must keep. */
+export type PortalColumnMeta = { role: PortalColumnRole; always?: boolean }
+
+/** What console tables can do: the server pages them, and each column says what it holds. */
 export const portalTableFeatures = tableFeatures({
   rowPaginationFeature,
   // A type-only slot: TanStack reads the columns' `meta` type from it.
-  columnMeta: {}
+  columnMeta: {} as PortalColumnMeta
 })
 export type PortalTableFeatures = typeof portalTableFeatures
 export type PortalColumn<Row extends RowData> = ColumnDef<PortalTableFeatures, Row>
@@ -69,8 +93,10 @@ export function usePortalList<Filter extends string, Row extends RowData>(option
   load: (request: PortalListRequest<Filter>) => Promise<PortalListPage<Filter, Row>>
   rowId: (row: Row) => string
   columns: PortalColumn<Row>[]
+  /** Another input `load` reads, such as a narrowing the list offers beside its filters. */
+  scope?: WatchSource
 }) {
-  const messages = useCloudPortalMessages()
+  const messages = useMessages('cloud/portal')
   const query = ref('')
   const search = refDebounced(query, SEARCH_DELAY_MS)
   const filter = shallowRef<Filter>(options.filter)
@@ -107,7 +133,7 @@ export function usePortalList<Filter extends string, Row extends RowData>(option
     }
   })
 
-  watch([search, filter], () => {
+  watch([search, filter, ...(options.scope ? [options.scope] : [])], () => {
     if (pagination.value.pageIndex === 0) void list.reload()
     else pagination.value = { ...pagination.value, pageIndex: 0 }
   })

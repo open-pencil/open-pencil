@@ -49,6 +49,13 @@ export function fillOutlines(node: SceneNode): FillOutlines | null {
   return { outlines, traced: false }
 }
 
+/** Outlines as clip paths that together cover what they fill, each by its own winding. */
+export function outlineClips(outlines: readonly FillOutline[]): SVGNode[] {
+  return outlines.map(({ d, windingRule }) =>
+    svg('path', { d, 'clip-rule': windingRule === 'EVENODD' ? 'evenodd' : undefined })
+  )
+}
+
 /** An outline painted once per visible paint, the last one carrying the stroke. */
 function paintedOutline(
   node: SceneNode,
@@ -67,7 +74,7 @@ function paintedOutline(
     svg('path', {
       ...attrs,
       fill: paint,
-      'fill-opacity': solidFillOpacity(fill, ctx.colorSpace),
+      'fill-opacity': solidFillOpacity(fill, ctx.colors),
       stroke: index === drawn.length - 1 ? attrs.stroke : 'none'
     })
   )

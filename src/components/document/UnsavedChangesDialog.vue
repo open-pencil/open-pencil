@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { useStore } from '@nanostores/vue'
 import { useFocus } from '@vueuse/core'
 import { useTemplateRef } from 'vue'
 
-import { commonMessages, filesMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { answerClosePrompt, closePrompt } from '@/app/document/close/prompt'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -13,8 +12,8 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import { documentCloseUI, documentCloseButtonUI } from '@/theme/document/close'
 
-const files = useStore(filesMessages)
-const common = useStore(commonMessages)
+const files = useMessages('files')
+const common = useMessages('common')
 const saveButton = useTemplateRef('saveButton')
 const prompt = useHeldContent(closePrompt)
 

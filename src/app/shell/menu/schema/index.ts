@@ -1,7 +1,7 @@
 import { ARRANGE_MENU } from './arrange'
 import { EDIT_MENU } from './edit'
 import { FILE_MENU, SETTINGS_MENU_ITEM } from './file'
-import { HELP_MENU } from './help'
+import { CHECK_UPDATES_MENU_ITEM, HELP_MENU } from './help'
 import { OBJECT_MENU } from './object'
 import { TEXT_MENU } from './text'
 import type { AppMenuActionItem, AppMenuGroupSchema } from './types'
@@ -38,7 +38,7 @@ export const APP_MENU_SCHEMA = [
  */
 export const APP_MENU_APP_ITEMS = [
   { id: 'about', label: 'About OpenPencil' },
-  { id: 'check-updates', label: 'Check for Updates…' },
+  CHECK_UPDATES_MENU_ITEM,
   SETTINGS_MENU_ITEM,
   { id: 'quit', label: 'Quit OpenPencil', shortcut: 'Mod+Q' }
 ] satisfies AppMenuActionItem[]

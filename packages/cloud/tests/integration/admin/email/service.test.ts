@@ -63,6 +63,60 @@ describe('admin email regeneration', () => {
       await runtime.close()
     }
   })
+  test('resends a kept invitation letter from the beta as the plain approval', async () => {
+    const runtime = await createCloudTestDatabase()
+    const sent: Array<{ subject: string; text: string }> = []
+    try {
+      await runtime.database
+        .insertInto('enrollment')
+        .values({
+          id: crypto.randomUUID(),
+          emailNormalized: 'person@example.com',
+          name: 'Person',
+          reason: null,
+          status: 'approved',
+          reviewedAt: new Date(),
+          reviewedBy: 'admin',
+          reviewNote: null,
+          approvedUserId: null
+        })
+        .execute()
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: 'regeneration-secret-at-least-32-characters',
+        from: 'cloud@example.com',
+        transport: {
+          id: 'memory',
+          async send(message) {
+            sent.push(message)
+            return { transportMessageId: 'message-id', acceptedAt: new Date().toISOString() }
+          }
+        }
+      })
+      // A letter the beta sent, kept in the outbox though nothing sends that kind now.
+      const original = await email.enqueue({
+        idempotencyKey: 'original-invitation',
+        kind: 'enrollment-approved',
+        recipientEmail: 'person@example.com',
+        payload: { name: 'Person', actionURL: CLOUD_LINKS.publicURL }
+      })
+      await runtime.database
+        .updateTable('transactionalEmail')
+        .set({ kind: 'enrollment-invited', status: 'failed', payloadEncrypted: null })
+        .where('id', '=', original)
+        .execute()
+      await createAdminEmailService(runtime.database, email, CLOUD_LINKS).regenerate(
+        'admin',
+        original
+      )
+      await email.deliverPending({ batchSize: 10, leaseDurationMs: 60_000 })
+      expect(sent).toHaveLength(1)
+      expect(sent[0]?.subject).toBe('Your OpenPencil Cloud access is ready')
+      expect(sent[0]?.text).toContain(CLOUD_LINKS.publicURL)
+      expect(sent[0]?.text).not.toContain('/auth/sign-in')
+    } finally {
+      await runtime.close()
+    }
+  })
   test('rejects regeneration when authoritative data is unavailable', async () => {
     const runtime = await createCloudTestDatabase()
     try {

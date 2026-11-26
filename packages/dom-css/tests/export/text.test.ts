@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { letterSpacingRoomCSS } from '#dom-css/export/css'
 import { serializeHTML } from '#dom-css/export/html'
 import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
 import {
@@ -7,7 +8,12 @@ import {
   sceneNodesToTailwindJSXWithLayers
 } from '#dom-css/export/tailwind-jsx'
 
-import { SceneGraph, type Fill, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  type Fill,
+  type SceneNode,
+  type TextParagraphStyle
+} from '@open-pencil/scene-graph'
 
 const RED: Fill = {
   type: 'SOLID',
@@ -165,5 +171,108 @@ describe('text export', () => {
     expect(jsx).toContain(
       '<a href="https://openpencil.dev/docs" className="text-inherit no-underline">docs</a>'
     )
+  })
+})
+
+describe('letter-spaced text export', () => {
+  const style = (props: Parameters<SceneGraph['createNode']>[2], graph = new SceneGraph()) => {
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Hold',
+      fontFamily: 'Inter',
+      fontSize: 16,
+      width: 200,
+      height: 40,
+      ...props
+    })
+    const [element] = sceneNodeToDesignDocument(graph, node.id, { tokens: true }).children
+    if (element?.type !== 'element') throw new Error('Expected an element')
+    return element.inlineStyle
+  }
+
+  // CSS spaces the last letter too, while the canvas fits and aligns lines by their glyphs.
+  test('widens a fixed box by the spacing and takes it back with a margin', () => {
+    expect(
+      style({ letterSpacing: { value: 10, unit: 'PIXELS' }, textAutoResize: 'HEIGHT' })
+    ).toMatchObject({ width: 'calc(200px + 10px)', 'margin-right': '-10px' })
+    expect(
+      style({ letterSpacing: { value: -5, unit: 'PERCENT' }, textAutoResize: 'NONE' })
+    ).toMatchObject({ width: 'calc(200px + -0.05em)', 'margin-right': '0.05em' })
+  })
+
+  test('gives auto-width text only the margin', () => {
+    const css = style({
+      letterSpacing: { value: 10, unit: 'PERCENT' },
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    expect(css).not.toHaveProperty('width')
+    expect(css?.['margin-right']).toBe('-0.1em')
+  })
+
+  test('takes a spacing written as a token back by the token', () => {
+    const spacing = 'var(--tracking-wide)'
+    expect(letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, spacing, '200px')).toEqual({
+      width: `calc(200px + ${spacing})`,
+      'margin-right': `calc(-1 * ${spacing})`
+    })
+  })
+
+  test('makes room for the spacing every character has, from its runs or the layer', () => {
+    const spaced = { value: 10, unit: 'PIXELS' } as const
+    const unspaced = { value: 0, unit: 'PIXELS' } as const
+    // Runs that take the layer's spacing off every character leave no spacing to make room for.
+    expect(
+      style({
+        letterSpacing: spaced,
+        textAutoResize: 'HEIGHT',
+        styleRuns: [{ start: 0, length: 4, style: { letterSpacing: unspaced } }]
+      })
+    ).not.toHaveProperty('margin-right')
+    // Characters that differ leave the box as the layer sets it.
+    expect(
+      style({
+        letterSpacing: spaced,
+        textAutoResize: 'HEIGHT',
+        styleRuns: [{ start: 2, length: 2, style: { letterSpacing: unspaced } }]
+      })
+    ).toMatchObject({ width: '200px' })
+    // Runs that space every character alike take their own spacing back.
+    expect(
+      style({
+        textAutoResize: 'HEIGHT',
+        styleRuns: [{ start: 0, length: 4, style: { letterSpacing: spaced } }]
+      })
+    ).toMatchObject({ width: 'calc(200px + 10px)', 'margin-right': '-10px' })
+  })
+
+  test('resolves percent spacing at the font size its runs set', () => {
+    // Each character is 32px and spaced 10% of that, 3.2px, which `em` on the box would not give.
+    const props: Partial<SceneNode> = {
+      text: 'Hold',
+      letterSpacing: { value: 10, unit: 'PERCENT' },
+      textAutoResize: 'HEIGHT',
+      styleRuns: [{ start: 0, length: 4, style: { fontSize: 32 } }]
+    }
+    expect(style(props)).toMatchObject({
+      width: 'calc(200px + 3.2px)',
+      'margin-right': '-3.2px'
+    })
+    // The span spaces its letters at its own size, not the 1.6px CSS would inherit.
+    expect(text(props).html).toContain(
+      '<span style="font-size: 32px; letter-spacing: 0.1em">Hold</span>'
+    )
+  })
+
+  test('makes no room in text with no characters', () => {
+    const css = style({
+      text: '',
+      letterSpacing: { value: 10, unit: 'PIXELS' },
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    expect(css?.['letter-spacing']).toBe('10px')
+    expect(css).not.toHaveProperty('margin-right')
+  })
+
+  test('leaves unspaced text as it is', () => {
+    expect(style({ textAutoResize: 'HEIGHT' })).not.toHaveProperty('margin-right')
   })
 })

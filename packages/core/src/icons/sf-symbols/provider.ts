@@ -1,9 +1,11 @@
 import * as v from 'valibot'
 
+import { parseColor } from '@open-pencil/scene-graph/color'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 import { tintedIconPath } from '#core/icons/artwork'
+import { resolveIconOptions } from '#core/icons/options'
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type {
   IconCollection,
@@ -37,8 +39,25 @@ export const SF_SYMBOLS_OPTIONS = [
   {
     key: 'rendering',
     name: 'Rendering',
-    values: ['monochrome', 'hierarchical'],
+    values: ['monochrome', 'hierarchical', 'palette', 'multicolor'],
     default: 'monochrome'
+  },
+  // How much of a symbol with variable color is on, such as the bars of `wifi`.
+  { key: 'variable', name: 'Variable value', min: 0, max: 1, default: 1, step: 0.01 },
+  // The palette's primary color is the icon's color; these paint its other layers.
+  {
+    key: 'secondary',
+    name: 'Secondary color',
+    color: true,
+    default: '#007AFF',
+    when: { key: 'rendering', value: 'palette' }
+  },
+  {
+    key: 'tertiary',
+    name: 'Tertiary color',
+    color: true,
+    default: '#8E8E93',
+    when: { key: 'rendering', value: 'palette' }
   }
 ] as const satisfies readonly IconOption[]
 
@@ -70,7 +89,16 @@ const renderedSchema = v.pipe(
   v.record(
     v.string(),
     v.object({
-      paths: v.array(v.object({ d: v.string(), opacity: v.number() }))
+      paths: v.array(
+        v.object({
+          d: v.string(),
+          opacity: v.number(),
+          /** The palette color that paints the path, 0 for the primary, in palette rendering. */
+          layer: v.optional(v.number()),
+          /** A color of the symbol's own, in multicolor rendering. */
+          color: v.optional(v.string())
+        })
+      )
     })
   )
 )
@@ -79,26 +107,44 @@ type Catalogue = v.InferOutput<typeof catalogueSchema>
 /** The symbols drawn, by name; those the Mac lacks are left out. */
 type Rendered = Partial<v.InferOutput<typeof renderedSchema>>
 
-/** Every option set, each one a value the set offers, and defaulted where `options` leaves it out. */
-export function sfSymbolsOptions(options: IconOptions = {}): Record<string, string> {
-  return Object.fromEntries(
-    SF_SYMBOLS_OPTIONS.map(({ key, values, default: fallback }) => {
-      const value = options[key]
-      return [key, values.some((known) => known === value) ? String(value) : fallback]
-    })
-  )
+/** Every option that applies, each a value the set offers, defaulted where `options` leaves it out. */
+export function sfSymbolsOptions(options: IconOptions = {}): Record<string, string | number> {
+  return resolveIconOptions(SF_SYMBOLS_OPTIONS, options)
 }
 
-function iconPath(d: string, opacity: number): IconPath {
-  return tintedIconPath(parseSVGPath(d, 'NONZERO'), opacity)
+type RenderedPath = v.InferOutput<typeof renderedSchema>[string]['paths'][number]
+
+/**
+ * A drawn path as an icon path: in the icon's color, or in a color of its own when the symbol
+ * keeps one or a palette color other than the primary paints it.
+ */
+/** The options that color a palette's layers past the primary, which is the icon's color. */
+const PALETTE_LAYERS = [null, 'secondary', 'tertiary'] as const
+
+function iconPath(path: RenderedPath, options: Record<string, string | number>): IconPath {
+  const network = parseSVGPath(path.d, 'NONZERO')
+  const layer = path.layer === undefined ? null : PALETTE_LAYERS[path.layer]
+  const own = path.color ?? (layer ? options[layer] : null)
+  if (typeof own !== 'string') return tintedIconPath(network, path.opacity)
+  return {
+    vectorNetwork: network,
+    fills: [{ type: 'SOLID', color: parseColor(own), opacity: path.opacity, visible: true }],
+    strokes: [],
+    tint: []
+  }
 }
 
-/** SF Symbols, drawn as outlines by `host` at the weight, scale, and rendering each icon sets. */
-export function createSFSymbolsProvider(host: SFSymbolsHost): IconProvider {
+/**
+ * SF Symbols, drawn as outlines by `host` at the weight, scale, and rendering each icon sets.
+ * Without a host, or where it cannot draw them, the set is listed as unavailable and has no icons,
+ * so a picker can say where they are offered.
+ */
+export function createSFSymbolsProvider(host: SFSymbolsHost | null): IconProvider {
   let catalogue: Promise<Catalogue | null> | null = null
   const previewCache = new Map<string, string | null>()
 
   function listed(): Promise<Catalogue | null> {
+    if (!host) return Promise.resolve(null)
     catalogue ??= host.catalogue().then((text) => {
       if (text === null) return null
       const parsed = v.safeParse(catalogueSchema, text)
@@ -114,13 +160,13 @@ export function createSFSymbolsProvider(host: SFSymbolsHost): IconProvider {
   async function render(
     names: readonly string[],
     size: number,
-    options: Record<string, string>
+    options: Record<string, string | number>
   ): Promise<Rendered> {
     const iconNames = names.flatMap((name) => {
       const parsed = parseIconName(name)
       return parsed?.prefix === SF_SYMBOLS_PREFIX ? [parsed.iconName] : []
     })
-    if (iconNames.length === 0) return {}
+    if (!host || iconNames.length === 0) return {}
     const text = await host.render(JSON.stringify({ names: iconNames, size, ...options }))
     if (text === null) return {}
     const parsed = v.safeParse(renderedSchema, text)
@@ -148,16 +194,16 @@ export function createSFSymbolsProvider(host: SFSymbolsHost): IconProvider {
 
     async collections(): Promise<IconCollection[]> {
       const symbols = await listed()
-      if (!symbols) return []
       return [
         {
           prefix: SF_SYMBOLS_PREFIX,
           name: 'SF Symbols',
-          total: symbols.names.length,
+          total: symbols?.names.length ?? 0,
           category: 'Apple',
           license: 'Apple',
           multicolor: false,
-          options: SF_SYMBOLS_OPTIONS
+          options: SF_SYMBOLS_OPTIONS,
+          ...(symbols ? {} : { unavailable: host ? 'system' : 'host' })
         }
       ]
     },
@@ -180,7 +226,7 @@ export function createSFSymbolsProvider(host: SFSymbolsHost): IconProvider {
           name: parsed.iconName,
           width: size,
           height: size,
-          paths: icon.paths.map((path) => iconPath(path.d, path.opacity)),
+          paths: icon.paths.map((path) => iconPath(path, set)),
           options: set
         })
       }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { compact } from 'es-toolkit'
-import { computed, ref } from 'vue'
+import { computed, onDeactivated, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppFormField from '@/components/ui/input/AppFormField.vue'
@@ -28,11 +28,16 @@ const {
 }>()
 const emit = defineEmits<{ act: [action: PortalPersonAction, reason?: string] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const personMessages = useMessages('cloud/portal/person')
 const confirming = ref<PortalPersonAction | null>(null)
 const reason = ref('')
 
 const confirmingShown = useHeldContent(confirming)
+// The console keeps a page it leaves; a confirmation must not outlive the visit that opened it.
+onDeactivated(() => {
+  confirming.value = null
+})
 const confirmation = computed(() => {
   const action = confirmingShown.value
   if (!action) return null
@@ -83,6 +88,12 @@ const confirmation = computed(() => {
       description: words.restoreDescription,
       confirm: words.restoreAccount,
       tone: 'primary'
+    },
+    delete: {
+      heading: personMessages.value.deletePersonAccountHeading({ name }),
+      description: personMessages.value.deletePersonAccountDescription,
+      confirm: personMessages.value.deletePersonAccount,
+      tone: 'danger'
     }
   }
   return copy[action]
@@ -99,7 +110,13 @@ const items = computed(() => {
     person.image && { action: 'remove-picture' as const, label: words.removePersonPicture },
     person.suspended
       ? { action: 'restore' as const, label: words.restoreAccount, separated: true }
-      : { action: 'suspend' as const, label: words.suspendAccount, separated: true }
+      : { action: 'suspend' as const, label: words.suspendAccount, separated: true },
+    // Only an account that never got in; one that did leaves by its owner's own deletion.
+    !person.admin &&
+      (person.access === 'waiting' || person.access === 'declined') && {
+        action: 'delete' as const,
+        label: personMessages.value.deletePersonAccount
+      }
   ])
 })
 

@@ -1,1 +1,0 @@
-- JSX export no longer fails for a layer with a Figma noise effect, or for any layer that contains one (#2115).

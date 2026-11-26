@@ -4,10 +4,10 @@ import { createEditor, type Editor } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDeferred } from '@open-pencil/std/async'
 
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { captureReloadState, restoreReloadState } from '@/app/document/io/reload-state'
-import { createDeferred } from '@/app/runtime/deferred'
 
 let editors: Editor[] = []
 

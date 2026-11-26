@@ -7,10 +7,10 @@ import { asDouble, attachFontProvider, expectRgbaPixels } from '#core-tests/canv
 import { SkiaRenderer as SkiaRendererClass } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { pixelLength, textVerticalOffset } from '@open-pencil/scene-graph/text'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
+import { appendAll } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 

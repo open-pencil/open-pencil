@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { TypographyControlsRoot } from '@open-pencil/vue/primitives/TypographyControls'
 
 import { loadFont } from '@/app/editor/fonts'
@@ -25,7 +25,9 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { panels, menu, fonts } = useI18n()
+const panels = useMessages('panels')
+const menu = useMessages('menu')
+const fonts = useMessages('fonts')
 const fontLoader = { load: loadFont }
 const alignmentOptions = computed(() => [
   { value: 'LEFT', label: panels.value.alignLeft },

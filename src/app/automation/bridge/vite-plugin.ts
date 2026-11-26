@@ -10,6 +10,8 @@ import type { Plugin } from 'vite'
 
 import { serializeDisabledTools } from '@open-pencil/mcp/tools'
 import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
+import { errorMessage } from '@open-pencil/std/errors'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import {
   DEV_MCP_RESTART_PATH,
@@ -113,7 +115,7 @@ export async function waitForAutomationHealth(
     options.assertRunning?.()
     let healthy = false
     try {
-      const response = await fetcher(healthURL, { signal: AbortSignal.timeout(2000) })
+      const response = await fetcher(healthURL, { signal: AbortSignal.timeout(DEADLINE_MS.probe) })
       healthy = response.ok
     } catch (error) {
       if (attempt === CHILD_HEALTH_ATTEMPTS - 1) {
@@ -293,7 +295,7 @@ export function automationPlugin(
             response.end()
           } catch (error) {
             response.statusCode = devMCPConfigurationErrorStatus(error)
-            response.end(error instanceof Error ? error.message : String(error))
+            response.end(errorMessage(error))
           }
         })()
       })

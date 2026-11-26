@@ -2,6 +2,7 @@ import { uniq } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { tauriFetch } from '@/app/tauri/http'
 
@@ -10,7 +11,7 @@ type ClipboardImageFetch = (input: RequestInfo | URL, init?: RequestInit) => Pro
 type FigmaImageURLs = Record<string, string>
 
 const IMAGE_FETCH_CONCURRENCY = 6
-const IMAGE_FETCH_TIMEOUT_MS = 15_000
+const IMAGE_FETCH_TIMEOUT_MS = DEADLINE_MS.transfer
 
 /** Figma's image batch response: a URL per image hash, unless it reports a failure. */
 const batchResponseSchema = v.pipe(

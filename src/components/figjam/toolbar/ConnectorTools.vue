@@ -5,13 +5,12 @@ import IconCircleDashed from '~icons/lucide/circle-dashed'
 import IconMinus from '~icons/lucide/minus'
 
 import type { ConnectorLineType, StrokeCap } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
-import { figJamColor } from '@open-pencil/scene-graph/figjam'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 import { useConnector } from '@open-pencil/vue/controls/connector'
-import { useFigJamMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { useFigJamColorCSS } from '@/components/figjam/color'
 import { useConnectorOptions } from '@/components/figjam/connector/options'
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { CONNECTOR_LINE_TYPE_ICONS, connectorCapIcon } from '@/components/icons/connectors'
@@ -24,14 +23,12 @@ import ToolbarOptions, { type ToolbarOption } from './ToolbarOptions.vue'
 /** FigJam's connector toolbar: colour, line weight and dash, a label, its ends and its shape. */
 const store = useEditorStore()
 const connector = useConnector()
-const figjam = useFigJamMessages()
-const { panels } = useI18n()
+const figjam = useMessages('figjam')
+const panels = useMessages('panels')
 const { lineOptions, capOptions } = useConnectorOptions()
 const styles = tv(theme)()
 
-const hex = computed(() =>
-  connector.color.value ? colorToHex(figJamColor(connector.color.value)) : undefined
-)
+const dotColor = useFigJamColorCSS(() => connector.color.value)
 type Weight = 'thin' | 'thick'
 type Dash = 'solid' | 'dashed'
 const weightOptions = computed<ToolbarOption<Weight>[]>(() => [
@@ -71,7 +68,7 @@ function addText() {
 <template>
   <ToolbarMenu :label="figjam.changeColor" property="toolbar-color">
     <template #trigger>
-      <span :class="styles.dot()" :style="{ backgroundColor: hex }" />
+      <span :class="styles.dot()" :style="{ backgroundColor: dotColor }" />
     </template>
     <FigJamPalette
       :label="panels.connectorColor"

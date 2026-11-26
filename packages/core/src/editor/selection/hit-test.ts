@@ -3,7 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { LAYER_HIT_PAD } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
-import { resolveEditorProfile } from '#core/editor/views'
+import { canvasRootId, resolveEditorProfile, stagedSlide } from '#core/editor/views'
 
 export function createSelectionHitTestActions(
   ctx: EditorContext,
@@ -24,7 +24,7 @@ export function createSelectionHitTestActions(
     const renderer = ctx.getRenderer()
     if (!renderer) return null
     const pad = LAYER_HIT_PAD / ctx.state.zoom
-    const scope = ctx.state.currentPageId
+    const scope = canvasRootId(ctx.graph, ctx.state)
     if (ctx.state.enteredContainerId && !ctx.graph.getNode(ctx.state.enteredContainerId)) {
       ctx.state.enteredContainerId = null
     }
@@ -43,6 +43,8 @@ export function createSelectionHitTestActions(
    * title, then a frame title. A right-click hits a locked layer's name as it hits its body.
    */
   function labelAt(renderer: SkiaRenderer, cx: number, cy: number): SceneNode | null {
+    // A slide on the stage hides every name around it, as the canvas draws none there.
+    if (stagedSlide(ctx.graph, ctx.state)) return null
     const preview = ctx.state.rotationPreview
     const graph = ctx.graph
     const filter = { locked: true }
@@ -64,23 +66,31 @@ export function createSelectionHitTestActions(
    * one included, or else the frame or section whose empty area is under the point, which a click
    * leaves for a marquee. A name above a frame, section, or component is part of that layer, read
    * from `renderer` (the pane's overlay canvas; the editor's current canvas when omitted). The
-   * entered container follows the selection, as it does after a press.
+   * entered container follows the selection, as it does after a press. Returns the layer it hit.
+   * `keepSelectionOnMiss` leaves the selection alone when nothing is hit, as the Comment tool's
+   * right-click does in Figma.
    */
-  function selectAtPoint(cx: number, cy: number, renderer?: SkiaRenderer | null) {
+  function selectAtPoint(
+    cx: number,
+    cy: number,
+    renderer?: SkiaRenderer | null,
+    { keepSelectionOnMiss = false }: { keepSelectionOnMiss?: boolean } = {}
+  ): SceneNode | null {
     // Each pane hit-tests names with its own page, zoom, viewport, and label cache.
     const labels = renderer === undefined ? ctx.getRenderer() : renderer
     const hit =
       (labels ? labelAt(labels, cx, cy) : null) ??
       hitAt(cx, cy, false, true) ??
-      ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
+      ctx.graph.hitTestOpenContainer(cx, cy, canvasRootId(ctx.graph, ctx.state))
     if (hit) {
       if (!ctx.state.selectedIds.has(hit.id)) {
         select([hit.id])
         enterContainerOf(hit.id)
       }
-    } else {
+    } else if (!keepSelectionOnMiss) {
       clearSelection()
     }
+    return hit
   }
 
   return { hitTestAtPoint, selectAtPoint }

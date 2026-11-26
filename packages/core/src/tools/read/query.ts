@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 import { queryByXPath } from '#core/xpath'
@@ -39,7 +41,7 @@ Examples:
         }))
       }
     } catch (err) {
-      return { error: `XPath error: ${err instanceof Error ? err.message : String(err)}` }
+      return { error: `XPath error: ${errorMessage(err)}` }
     }
   }
 })

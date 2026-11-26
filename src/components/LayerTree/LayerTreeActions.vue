@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import Tip from '../ui/overlay/Tip.vue'
@@ -14,7 +14,7 @@ const emit = defineEmits<{
   toggleVisibility: []
 }>()
 
-const { menu: t } = useI18n()
+const t = useMessages('menu')
 </script>
 
 <template>

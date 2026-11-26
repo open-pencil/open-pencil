@@ -1,16 +1,22 @@
 import type { SceneGraph } from '../graph'
 import type { Color, Vector } from '../primitives'
-import { randomHex } from '../random'
 import type { CommentReply, CommentThread, SceneNode } from '../types'
 
 /** Who writes a comment: their name and, in a collaboration room, their color. */
 export interface CommentAuthor {
   name: string
   color?: Color
+  /** The agent writing, when one writes rather than the person. */
+  agent?: string
 }
 
-function newCommentId(prefix: 'c' | 'r'): string {
-  return `${prefix}_${randomHex(8)}`
+/**
+ * A new thread's or reply's ID: a UUID, so a server that keeps comments, as Cloud does, takes the
+ * ID the editor chose and a retried request finds the comment it already made. Files from older
+ * versions keep their own IDs.
+ */
+function newCommentId(): string {
+  return crypto.randomUUID()
 }
 
 /** When a comment is written or changed, as stored: an ISO timestamp. */
@@ -94,12 +100,13 @@ export function createCommentThread(
 ): CommentThread {
   const { pageId, at, node, author, text, now } = options
   return {
-    id: newCommentId('c'),
+    id: newCommentId(),
     pageId,
     pageName: graph.getNode(pageId)?.name,
     ...commentAnchor(graph, pageId, at, node),
     author: author.name,
     authorColor: author.color,
+    ...(author.agent ? { agent: author.agent } : {}),
     text,
     createdAt: now,
     updatedAt: now,
@@ -110,9 +117,10 @@ export function createCommentThread(
 
 export function createCommentReply(author: CommentAuthor, text: string, now: string): CommentReply {
   return {
-    id: newCommentId('r'),
+    id: newCommentId(),
     author: author.name,
     authorColor: author.color,
+    ...(author.agent ? { agent: author.agent } : {}),
     text,
     createdAt: now
   }

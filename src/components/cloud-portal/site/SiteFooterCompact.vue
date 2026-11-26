@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useSiteIdentity, type SiteLinkTarget } from '@/app/cloud-portal/identity'
 import BrandMark from '@/components/brand/BrandMark.vue'
@@ -16,7 +16,8 @@ import { siteCompactFooter } from './ui'
  * what the server runs, its docs and source, and the language.
  */
 const site = useSiteIdentity()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const communityMessages = useMessages('cloud/portal/community')
 const ui = siteCompactFooter()
 
 const operatorLinks = computed<SiteLinkTarget[]>(() => [
@@ -43,11 +44,11 @@ const operatorLinks = computed<SiteLinkTarget[]>(() => [
         <SiteLink :href="DOCS_URL" external>
           <span :class="ui.poweredBy()">
             <BrandMark variant="micro" decorative :class="ui.poweredMark()" />
-            {{ messages.sitePoweredBy }}
+            {{ communityMessages.sitePoweredBy }}
           </span>
         </SiteLink>
-        <SiteLink :href="DOCS_URL" external>{{ messages.siteDocs }}</SiteLink>
-        <SiteLink :href="REPOSITORY_URL" external>{{ messages.siteSourceCode }}</SiteLink>
+        <SiteLink :href="DOCS_URL" external>{{ communityMessages.siteDocs }}</SiteLink>
+        <SiteLink :href="REPOSITORY_URL" external>{{ communityMessages.siteSourceCode }}</SiteLink>
         <PortalLanguageSelect />
       </nav>
     </div>

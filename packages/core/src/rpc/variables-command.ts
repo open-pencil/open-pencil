@@ -1,6 +1,12 @@
-import type { SceneGraph, Variable, VariableType } from '@open-pencil/scene-graph'
+import { timingToCSS } from '@open-pencil/dom-css/export'
+import {
+  VARIABLE_TYPES,
+  type SceneGraph,
+  type Variable,
+  type VariableType
+} from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
-import { formatVariableFormula } from '@open-pencil/scene-graph/variables'
+import { easingText, formatVariableFormula, isEasing } from '@open-pencil/scene-graph/variables'
 
 import { exportTokenStylesheet, type TokenExport } from '#core/tools/codegen/tokens'
 
@@ -25,11 +31,14 @@ function formatVariableValue(variable: Variable, graph: SceneGraph): string {
   if (typeof raw === 'object' && 'r' in raw) {
     return colorToHex(raw).toLowerCase()
   }
+  if (isEasing(raw)) return easingText(raw)
+  if (variable.type === 'TIMING' && typeof raw === 'number') return timingToCSS(raw)
   if (typeof raw === 'object' && 'expression' in raw) {
     // A formula reads as written, with what it gives now; a composed color by its result.
     const resolved = graph.resolveVariable(variable.id, modeId)
     let result = '—'
-    if (typeof resolved === 'object') result = colorToHex(resolved).toLowerCase()
+    if (typeof resolved === 'object' && 'r' in resolved) result = colorToHex(resolved).toLowerCase()
+    else if (isEasing(resolved)) result = easingText(resolved)
     else if (resolved !== undefined) result = String(resolved)
     return raw.expression === 'FORMULA'
       ? `${formatVariableFormula(graph, raw)} = ${result}`
@@ -63,11 +72,11 @@ export const variablesCommand: RPCCommand<VariablesArgs, VariablesResult> = {
 
     const result: VariablesResult = {
       collections: [],
-      totalVariables: graph.variables.size,
-      totalCollections: graph.variableCollections.size
+      totalVariables: graph.getLiveVariables().length,
+      totalCollections: graph.getLiveCollections().length
     }
 
-    for (const coll of graph.variableCollections.values()) {
+    for (const coll of graph.getLiveCollections()) {
       if (collFilter && !coll.name.toLowerCase().includes(collFilter)) continue
 
       const collVars = graph
@@ -103,8 +112,6 @@ export interface TokensArgs {
 
 export type TokensResult = TokenExport
 
-const VARIABLE_TYPES: readonly VariableType[] = ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']
-
 function variableType(value: string | undefined): VariableType | undefined {
   if (!value) return undefined
   const type = VARIABLE_TYPES.find((candidate) => candidate === value.toUpperCase())
@@ -119,7 +126,7 @@ async function designTokenFiles(graph: SceneGraph): Promise<TokensResult> {
   const { files, issues } = exportDesignTokens(graph)
   return {
     css: '',
-    tokenCount: graph.variables.size,
+    tokenCount: graph.getLiveVariables().length,
     issues: issues.map(designTokenIssueMessage),
     files
   }

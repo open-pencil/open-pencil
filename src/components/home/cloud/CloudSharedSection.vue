@@ -3,7 +3,7 @@ import { useAsyncState, useLocalStorage } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
 import type { SharedDocument } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
@@ -21,8 +21,8 @@ const { serverId, query = '' } = defineProps<{
   query?: string
 }>()
 
-const { locale } = useI18n()
-const t = useCloudMessages()
+const { locale } = useLocale()
+const t = useMessages('cloud/editor')
 const dates = useDateFormat()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const {

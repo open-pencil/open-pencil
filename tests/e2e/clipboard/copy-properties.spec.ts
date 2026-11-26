@@ -62,7 +62,7 @@ test('Alt+Cmd+C then Alt+Cmd+V moves the look of one layer to another, in one un
   await selectAt(SOURCE)
   expect((await selectedLook())?.id).toBe(sourceId)
   await editor.page.keyboard.press('ControlOrMeta+Alt+KeyC')
-  await expect(editor.page.getByText('Copied properties.')).toBeVisible()
+  await expect(editor.page.getByText('Copied properties.', { exact: true })).toBeVisible()
 
   await selectAt(TARGET)
   await editor.page.keyboard.press('ControlOrMeta+Alt+KeyV')

@@ -5,7 +5,7 @@ import {
 } from '@realfavicongenerator/generate-favicon'
 import sharp from 'sharp'
 
-import { appArtwork, loadArtwork, recolor } from './artwork.ts'
+import { appArtwork, bimiArtwork, loadArtwork, recolor } from './artwork.ts'
 
 export type BrandFiles = Map<string, Buffer>
 
@@ -40,6 +40,7 @@ export async function generateWeb(root: string): Promise<BrandFiles> {
     )
   }
   files.set('brand/app-icon.svg', Buffer.from(tile))
+  files.set('brand/bimi.svg', Buffer.from(bimiArtwork(main, adapter)))
   files.set('brand/app-icon-1024.png', await sharp(Buffer.from(tile)).png().toBuffer())
   files.set('brand/mark.svg', Buffer.from(main))
   files.set('brand/mark-dark.svg', Buffer.from(recolor(main, adapter, 'dark')))

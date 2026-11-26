@@ -16,6 +16,7 @@ export const CLOUD_STORAGE_PROVIDERS: readonly StorageProviderRegistration[] = [
     description: 'Workspaces on OpenPencil Cloud or your team’s own server',
     preferenceFields: [],
     credentialFields: [{ id: CLOUD_SESSION_FIELD, label: 'Session' }],
+    keepsComments: true,
     createAdapter: (runtime) => createCloudStorageAdapter(runtime)
   })
 ]

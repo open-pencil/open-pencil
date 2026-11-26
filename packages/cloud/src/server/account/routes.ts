@@ -1,19 +1,19 @@
 import type { EnrollmentService } from '#cloud/admin'
 import {
-  parseCloudPasswordChange,
-  parseCloudMFAEnable,
-  parseCloudMFAVerify,
-  parseCloudPasskeyDelete,
-  parseCloudSocialLink,
-  parseCloudUnlinkAuthenticationMethod,
-  parseCloudEmailChange,
-  parseCloudProfileUpdate,
-  parseCloudLocaleUpdate,
-  parseCloudPictureUpload,
+  cloudPasswordChangeSchema,
+  cloudMFAEnableSchema,
+  cloudMFAVerifySchema,
+  cloudPasskeyDeleteSchema,
+  cloudSocialLinkSchema,
+  cloudUnlinkAuthenticationMethodSchema,
+  cloudEmailChangeSchema,
+  cloudProfileUpdateSchema,
+  cloudLocaleUpdateSchema,
+  cloudPictureUploadSchema,
   CLOUD_PICTURE_MAX_BYTES,
-  parseCloudSessionRevoke,
-  parseCloudAccountDelete,
-  parseCloudTermsAcceptance,
+  cloudSessionRevokeSchema,
+  cloudAccountDeleteSchema,
+  cloudTermsAcceptanceSchema,
   type CloudAccountStatus
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
@@ -48,6 +48,8 @@ export type AccountRouteDependencies = {
   terms: TermsService
   resolveIdentity: CloudIdentityResolver
   resolveSession: CloudSessionResolver
+  /** Whether the request's session proved its account's second step, or the account has none. */
+  twoStepConfirmed: (request: Request) => Promise<boolean>
   requireActiveSession: MiddlewareHandler<CloudAPIEnvironment>
   /** Lets an account with terms to accept reach what leaving needs; see `resolveAccountSession`. */
   requireAccountSession: MiddlewareHandler<CloudAPIEnvironment>
@@ -60,6 +62,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
     workspaces,
     resolveIdentity,
     resolveSession,
+    twoStepConfirmed,
     requireActiveSession,
     authenticatedMutationLimiter
   } = services
@@ -81,14 +84,18 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
           services.config.enrollmentMode !== 'approval' || enrollmentStatus === 'approved'
             ? null
             : (enrollmentStatus ?? 'pending')
-        // Terms come after approval: an account still waiting has nothing to accept yet.
+        // The second step comes after approval, and terms after it: an account still waiting has
+        // nothing to prove or accept yet.
         let state: CloudAccountStatus['state'] = enrollmentState ?? 'active'
-        if (!enrollmentState && !(await services.terms.hasAccepted(identity.userId)))
+        if (!enrollmentState && !(await twoStepConfirmed(context.req.raw))) {
+          state = 'two-step'
+        } else if (!enrollmentState && !(await services.terms.hasAccepted(identity.userId))) {
           state = 'terms'
+        }
         if (state === 'active') await workspaces.ensurePersonal(identity)
         return context.json({ user: identity, state })
       })
-      .post('/api/account/terms', validatedJSON(parseCloudTermsAcceptance), async (context) => {
+      .post('/api/account/terms', validatedJSON(cloudTermsAcceptanceSchema), async (context) => {
         const identity = await resolveIdentity(context.req.raw)
         if (!identity) return context.json({ error: { code: 'unauthorized' as const } }, 401)
         if (!services.terms.requiredVersion) {
@@ -100,33 +107,38 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
         }
         return context.json({ ok: true as const })
       })
+      // A session still proving its second step reads which ways it has, and proves one.
       .get('/api/account/mfa', async (context) => {
-        const actor = await resolveSession(context.req.raw)
+        const actor = await resolveIdentity(context.req.raw)
         if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
         const mfa = await services.auth.mfaStatus(context.req.raw.headers)
         return mfa
           ? context.json({ mfa })
           : context.json({ error: { code: 'unauthorized' as const } }, 401)
       })
-      .post('/api/account/mfa/totp/enable', validatedJSON(parseCloudMFAEnable), async (context) => {
-        const result = await activeAccountAction(context, () =>
-          services.auth.enableTOTP(context.req.raw.headers, context.req.valid('json').password)
-        )
-        return result instanceof Response ? result : context.json(result)
-      })
-      .post('/api/account/mfa/totp/verify', validatedJSON(parseCloudMFAVerify), (context) =>
-        verifiedMFAAction(context, resolveSession, () =>
+      .post(
+        '/api/account/mfa/totp/enable',
+        validatedJSON(cloudMFAEnableSchema),
+        async (context) => {
+          const result = await activeAccountAction(context, () =>
+            services.auth.enableTOTP(context.req.raw.headers, context.req.valid('json').password)
+          )
+          return result instanceof Response ? result : context.json(result)
+        }
+      )
+      .post('/api/account/mfa/totp/verify', validatedJSON(cloudMFAVerifySchema), (context) =>
+        verifiedMFAAction(context, resolveIdentity, () =>
           services.auth.verifyTOTP(context.req.raw.headers, context.req.valid('json').code)
         )
       )
-      .post('/api/account/mfa/recovery/verify', validatedJSON(parseCloudMFAVerify), (context) =>
+      .post('/api/account/mfa/recovery/verify', validatedJSON(cloudMFAVerifySchema), (context) =>
         verifiedMFAAction(context, resolveIdentity, () =>
           services.auth.verifyRecoveryCode(context.req.raw.headers, context.req.valid('json').code)
         )
       )
       .post(
         '/api/account/mfa/recovery/regenerate',
-        validatedJSON(parseCloudMFAEnable),
+        validatedJSON(cloudMFAEnableSchema),
         async (context) => {
           const result = await activeAccountAction(context, () =>
             services.auth.generateRecoveryCodes(
@@ -139,7 +151,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       )
       .post(
         '/api/account/mfa/totp/disable',
-        validatedJSON(parseCloudMFAEnable),
+        validatedJSON(cloudMFAEnableSchema),
         async (context) => {
           const actor = await resolveSession(context.req.raw)
           if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
@@ -167,7 +179,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       })
       .post(
         '/api/account/mfa/passkeys/delete',
-        validatedJSON(parseCloudPasskeyDelete),
+        validatedJSON(cloudPasskeyDeleteSchema),
         async (context) => {
           const actor = await resolveSession(context.req.raw)
           if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
@@ -192,7 +204,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       .use('/api/account/authentication/*', authenticatedMutationLimiter)
       .post(
         '/api/account/authentication/change-password',
-        validatedJSON(parseCloudPasswordChange),
+        validatedJSON(cloudPasswordChangeSchema),
         async (context) => {
           const result = await accountAction(
             () =>
@@ -207,7 +219,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       )
       .post(
         '/api/account/authentication/link-social',
-        validatedJSON(parseCloudSocialLink),
+        validatedJSON(cloudSocialLinkSchema),
         async (context) => {
           const result = await accountAction(
             () =>
@@ -217,12 +229,17 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
               ),
             context
           )
-          return result instanceof Response ? result : context.json({ url: result })
+          if (result instanceof Response) return result
+          // The provider's callback checks the state cookie this sets.
+          for (const cookie of result.headers.getSetCookie()) {
+            context.header('Set-Cookie', cookie, { append: true })
+          }
+          return context.json({ url: result.url })
         }
       )
       .post(
         '/api/account/authentication/unlink',
-        validatedJSON(parseCloudUnlinkAuthenticationMethod),
+        validatedJSON(cloudUnlinkAuthenticationMethodSchema),
         async (context) => {
           const result = await accountAction(
             () =>
@@ -265,7 +282,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
           }
         })
       })
-      .post('/api/account/profile', validatedJSON(parseCloudProfileUpdate), async (context) => {
+      .post('/api/account/profile', validatedJSON(cloudProfileUpdateSchema), async (context) => {
         const result = await accountAction(
           () => services.auth.updateProfile(context.req.raw.headers, context.req.valid('json')),
           context
@@ -273,7 +290,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
         return result instanceof Response ? result : context.json({ ok: true as const })
       })
       // The app says which language it uses after signing in and whenever the person changes it.
-      .put('/api/account/locale', validatedJSON(parseCloudLocaleUpdate), async (context) => {
+      .put('/api/account/locale', validatedJSON(cloudLocaleUpdateSchema), async (context) => {
         const result = await accountAction(
           () => services.auth.setLocale(context.req.raw.headers, context.req.valid('json').locale),
           context
@@ -286,7 +303,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
           maxSize: PICTURE_BODY_BYTES,
           onError: (context) => context.json({ error: { code: 'picture_invalid' as const } }, 413)
         }),
-        validatedJSON(parseCloudPictureUpload),
+        validatedJSON(cloudPictureUploadSchema),
         async (context) => {
           const bytes = toUint8Array(context.req.valid('json').data)
           try {
@@ -302,14 +319,18 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
         await services.pictures.remove(context.get('actor').userId)
         return context.json({ ok: true as const })
       })
-      .post('/api/account/profile/email', validatedJSON(parseCloudEmailChange), async (context) => {
-        const result = await accountAction(
-          () =>
-            accountAuthentication.changeEmail(context.req.raw.headers, context.req.valid('json')),
-          context
-        )
-        return result instanceof Response ? result : context.json({ ok: true as const })
-      })
+      .post(
+        '/api/account/profile/email',
+        validatedJSON(cloudEmailChangeSchema),
+        async (context) => {
+          const result = await accountAction(
+            () =>
+              accountAuthentication.changeEmail(context.req.raw.headers, context.req.valid('json')),
+            context
+          )
+          return result instanceof Response ? result : context.json({ ok: true as const })
+        }
+      )
       .get('/api/account/sessions', async (context) => {
         const sessions = await services.auth.sessions(context.req.raw.headers)
         if (!sessions) return context.json({ error: { code: 'unauthorized' as const } }, 401)
@@ -317,7 +338,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       })
       .post(
         '/api/account/sessions/revoke',
-        validatedJSON(parseCloudSessionRevoke),
+        validatedJSON(cloudSessionRevokeSchema),
         async (context) => {
           const result = await accountAction(
             () =>
@@ -345,7 +366,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       .get('/api/account/deletion', async (context) => {
         return context.json({ deletion: await services.deletion.plan(context.get('actor').userId) })
       })
-      .post('/api/account/delete', validatedJSON(parseCloudAccountDelete), async (context) => {
+      .post('/api/account/delete', validatedJSON(cloudAccountDeleteSchema), async (context) => {
         const result = await accountAction(
           () =>
             services.auth.deleteAccount(

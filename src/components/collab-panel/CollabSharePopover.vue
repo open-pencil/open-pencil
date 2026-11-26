@@ -2,7 +2,9 @@
 import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
-import { showsRoomDocument } from '@/app/collab/room/status'
+import { showsRoomDocument } from '@open-pencil/collab'
+
+import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import ConnectedRoom from '@/components/collab-panel/ConnectedRoom.vue'
 import { useCollabPanelContext } from '@/components/collab-panel/context'
 import ShareOrJoinRoom from '@/components/collab-panel/ShareOrJoinRoom.vue'
@@ -43,7 +45,10 @@ const connection = computed(() => {
         @open-auto-focus.prevent
       >
         <ConnectedRoom v-if="collab.state.inRoom" />
-        <ShareOrJoinRoom v-else />
+        <template v-else>
+          <CampaignNoteHost placement="share" class="mb-3" />
+          <ShareOrJoinRoom />
+        </template>
       </PopoverContent>
     </PopoverPortal>
   </AppPopoverRoot>

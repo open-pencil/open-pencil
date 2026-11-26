@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
-import { addOpenSegmentsToPath, type PathSink } from '@open-pencil/scene-graph/paths'
+import { addOpenSegmentsToPath } from '@open-pencil/scene-graph/paths'
+
+import type { PathRecorder } from './recorder'
 
 const zero = { x: 0, y: 0 }
 
@@ -10,7 +12,7 @@ function line(start: number, end: number): VectorSegment {
 }
 
 /** Records path commands, with a cubic's handles rounded to a tenth. */
-function recorder(): PathSink & { commands: string[] } {
+function recorder(): PathRecorder {
   const commands: string[] = []
   const r = (value: number) => Math.round(value * 10) / 10
   return {

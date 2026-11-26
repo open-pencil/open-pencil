@@ -1,3 +1,7 @@
+/**
+ * Where named shapes are compared with each other, across these roots. Other packages hold
+ * small value types, such as a point or a range, that match by coincidence, not by meaning.
+ */
 export const TYPE_SHAPE_ROOTS = [
   'src',
   'packages/core/src',
@@ -7,6 +11,9 @@ export const TYPE_SHAPE_ROOTS = [
   'tests',
   'tools'
 ] as const
+
+/** Where an inline intersection written twice in one package is caught: everywhere. */
+export const INTERSECTION_ROOTS = ['src', 'packages', 'tests', 'tools'] as const
 
 const EXCLUDED_DIRECTORIES = new Set(['node_modules', 'dist', 'coverage', '.worktrees'])
 

@@ -1,7 +1,10 @@
 export * from './account'
 export * from './locale'
+export * from './api'
+export * from './oauth'
 export {
   SERVICE_ERROR_STATUS,
+  roleModelsSchema,
   serviceCatalogSchema,
   creditBucketSchema,
   serviceErrorCodeSchema,
@@ -28,6 +31,7 @@ export {
   parseUsageQuery,
   parseSearchRequest,
   parseCreateServicesToken,
+  type RoleModels,
   type ServiceCatalog,
   type CreditBucket,
   type ServiceError,
@@ -46,21 +50,24 @@ export {
   type SearchResponse,
   type CloudServicesDiscovery,
   type CreateServicesTokenInput,
-  type CloudServicesAPI,
-  type CloudServicesSchema,
   sendsTokenSafely
 } from './services'
 export {
   BILLING_ERROR_STATUS,
+  CLOUD_ACCOUNT_BILLING_PATH,
   CLOUD_ACCOUNT_PLAN_PATH,
   CLOUD_BILLING_API_PATHS,
+  CLOUD_BILLING_PAGE_PATHS,
   CLOUD_BILLING_CONTRACT_VERSION,
   CLOUD_BILLING_TOKEN_AUDIENCE,
+  CLOUD_BILLING_TOKEN_PATH,
   billingAccountSchema,
   billingCatalogSchema,
   billingErrorCodeSchema,
   billingErrorSchema,
+  billingFreePlanSchema,
   billingPlanSchema,
+  billingSeatPricingSchema,
   billingRedirectSchema,
   billingTokenClaimsSchema,
   billingTokenSchema,
@@ -71,14 +78,14 @@ export {
   type BillingCatalog,
   type BillingError,
   type BillingErrorCode,
+  type BillingFreePlan,
   type BillingPlan,
+  type BillingSeatPricing,
   type BillingRedirect,
   type BillingToken,
   type BillingTokenClaims,
   type CheckoutRequest,
-  type CloudBillingAPI,
   type CloudBillingDiscovery,
-  type CloudBillingSchema,
   type CreditPack
 } from './billing'
 export * from './admin'
@@ -94,8 +101,10 @@ export * from './relay'
 export {
   accountEntitlementsResponseSchema,
   accountEntitlementsSchema,
+  staticEntitlementsSchema,
   workspaceEntitlementsSchema,
   type AccountEntitlements,
+  type StaticEntitlements,
   type WorkspaceEntitlements
 } from './entitlements'
 export {
@@ -124,6 +133,7 @@ export {
   type CloudListing
 } from './discovery'
 export {
+  CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH,
   CLOUD_DOCUMENT_NAME_MAX_LENGTH,
   CLOUD_IMAGE_NAME_PATTERN,
   CLOUD_API_MAX_BODY_BYTES,
@@ -149,6 +159,8 @@ export {
   trashSchema,
   trashedDocumentSchema,
   type TrashedDocument,
+  updateDocumentSchema,
+  type UpdateDocumentInput,
   workspaceUsageSchema,
   isCloudChecksum,
   parseCommitImageUploads,
@@ -256,17 +268,24 @@ export {
   cloudCommunityPagePath,
   cloudDesktopLinkURL,
   cloudDocumentPath,
+  cloudCommentURL,
   cloudDocumentURL,
   cloudInvitationURL,
   cloudShareURL,
   parseCloudLinkPath,
   cloudCommunityPath,
   cloudCommunityURL,
+  CLOUD_EMBED_PATH,
+  cloudEmbedCommunityURL,
+  cloudEmbedShareURL,
+  parseCloudEmbedPath,
+  type CloudEmbedKind,
   type CloudLinkKind,
   type CloudLinkPathKind
 } from './links'
 export { CLOUD_PORTAL_COMMUNITY_PAGES, CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export * from './comments'
 export * from './community'
 export {
   DOCUMENT_REPORT_DESCRIPTION_MAX,

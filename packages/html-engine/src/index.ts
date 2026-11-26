@@ -1,9 +1,4 @@
-export {
-  HTMLEngine,
-  type HTMLEngineFetch,
-  type HTMLEngineLayoutOptions,
-  type HTMLEngineResource
-} from './engine'
+export { HTMLEngine, type HTMLEngineLayoutOptions } from './engine'
 export { rasterImageSize } from './images'
 export { loadHTMLEngine, setHTMLEngineLocator, type HTMLEngineLocator } from './load'
 export {

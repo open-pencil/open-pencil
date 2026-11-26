@@ -1,10 +1,10 @@
 import { toRaw, type FunctionalComponent } from 'vue'
 
 import { nodeOutlinePath } from '@open-pencil/core/io/formats/svg'
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { validateVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 import type { LayerOutline } from '@open-pencil/vue/primitives/LayerTree'
 
 import { maskIcon } from './mask'

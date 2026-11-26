@@ -1,3 +1,5 @@
+import type { Ref } from 'vue'
+
 import { openTourFromMenu } from '@/app/demo/document'
 import { donate } from '@/app/donation'
 import { openReportDialog, REPORTS_ENABLED } from '@/app/reports/state'
@@ -6,6 +8,8 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { detectEnvironment } from '@/app/shell/support/gate'
 import { problemReportIssueURL, type EditorSite } from '@/app/shell/support/guidance'
 import { openExternalLink } from '@/app/shell/ui'
+import { checkForAppUpdate } from '@/app/shell/updater/check'
+import type { UpdaterMessages } from '@/app/shell/updater/messages'
 import {
   COMMUNITY_URL,
   DOCS_URL,
@@ -41,13 +45,17 @@ function reportProblem() {
   void detectEnvironment().then((env) => open(problemReportIssueURL(env, editorSite())))
 }
 
-/** The Help menu's actions, the same in the web app's menu and the desktop app's. */
-export function createHelpMenuActions(): Record<string, () => void> {
+/**
+ * The Help menu's actions, the same in the web app's menu, the command palette, and the desktop
+ * app's, with Check for Updates… also run from the macOS application menu.
+ */
+export function createHelpMenuActions(updates: Ref<UpdaterMessages>): Record<string, () => void> {
   return {
     'help-docs': () => open(DOCS_URL),
     'help-shortcuts': () => open(KEYBOARD_SHORTCUTS_URL),
     'help-whats-new': () => open(releaseNotesURL(APP_VERSION)),
     'open-tour': openTourFromMenu,
+    'check-updates': () => void checkForAppUpdate({ messages: updates }),
     'report-problem': reportProblem,
     diagnostics: () => openSettingsDialog('diagnostics'),
     'help-community': () => open(COMMUNITY_URL),

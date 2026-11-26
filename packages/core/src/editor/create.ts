@@ -54,6 +54,7 @@ import { createShapeActions } from './shapes'
 import { createPenResumeActions } from './shapes/pen/resume'
 import { createShapeWithTextActions } from './shapes/with-text'
 import { createEditorSignals } from './signals'
+import { createSlideActions } from './slides'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
@@ -124,7 +125,9 @@ export function createEditor(options?: EditorOptions) {
   void prefetchFigmaSchema()
 
   const graphReads = createGraphReadActions(() => _graph)
-  const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
+  const { runLayoutForNode, runLayoutForParents, runMutationWithLayout } = createLayoutRunner(
+    () => _graph
+  )
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
     getRenderer: canvas.getRenderer,
@@ -133,7 +136,7 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync, flushComponentSync, isSyncingComponents } =
+  const { scheduleComponentSync, flushComponentSync, isSyncingComponents, withoutComponentSync } =
     createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
@@ -187,6 +190,7 @@ export function createEditor(options?: EditorOptions) {
     setActiveTool,
     setNavigationPhase,
     runLayoutForNode,
+    runLayoutForParents,
     runMutationWithLayout,
     subscribeToGraph
   }
@@ -201,7 +205,11 @@ export function createEditor(options?: EditorOptions) {
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
   const clipboard = createClipboardActions(ctx)
-  const colorSpace = createColorSpaceActions(ctx)
+  const colorSpace = createColorSpaceActions(ctx, {
+    loadPageNodes: pages.loadPageNodes,
+    withoutComponentSync,
+    refusal: (profile, mode) => readOnly.refusal('setDocumentColorSpace', [profile, mode])
+  })
   const documentSettings = createDocumentSettingsActions(ctx)
   const undoActions = createUndoActions(ctx)
   const text = createTextActions(ctx)
@@ -221,6 +229,7 @@ export function createEditor(options?: EditorOptions) {
   const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
   const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
+  const slides = createSlideActions(ctx, viewport.zoomToFit)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
   const connectorDrawing = createConnectorDrawActions(ctx)
@@ -235,7 +244,7 @@ export function createEditor(options?: EditorOptions) {
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const canvasViews = createCanvasViewActions(ctx)
-  const clipboardBridge = createClipboardBridge(clipboard, selection)
+  const clipboardBridge = createClipboardBridge(clipboard, selection, slides, () => ctx.graph)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
   const frameNavigation = createFrameNavigationBridge(ctx, selection, viewport)
@@ -439,6 +448,7 @@ export function createEditor(options?: EditorOptions) {
     // Bitmap-to-vector replacement
     ...vectorize,
     ...icons,
+    ...slides,
     ...stickies,
     ...shapesWithText,
     ...figJamText,

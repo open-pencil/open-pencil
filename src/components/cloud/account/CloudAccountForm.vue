@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, toRef, useTemplateRef, watch } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   useCloudAccountForm,
@@ -37,7 +37,7 @@ const {
 const emit = defineEmits<{ submit: [credentials: CloudAccountCredentials]; forgotPassword: [] }>()
 
 const ui = computed(() => portalForm({ size }))
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const form = useCloudAccountForm(
   toRef(() => mode),
   toRef(() => minimumPasswordLength),

@@ -70,6 +70,11 @@ export interface BlockPlacement {
   pieces: LinePiece[] | null
 }
 
+/** A block's placement, with where its top ends up. */
+export interface PlacedBlock extends BlockPlacement {
+  y: number
+}
+
 /** A line as Figma sets it: its height, and how far its baseline stands below its top. */
 export interface LineBox {
   height: number
@@ -268,7 +273,7 @@ function buildPieces(
 
 /** Where `placeLines` puts each block, and the text's height. */
 export interface PlacedLines<Block> {
-  blocks: Map<Block, BlockPlacement & { y: number }>
+  blocks: Map<Block, PlacedBlock>
   height: number
 }
 
@@ -313,7 +318,7 @@ export function placeLines<Block extends LineBlock>(
   )
   if (alike && stacked) return null
 
-  const placed = new Map<Block, BlockPlacement & { y: number }>()
+  const placed = new Map<Block, PlacedBlock>()
   for (const [index, block] of blocks.entries()) {
     const lines = metrics[index]
     const blockBoxes = boxes[index]

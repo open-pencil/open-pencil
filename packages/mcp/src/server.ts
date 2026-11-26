@@ -3,23 +3,32 @@ import type { Server as HttpServer } from 'node:http'
 import { resolve } from 'node:path'
 
 import type { McpServer } from '@modelcontextprotocol/server'
-import { Hono, type Context, type Next } from 'hono'
+import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
-import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
+import { errorMessage } from '@open-pencil/std/errors'
+
+import {
+  bearerToken,
+  createMCPAccess,
+  mcpAuthorization,
+  requireScope,
+  type MCPAccess
+} from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
 import type { RPCJSONObject } from '#mcp/json'
 import { registerFileRoutes } from '#mcp/server/files'
 import { createMCPSessionManager, sessionOpener } from '#mcp/server/sessions'
+import { mcpClientToken } from '#mcp/tool/client-token'
 import { createToolDescriptors } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
 import { applyToolPolicy } from '#mcp/tool/policy'
 import { registerTools, type MCPAgentSession } from '#mcp/tool/registration'
-import { scopeRPC, type MCPToolScope } from '#mcp/tool/scope'
+import type { MCPToolScope } from '#mcp/tool/scope'
 
 import packageJSON from '../package.json' with { type: 'json' }
 import {
@@ -69,6 +78,7 @@ export {
   type RegisterToolsOptions,
   type RPCSender
 } from '#mcp/tool/registration'
+import { MAX_TIMER_MS } from '@open-pencil/std/timing'
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */
@@ -83,7 +93,7 @@ export interface ServerOptions {
   /** What clients can reach: the whole document (default) or only the user's selection. */
   scope?: MCPToolScope
   mcpRoot?: string | null
-  /** Auth token for /mcp and /rpc endpoints. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. */
+  /** The server's token, for the app and every endpoint. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. `/mcp` also takes `mcpClientToken(authToken)`, which opens nothing else. */
   authToken?: string | null
   corsOrigin?: string | readonly string[] | null
   /**
@@ -126,7 +136,8 @@ export interface ServerHandle {
 
 /** Set up Hono routes: /health, /rpc, /files, /mcp */
 function createHonoApp(options: {
-  authToken: string | null
+  access: MCPAccess
+  authRequired: boolean
   corsOrigin: string | readonly string[] | null
   /** The root `/files` reads and writes inside, or null to leave the route out. */
   fileRoot: string | null
@@ -135,8 +146,8 @@ function createHonoApp(options: {
   sendToBrowser: (msg: RPCJSONObject) => Promise<unknown>
   toolDescriptors: ToolDescriptor[]
 }): Hono {
-  const { authToken, corsOrigin, fileRoot, browserRPC, mcpSessions, sendToBrowser } = options
-  const { toolDescriptors } = options
+  const { access, authRequired, corsOrigin, fileRoot, browserRPC, mcpSessions } = options
+  const { sendToBrowser, toolDescriptors } = options
 
   const app = new Hono()
 
@@ -154,34 +165,24 @@ function createHonoApp(options: {
 
   app.get('/health', async (c) => {
     const provided = bearerToken(c.req.header('authorization'))
-    const canInspectConfiguration = authToken === null || isAuthorized(provided, authToken)
+    const canInspectConfiguration = access.scopes(provided).includes('mcp')
     return c.json({
       status: browserRPC.isConnected() ? 'ok' : 'no_app',
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
-      authRequired: authToken !== null,
+      authRequired,
       // Tells the app it reports agent_session_opened, so a chat may wait for its agent.
       agentSessionEvents: true,
+      // Tells the app `/mcp` takes the client token; a server without it predates the token.
+      clientTokens: true,
       ...(canInspectConfiguration ? { tools: toolDescriptors } : {})
     })
   })
 
-  const requireToken = async (c: Context, next: Next) => {
-    // When authToken is null (operator explicitly disabled auth), skip token check —
-    // the Unix socket or localhost TCP already restricts access to local processes.
-    if (authToken !== null) {
-      const provided = bearerToken(c.req.header('authorization'))
-      if (!isAuthorized(provided, authToken)) {
-        return c.json({ error: 'Unauthorized' }, 401)
-      }
-    }
-    return next()
-  }
-
-  app.use('/rpc', requireToken)
+  app.use('/rpc', requireScope(access, 'rpc'))
 
   if (fileRoot !== null) {
-    app.use('/files/*', requireToken)
+    app.use('/files/*', requireScope(access, 'files'))
     registerFileRoutes(app, fileRoot)
   }
 
@@ -198,18 +199,18 @@ function createHonoApp(options: {
       const result = await sendToBrowser(body as RPCJSONObject)
       return c.json(result)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
+      const msg = errorMessage(e)
       return c.json({ ok: false, error: msg }, 502)
     }
   })
 
   app.all('/mcp', async (c) => {
-    if (authToken !== null) {
-      const token = mcpRequestToken(c.req.header('authorization'), c.req.header('x-mcp-token'))
-      if (!isAuthorized(token, authToken)) {
-        return c.json({ error: 'Unauthorized' }, 401)
-      }
-    }
+    const authorization = mcpAuthorization(
+      c.req.header('authorization'),
+      c.req.header('x-mcp-token')
+    )
+    const refusal = access.refuse(authorization, 'mcp')
+    if (refusal) return refusal
     if (!MCP_METHODS.includes(c.req.method)) {
       return c.json(
         { error: 'Method not allowed' },
@@ -310,7 +311,7 @@ function wireConnectionHandling(
   wss.on('close', () => clearInterval(heartbeat))
 }
 
-function buildServerContext(options: ServerOptions) {
+async function buildServerContext(options: ServerOptions) {
   const httpPort = options.httpPort ?? 7600
   const toolPolicy: ToolPolicy = {
     allowEval: options.enableEval ?? false,
@@ -322,6 +323,8 @@ function buildServerContext(options: ServerOptions) {
   // Pass authToken: null explicitly to disable auth entirely.
   const authToken =
     options.authToken === undefined ? randomBytes(16).toString('hex') : options.authToken
+  const clientToken = authToken === null ? null : await mcpClientToken(authToken)
+  const access = createMCPAccess(authToken, clientToken)
   const corsOrigin = options.corsOrigin ?? null
   const withTcp = options.withTcp ?? false
 
@@ -361,16 +364,18 @@ function buildServerContext(options: ServerOptions) {
     }
   })
   const browserRPC = createBrowserRPCBridge({
-    authToken,
+    access,
+    scope: toolPolicy.scope,
     onConnectionChange: mcpSessions.notifyToolsChanged,
     appWaitTimeoutMs: options.appWaitTimeoutMs
   })
-  // Every call into the app, from MCP sessions and /rpc alike, stays within the scope.
-  const sendToBrowser = scopeRPC(browserRPC.sendRPC, toolPolicy.scope)
+  // The bridge keeps every call into the app within the scope, however it arrived.
+  const sendToBrowser = browserRPC.sendRPC
   const toolDescriptors = applyToolPolicy(createToolDescriptors(mcpRoot !== null), toolPolicy)
 
   const app = createHonoApp({
-    authToken,
+    access,
+    authRequired: authToken !== null,
     corsOrigin,
     // A client limited to the selection reaches no files, as the file tools are left out then.
     fileRoot: mcpRoot !== null && toolPolicy.scope !== 'selection' ? resolve(mcpRoot) : null,
@@ -487,7 +492,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   validateTimeoutOption('appAttachTimeoutMs', options.appAttachTimeoutMs)
   validateTimeoutOption('appWaitTimeoutMs', options.appWaitTimeoutMs)
   validateTimeoutOption('sessionIdleTimeoutMs', options.sessionIdleTimeoutMs)
-  const ctx = buildServerContext(options)
+  const ctx = await buildServerContext(options)
 
   // Wire shared connection handling BEFORE starting listeners so that
   // any client connecting during startup is handled immediately.
@@ -543,8 +548,6 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
 
   return handle
 }
-
-const MAX_TIMER_MS = 2_147_483_647
 
 function validateTimeoutOption(name: string, timeoutMs: number | undefined): void {
   if (timeoutMs === undefined) return

@@ -132,6 +132,11 @@ export const emailMessageDefaults = {
   twoStepResetHeading: 'Two-step sign-in was reset',
   twoStepReset:
     'An administrator removed your authenticator app, recovery codes, and passkeys, so you can set them up again.',
+  signInMethodRemovedHeading: 'Sign-in method removed',
+  signInMethodRemoved: params(
+    'An administrator removed {method} from the ways you sign in to your account.'
+  ),
+  signInMethodPassword: 'your password',
   twoStepNotYou: 'If this wasn’t you, change your password and contact your administrator.',
   reviewSecurity: 'Review security',
 
@@ -185,6 +190,17 @@ export const emailMessageDefaults = {
   reportDisagree: params('If you disagree, write to {email}.'),
   reportDisagreeAdministrators:
     'If you disagree, ask the server’s administrators to look at it again.',
+
+  commentMentionSubject: params('{author} mentioned you in “{document}”'),
+  commentReplySubject: params('{author} replied in “{document}”'),
+  commentMentionHeading: 'You were mentioned',
+  commentReplyHeading: 'New reply',
+  commentMention: params('{author} mentioned you in a comment on “{document}”:'),
+  commentReply: params('{author} replied in a thread you’re part of on “{document}”:'),
+  commentSomeone: 'Someone',
+  openComment: 'Open the comment',
+  commentSettings: 'You get these emails as your notification settings say. Change them in {link}.',
+  commentSettingsLink: 'your account settings',
 
   waitlistSubject: 'Confirm your place on the OpenPencil Cloud waitlist',
   waitlistHeading: 'Confirm your email',

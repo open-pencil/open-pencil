@@ -26,7 +26,7 @@ const SOFTWARE_APPLICATION = {
   applicationCategory: 'DesignApplication',
   operatingSystem: 'Windows, macOS, Linux, Web',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  url: 'https://app.openpencil.dev',
+  url: 'https://cloud.openpencil.dev',
   description:
     'Open-source design editor that opens Figma .fig files, runs locally, and is programmable by you or your AI agent.',
   softwareVersion: version,

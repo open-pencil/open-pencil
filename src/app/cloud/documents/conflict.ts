@@ -1,3 +1,5 @@
+import { shallowRef } from 'vue'
+
 import type { EditorStore } from '@/app/editor/session'
 import { rememberRecentStorageDocument } from '@/app/recent-files'
 import {
@@ -9,6 +11,14 @@ import {
 import { reloadStorageDocumentInTab } from '@/app/tabs'
 
 export type CloudConflictChoice = 'keep-both' | 'use-cloud' | 'use-mine'
+
+/** The tab whose conflict choice opens once its status shows, as a notification's click asks. */
+export const conflictChoiceRequested = shallowRef<EditorStore | null>(null)
+
+/** Opens the choice for `store`'s conflict, once its tab shows the document's status. */
+export function requestConflictChoice(store: EditorStore): void {
+  conflictChoiceRequested.value = store
+}
 
 /**
  * Resolves the open document's conflict. Keeping both moves the tab to the copy, which already

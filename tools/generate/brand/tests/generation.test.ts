@@ -5,6 +5,8 @@ import { repositoryRoot, webFiles } from '#brand/config'
 import { generateDesktop } from '#brand/desktop'
 import { canonicalIcns, icoSizes, validateFiles, validateMaskable } from '#brand/validate'
 import { generateWeb } from '#brand/web'
+import { stringToSvg as stringToSVG } from '@realfavicongenerator/generate-favicon'
+import { getNodeImageAdapter } from '@realfavicongenerator/image-adapter-node'
 import sharp from 'sharp'
 
 const files = await generateWeb(repositoryRoot)
@@ -113,6 +115,33 @@ describe('brand generation', () => {
     const svg = await sharp(file('brand/app-icon.svg')).ensureAlpha().raw().toBuffer()
     const png = await sharp(file('brand/app-icon-1024.png')).ensureAlpha().raw().toBuffer()
     expect(svg.equals(png)).toBe(true)
+  })
+
+  test('makes a BIMI logo in SVG Tiny Portable/Secure that a circular crop keeps whole', async () => {
+    const adapter = await getNodeImageAdapter()
+    const svg = stringToSVG(file('brand/bimi.svg').toString('utf8'), adapter)
+    expect(String(svg.attr('version'))).toBe('1.2')
+    expect(svg.attr('baseProfile')).toBe('tiny-ps')
+    // The profile forbids placing the root.
+    expect(svg.node.hasAttribute('x') || svg.node.hasAttribute('y')).toBe(false)
+    expect(svg.findOne('title')?.node.textContent).toBe('OpenPencil')
+    // The profile has no patterns, clipping, references, scripts, or images, and no arcs in paths.
+    expect(svg.find('pattern, clipPath, mask, filter, use, image, script, style, a')).toHaveLength(
+      0
+    )
+    for (const path of svg.find('path')) expect(String(path.attr('d'))).not.toMatch(/[Aa]/)
+
+    // Mail apps crop the logo to a circle: everything outside it is the ivory background.
+    const size = 256
+    const pixels = await sharp(file('brand/bimi.svg')).resize(size, size).raw().toBuffer()
+    const channels = pixels.length / (size * size)
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (Math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) < (size / 2) * 0.9) continue
+        const at = (y * size + x) * channels
+        expect([pixels[at], pixels[at + 1], pixels[at + 2]]).toEqual([0xf5, 0xf5, 0xef])
+      }
+    }
   })
 
   test('rejects a transparent maskable icon', async () => {

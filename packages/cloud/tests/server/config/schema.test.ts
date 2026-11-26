@@ -84,6 +84,12 @@ describe('Cloud server configuration', () => {
     )
   })
 
+  test('requires GitHub’s client ID and secret together', () => {
+    expect(() =>
+      parseCloudServerConfig({ ...baseConfig, githubClientId: 'github-client' })
+    ).toThrow(CloudConfigError)
+  })
+
   test('requires transport-specific transactional email configuration', () => {
     expect(() =>
       parseCloudServerConfig({

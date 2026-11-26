@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ContextMenuPortal, ContextMenuTrigger, PopoverContent, PopoverPortal } from 'reka-ui'
+import { ContextMenuPortal, PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch, type Component } from 'vue'
 import IconLucideAlignHorizontalSpaceBetween from '~icons/lucide/align-horizontal-space-between'
 import IconLucideAlignVerticalSpaceBetween from '~icons/lucide/align-vertical-space-between'
@@ -47,6 +47,7 @@ import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
@@ -83,6 +84,9 @@ const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
 }
+// The layout moved the canvas on screen: pan the other way so the drawing stays where it was.
+const onViewportMove = (dx: number, dy: number) =>
+  store.shiftPane(paneId ?? store.activePaneId.value, -dx, -dy)
 
 const { updateCursor } = useCanvasCollaborationAwareness(store)
 
@@ -119,6 +123,7 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   getRenderState,
   onViewportResize,
+  onViewportMove,
   onPresentation: (colorSpace) => {
     store.state.canvasPresentation = colorSpace
   }
@@ -147,7 +152,11 @@ const {
   getRenderState,
   onViewportResize
 })
-const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store, getOverlayRenderer)
+const { selectAtContextPoint, contextTarget } = createCanvasContextSelection(
+  canvasRef,
+  store,
+  getOverlayRenderer
+)
 const {
   drag,
   cursorOverride,
@@ -298,7 +307,7 @@ const cursor = computed(() =>
 
 <template>
   <AppContextMenuRoot :modal="false">
-    <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
+    <AppContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
         ref="area"
         dir="ltr"
@@ -397,10 +406,10 @@ const cursor = computed(() =>
           :preparation="store.state.preparation"
         />
       </div>
-    </ContextMenuTrigger>
+    </AppContextMenuTrigger>
 
     <ContextMenuPortal>
-      <CanvasMenu />
+      <CanvasMenu :target="contextTarget" />
     </ContextMenuPortal>
   </AppContextMenuRoot>
 </template>

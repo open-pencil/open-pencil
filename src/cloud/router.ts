@@ -1,9 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { isCloudPortalPage } from '@open-pencil/cloud/contract'
+import { CLOUD_OAUTH_AUTHORIZE_PAGE, isCloudPortalPage } from '@open-pencil/cloud/contract'
 
 import type { PortalContext } from '@/app/cloud-portal/context'
-import { PORTAL_HOME, portalDestination, TERMS_PAGE } from '@/app/cloud-portal/navigation'
+import {
+  PORTAL_HOME,
+  portalDestination,
+  CONFIRM_PAGE,
+  TERMS_PAGE
+} from '@/app/cloud-portal/navigation'
 
 /**
  * The Cloud portal's pages, guarded by the portal's access rules (`portalDestination`). The
@@ -69,6 +74,14 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
+        // An app asking to connect, with its signed request; a server that accepts none has none.
+        path: CLOUD_OAUTH_AUTHORIZE_PAGE,
+        name: 'authorize',
+        component: () => import('@/views/cloud/AuthorizeView.vue'),
+        meta: { account: true },
+        beforeEnter: () => (context.discovery.capabilities.apps ? true : PORTAL_HOME)
+      },
+      {
         path: '/account/pending',
         name: 'pending',
         component: () => import('@/views/cloud/StandingView.vue'),
@@ -81,6 +94,12 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
+        path: CONFIRM_PAGE,
+        name: 'confirm',
+        component: () => import('@/views/cloud/ConfirmView.vue'),
+        meta: { account: true }
+      },
+      {
         path: TERMS_PAGE,
         name: 'terms',
         component: () => import('@/views/cloud/TermsView.vue'),
@@ -89,6 +108,12 @@ export function createCloudPortalRouter(context: PortalContext) {
       {
         path: '/account',
         name: 'profile',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true }
+      },
+      {
+        path: '/account/notifications',
+        name: 'notifications',
         component: () => import('@/views/cloud/ConsoleView.vue'),
         meta: { account: true }
       },
@@ -117,6 +142,14 @@ export function createCloudPortalRouter(context: PortalContext) {
         name: 'tokens',
         component: () => import('@/views/cloud/ConsoleView.vue'),
         meta: { account: true }
+      },
+      {
+        path: '/account/apps',
+        name: 'apps',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true },
+        // Only a server that accepts apps lists them.
+        beforeEnter: () => (context.discovery.capabilities.apps ? true : { name: 'profile' })
       },
       {
         path: '/admin/:section(overview|requests|reports|documents|people|email|activity)?',

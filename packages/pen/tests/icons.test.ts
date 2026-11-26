@@ -12,6 +12,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { parseDocument } from './helpers/document'
+import { lightDark, SEMANTIC_THEMES } from './helpers/themes'
 
 /** Draws each glyph as one path tinted with the icon's colour, as the Iconify source does. */
 const icons = {
@@ -169,5 +170,99 @@ describe('parsePenFile — icons in components', () => {
       syncInstance(graph, glyph.id)
       expect(glyphOf(graph, id).opacity).toBe(opacity)
     }
+  })
+
+  // A theme re-read swaps the icon onto the glyph component for that theme, and a descendant
+  // override that follows still has to find the layer it names (#2170).
+  test('hides an icon a theme swaps when a descendant override disables it', () => {
+    const graph = parseDocument(
+      [
+        {
+          id: 'Card',
+          type: 'frame',
+          reusable: true,
+          children: [
+            {
+              id: 'symbol',
+              type: 'icon',
+              library: 'lucide',
+              icon: '$glyph',
+              width: 16,
+              height: 16
+            }
+          ]
+        },
+        {
+          id: 'Dark',
+          type: 'frame',
+          theme: { semantic: 'dark' },
+          children: [
+            {
+              id: 'placed',
+              type: 'ref',
+              ref: 'Card',
+              descendants: { symbol: { enabled: false } }
+            }
+          ]
+        }
+      ],
+      { themes: SEMANTIC_THEMES, variables: { glyph: lightDark('string', 'sun', 'moon') } },
+      { icons }
+    )
+    const symbol = expectDefined(graph.getChildren('placed')[0], 'symbol')
+
+    expect(instanceMainComponent(graph, getNodeOrThrow(graph, 'symbol'))?.name).toBe(
+      'lucide/sun/16x16'
+    )
+    expect(instanceMainComponent(graph, symbol)?.name).toBe('lucide/moon/16x16')
+    expect(symbol.visible).toBe(false)
+  })
+
+  test('hides a nested icon a theme swaps when a descendant override disables it', () => {
+    const graph = parseDocument(
+      [
+        {
+          id: 'Card',
+          type: 'frame',
+          reusable: true,
+          children: [
+            {
+              id: 'symbol',
+              type: 'icon',
+              library: 'lucide',
+              icon: '$glyph',
+              width: 16,
+              height: 16
+            }
+          ]
+        },
+        {
+          id: 'Row',
+          type: 'frame',
+          reusable: true,
+          children: [{ id: 'RowCard', type: 'ref', ref: 'Card' }]
+        },
+        {
+          id: 'Dark',
+          type: 'frame',
+          theme: { semantic: 'dark' },
+          children: [
+            {
+              id: 'RowInst',
+              type: 'ref',
+              ref: 'Row',
+              descendants: { 'RowCard/symbol': { enabled: false } }
+            }
+          ]
+        }
+      ],
+      { themes: SEMANTIC_THEMES, variables: { glyph: lightDark('string', 'sun', 'moon') } },
+      { icons }
+    )
+    const card = expectDefined(graph.getChildren('RowInst')[0], 'nested card')
+    const symbol = expectDefined(graph.getChildren(card.id)[0], 'nested symbol')
+
+    expect(instanceMainComponent(graph, symbol)?.name).toBe('lucide/moon/16x16')
+    expect(symbol.visible).toBe(false)
   })
 })

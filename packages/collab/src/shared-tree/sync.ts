@@ -2,8 +2,8 @@ import { isEqual } from 'es-toolkit/predicate'
 import type * as Y from 'yjs'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { LayerTree, type TreeMove } from '../tree/layer-tree'
 import {

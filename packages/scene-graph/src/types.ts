@@ -5,6 +5,7 @@ import type { CanvasGuide } from './guides'
 import type { InstanceOverrideState } from './instances/overrides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
 import type { ShapeWithTextType } from './shape-with-text/kinds'
+import type { SlideSettings } from './slides/types'
 
 export interface SceneGraphEvents {
   'node:created': (node: SceneNode) => void
@@ -58,10 +59,14 @@ export interface NodeChangeObserver {
   resume?: () => void
 }
 
-export type DocumentColorSpace = 'srgb' | 'display-p3'
+/**
+ * A color profile: the one a document's colors are stored in, or the one they are shown or
+ * exported in. Figma files are sRGB or Display P3.
+ */
+export type ColorProfile = 'srgb' | 'display-p3'
 
-/** What a document is for, as Figma keeps design files and FigJam boards apart. */
-export type DocumentKind = 'design' | 'board'
+/** What a document is for, as Figma keeps design files, FigJam boards and Slides decks apart. */
+export type DocumentKind = 'design' | 'board' | 'slides'
 
 export interface FigmaSourcePayload {
   rawSize: Vector | null
@@ -70,6 +75,11 @@ export interface FigmaSourcePayload {
   layout: FigmaLayoutMetadata | null
   symbolOverrides: unknown[]
   componentPropAssignments: unknown[]
+  /**
+   * An instance's saved assignments of slot content that no layer shows, as when its variant
+   * has no frame for the slot. Figma keeps them, and the content, for a variant that does.
+   */
+  hiddenSlotAssignments: unknown[]
   derivedSymbolData: unknown[]
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
@@ -142,6 +152,9 @@ export type NodeType =
   | 'CONNECTOR'
   | 'SHAPE_WITH_TEXT'
   | 'STICKY'
+  | 'SLIDE'
+  | 'SLIDE_ROW'
+  | 'SLIDE_GRID'
 
 export type FillType =
   | 'SOLID'
@@ -186,6 +199,17 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
+/** Figma's adjustments of an image paint, each from -1 to 1; 0 leaves the image as it is. */
+export interface ImageFilters {
+  exposure?: number
+  contrast?: number
+  saturation?: number
+  temperature?: number
+  tint?: number
+  highlights?: number
+  shadows?: number
+}
+
 export interface Fill {
   type: FillType
   color: Color
@@ -203,6 +227,8 @@ export interface Fill {
   imageTransform?: GradientTransform
   /** Clockwise turn of a Fill, Fit or Tile image, in multiples of 90°; a crop holds its own. */
   imageRotation?: number
+  /** An image's adjustments, in Figma's plugin API units. */
+  filters?: ImageFilters
   sourceNodeId?: string
   scale?: number
   spacing?: number
@@ -287,6 +313,33 @@ export interface ProgressiveBlur {
   endOffset: Vector
 }
 
+/**
+ * A Noise effect's grain, in Figma's plugin terms: `MONOTONE` grains in the effect's colour,
+ * `DUOTONE` in it and `secondaryColor`, `MULTITONE` in many colours at `opacity`. `noiseSize` is a
+ * grain's size in px, which Figma keeps within 0 to 100, and `density` how much of the layer the
+ * grains cover, 0 to 1. `seed` picks the pattern; Figma's plugin API neither shows nor sets it.
+ */
+export interface NoiseEffectParams {
+  noiseType: NoiseType
+  noiseSize: Vector
+  density: number
+  secondaryColor?: Color
+  opacity?: number
+  seed?: number
+}
+
+/**
+ * A Texture effect's grain, which roughens the layer's edges: `noiseSize` is the grain's size in
+ * px, within 0 to 100 as Figma keeps it, and `clipToShape` keeps the roughened layer inside its
+ * own outline. The effect's `radius` is how far the grain moves the edges. `.fig` files name the
+ * effect `GRAIN`.
+ */
+export interface TextureEffectParams {
+  noiseSize: Vector
+  clipToShape: boolean
+  seed?: number
+}
+
 export interface Effect {
   type:
     | 'DROP_SHADOW'
@@ -295,6 +348,8 @@ export interface Effect {
     | 'BACKGROUND_BLUR'
     | 'FOREGROUND_BLUR'
     | 'GLASS'
+    | 'NOISE'
+    | 'TEXTURE'
   color: Color
   offset: Vector
   radius: number
@@ -306,6 +361,10 @@ export interface Effect {
   glass?: GlassEffectParams
   /** Set on a layer or background blur that is progressive, and only there. */
   progressive?: ProgressiveBlur
+  /** Set on a `NOISE` effect, and only there. */
+  noise?: NoiseEffectParams
+  /** Set on a `TEXTURE` effect, and only there. */
+  texture?: TextureEffectParams
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
@@ -654,6 +713,8 @@ export interface CommentReply {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string
@@ -678,6 +739,8 @@ export interface CommentThread {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string
@@ -884,6 +947,8 @@ export interface SceneNode {
   starInnerRadius: number
   /** The FigJam kind a SHAPE_WITH_TEXT draws; its label is the node's own text. */
   shapeWithTextType: ShapeWithTextType
+  /** What a slide keeps besides its layers; null on other layers. */
+  slide: SlideSettings | null
   /** The height a shape with text was given; it grows past it to fit its label. 0 is unset. */
   shapeUserHeight: number
   /**
@@ -995,7 +1060,62 @@ export interface ComponentPropertyDefinition {
   slotSettings?: SlotSettings
 }
 
-export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
+/** A TIMING variable holds a duration in seconds; an EASING one, an `Easing`. */
+export const VARIABLE_TYPES = ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN', 'EASING', 'TIMING'] as const
+export type VariableType = (typeof VARIABLE_TYPES)[number]
+
+/**
+ * The curves and springs an easing can be, by the names `.fig` files give them. `CUSTOM_CUBIC`
+ * and `CUSTOM_SPRING` hold the curve or spring they were given; the rest are presets, and
+ * `HOLD` jumps to the end without easing.
+ */
+export const EASING_CURVES = [
+  'IN_CUBIC',
+  'OUT_CUBIC',
+  'INOUT_CUBIC',
+  'LINEAR',
+  'IN_BACK_CUBIC',
+  'OUT_BACK_CUBIC',
+  'INOUT_BACK_CUBIC',
+  'CUSTOM_CUBIC',
+  'SPRING',
+  'GENTLE_SPRING',
+  'CUSTOM_SPRING',
+  'SPRING_PRESET_ONE',
+  'SPRING_PRESET_TWO',
+  'SPRING_PRESET_THREE',
+  'HOLD',
+  'EASE_IN'
+] as const
+export type EasingCurve = (typeof EASING_CURVES)[number]
+
+/** A CSS `cubic-bezier()`: the two control points between (0, 0) and (1, 1). */
+export interface CubicBezier {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+}
+
+/**
+ * A spring as its physics. `type` says how it is edited: by its bounce (`NORMALIZED`, the
+ * default) or by these three numbers (`PHYSICAL`), whose meaning `platform` sets.
+ */
+export interface Spring {
+  stiffness: number
+  damping: number
+  mass: number
+  type?: 'NORMALIZED' | 'PHYSICAL'
+  platform?: 'IOS_WEB' | 'ANDROID'
+}
+
+/** An EASING variable's value: a curve or spring, and the numbers it holds as a file saves them. */
+export interface Easing {
+  easing: EasingCurve
+  bezier?: CubicBezier
+  spring?: Spring
+}
+
 export interface VariableAlias {
   aliasId: string
 }
@@ -1007,7 +1127,10 @@ export interface VariableColorExpression {
   opacity: number | VariableAlias
 }
 
-export type VariableLiteral = Color | number | string | boolean
+export type VariableLiteral = Color | number | string | boolean | Easing
+/** The types a formula computes with and gives; easings and timings are not among them. */
+export type VariableFormulaType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
+export type VariableFormulaLiteral = Color | number | string | boolean
 /** The arithmetic, comparison, logic and conversions a formula combines values with. */
 export const VARIABLE_FORMULA_OPERATORS = [
   'add',
@@ -1033,10 +1156,10 @@ export interface VariableFormulaOperation {
   operator: VariableFormulaOperator
   operands: VariableFormulaNode[]
 }
-export type VariableFormulaNode = VariableLiteral | VariableAlias | VariableFormulaOperation
+export type VariableFormulaNode = VariableFormulaLiteral | VariableAlias | VariableFormulaOperation
 export interface VariableFormula {
   expression: 'FORMULA'
-  type: VariableType
+  type: VariableFormulaType
   value: VariableFormulaNode
 }
 /**
@@ -1133,6 +1256,11 @@ export interface Variable {
   key?: string
   /** Published library version (from NodeChange.version). Used for assetRef resolution in colorVar. */
   version?: string
+  /**
+   * Deleted as Figma deletes a variable: gone from its collection's `variableIds` and from every
+   * list of variables, while layers bound to it still resolve it and the file keeps it.
+   */
+  deleted?: true
 }
 
 /** Scalar numeric node fields accepted by numeric property controls; some may also be null. */
@@ -1182,6 +1310,11 @@ export interface VariableCollection {
   key?: string
   /** Published library version, which references by key carry with it. */
   version?: string
+  /**
+   * Deleted as Figma deletes a collection: gone from every list of collections, with its variables
+   * deleted too, while layers bound to them still resolve them and the file keeps them.
+   */
+  deleted?: true
 }
 
 /** Whether a collection is a library's copy, which takes no variables or modes of the file's. */

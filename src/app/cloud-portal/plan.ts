@@ -1,169 +1,133 @@
+import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
-import { createCloudBillingClient, type CloudBillingClient } from '@open-pencil/cloud/client'
-import type {
-  AccountEntitlements,
-  BillingAccount,
-  BillingCatalog
-} from '@open-pencil/cloud/contract'
-
-import { createCloudTokenCache } from '@/app/cloud/tokens'
-import { useDateFormat } from '@/app/i18n/date'
-import { formatNumber, formatPrice } from '@/app/i18n/number'
-import { formatStorageBytes } from '@/app/storage/format-bytes'
+import { CLOUD_BILLING_PAGE_PATHS, type AccountEntitlements } from '@open-pencil/cloud/contract'
 
 import { usePortal } from './context'
 import { usePortalAction, usePortalLoad } from './state'
 
-/** The account's plan as the Plan section shows it. */
+/** The account's plan as the Plan section shows it: what Cloud enforces, and what it uses. */
 export type PortalPlan = {
-  /** Whether billing has said what the account subscribes to; until then no plan is named. */
-  known: boolean
-  /** The plan's name, or null on the server's free allowance. */
-  name: string | null
-  /** `past_due` while a failed payment is retried. */
-  status: 'active' | 'past_due' | null
-  /** When it renews, or ends when `cancels`. */
-  periodEnd: string | null
-  cancels: boolean
   storage: { usedBytes: number; totalBytes: number | null }
-  /** Credits granted each month, or null when the plan includes no services. */
+  /** Whether the plan includes services, such as AI and search. */
+  services: boolean
+  /** Credits granted each month with services, or null for no monthly limit. */
   monthlyCredits: number | null
 }
 
-/** A plan the account can subscribe to. */
-export type PortalPlanOffer = {
-  id: string
-  name: string
-  price: string
-  storage: string
-  credits: string
-}
-
-/** Credits an account on a plan can buy once. */
-export type PortalCreditPack = {
-  id: string
-  credits: string
-  price: string
-  validDays: number
-}
-
-/** What the plan page reads and opens: Cloud for the account's limits, billing for the rest. */
+/**
+ * What the plan page reads and opens: Cloud for the account's limits, and the server's billing
+ * service, when it advertises one, for buying and managing a plan on billing's own pages.
+ */
 export type PortalPlanServices = {
   entitlements(): Promise<AccountEntitlements>
-  billing: Pick<CloudBillingClient, 'account' | 'catalog' | 'checkout' | 'portal'>
-  /** Leaves for the payment provider's page. */
-  openPage(url: string): void
+  /**
+   * Opens billing signed in as this account, unless `wanted` says the person has moved on while
+   * the token was on its way; `null` when the server sells nothing.
+   */
+  openBilling: ((wanted: () => boolean) => Promise<void>) | null
 }
 
-/** Billing sells in US dollars. */
-const BILLING_CURRENCY = 'USD'
+/** Billing's session page, below the endpoint's path, without its query or fragment. */
+function sessionURL(endpoint: string): string {
+  const url = new URL(endpoint)
+  url.pathname = joinURL(url.pathname, CLOUD_BILLING_PAGE_PATHS.session)
+  url.search = ''
+  url.hash = ''
+  return url.href
+}
 
-/** The services the server this page is served from offers; the route needs it to bill. */
-export function portalPlanServices(): PortalPlanServices {
-  const portal = usePortal()
+/** Where and how a billing token reaches billing's session page. */
+export function billingSessionForm(endpoint: string, token: string) {
   return {
-    entitlements: async () => (await portal.api.entitlements()).entitlements,
-    billing: createCloudBillingClient({
-      endpoint: portal.discovery.billing?.endpoint ?? '',
-      tokens: createCloudTokenCache(() => portal.api.billingToken()),
-      fetch: (input, init) => globalThis.fetch(input, init)
-    }),
-    openPage: (url) => globalThis.location.assign(url)
-  }
+    action: sessionURL(endpoint),
+    method: 'POST',
+    fields: { token }
+  } as const
 }
 
 /**
- * The plan as the page shows it: Cloud's limits and usage, named by billing's subscription. Until
- * billing has said what the account subscribes to, `known` is false, so a paid account is never
- * called Free.
+ * Signs the person in to billing's own pages: posts a fresh billing token to its session page,
+ * as a form so the token leaves in the body, never in an address that history or logs keep.
  */
-export function portalPlan(
-  entitlements: AccountEntitlements,
-  account: BillingAccount | null,
-  catalog: BillingCatalog | null,
-  formatDate: (iso: string) => string
-): PortalPlan {
-  const current = account?.subscription ?? null
+function postBillingToken(endpoint: string, token: string) {
+  const { action, method, fields } = billingSessionForm(endpoint, token)
+  const form = document.createElement('form')
+  form.action = action
+  form.method = method
+  form.hidden = true
+  for (const [name, value] of Object.entries(fields)) {
+    const field = document.createElement('input')
+    field.type = 'hidden'
+    field.name = name
+    field.value = value
+    form.append(field)
+  }
+  document.body.append(form)
+  try {
+    form.submit()
+  } finally {
+    // The browser has the post's fields once `submit` returns; the token leaves the page with it.
+    form.remove()
+  }
+}
+
+/** The services the server this page is served from offers. */
+export function portalPlanServices(): PortalPlanServices {
+  const portal = usePortal()
+  const endpoint = portal.discovery.billing?.endpoint
   return {
-    known: account !== null,
-    // A plan the catalog no longer lists, or can't be read, still has its ID to show.
-    name: current
-      ? (catalog?.plans.find((plan) => plan.id === current.planId)?.name ?? current.planId)
-      : null,
-    status: current?.status ?? null,
-    periodEnd: current ? formatDate(current.currentPeriodEnd) : null,
-    cancels: current?.cancelsAtPeriodEnd ?? false,
+    entitlements: async () => (await portal.api.entitlements()).entitlements,
+    openBilling: endpoint
+      ? async (wanted) => {
+          const { token } = await portal.api.billingToken()
+          if (wanted()) postBillingToken(endpoint, token)
+        }
+      : null
+  }
+}
+
+export function portalPlan(entitlements: AccountEntitlements): PortalPlan {
+  return {
     storage: {
       usedBytes: entitlements.usage.committedStorageBytes,
       totalBytes: entitlements.limits.maximumStorageBytes
     },
-    monthlyCredits: entitlements.features.cloudServices
-      ? entitlements.limits.monthlyCreditAllowance
-      : null
+    services: entitlements.features.cloudServices,
+    monthlyCredits: entitlements.limits.monthlyCreditAllowance
   }
 }
 
-export function planOffers(catalog: BillingCatalog | null): PortalPlanOffer[] {
-  return (catalog?.plans ?? []).map((plan) => ({
-    id: plan.id,
-    name: plan.name,
-    price: formatPrice(plan.monthlyPriceCents, BILLING_CURRENCY),
-    storage: formatStorageBytes(plan.storageBytes),
-    credits: formatNumber(plan.monthlyCredits)
-  }))
-}
-
-export function planCreditPacks(catalog: BillingCatalog | null): PortalCreditPack[] {
-  return (catalog?.creditPacks ?? []).map((pack) => ({
-    id: pack.id,
-    credits: formatNumber(pack.credits),
-    price: formatPrice(pack.priceCents, BILLING_CURRENCY),
-    validDays: pack.validDays
-  }))
-}
-
 /**
- * The signed-in account's plan page: its limits and storage from Cloud, its subscription and what
- * it can buy from billing, and the payment provider's pages to buy or manage it. The subscription
- * and the catalog load apart, so Manage billing stays while only the catalog fails, and the plan
- * still shows from Cloud's side when billing can't be reached.
+ * The signed-in account's plan page: its limits and storage from Cloud, and the way to billing's
+ * own pages, where the plan is bought, changed, and paid for.
  */
 export function usePortalPlan(services: PortalPlanServices = portalPlanServices()) {
-  const dates = useDateFormat()
-
   const entitlements = usePortalLoad(() => services.entitlements(), null)
-  const subscription = usePortalLoad<BillingAccount | null>(() => services.billing.account(), null)
-  const catalog = usePortalLoad<BillingCatalog | null>(() => services.billing.catalog(), null)
-
   const plan = computed(() =>
-    entitlements.data.value
-      ? portalPlan(entitlements.data.value, subscription.data.value, catalog.data.value, (iso) =>
-          dates.format(iso, 'date')
-        )
-      : null
+    entitlements.data.value ? portalPlan(entitlements.data.value) : null
   )
-
-  /** Opens the provider's page; the plan reads again when the person comes back to this one. */
-  const opening = usePortalAction(async (page: () => Promise<string>) => {
-    services.openPage(await page())
+  /** Counts the handoffs started, so leaving the page drops one still waiting for its token. */
+  let handoffs = 0
+  const opening = usePortalAction(async () => {
+    const handoff = ++handoffs
+    await services.openBilling?.(() => handoff === handoffs)
   })
-
   return {
     entitlements,
     plan,
-    offers: computed(() => planOffers(catalog.data.value)),
-    creditPacks: computed(() => planCreditPacks(catalog.data.value)),
-    /** What went wrong asking billing, which the page reports without hiding the plan. */
-    billingError: computed(() => subscription.error.value ?? catalog.error.value),
-    billingLoading: computed(() => subscription.loading.value || catalog.loading.value),
-    async reloadBilling() {
-      await Promise.all([subscription.reload(), catalog.reload()])
-    },
+    /** Whether the server sells plans; without billing the page shows only the limits. */
+    sells: services.openBilling !== null,
     opening,
-    subscribe: (planId: string) => opening.run(() => services.billing.checkout({ planId })),
-    buy: (creditPackId: string) => opening.run(() => services.billing.checkout({ creditPackId })),
-    manage: () => opening.run(() => services.billing.portal())
+    openBilling: () => opening.run(),
+    /**
+     * Drops a handoff still waiting for its token, as when the person leaves the page: it opens
+     * nothing, the button is free again, and its failure is not reported.
+     */
+    cancelBilling() {
+      handoffs += 1
+      opening.abandon()
+    }
   }
 }
 

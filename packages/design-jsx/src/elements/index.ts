@@ -319,6 +319,12 @@ export function elementPropsByName(name: string): ReadonlySet<string> | null {
   return element.runtimeType === 'instance' ? null : elementProps(element.runtimeType)
 }
 
+/** The layer an element written `<name>` makes, as `elementNodeType` finds it. */
+export function elementNodeTypeByName(name: string): NodeType | undefined {
+  const element = BY_NAME.get(name)
+  return element ? elementNodeType(element.runtimeType) : undefined
+}
+
 /** The schema an element of `runtimeType` reads its props by, if it has one. */
 export function elementSchema(runtimeType: string): ElementPropsSchema | undefined {
   return BY_RUNTIME_TYPE.get(runtimeType)?.schema

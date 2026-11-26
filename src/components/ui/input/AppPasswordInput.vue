@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ControlSize } from '@/theme/control'
 
@@ -17,7 +17,7 @@ const { id, size = 'md' } = defineProps<{
 
 const value = defineModel<string>({ required: true })
 const shown = ref(false)
-const common = useCommonMessages()
+const common = useMessages('common')
 </script>
 
 <template>

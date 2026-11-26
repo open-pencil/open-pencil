@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { DesignReview } from '@/app/ai/review/message'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
@@ -17,7 +17,7 @@ const { review, canFix = false } = defineProps<{
   canFix?: boolean
 }>()
 const emit = defineEmits<{ fix: [] }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatReviewTheme()
 </script>
 

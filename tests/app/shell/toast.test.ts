@@ -88,6 +88,18 @@ describe('toast progress', () => {
     expect(failure?.action?.label).toBe('Retry save')
   })
 
+  test('shows the newest message even when sticky failures fill the stack', () => {
+    for (let index = 0; index < 5; index += 1)
+      toast.error(`Document ${index} failed`, undefined, { sticky: true, separate: true })
+    toast.info('Exported.')
+    expect(toast.toasts.value.map((entry) => entry.message).at(-1)).toBe('Exported.')
+    toast.info('Copied.')
+    const messages = toast.toasts.value.map((entry) => entry.message)
+    expect(messages.filter((message) => message.endsWith('failed'))).toHaveLength(5)
+    expect(messages.at(-1)).toBe('Copied.')
+    expect(messages).not.toContain('Exported.')
+  })
+
   test('ignores updates to a toast that was trimmed away', () => {
     const dropped = toast.startProgress('First download')
     for (let index = 0; index < 5; index += 1) toast.info(`Message ${index}`)

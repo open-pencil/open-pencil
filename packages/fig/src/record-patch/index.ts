@@ -13,6 +13,9 @@ import {
 } from '@open-pencil/kiwi/schema-runtime'
 
 import { readFigArchiveParts, streamFigArchive, type FigImageEntry } from '../archive'
+import { createResourceResolver } from '../document/resource-reference'
+import { isModeledVariableType, variableCollectionId } from '../document/variables'
+import { mapBlobIndices } from '../node-change/blobs'
 import { guidKey } from './entry'
 import { mergeRecords, type FigRecordPatch } from './merge'
 import { archiveCodec, scanMessage } from './scan'
@@ -32,6 +35,13 @@ export {
 } from './pages'
 
 /** Archive facts a patch is built against: where new blob indices and new GUIDs start. */
+/** A variable record the reader left out, with the collection it names as the reader finds it. */
+export interface FigUnreadVariable {
+  record: NodeChange
+  /** Absent when the record names no collection the file holds. */
+  collectionId?: string
+}
+
 export interface FigArchiveRecordInfo {
   /** Record identities on every page, including pages not materialized in the graph. */
   recordIds: string[]
@@ -41,6 +51,22 @@ export interface FigArchiveRecordInfo {
   imageHashes: string[]
   /** The document record's GUID, as `session:local`. */
   documentId: string | null
+  /**
+   * Variable records the reader leaves out of the document, such as one of a type OpenPencil does
+   * not model; a save writes them back as they are.
+   */
+  unreadVariables: FigUnreadVariable[]
+  /**
+   * The slot content frames the file keeps and the records below them, for a save that writes
+   * an instance's slot assignment without the layers to show its content.
+   */
+  slotContent: FigSlotContent
+}
+
+/** Records kept apart from the archive, with the blobs they cite, which their indices number. */
+export interface FigSlotContent {
+  records: NodeChange[]
+  blobs: Uint8Array[]
 }
 
 export interface FigPatchedArchiveInput {
@@ -82,18 +108,54 @@ function highestLocalId(records: readonly NodeChange[]): number {
 
 export function figArchiveRecordInfo(archive: {
   records: readonly NodeChange[]
-  blobCount: number
+  /** The variable and collection records, whole; `records` may hold only their headers. */
+  resources: readonly NodeChange[]
+  slotContent: readonly NodeChange[]
+  blobs: readonly Uint8Array[]
   imageHashes: readonly string[]
 }): FigArchiveRecordInfo {
   return {
     recordIds: archive.records.flatMap((record) =>
       record.guid ? [guidToString(record.guid)] : []
     ),
-    blobCount: archive.blobCount,
+    blobCount: archive.blobs.length,
     nextLocalId: highestLocalId(archive.records) + 1,
     imageHashes: [...archive.imageHashes],
-    documentId: guidKey(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null
+    documentId: guidKey(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null,
+    slotContent: withCitedBlobs(archive.slotContent, archive.blobs),
+    unreadVariables: unreadVariables(archive.resources)
   }
+}
+
+/** Records with the archive blobs they cite, renumbered from 0 in the order they are cited. */
+function withCitedBlobs(
+  records: readonly NodeChange[],
+  archiveBlobs: readonly Uint8Array[]
+): FigSlotContent {
+  const cited = new Map<number, number>()
+  const blobs: Uint8Array[] = []
+  const renumbered = records.map((record) =>
+    mapBlobIndices(record, (index) => {
+      const known = cited.get(index)
+      if (known !== undefined) return known
+      cited.set(index, blobs.length)
+      blobs.push(archiveBlobs[index] ?? new Uint8Array())
+      return blobs.length - 1
+    })
+  )
+  return { records: renumbered, blobs }
+}
+
+function unreadVariables(resources: readonly NodeChange[]): FigUnreadVariable[] {
+  const resolve = createResourceResolver(resources)
+  return resources
+    .filter(
+      (record) => record.type === 'VARIABLE' && !isModeledVariableType(record.variableResolvedType)
+    )
+    .map((record) => {
+      const collectionId = variableCollectionId(record, resolve)
+      return collectionId ? { record, collectionId } : { record }
+    })
 }
 
 function varUint(value: number): Uint8Array {

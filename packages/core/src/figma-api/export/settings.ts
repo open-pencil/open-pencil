@@ -5,6 +5,7 @@ import type {
 import * as v from 'valibot'
 
 import type { ExportSetting } from '@open-pencil/scene-graph'
+import { exportColorProfileSchema } from '@open-pencil/scene-graph/color'
 import {
   compactExportSetting,
   EXPORT_OPTION_DEFAULTS,
@@ -19,8 +20,6 @@ import { parseFigma } from '#core/figma-api/validation'
 // export's options are checked loosely, so a key Figma does not know is dropped; its size is
 // checked strictly.
 
-const COLOR_PROFILES = ['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'] as const
-
 /** How big an export is: a multiplier, or a width or height in pixels. */
 const constraintSchema = v.union([
   v.strictObject({ type: v.literal('SCALE'), value: finiteNumberSchema }),
@@ -31,7 +30,7 @@ const optionEntries = {
   contentsOnly: v.optional(v.boolean()),
   useAbsoluteBounds: v.optional(v.boolean()),
   suffix: v.optional(v.string()),
-  colorProfile: v.optional(v.picklist(COLOR_PROFILES))
+  colorProfile: v.optional(exportColorProfileSchema)
 }
 
 const imageSchema = v.looseObject({

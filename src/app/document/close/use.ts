@@ -2,6 +2,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useEventListener } from '@vueuse/core'
 import { onMounted, onScopeDispose } from 'vue'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { confirmAppExit, isExitApproved, pageAsksBeforeLeaving } from '@/app/document/close/exit'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
@@ -27,7 +29,7 @@ export function useDocumentCloseProtection() {
     } catch (error) {
       toast.error(
         notificationMessages.get().operationFailed({
-          error: error instanceof Error ? error.message : String(error)
+          error: errorMessage(error)
         })
       )
     } finally {

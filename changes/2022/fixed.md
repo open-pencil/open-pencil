@@ -1,1 +1,0 @@
-- Duplicating a layer inside an auto layout frame places the copy in the flow and resizes a hugging parent immediately, including after undo and redo.

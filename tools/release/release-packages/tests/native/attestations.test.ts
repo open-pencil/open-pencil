@@ -24,6 +24,7 @@ async function withRelease(files: string[], run: (root: string) => Promise<void>
 function contextFor(root: string) {
   const identity = {
     tag: 'v0.15.0',
+    version: '0.15.0',
     sourceCommit: 'a'.repeat(40),
     workflowCommit: 'b'.repeat(40),
     runId: '1',

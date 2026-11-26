@@ -42,6 +42,8 @@ export {
   patchFigArchive,
   patchFigRecords,
   type FigArchiveRecordInfo,
+  type FigSlotContent,
+  type FigUnreadVariable,
   type FigPatchedArchiveInput,
   entryPathKey,
   type FigEntryListPatch,

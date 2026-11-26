@@ -10,6 +10,8 @@ import {
   type EffectBindingProperty
 } from '@open-pencil/scene-graph/variables'
 
+import { modeledEffectIndexes, modeledEffectType } from '../paint'
+
 /** The field of a `.fig` effect that holds each property's variable alias. */
 export const EFFECT_VARIABLE_FIELDS = {
   color: 'colorVar',
@@ -29,12 +31,17 @@ export function effectVariableAliases(effect: KiwiEffect): VariableAliasValue[] 
 
 /**
  * The node binding fields the effects of a record bind, such as `effects/0/radius`, skipping an
- * alias on a property the effect does not have, such as a blur's colour.
+ * alias on a property the effect does not have, such as a blur's colour, and on an effect the
+ * scene graph does not model. Indexes count only the modeled effects, as the node's do.
  */
 export function effectBindingsFromKiwi(effects: readonly KiwiEffect[]): Record<string, string> {
   const bindings: Record<string, string> = {}
-  effects.forEach((effect, index) => {
-    for (const property of effectBindableProperties(effect.type)) {
+  const indexes = modeledEffectIndexes(effects)
+  effects.forEach((effect, rawIndex) => {
+    const index = indexes[rawIndex]
+    const type = modeledEffectType(effect.type)
+    if (index === null || !type) return
+    for (const property of effectBindableProperties(type)) {
       const guid = effect[EFFECT_VARIABLE_FIELDS[property]]?.value?.alias?.guid
       if (guid) bindings[effectBindingField(index, property)] = guidToString(guid)
     }

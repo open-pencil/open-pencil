@@ -26,9 +26,6 @@ jobs:
       - name: Format check
         run: bun run format:check
 
-      # The demo document's shader fills are drawn at build time in a headless Chromium.
-      - uses: ./.github/actions/setup/playwright
-
       - run: bun run build
         env:
           # Official releases only: lets the app send its daily ping and, with consent, usage stats.

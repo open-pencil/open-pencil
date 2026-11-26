@@ -135,4 +135,31 @@ describe('Tauri process helpers', () => {
     await expect(reader.read()).rejects.toThrow('Agent process exited unexpectedly.')
     expect(onUnexpectedClose).toHaveBeenCalled()
   })
+
+  test('delivers what the agent wrote before it exited, then the exit', async () => {
+    const spawned: { onEvent: ((event: unknown) => void) | null } = { onEvent: null }
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'plugin:shell|spawn') {
+        spawned.onEvent = (
+          args as { onEvent: { onmessage: (event: unknown) => void } }
+        ).onEvent.onmessage
+        return 46
+      }
+      return null
+    })
+
+    const process = await spawnACPProcess({
+      command: 'agent-cli',
+      args: [],
+      logId: 'test',
+      destroying: () => false,
+      onUnexpectedClose: vi.fn()
+    })
+    spawned.onEvent?.({ event: 'Stdout', payload: [7, 8] })
+    spawned.onEvent?.({ event: 'Terminated', payload: { code: 1, signal: null } })
+
+    const reader = process.output.getReader()
+    await expect(reader.read()).resolves.toEqual({ done: false, value: new Uint8Array([7, 8]) })
+    await expect(reader.read()).rejects.toThrow('Agent process exited unexpectedly.')
+  })
 })

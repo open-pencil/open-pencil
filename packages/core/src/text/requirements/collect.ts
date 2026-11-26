@@ -3,9 +3,11 @@ import { uniqBy } from 'es-toolkit/array'
 import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+import { textLanguageAt, textListItems } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
+import { ELLIPSIS } from '#core/text/ellipsis'
 import { fontFallbackScriptForCharacter, type FontFallbackScript } from '#core/text/fallbacks'
 import type { FontFaceRef } from '#core/text/font/faces'
 
@@ -57,15 +59,16 @@ export function collectGraphFontKeys(
   return Array.from(fontKeys, (key) => key.split('\0') as [string, string])
 }
 
-function textLanguageAt(node: SceneNode, index: number): string | null {
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
-}
-
 export interface GraphFontRequirements {
   characters: string
   nodes: SceneNode[]
   scripts: FontFallbackScript[]
+}
+
+/** The characters a layout adds to a text's own: its list markers and the ellipsis that truncates it. */
+function addedCharacters(node: SceneNode): string {
+  const markers = textListItems(node.text, node.textParagraphs).map((item) => item.marker)
+  return markers.join('') + (node.textTruncation === 'ENDING' ? ELLIPSIS : '')
 }
 
 /** What the text of `nodes` needs to measure and draw: its characters and the scripts among them. */
@@ -79,6 +82,7 @@ export function collectFontRequirements(nodes: readonly SceneNode[]): GraphFontR
       const script = fontFallbackScriptForCharacter(character, textLanguageAt(node, sourceIndex))
       if (script) scripts.add(script)
     }
+    for (const character of addedCharacters(node)) characters.add(character)
   }
   return {
     characters: Array.from(characters).join(''),

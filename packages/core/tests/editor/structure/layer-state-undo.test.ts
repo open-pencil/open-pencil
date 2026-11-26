@@ -65,4 +65,28 @@ describe('layer state undo', () => {
     editor.undo.redo()
     expect(node(other).childIds).toEqual([a, c])
   })
+
+  test('moving out of an auto layout frame shrinks a hugging parent, and undo grows it back', () => {
+    editor = createEditor()
+    const page = editor.state.currentPageId
+    const row = editor.graph.createNode('FRAME', page, {
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG'
+    })
+    const kept = editor.graph.createNode('RECTANGLE', row.id, { width: 40, height: 40 }).id
+    const moved = editor.graph.createNode('RECTANGLE', row.id, { width: 60, height: 40 }).id
+    editor.runLayoutForNode(row.id)
+    expect(node(row.id).width).toBe(100)
+
+    const other = editor.addPage('Other')
+    editor.select([moved])
+    editor.moveToPage(other)
+    expect(node(row.id).width).toBe(40)
+
+    editor.undo.undo()
+    expect(node(row.id).childIds).toEqual([kept, moved])
+    expect(node(row.id).width).toBe(100)
+    expect(node(moved).x).toBe(40)
+  })
 })

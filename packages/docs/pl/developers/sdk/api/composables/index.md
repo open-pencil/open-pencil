@@ -45,4 +45,4 @@ Poniżej znajdują się composables najczęściej używane podczas pracy z `@ope
 ## Zmienne, nawigacja i lokalizacja
 
 - [usePageList](./use-page-list)
-- [useI18n](./use-i18n)
+- [useMessages](/developers/sdk/api/composables/use-messages)

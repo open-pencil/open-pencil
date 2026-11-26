@@ -38,5 +38,9 @@
   "savingDocument": "Salvataggio del documento…",
   "saveFailedRetry": "Riprova salvataggio",
   "fileChangedOnDisk": "«{name}» è cambiato sul disco. Le modifiche non salvate vengono mantenute; salvando si sostituisce il file.",
-  "reloadDiscardingChanges": "Ricarica"
+  "reloadDiscardingChanges": "Ricarica",
+  "autosaveFailed": "Impossibile salvare «{name}»: {error}",
+  "saveFailedTitle": "Impossibile salvare «{name}»",
+  "notifySaveFailed": "Salvataggi non riusciti",
+  "notifySaveFailedHint": "Non è stato possibile salvare automaticamente un documento aperto."
 }

@@ -16,5 +16,5 @@ export {
   CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM,
   type CloudTechnicalLimits
 } from './limits'
-export { cloudDiscoveryFromConfig, configuredSocialProviders } from './public'
+export { cloudDiscoveryFromConfig } from './public'
 export { CloudConfigError, parseCloudServerConfig, type CloudServerConfig } from './schema'

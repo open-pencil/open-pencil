@@ -34,6 +34,7 @@ describe('transactional email delivery', () => {
       await transport.send({
         deliveryId: 'delivery-id',
         from: 'OpenPencil <cloud@example.com>',
+        replyTo: 'hello@example.com',
         to: 'recipient@example.com',
         subject: 'Invitation',
         html: '<p>Invitation</p>',
@@ -44,6 +45,7 @@ describe('transactional email delivery', () => {
     expect(sent).toHaveLength(1)
     expect(sent[0]).toMatchObject({
       from: 'OpenPencil <cloud@example.com>',
+      replyTo: 'hello@example.com',
       to: 'recipient@example.com',
       headers: { 'X-OpenPencil-Delivery-ID': 'delivery-id' }
     })

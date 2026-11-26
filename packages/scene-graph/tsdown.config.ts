@@ -6,7 +6,6 @@ export default defineConfig(
   libraryConfig({
     entry: {
       index: './src/index.ts',
-      arrays: './src/arrays.ts',
       'arrow-caps': './src/arrow-caps.ts',
       'asset-keys': './src/asset-keys.ts',
       'behaviours/index': './src/behaviours/index.ts',
@@ -44,6 +43,7 @@ export default defineConfig(
       'mutation-impact': './src/mutation-impact.ts',
       'node-defaults': './src/node-defaults.ts',
       'order-keys': './src/order-keys.ts',
+      'slides/index': './src/slides/index.ts',
       'outline/index': './src/outline/index.ts',
       'paints/index': './src/paints/index.ts',
       'parse-path': './src/parse-path.ts',
@@ -52,7 +52,6 @@ export default defineConfig(
       polygon: './src/polygon.ts',
       preview: './src/preview.ts',
       'primitives/index': './src/primitives/index.ts',
-      random: './src/random.ts',
       resize: './src/resize.ts',
       'scaling/index': './src/scaling/index.ts',
       'shaders/index': './src/shaders/index.ts',
@@ -62,6 +61,7 @@ export default defineConfig(
       snap: './src/snap.ts',
       'source-metadata': './src/source-metadata.ts',
       'statuses/index': './src/statuses/index.ts',
+      strokes: './src/strokes.ts',
       'text/index': './src/text/index.ts',
       'text/direction': './src/text/direction.ts',
       'text/picture': './src/text/picture.ts',

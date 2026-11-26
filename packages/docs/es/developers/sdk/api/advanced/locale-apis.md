@@ -16,4 +16,4 @@ Los identificadores de claves y nombres de configuración permanecen en inglés 
 
 ## Véase también
 
-- [useI18n](../composables/use-i18n)
+- [useMessages](/developers/sdk/api/composables/use-messages)

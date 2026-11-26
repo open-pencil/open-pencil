@@ -40,6 +40,25 @@ describe('checkDocsIntegrity', () => {
     expect(result.localeMissingPages.ru).toEqual(['legacy.md', 'page.md'])
   })
 
+  test('rejects guide pictures without alt text or a file for each theme', async () => {
+    const docsRoot = await fixture()
+    await writeFile(join(docsRoot, 'public/_redirects'), '', 'utf8')
+    await write(join(docsRoot, 'public/guide/page/whole/light.webp'))
+    await write(join(docsRoot, 'public/guide/page/whole/dark.webp'))
+    await write(join(docsRoot, 'public/guide/page/half/light.webp'))
+    await write(
+      join(docsRoot, 'page.md'),
+      '<GuideImage name="page/whole" other="page/half" alt="A menu" />'
+    )
+    await write(join(docsRoot, 'silent.md'), '<GuideImage name="page/whole" />')
+    await write(join(docsRoot, 'example.md'), '```md\n<GuideImage name="none" />\n```')
+
+    expect(check(docsRoot).errors.toSorted()).toEqual([
+      "page.md shows missing 'public/guide/page/half/dark.webp'.",
+      'silent.md has a guide picture without alt text.'
+    ])
+  })
+
   test('rejects pages copied identically into every locale', async () => {
     const docsRoot = await fixture()
     await write(join(docsRoot, 'index.md'), '# English')
@@ -131,6 +150,29 @@ describe('checkDocsIntegrity', () => {
     expect(check(docsRoot).errors).toEqual([
       "Redirect '/gone/*' targets missing section '/missing/'.",
       "Redirect source '/kept/*' still has pages and would shadow them."
+    ])
+  })
+
+  test('sends a page to another site only by HTTPS, and never over a page of its own', async () => {
+    const docsRoot = await fixture()
+    await write(join(docsRoot, 'kept.md'))
+    await write(join(docsRoot, 'guide/start.md'))
+    await writeFile(
+      join(docsRoot, 'public/_redirects'),
+      [
+        '/pricing https://billing.example/pricing 302',
+        '/plain http://billing.example/pricing 302',
+        '/kept https://billing.example/kept 302',
+        '/guide/* https://billing.example/:splat 302',
+        '/moved/* https://billing.example/:splat 302'
+      ].join('\n'),
+      'utf8'
+    )
+
+    expect(check(docsRoot).errors).toEqual([
+      "Redirect '/plain' must use root-relative paths.",
+      "Redirect source '/guide/*' still has pages and would shadow them.",
+      "Redirect source '/kept' still has a page and would shadow it."
     ])
   })
 

@@ -1,7 +1,7 @@
 import { sum } from 'es-toolkit'
 
-import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { maxOf, minOf } from '@open-pencil/std/arrays'
 
 /** A layer's box on the page, by its id. */
 export interface PlacedBox extends Rect {

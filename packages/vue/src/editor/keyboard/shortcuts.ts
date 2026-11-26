@@ -181,6 +181,18 @@ export function editorShortcuts(
       run: () => actions.confirmOrEditSelection()
     },
     { id: 'escape', keys: 'Escape', run: () => actions.escapeOrDeselect(), view: true },
+    // A deck's Shift+S adds a slide after the selected one, as in Figma Slides; elsewhere the key
+    // goes on to the Section tool.
+    {
+      id: 'new-slide',
+      keys: 'Shift+S',
+      run: () => {
+        if (!resolveEditorProfile(editor.state).filmstrip) return false
+        editor.addSlide()
+        return true
+      },
+      preventDefault: () => resolveEditorProfile(editor.state).filmstrip
+    },
     sibling('selection.selectNextSibling'),
     sibling('selection.selectPreviousSibling'),
     ...(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const).map(

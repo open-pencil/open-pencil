@@ -1,11 +1,11 @@
 import { CloudPortalAPIError, type CloudAuthFailure } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { cloudAuthFailureMessage } from '@/app/cloud/sessions/account-form'
 
 /** Words for a failed sign-in step, and for errors the provider sends back in the URL. */
 export function usePortalFailureMessages() {
-  const messages = useCloudPortalMessages()
+  const messages = useMessages('cloud/portal')
   const failure = (kind: CloudAuthFailure) => cloudAuthFailureMessage(kind, messages.value)
   /** The provider's `error` query values after a social sign-in comes back, or null. */
   function callback(query: Record<string, unknown>): string | null {
@@ -38,6 +38,7 @@ export function usePortalFailureMessages() {
     }
     const words: Partial<Record<NonNullable<CloudPortalAPIError['code']>, string>> = {
       current_password_invalid: value.failureInvalidCredentials,
+      code_invalid: value.failureInvalidCode,
       password_too_short: value.failurePasswordTooShort,
       password_too_long: value.failurePasswordTooLong,
       last_authentication_method: value.errorLastMethod,
@@ -45,7 +46,9 @@ export function usePortalFailureMessages() {
       last_admin_required: value.errorLastAdmin,
       account_sole_admin: value.errorAccountSoleAdmin,
       self_admin_action_forbidden: value.errorSelfAction,
+      account_approved: value.errorAccountApproved,
       mfa_required: value.errorTwoStepRequired,
+      two_step_unconfirmed: value.errorTwoStepUnconfirmed,
       invalid_enrollment_transition: value.errorAlreadyDecided,
       document_not_restorable: value.errorDocumentNotRestorable,
       workspace_gone: value.errorWorkspaceGone,

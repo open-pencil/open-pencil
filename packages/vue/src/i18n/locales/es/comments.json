@@ -24,6 +24,13 @@
   "empty": "Aún no hay comentarios. Haz clic en el lienzo para dejar uno.",
   "noMatches": "Ningún comentario coincide.",
   "replyCount": "Respuestas: {count}",
+  "clusterCount": "Comentarios: {count}",
   "commentDeleted": "Comentario eliminado",
-  "hideComments": "Ocultar comentarios"
+  "hideComments": "Ocultar comentarios",
+  "mentionPeople": "Personas para mencionar",
+  "unread": "Sin leer",
+  "notifyMention": "Menciones en comentarios",
+  "notifyReply": "Respuestas a tus comentarios",
+  "notifyReplyHint": "Alguien responde en un hilo de comentarios en el que escribiste.",
+  "notifyTitle": "{author} · {document}"
 }

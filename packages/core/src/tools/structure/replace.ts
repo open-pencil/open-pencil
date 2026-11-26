@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
 import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
@@ -14,14 +15,14 @@ export const nodeReplaceWith = defineTool({
   }),
   execute: async (figma, args) => {
     const { designJSXRenderer } = await graphOf(figma).waitOutsideEdit(import('#core/design-jsx'))
-    const node = figma.getNodeById(args.id)
-    if (!node) return { error: `Node "${args.id}" not found` }
-    const parentId = node.parent?.id ?? figma.currentPageId
-    const x = node.x
-    const y = node.y
-    node.remove()
+    if (!figma.getNodeById(args.id)) return { error: `Node "${args.id}" not found` }
+    const graph = graphOf(figma)
+    // As render's replace_id does: the original goes only once the replacement has rendered, so a
+    // render that fails leaves it where it was.
+    const placement = resolveRenderPlacement(graph, { replace_id: args.id }, figma.currentPageId)
     const { renderJSX } = designJSXRenderer(figma.icons)
-    const results = await renderJSX(graphOf(figma), args.jsx, { parentId, x, y })
+    const results = await renderJSX(graph, args.jsx, placement)
+    finishRenderPlacement(graph, results, placement)
     const result = results[0]
     return {
       id: result.id,

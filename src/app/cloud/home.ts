@@ -2,6 +2,7 @@ import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
 import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
+import { useAutoRefresh } from '@open-pencil/vue/shared/refresh'
 
 import { openExternalLink } from '@/app/shell/ui'
 import { IS_CLOUD_SITE } from '@/constants'
@@ -9,15 +10,32 @@ import { IS_CLOUD_SITE } from '@/constants'
 import { openCloudConnect } from './connect/flow'
 import { cloudServerHost } from './servers/address'
 import { homeCloudServer } from './servers/store'
-import { cloudConnection } from './sessions/connection'
+import { cloudConnection, refreshCloudConnection } from './sessions/connection'
 import { signOutOfCloud } from './sessions/sign-out'
 import { openNewWorkspace } from './workspaces/manage'
 
 /** A workspace Home lists, and whether anyone may open what is in it: the server's gallery. */
 export type HomeCloudWorkspace = WorkspaceSummary & { public: boolean }
 
-/** The server Home shows: who is signed in to it, and its workspaces. */
+/** How often Home asks its server again while shown, as it does for a workspace's files. */
+const HOME_CLOUD_REFRESH_MS = 60_000
+
+/**
+ * Asks the server Home shows again, keeping what Home shows until it answers: a workspace made or
+ * left elsewhere, on the server's pages or another device, then appears or goes. `fresh`, as a
+ * refresh button asks, takes no answer from a check that started before the call.
+ */
+export async function refreshHomeCloud(options: { fresh?: boolean } = {}): Promise<void> {
+  const server = homeCloudServer.value
+  if (server) await refreshCloudConnection(server, { background: true, fresh: options.fresh })
+}
+
+/**
+ * The server Home shows: who is signed in to it, and its workspaces, asked again when the window
+ * regains focus, when the browser comes back online, and every minute while Home is visible.
+ */
 export function useHomeCloud() {
+  useAutoRefresh(() => refreshHomeCloud(), { interval: HOME_CLOUD_REFRESH_MS })
   const connection = computed(() => {
     const server = homeCloudServer.value
     return server ? { server, ...cloudConnection(server.id) } : null

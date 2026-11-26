@@ -109,6 +109,8 @@ export const MCP_CONNECTIONS_DOCS_URL = `${DOCS_ORIGIN}/programmable/ai-chat#ext
 /** The Help menu's links: the guides, the shortcut reference, the community, and the source. */
 export const DOCS_URL = `${DOCS_ORIGIN}/getting-started`
 export const KEYBOARD_SHORTCUTS_URL = `${DOCS_ORIGIN}/reference/keyboard-shortcuts`
+/** Where SF Symbols are offered and how to get them, for hosts that cannot draw them. */
+export const SF_SYMBOLS_DOCS_URL = `${DOCS_ORIGIN}/user-guide/icons#sf-symbols`
 export const COMMUNITY_URL = 'https://discord.gg/4wXc9fuZfm'
 export const REPOSITORY_URL = 'https://github.com/open-pencil/open-pencil'
 export const CODING_AGENTS_GUIDE_URL = `${DOCS_ORIGIN}/programmable/coding-agents`

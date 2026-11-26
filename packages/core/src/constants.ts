@@ -63,6 +63,7 @@ export const DEFAULT_STROKE_MITER_LIMIT = 4
 /** Figma's stroke weight for a node that has not been given one. */
 export const LABEL_FONT_SIZE = 11
 export const SIZE_FONT_SIZE = 10
+export const HUD_FONT_SIZE = 10
 export const VALUE_FONT_SIZE = 11
 
 export const HANDLE_HALF_SIZE = 3

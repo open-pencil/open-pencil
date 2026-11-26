@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
 import {
   boundEndpoint,
   connectorRoute,
@@ -9,6 +8,7 @@ import {
   createConnector
 } from '@open-pencil/scene-graph/connectors'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { minOf } from '@open-pencil/std/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { arrangeLayers } from '#core/layout/arrange/layers'

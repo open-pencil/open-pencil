@@ -1,1 +1,0 @@
-- Someone who reports a shared document and leaves an email gets a confirmation that the report arrived, and later what the administrators decided and where to write to disagree (#2090).

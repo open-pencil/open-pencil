@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { errorMessage } from '@open-pencil/std/errors'
+
 import { CALC_FUNCTIONS, evaluateExpression } from './calc/expression'
 import { defineTool } from './schema'
 
@@ -13,7 +15,7 @@ function evalExpr(
     }
     return { expr, result }
   } catch (e) {
-    return { expr, error: e instanceof Error ? e.message : String(e) }
+    return { expr, error: errorMessage(e) }
   }
 }
 

@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup/view'
 import { modelProviderName } from '@/app/ai/models/provider-name'
@@ -73,7 +73,8 @@ const emit = defineEmits<{
   cancelAgentSignIn: []
   submitAgentSignInCode: [code: string]
 }>()
-const { ai, credentials } = useI18n()
+const ai = useMessages('ai')
+const credentials = useMessages('credentials')
 const styles = tv(theme)()
 
 const name = computed(() =>

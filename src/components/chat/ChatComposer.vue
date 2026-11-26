@@ -5,7 +5,7 @@ import { TooltipProvider } from 'reka-ui'
 import { computed, useTemplateRef } from 'vue'
 
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { CHAT_COMPOSER_KEYS } from '@/components/chat/composer/keys'
 import { useChatEditor } from '@/components/chat/composer/useChatEditor'
@@ -33,7 +33,7 @@ const emit = defineEmits<{
   interrupt: []
   paste: [event: ClipboardEvent]
 }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 /** The agent is replying; messages written now wait for it, so the field stays open. */
 const working = computed(() => status === 'streaming' || status === 'submitted')
 const host = useTemplateRef<HTMLDivElement>('host')

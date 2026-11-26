@@ -1,8 +1,4 @@
-import type { Hono } from 'hono'
-import type { BlankEnv, BlankInput } from 'hono/types'
 import * as v from 'valibot'
-
-import type { JSONRoute } from './routes'
 
 /**
  * The contract between editors, Cloud, and the services Cloud advertises: AI models today, and
@@ -85,11 +81,51 @@ export type ChatModel = v.InferOutput<typeof chatModelSchema>
 export const searchPricingSchema = v.object({ creditsPerRequest: creditsSchema })
 export type SearchPricing = v.InferOutput<typeof searchPricingSchema>
 
-export const serviceCatalogSchema = v.object({
-  models: v.array(chatModelSchema),
-  defaultModelID: v.pipe(v.string(), v.minLength(1)),
-  search: v.optional(searchPricingSchema)
+const modelIDSchema = v.pipe(v.string(), v.minLength(1))
+
+/**
+ * The model the service recommends for each of the editor's roles: Design runs the chat, Review
+ * critiques designs, Fast does quick tasks such as naming conversations, and Vision reads images.
+ * An editor signed in to the service with no model of its own yet sets itself up with them, so
+ * nobody has to choose one. Vision `null` recommends none, and the editor leaves it unassigned.
+ */
+export const roleModelsSchema = v.object({
+  design: modelIDSchema,
+  review: modelIDSchema,
+  fast: modelIDSchema,
+  vision: v.nullable(modelIDSchema)
 })
+export type RoleModels = v.InferOutput<typeof roleModelsSchema>
+
+export const serviceCatalogSchema = v.pipe(
+  v.object({
+    models: v.array(chatModelSchema),
+    defaultModelID: modelIDSchema,
+    /**
+     * Absent from a service that predates it, or whose default model can't run the chat. Editors
+     * then use `defaultModelID` for every role, except Vision when that model reads no images,
+     * and set nothing up when it calls no tools.
+     */
+    roleModels: v.optional(roleModelsSchema),
+    search: v.optional(searchPricingSchema)
+  }),
+  // Every recommendation names a model the catalog lists and can do its role: Design and Fast
+  // call tools, and Vision reads images. An editor then never sets up a role it can't run.
+  v.check(({ models, roleModels }) => {
+    if (!roleModels) return true
+    const can = (id: string | null, capability: 'tools' | 'vision' | null) => {
+      if (id === null) return true
+      const model = models.find((candidate) => candidate.id === id)
+      return model !== undefined && (capability === null || model.capabilities[capability])
+    }
+    return (
+      can(roleModels.design, 'tools') &&
+      can(roleModels.review, null) &&
+      can(roleModels.fast, 'tools') &&
+      can(roleModels.vision, 'vision')
+    )
+  }, 'A recommended model is not in the catalog or cannot do its role')
+)
 export type ServiceCatalog = v.InferOutput<typeof serviceCatalogSchema>
 
 export const creditBucketSchema = v.object({
@@ -199,28 +235,6 @@ export const SERVICE_ERROR_STATUS = {
   capability_unavailable: 404,
   rate_limited: 429
 } as const satisfies Record<ServiceErrorCode, number>
-
-/**
- * Every route a service answers besides chat completions, which OpenAI-compatible clients call
- * themselves. Editors build a typed client from it with Hono's `hc`; a service's own app must
- * match it, so the two cannot drift apart.
- */
-export type CloudServicesSchema = JSONRoute<
-  'get',
-  typeof CLOUD_SERVICES_API_PATHS.catalog,
-  BlankInput,
-  ServiceCatalog
-> &
-  JSONRoute<'get', typeof CLOUD_SERVICES_API_PATHS.wallet, BlankInput, CreditWallet> &
-  JSONRoute<'get', typeof CLOUD_SERVICES_API_PATHS.usage, { query: UsageQuery }, UsagePage> &
-  JSONRoute<
-    'post',
-    typeof CLOUD_SERVICES_API_PATHS.search,
-    { json: SearchRequestInput },
-    SearchResponse
-  >
-
-export type CloudServicesAPI = Hono<BlankEnv, CloudServicesSchema>
 
 /**
  * Whether a bearer token may travel to `url`: over HTTPS, or in the clear only to a loopback

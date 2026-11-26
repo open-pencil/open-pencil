@@ -30,6 +30,8 @@ openpencil export design.fig -f jsx --style tailwind  # Tailwind classes
 
 Exported OpenPencil JSX can be edited and rendered back into the document. The export writes hidden and locked layers, constraints, size limits, stacked, gradient, and image fills, strokes, effects, masks, and variable bindings, so rendering an export reproduces them and `diff_nodes` shows changes to any of them. Rich text with mixed styles, vector paths, layout grids, shared styles, and component property definitions are not written yet. Instances are written as frames with their content, so exported JSX stands on its own. See [CLI exports](./cli/exporting).
 
+Rendering edited JSX with `replace_id` updates that layer in place: it and the descendants that match by type and name keep their IDs, so bindings and links to them survive. A layer written with `keepChildren`, as `get_jsx` writes the deep layers of long JSX, changes only its own props and keeps its children.
+
 ## Visual Diffing
 
 JSX makes structural design changes reviewable as code. Use `get_jsx` and `diff_nodes` to inspect changes, then verify the actual rendered result; a clean structural diff does not prove visual equivalence.

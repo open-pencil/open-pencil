@@ -1,3 +1,5 @@
+import { sha256 } from '@noble/hashes/sha2.js'
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 import { stat, open, SeekMode } from '@tauri-apps/plugin-fs'
 import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
@@ -37,10 +39,7 @@ async function fileFingerprint(path: string): Promise<CoverFingerprint | null> {
 }
 
 async function coverEntry(path: string): Promise<{ image: string; fingerprint: string }> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(path))
-  const hash = [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('')
+  const hash = bytesToHex(sha256(utf8ToBytes(path)))
   const base = `${RECENT_FILE_THUMBNAIL_CACHE_DIR}/${hash}`
   return { image: `${base}.png`, fingerprint: `${base}.json` }
 }

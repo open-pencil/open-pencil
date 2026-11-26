@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@open-pencil/package-artifacts-tools": "workspace:*",
-    "citty": "^0.1.6",
+    "@open-pencil/std": "workspace:*",
+    "citty": "^0.2.2",
     "es-toolkit": "^1.52.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   }

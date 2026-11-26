@@ -4,7 +4,8 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { Size } from '@open-pencil/scene-graph/primitives'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { focusStyles } from '@open-pencil/theme'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   centredCrop,
@@ -22,7 +23,6 @@ import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
 import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import { focusStyles } from '@/theme/focus/styles'
 
 /** The side of the square the picture is placed in, in CSS pixels. */
 const FRAME = 240
@@ -41,7 +41,7 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ save: [picture: Blob] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const url = useObjectUrl(() => file)
 const image = useTemplateRef<HTMLImageElement>('image')
 const size = ref<Size | null>(null)
@@ -175,13 +175,14 @@ async function save() {
         :max="PICTURE_MAX_ZOOM"
         :step="0.01"
         :disabled="!size"
-        :aria-label="messages.pictureZoom"
         class="relative flex w-60 touch-none items-center"
       >
         <SliderTrack class="relative h-1.5 grow overflow-hidden rounded-full bg-hover">
           <SliderRange class="absolute h-full bg-accent" />
         </SliderTrack>
+        <!-- The thumb is what assistive technology focuses and reads out as the slider. -->
         <SliderThumb
+          :aria-label="messages.pictureZoom"
           :class="[
             'block size-3.5 rounded-full border border-accent bg-panel shadow',
             focusStyles.ringStrong

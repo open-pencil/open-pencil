@@ -10,6 +10,7 @@ export type CloudflareEmailBinding = {
   send(message: {
     to: string
     from: string
+    replyTo?: string
     subject: string
     html: string
     text: string
@@ -50,6 +51,7 @@ export function createCloudflareEmailTransport(
         const result = await binding.send({
           to: message.to,
           from: message.from,
+          ...(message.replyTo ? { replyTo: message.replyTo } : {}),
           subject: message.subject,
           html: message.html,
           text: message.text,

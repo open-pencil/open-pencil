@@ -5,17 +5,19 @@ import {
   parseCSSAlignItems,
   parseCSSFlexDirection,
   parseCSSJustifyContent,
-  parseCSSNumber
+  parseCSSNumber,
+  splitCSSValue
 } from '@open-pencil/scene-graph/css'
 import {
   autoLayoutSizingFields,
   fillSizingFields,
   layoutSizing,
+  layoutSizingUpdates,
   textAutoResizeFor
 } from '@open-pencil/scene-graph/layout'
 
-import type { DesignElement, DesignStyleDeclaration } from '../types'
-import { pickStyle } from './css-values'
+import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
+import { mergedStyle, pickStyle } from './css-values'
 import { isTableRow } from './table'
 
 /**
@@ -83,7 +85,8 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
   const display = pickStyle(style, 'display')?.trim().toLowerCase()
   if (display) return display
   const tag = element.tagName.toLowerCase()
-  if (INLINE_TAGS.has(tag)) return 'inline'
+  // Generated content, `::before` and `::after`, is inline unless styled otherwise, as in CSS.
+  if (INLINE_TAGS.has(tag) || tag.startsWith('::')) return 'inline'
   if (tag === 'li') return 'list-item'
   return INLINE_BLOCK_TAGS.has(tag) ? 'inline-block' : 'block'
 }
@@ -102,10 +105,100 @@ export function isInlineLevel(display: string): boolean {
   return display.startsWith('inline')
 }
 
-function textAlignAxis(style: DesignStyleDeclaration) {
+/**
+ * The legacy `text-align` values `<center>` and the `align` attribute compute to, which align a
+ * block's children as well as its lines, by the side they put them on.
+ */
+const LEGACY_TEXT_ALIGN: Partial<Record<string, 'left' | 'center' | 'right'>> = {
+  '-moz-left': 'left',
+  '-webkit-left': 'left',
+  '-moz-center': 'center',
+  '-webkit-center': 'center',
+  '-moz-right': 'right',
+  '-webkit-right': 'right'
+}
+
+/** The element's `text-align`, lowercase, with a legacy value read as the side it aligns to. */
+export function textAlignOf(style: DesignStyleDeclaration): string | undefined {
   const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
+  return align === undefined ? undefined : (LEGACY_TEXT_ALIGN[align] ?? align)
+}
+
+function textAlignAxis(style: DesignStyleDeclaration) {
+  const align = textAlignOf(style)
   if (align === 'center') return 'CENTER'
   return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
+}
+
+/** Where a block can go across its container besides its start. */
+type BlockAlign = 'CENTER' | 'MAX'
+
+const BLOCK_ALIGN: Partial<Record<string, BlockAlign>> = { center: 'CENTER', right: 'MAX' }
+
+/**
+ * Where block flow puts a block across its container: by its auto margins, which take up the
+ * space it leaves, or else by a legacy `text-align` on the container, as `<center>` sets.
+ */
+function blockAlignSelf(
+  style: DesignStyleDeclaration,
+  containerStyle: DesignStyleDeclaration
+): BlockAlign | null {
+  const left = pickStyle(style, 'margin-left')?.trim() === 'auto'
+  const right = pickStyle(style, 'margin-right')?.trim() === 'auto'
+  if (left && right) return 'CENTER'
+  if (left) return 'MAX'
+  if (right) return null
+  const legacy = pickStyle(containerStyle, 'text-align')?.trim().toLowerCase() ?? ''
+  const side = LEGACY_TEXT_ALIGN[legacy]
+  return side ? (BLOCK_ALIGN[side] ?? null) : null
+}
+
+/** A child element's layer, with the element and its style. */
+export interface FlowBlock {
+  layer: SceneNode
+  element: DesignElement
+  style: DesignStyleDeclaration
+}
+
+/**
+ * Aligns blocks in their block-flow container where CSS centers them or puts them at the end, as
+ * `margin: auto` and `<center>` do. A block that fills the container's width has no room to
+ * move, so only one with a width of its own moves by its own alignment. One capped by a maximum
+ * width stays filling up to it, and the container's alignment places it, as Figma places a
+ * capped Fill child, when that moves nothing else: when every other child fills the width
+ * without a maximum of its own.
+ * Otherwise it hugs its content up to the maximum, and placement corrects a size that differs.
+ */
+export function alignBlocksInFlow(
+  graph: SceneGraph,
+  container: SceneNode,
+  blocks: readonly FlowBlock[],
+  containerStyle: DesignStyleDeclaration
+): void {
+  const capped: { layer: SceneNode; align: BlockAlign }[] = []
+  for (const { layer, style } of blocks) {
+    if (layer.layoutPositioning === 'ABSOLUTE') continue
+    const align = blockAlignSelf(style, containerStyle)
+    if (!align) continue
+    if (layer.layoutAlignSelf !== 'STRETCH') layer.layoutAlignSelf = align
+    else if (layer.maxWidth !== null) capped.push({ layer, align })
+  }
+  if (capped.length === 0) return
+  const [{ align }] = capped
+  const cappedIds = new Set(capped.map((block) => block.layer.id))
+  const othersFill = graph
+    .getChildren(container.id)
+    .filter((child) => child.layoutPositioning !== 'ABSOLUTE' && !cappedIds.has(child.id))
+    // A sibling capped by a maximum width of its own would move with the container's alignment.
+    .every((child) => child.layoutAlignSelf === 'STRETCH' && child.maxWidth === null)
+  if (othersFill && capped.every((block) => block.align === align)) {
+    container.counterAxisAlign = align
+    return
+  }
+  for (const { layer, align: own } of capped) {
+    Object.assign(layer, layoutSizingUpdates(graph, layer, 'HORIZONTAL', 'HUG'))
+    layer.layoutAlignSelf = own
+  }
 }
 
 const LINE_ALIGN: Partial<Record<SceneNode['textAlignHorizontal'], SceneNode['counterAxisAlign']>> =
@@ -116,17 +209,28 @@ const LINE_ALIGN: Partial<Record<SceneNode['textAlignHorizontal'], SceneNode['co
 
 /**
  * Aligns a block's lines across it, as `text-align` does, when they are all it holds: a single
- * line hugs its words, so the block places it where the page did. `text-align` moves lines,
- * not blocks, so a block with any other child keeps its children at its start.
+ * line hugs its words, and an inline-level box, such as an inline-block, its content, so the
+ * block places them where the page did. Text takes its own alignment, which a block element that
+ * became a text layer may set; boxes in a line take the block's. `text-align` moves lines, not
+ * blocks, so a block with a block-level child keeps its children at its start.
  */
-export function alignBlockLines(graph: SceneGraph, node: SceneNode): void {
+export function alignBlockLines(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  inlineContent: boolean
+): void {
   if (node.layoutMode !== 'VERTICAL') return
   const children = graph.getChildren(node.id)
-  if (children.length === 0 || !children.every((child) => child.type === 'TEXT')) return
-  const [first] = children
-  if (!children.every((child) => child.textAlignHorizontal === first.textAlignHorizontal)) return
-  const align = LINE_ALIGN[first.textAlignHorizontal]
-  if (align) node.counterAxisAlign = align
+  if (children.length === 0) return
+  if (children.every((child) => child.type === 'TEXT')) {
+    const [first] = children
+    if (!children.every((child) => child.textAlignHorizontal === first.textAlignHorizontal)) return
+    const align = LINE_ALIGN[first.textAlignHorizontal]
+    if (align) node.counterAxisAlign = align
+    return
+  }
+  if (inlineContent) node.counterAxisAlign = textAlignAxis(style)
 }
 
 /** The auto layout an element's own flow gives its children. */
@@ -162,7 +266,7 @@ export function applyContainerLayout(
 function grows(style: DesignStyleDeclaration): boolean {
   const grow = parseCSSNumber(pickStyle(style, 'flex-grow'))
   if (grow !== null) return grow > 0
-  const flex = pickStyle(style, 'flex')?.trim().split(/\s+/)[0]
+  const [flex] = splitCSSValue(pickStyle(style, 'flex') ?? '')
   if (flex === 'auto') return true
   const shorthand = parseCSSNumber(flex)
   return shorthand !== null && shorthand > 0
@@ -278,4 +382,58 @@ export function applyFlowSizing(
   }
   applyParentFill(graph, node, style, display, parentFlow, size)
   if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
+}
+
+/** Whether a box is out of the flow, placed by its own position rather than in the lines. */
+function isOutOfFlow(node: DesignNode): boolean {
+  if (node.type !== 'element') return false
+  const position = pickStyle(mergedStyle(node), 'position')?.trim()
+  return position === 'absolute' || position === 'fixed'
+}
+
+/**
+ * An element's content as its lines lay it out, and the boxes out of the flow inside it, such as a
+ * link's `::before` stretched over the card it is in, which take no part in the lines.
+ */
+export function splitOutOfFlow(element: DesignElement): {
+  inFlow: DesignElement
+  outOfFlow: DesignElement[]
+} {
+  const outOfFlow: DesignElement[] = []
+  const keep = (node: DesignElement): DesignElement => ({
+    ...node,
+    children: node.children.flatMap((child): DesignNode[] => {
+      if (child.type !== 'element') return [child]
+      if (isOutOfFlow(child)) {
+        outOfFlow.push(child)
+        return []
+      }
+      return [keep(child)]
+    })
+  })
+  return { inFlow: keep(element), outOfFlow }
+}
+
+/** Whether a box's `visibility` hides what it paints and the text it holds. */
+export function hiddenByVisibility(style: DesignStyleDeclaration): boolean {
+  const visibility = pickStyle(style, 'visibility')?.trim()
+  return visibility === 'hidden' || visibility === 'collapse'
+}
+
+function hidesByVisibility(node: DesignElement): boolean {
+  return hiddenByVisibility(mergedStyle(node))
+}
+
+/**
+ * How much of a box CSS hides with `visibility`: `all` of it, `own` paint only when a descendant
+ * sets `visibility: visible` and shows inside it, which a hidden layer would hide with it, or
+ * `none`.
+ */
+export function hiddenPart(element: DesignElement): 'all' | 'own' | 'none' {
+  if (!hidesByVisibility(element)) return 'none'
+  const showsAgain = (node: DesignElement): boolean =>
+    node.children.some(
+      (child) => child.type === 'element' && (!hidesByVisibility(child) || showsAgain(child))
+    )
+  return showsAgain(element) ? 'own' : 'all'
 }

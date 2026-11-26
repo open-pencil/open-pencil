@@ -1,26 +1,17 @@
-import {
-  documentImageLinkSchema,
-  imageUploadOfferSchema,
-  type CommitImageUploadsInput,
-  type DocumentImageLink,
-  type ImageUploadOffer,
-  type RequestImageUploadsInput,
-  type ResolveDocumentShareInput
+import type {
+  CommitImageUploadsInput,
+  DocumentImageLink,
+  ImageUploadOffer,
+  RequestImageUploadsInput,
+  ResolveDocumentShareInput
 } from '#cloud/contract'
-import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
-import type { hc } from 'hono/client'
-import * as v from 'valibot'
 
-import { parseResponse, responseBody, type CloudClientDiagnostic } from './response'
-
-const imageLinksResponseSchema = v.object({ images: v.array(documentImageLinkSchema) })
-const imageUploadsResponseSchema = v.object({ uploads: v.array(imageUploadOfferSchema) })
+import type { CloudContractClient } from './contract'
 
 /** The images a save uploads apart from the document, and the links a live room loads them by. */
 export function createImageRequests(
-  client: ReturnType<typeof hc<CloudAPI>>,
-  publicClient: ReturnType<typeof hc<PublicCloudAPI>>,
-  onDiagnostic?: CloudClientDiagnostic
+  contract: CloudContractClient['documents'],
+  publicSharing: CloudContractClient['publicSharing']
 ) {
   return {
     /** Uploads for the images a save will name that the document's workspace lacks. */
@@ -28,38 +19,18 @@ export function createImageRequests(
       documentId: string,
       input: RequestImageUploadsInput
     ): Promise<ImageUploadOffer[]> {
-      const response = await parseResponse(
-        client.documents[':documentId'].images.$post({
-          param: { documentId },
-          json: input
-        }),
-        imageUploadsResponseSchema,
-        onDiagnostic
-      )
-      return response.uploads
+      return (await contract.requestImageUploads({ params: { documentId }, body: input })).uploads
     },
     /** Commits the image uploads a save asked for, once their bytes are in place. */
     async commitImageUploads(
       documentId: string,
       uploads: CommitImageUploadsInput['uploads']
     ): Promise<void> {
-      const response = await client.documents[':documentId'].images.commit.$post({
-        param: { documentId },
-        json: { uploads }
-      })
-      await responseBody(response, onDiagnostic)
+      await contract.commitImageUploads({ params: { documentId }, body: { uploads } })
     },
     /** Links for images a document's live room names. */
     async getImageLinks(documentId: string, checksums: string[]): Promise<DocumentImageLink[]> {
-      const response = await parseResponse(
-        client.documents[':documentId'].images.links.$post({
-          param: { documentId },
-          json: { checksums }
-        }),
-        imageLinksResponseSchema,
-        onDiagnostic
-      )
-      return response.images
+      return (await contract.imageLinks({ params: { documentId }, body: { checksums } })).images
     },
     /** Links for images a shared document's live room names, as the share's guest. */
     async getSharedImageLinks(
@@ -67,15 +38,9 @@ export function createImageRequests(
       input: ResolveDocumentShareInput,
       checksums: string[]
     ): Promise<DocumentImageLink[]> {
-      const response = await parseResponse(
-        publicClient.shares[':shareId'].images.$post({
-          param: { shareId },
-          json: { ...input, checksums }
-        }),
-        imageLinksResponseSchema,
-        onDiagnostic
-      )
-      return response.images
+      return (
+        await publicSharing.imageLinks({ params: { shareId }, body: { ...input, checksums } })
+      ).images
     }
   }
 }

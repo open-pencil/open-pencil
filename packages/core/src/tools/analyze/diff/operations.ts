@@ -1,7 +1,7 @@
 import { union } from 'es-toolkit'
 import type { Delta } from 'jsondiffpatch'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import type { ProjectedNode } from './projection'
 

@@ -3,7 +3,7 @@ import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useColorModel, type OkHCLControls } from '@open-pencil/vue/controls/color-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 interface ColorPanelProps {
   color: Color
@@ -15,7 +15,7 @@ interface ColorPanelProps {
 type ColorPanelEmit = (event: 'update', color: Color) => void
 
 function createColorPickerPanelContext(props: ColorPanelProps, emit: ColorPanelEmit) {
-  const { panels } = useI18n()
+  const panels = useMessages('panels')
   const color = computed(() => props.color)
   const okhcl = computed(() => props.okhcl ?? null)
   const colorModel = useColorModel({

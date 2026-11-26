@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
 usePortalTheme()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const reload = () => globalThis.location.reload()
 // Its own app, without the portal's title template, so it names the product itself.
 useHead({

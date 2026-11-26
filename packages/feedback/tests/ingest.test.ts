@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
 import { createTestService, type TestService } from '#feedback-tests/harness'
-import type { UsageBatch } from '#feedback/contract'
+import { campaignSchema, type UsageBatch } from '#feedback/contract'
 import * as v from 'valibot'
 
 const BATCH: UsageBatch = {
@@ -45,6 +45,14 @@ beforeEach(() => {
 
 afterAll(async () => {
   await service.dispose()
+})
+
+const SERVED = v.parse(campaignSchema, {
+  id: 'try-cloud',
+  kind: 'cloud',
+  placement: 'prompt',
+  content: { en: { title: 'Try Cloud', body: 'Sync your designs.' } },
+  timing: { repeatAfterDays: 30, afterActionDays: null }
 })
 
 describe('ingest', () => {
@@ -146,5 +154,41 @@ describe('ingest', () => {
     service.respond('https://eu.i.posthog.com/', () => new Response(null, { status: 503 }))
 
     expect((await service.postJSON('/ingest', BATCH)).status).toBe(502)
+  })
+
+  test("forwards a campaign's events with its kind, only while the campaign is served", async () => {
+    service.clearResponses()
+    service.services.campaigns = [SERVED]
+    try {
+      const at = '2026-10-12T09:02:00.000Z'
+      const response = await service.client.ingest.$post({
+        json: {
+          ...BATCH,
+          events: [
+            { name: 'campaign_shown', timestamp: at, campaign: 'try-cloud', placement: 'prompt' },
+            { name: 'campaign_acted', timestamp: at, campaign: 'retired', placement: 'prompt' }
+          ]
+        }
+      })
+      expect(response.status).toBe(204)
+      const body = v.parse(postHogBodySchema, service.fetchCalls[0]?.init?.body)
+      expect(
+        body.batch.map(({ event, properties }) => [event, properties.campaign, properties.kind])
+      ).toEqual([['campaign_shown', 'try-cloud', 'cloud']])
+
+      service.fetchCalls.length = 0
+      const retired = await service.client.ingest.$post({
+        json: {
+          ...BATCH,
+          events: [
+            { name: 'campaign_dismissed', timestamp: at, campaign: 'retired', placement: 'share' }
+          ]
+        }
+      })
+      expect(retired.status).toBe(204)
+      expect(service.fetchCalls).toHaveLength(0)
+    } finally {
+      service.services.campaigns = undefined
+    }
   })
 })

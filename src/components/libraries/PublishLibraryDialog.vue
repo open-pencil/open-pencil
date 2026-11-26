@@ -7,7 +7,7 @@ import {
   publishableLibraryAssets,
   readSourceLibraryPublication
 } from '@open-pencil/core/library'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
@@ -26,7 +26,7 @@ import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 const editor = useEditorStore()
 const dialog = useDialogUI()
 const service = useLibraryService()
-const { panels } = useI18n()
+const libraryMessages = useMessages('panels/libraries')
 const libraryId = ref('')
 const libraryName = ref('')
 const description = ref('')
@@ -37,10 +37,10 @@ const error = ref('')
 const changes = ref<LibraryAssetChange[]>([])
 const selectedKeys = ref(new Set<string>())
 const changeLabels = computed(() => ({
-  added: panels.value.libraryChangeAdded,
-  modified: panels.value.libraryChangeModified,
-  renamed: panels.value.libraryChangeRenamed,
-  removed: panels.value.libraryChangeRemoved
+  added: libraryMessages.value.libraryChangeAdded,
+  modified: libraryMessages.value.libraryChangeModified,
+  renamed: libraryMessages.value.libraryChangeRenamed,
+  removed: libraryMessages.value.libraryChangeRemoved
 }))
 const publication = computed(() => readSourceLibraryPublication(editor.graph))
 const visibleChanges = computed(() => {
@@ -77,7 +77,8 @@ watch(publishLibraryDialogOpen, async (open) => {
     }
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : panels.value.libraryPublishFailed
+    error.value =
+      cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
   } finally {
     loading.value = false
   }
@@ -115,7 +116,8 @@ async function publish() {
     })
     publishLibraryDialogOpen.value = false
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : panels.value.libraryPublishFailed
+    error.value =
+      cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
   } finally {
     publishing.value = false
   }
@@ -124,18 +126,21 @@ async function publish() {
 
 <template>
   <AppDialogRoot v-model:open="publishLibraryDialogOpen" size="md" height="tall">
-    <AppDialogHeader :heading="panels.publishLibrary" :description="panels.publishLibraryHelp" />
+    <AppDialogHeader
+      :heading="libraryMessages.publishLibrary"
+      :description="libraryMessages.publishLibraryHelp"
+    />
     <form
       :class="[dialog.pane, 'flex min-h-0 flex-1 flex-col gap-3 px-4 py-4']"
       @submit.prevent="publish"
     >
       <div class="grid grid-cols-2 gap-3">
         <label class="flex flex-col gap-1.5 text-xs text-muted">
-          {{ panels.libraryId }}
+          {{ libraryMessages.libraryId }}
           <AppInput v-model="libraryId" required size="md" :disabled="!!publication" />
         </label>
         <label class="flex flex-col gap-1.5 text-xs text-muted">
-          {{ panels.libraryName }}
+          {{ libraryMessages.libraryName }}
           <AppInput v-model="libraryName" required size="md" />
         </label>
       </div>
@@ -143,43 +148,45 @@ async function publish() {
         v-model="query"
         type="search"
         size="md"
-        :placeholder="panels.searchLibraryChanges"
+        :placeholder="libraryMessages.searchLibraryChanges"
       />
       <label class="flex flex-col gap-1.5 text-xs text-muted">
-        {{ panels.revisionDescription }}
+        {{ libraryMessages.revisionDescription }}
         <AppTextarea v-model="description" :rows="2" />
       </label>
       <div
         class="flex items-center justify-between rounded-lg border border-border bg-input px-3 py-2 text-xs"
       >
-        <span class="text-muted">{{ panels.libraryDestination }}</span>
+        <span class="text-muted">{{ libraryMessages.libraryDestination }}</span>
         <span>{{
-          service.catalogSource === 'storage' ? panels.storageLibraries : panels.localLibraries
+          service.catalogSource === 'storage'
+            ? libraryMessages.storageLibraries
+            : libraryMessages.localLibraries
         }}</span>
       </div>
       <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border">
         <div class="flex items-center gap-2 border-b border-border px-3 py-2 text-xs font-medium">
           <AppCheckbox
             :model-value="selectionState"
-            :ariaLabel="panels.libraryChanges"
+            :ariaLabel="libraryMessages.libraryChanges"
             @update:model-value="toggleAll"
           />
-          <span>{{ panels.libraryChanges }}</span>
+          <span>{{ libraryMessages.libraryChanges }}</span>
           <span class="ms-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
         </div>
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
-          {{ panels.loading }}
+          {{ libraryMessages.loading }}
         </div>
         <AppPlaceholder
           v-else-if="changes.length === 0"
-          :label="panels.noLibraryAssetChanges"
+          :label="libraryMessages.noLibraryAssetChanges"
           size="compact"
         >
           <template #icon><icon-lucide-package-check /></template>
         </AppPlaceholder>
         <AppPlaceholder
           v-else-if="visibleChanges.length === 0"
-          :label="panels.noLibraryChangesFound"
+          :label="libraryMessages.noLibraryChangesFound"
           size="compact"
         >
           <template #icon><icon-lucide-search-x /></template>
@@ -218,7 +225,7 @@ async function publish() {
     </form>
     <AppDialogFooter>
       <AppButton size="md" @click="publishLibraryDialogOpen = false">
-        {{ panels.cancel }}
+        {{ libraryMessages.cancel }}
       </AppButton>
       <AppButton
         size="md"
@@ -233,7 +240,7 @@ async function publish() {
         "
         @click="publish"
       >
-        {{ publishing ? panels.publishingLibrary : panels.publishLibrary }}
+        {{ publishing ? libraryMessages.publishingLibrary : libraryMessages.publishLibrary }}
       </AppButton>
     </AppDialogFooter>
   </AppDialogRoot>

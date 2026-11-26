@@ -61,7 +61,7 @@ Settings live in a TOML file; environment variables supply secrets and tell the 
 2. Copy [`.env.example`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/.env.example) and set:
    - `OPENPENCIL_CLOUD_CONFIG`: the path to the TOML file;
    - `OPENPENCIL_CLOUD_SITE_DIR`: the path to `dist-cloud/`. Without it the server still runs its API, but the editor and the sign-in, account, and administration pages answer 404, and it warns at startup;
-   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
+   - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `GITHUB_CLIENT_SECRET`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
 3. Start the server with the environment loaded, for example `node --env-file=.env dist-standalone/server.mjs`, or, installed from npm, `node --env-file=.env "$(command -v openpencil-cloud)"`.
 
 Use `{ from_env = "CUSTOM_NAME" }` in the TOML to read a secret from a different variable. A missing required secret stops startup and names the variable without printing a value.
@@ -75,6 +75,18 @@ The server serves the editor at its own address. Visitors who are not signed in 
 For a server only its members use, set `deployment.local_editor = false`: the welcome page then offers only signing in, and every editor page asks for it. To keep shared links to members too, turn off `guest_view`, `guest_edit`, and `guest_presence` under `[entitlements.sharing]`; links then open after signing in to the server. With `guest_view` on and `guest_edit` off, as the shipped configurations have it, a guest opens an edit link view-only and signs in to edit.
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
+
+## Embedding in other sites
+
+Other sites can show documents shared by link, and community gallery documents, in a frame at `/embed/…`, read-only and without the visitor's account. A shared document keeps up with edits as they happen; a community document shows its latest version, or the one its address names. Self-hosted servers keep this off; turn it on under `[deployment.embedding]`, and list the sites that may embed documents, or leave the list out to let any site:
+
+```toml
+[deployment.embedding]
+enabled = true
+allowed_origins = ["https://wiki.example.com"]
+```
+
+Only `/embed/…` pages may be framed; every other page of the server refuses to be. A shared link embeds only where guests may view it (`guest_view` under `[entitlements.sharing]`), since an embed never signs in. Embeds are never indexed, whatever `deployment.indexing` says.
 
 ## Your name on the server's pages
 
@@ -93,6 +105,10 @@ Without `help_url`, help goes to the OpenPencil documentation. The addresses mus
 
 When a server update needs a newer editor, set `deployment.minimum_editor_version`, such as `"0.17.0"`. An older desktop app then shows a banner offering its update instead of connecting, and the server answers its requests with `426 Upgrade Required`; a browser tab on an older editor offers a reload. Requests that name no editor version, from the CLI or MCP, are served as before.
 
+Turning on GitHub sign-in (`[authentication.providers.github]`) needs a minimum too. Editors from before GitHub sign-in cannot read the server once it offers GitHub: the oldest fail to connect, and the rest fail to open the account pages of anyone who signed in with GitHub. Set `minimum_editor_version` to an editor release that offers GitHub sign-in in the same change.
+
+Versions compare in SemVer order, where a pre-release comes before its release: `"0.18.0"` turns away `0.18.0-beta.2`. To let a release's betas and nightlies in, name the earliest one you accept, such as `"0.18.0-beta.1"`; nightlies come after their release's betas, so `"0.18.0-nightly.20261116"` admits nightlies from that day on but no betas. Editors before 0.18.0 cannot read a pre-release minimum and stop connecting, so name one only when the minimum is already 0.18.0 or later.
+
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
@@ -101,19 +117,32 @@ When a server update needs a newer editor, set `deployment.minimum_editor_versio
 
 ## The first administrator
 
-Set `[authentication.enrollment] mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that reads the same configuration and secrets and can reach the server's database at `DATABASE_URL`:
+Set `[authentication.enrollment] mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that can reach the server's database. The command needs only `DATABASE_URL`, and refuses a database the server's version has not migrated yet:
 
 ```sh
-bun --filter @open-pencil/cloud admin approve owner@example.com
+DATABASE_URL=postgres://… bun --filter @open-pencil/cloud admin approve owner@example.com
 # after that person signs in once
-bun --filter @open-pencil/cloud admin grant owner@example.com
+DATABASE_URL=postgres://… bun --filter @open-pencil/cloud admin grant owner@example.com
 ```
 
-Deployment administrators manage enrollment and users in the server's administration pages. They are separate from workspace administrators.
+From then on, deployment administrators approve requests and grant or revoke the role in the server's administration pages, which ask for two-step sign-in first; keep the command for when no administrator can sign in. Deployment administrators are separate from workspace administrators.
+
+Deployment administrators can see what every document on the server looks like: **Documents** and **Reports** in the console show the thumbnail each document was last saved with, along with its kind, owner, when it last changed, and who beyond its workspace can open it, through the community gallery or a share link. They can also download any saved document, to open it in the app without changing the original; **Activity** records each download. Say so in your privacy policy.
 
 ## Terms and privacy
 
 The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there and as the address a document's owner writes to when an administrator blocks it, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when, so give each version that needs accepting again a value never used before: going back to an earlier one asks nobody who accepted it.
+
+## Connected apps
+
+Add an `[oauth]` table to let people connect apps to their accounts through OAuth, with the server as the [apps' authorization server](../apps#for-app-developers):
+
+```toml
+[oauth]
+enabled = true
+```
+
+Apps register themselves, so anyone can register one, but each connection takes the person's approval and reaches one workspace they pick. Connected apps then read, and with the person's approval change, that workspace's documents, so say so in your privacy notice. Without the table, the server accepts no apps and its account pages have no **Connected apps**.
 
 ## Community gallery
 
@@ -135,6 +164,8 @@ Its data is served without signing in:
 - `GET /api/community/thumbnails/<document>/<revision>` is the thumbnail the document's saved file carries. The address changes with each save. It is cached for five minutes, like the list, so a document taken down or moved out of the gallery stops showing soon after.
 
 Name a version for each state you want people to be able to open later, such as a release.
+
+Add `tour = "<document ID>"` to the table to name the gallery document editors open as their tour: Help → Open the Tour, the welcome dialog's tour, and `/demo` open it from the official server; an editor built to name your server as its official one opens yours. Any page may read the gallery and the server's discovery, so these addresses answer every origin, without cookies.
 
 These routes are limited per visitor by IP address, which the server only knows from a header your proxy sets. The proxy must overwrite that header or append the client's address to it; one it passes through unchanged is whatever the client sent. Name that header under `[authentication.trusted_proxies]` before you turn the gallery on, and let only the proxy reach the server: a request without the header has no IP to count, so nothing limits it.
 

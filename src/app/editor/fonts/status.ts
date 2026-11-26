@@ -2,15 +2,18 @@ import { computed, ref } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { DocumentFontUses, fontManager, fontResolver } from '@open-pencil/core/text'
+import { errorMessage } from '@open-pencil/std/errors'
 import { useEditorEvent } from '@open-pencil/vue/editor/events'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { loadFont, requestLocalFontAccess } from '@/app/editor/fonts'
+import { loadFont, onInstalledFontsChanged, requestLocalFontAccess } from '@/app/editor/fonts'
 
 export function useDocumentFontStatus() {
   const editor = useEditorStore()
   const revision = ref(0)
   const retrying = ref(false)
+  /** A font installed while a retry runs, which may have missed it, retries once more after. */
+  let retryAgain = false
 
   // The page's text faces, kept by layer: a keystroke updates one layer rather than walking
   // a page of tens of thousands of layers again.
@@ -48,7 +51,10 @@ export function useDocumentFontStatus() {
   })
 
   async function retry() {
-    if (retrying.value) return
+    if (retrying.value) {
+      retryAgain = true
+      return
+    }
     retrying.value = true
     const preparation = editor.preparationController.begin({ kind: 'font-retry' })
     let succeeded = false
@@ -81,7 +87,7 @@ export function useDocumentFontStatus() {
       if (!preparation.signal.aborted) {
         preparation.fail({
           code: 'font-failed',
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
           retryable: true
         })
       }
@@ -89,7 +95,16 @@ export function useDocumentFontStatus() {
       if (succeeded) preparation.complete()
       retrying.value = false
     }
+    if (retryAgain) {
+      retryAgain = false
+      if (status.value.issues.length > 0) await retry()
+    }
   }
+
+  // A missing font installed while the document is open is loaded then, as a retry would.
+  onInstalledFontsChanged(() => {
+    if (status.value.issues.length > 0) void retry()
+  })
 
   function selectAffectedNodes() {
     editor.select(status.value.issues.flatMap((issue) => issue.nodeIds))

@@ -1,3 +1,4 @@
+import { errorMessage } from '@open-pencil/std/errors'
 /**
  * The routes a deployment must answer, and how each is asked for: pages as a browser asks, the API
  * as a client does, so a missing API route can't turn into the editor's page.
@@ -37,7 +38,7 @@ async function routeStatus(
       if (response.status === 200) return '200'
       status = `HTTP ${response.status}`
     } catch (error) {
-      status = error instanceof Error ? error.message : String(error)
+      status = errorMessage(error)
     }
     if (attempt < attempts) await Bun.sleep(delayMs)
   }

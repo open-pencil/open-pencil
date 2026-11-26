@@ -1,4 +1,4 @@
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, providerKind } from '@open-pencil/core/constants'
 
 import { aiModelSettings, modelConnectionCredentialRef } from '@/app/ai/models'
 import { VECTORIZE_CREDENTIAL_REFS } from '@/app/editor/vectorize/credentials'
@@ -20,11 +20,11 @@ function uniqueCredentialRefs(references: CredentialRef[]): CredentialRef[] {
 }
 
 export function appCredentialRefs(): CredentialRef[] {
-  const legacyAIRefs = AI_PROVIDERS.filter((provider) => !provider.id.startsWith('acp:')).map(
+  const legacyAIRefs = AI_PROVIDERS.filter((provider) => providerKind(provider.id) !== 'acp').map(
     (provider) => providerCredentialRef(provider.id)
   )
   const modelConnectionRefs = aiModelSettings.value.connections
-    .filter((connection) => !connection.providerID.startsWith('acp:'))
+    .filter((connection) => providerKind(connection.providerID) !== 'acp')
     .map(modelConnectionCredentialRef)
   const storageCredentials = storageProviderRegistry
     .list()

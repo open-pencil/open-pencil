@@ -7,7 +7,7 @@ import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { asDouble, asRenderer } from './helpers'
 
 function surface() {
-  return { delete: mock() } as Surface & { delete: ReturnType<typeof mock> }
+  return asDouble<Surface>({ dispose: mock() })
 }
 
 function liveImage() {
@@ -53,7 +53,7 @@ describe('renderer surface replacement', () => {
     expect(renderer.glassMaps.clear).toHaveBeenCalledTimes(1)
     expect(renderer.invalidateAllPictures).toHaveBeenCalledTimes(1)
     expect(renderer.images.live.size).toBe(0)
-    expect(previous.delete).toHaveBeenCalledTimes(1)
+    expect(previous.dispose).toHaveBeenCalledTimes(1)
     expect(renderer.surface).toBe(next)
     expect(renderer.invalidateScenePicture).toHaveBeenCalledTimes(1)
   })
@@ -71,7 +71,7 @@ describe('renderer surface replacement', () => {
     expect(renderer.glassMaps.clear).not.toHaveBeenCalled()
     expect(renderer.invalidateAllPictures).not.toHaveBeenCalled()
     expect(renderer.images.live.get('shader')).toEqual({ image, surface: next })
-    expect(previous.delete).toHaveBeenCalledTimes(1)
+    expect(previous.dispose).toHaveBeenCalledTimes(1)
     expect(renderer.surface).toBe(next)
     expect(renderer.invalidateScenePicture).toHaveBeenCalledTimes(1)
   })

@@ -5,11 +5,11 @@ import { until } from '@vueuse/core'
 import { materializeLibraryAsset, MemoryLibraryCatalog } from '@open-pencil/core/library'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { createDeferred } from '@open-pencil/std/async'
 
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { LibraryService } from '@/app/libraries/service'
-import { createDeferred } from '@/app/runtime/deferred'
 
 function source(width: number, label: string) {
   const graph = new SceneGraph()

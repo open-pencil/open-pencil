@@ -4,7 +4,7 @@ import type { ParentEntries } from '#collab/tree/entries'
 import { LayerTree } from '#collab/tree/layer-tree'
 import { create as createPRNG, oneOf, real53 } from 'lib0/prng'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 const ROOT = 'root'
 const PAGE = 'page'

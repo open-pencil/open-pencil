@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_RATE_LIMITS,
   createCloudApp,
@@ -10,7 +10,7 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
-import * as v from 'valibot'
+import { testClient } from 'hono/testing'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -63,17 +63,15 @@ describe('Cloud workspace routes', () => {
         resolveIdentity: async () => alice,
         resolveSession: async () => alice
       })
+      const client = testClient(app)
       const statuses = await Promise.all([
-        app.request('/api/account/status'),
-        app.request('/api/account/status')
+        client.api.account.status.$get(),
+        client.api.account.status.$get()
       ])
       expect(statuses.map((response) => response.status)).toEqual([200, 200])
-      await app.request('/api/account/status')
+      await client.api.account.status.$get()
 
-      const listed = await responseJSON(
-        await app.request('/api/workspaces'),
-        v.object({ workspaces: v.array(v.object({ name: v.string(), role: v.string() })) })
-      )
+      const listed = await contractClient(app).workspaces.list()
       expect(listed.workspaces).toEqual([
         expect.objectContaining({ name: 'Alice’s workspace', role: 'admin' })
       ])
@@ -85,9 +83,10 @@ describe('Cloud workspace routes', () => {
   test('requires authentication for Cloud APIs', async () => {
     const { app, runtime } = await testApp(null)
     try {
-      const response = await app.request('/api/workspaces')
-      expect(response.status).toBe(401)
-      expect(await response.json()).toEqual({ error: { code: 'unauthorized' } })
+      expect(await outcome(contractClient(app).workspaces.list())).toEqual({
+        status: 401,
+        code: 'unauthorized'
+      })
     } finally {
       await runtime.close()
     }
@@ -96,9 +95,9 @@ describe('Cloud workspace routes', () => {
   test('returns the resolved session actor', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const response = await app.request('/api/session')
-      expect(response.status).toBe(200)
-      expect(await response.json()).toEqual({ user: alice })
+      expect(await contractClient(app).session.session()).toEqual({
+        user: { ...alice, scopes: undefined }
+      })
     } finally {
       await runtime.close()
     }
@@ -107,38 +106,23 @@ describe('Cloud workspace routes', () => {
   test('creates, lists, and reads an owned workspace', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const createResponse = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Design team', slug: 'design-team' })
+      const api = contractClient(app)
+      const created = await api.workspaces.create({
+        body: { name: 'Design team', slug: 'design-team' }
       })
-      expect(createResponse.status).toBe(201)
-      const created = await responseJSON(
-        createResponse,
-        v.object({
-          workspace: v.object({
-            id: v.string(),
-            name: v.string(),
-            slug: v.string(),
-            role: v.string()
-          })
-        })
-      )
       expect(created.workspace).toMatchObject({
         name: 'Design team',
         slug: 'design-team',
         role: 'admin'
       })
 
-      const listResponse = await app.request('/api/workspaces')
-      expect(listResponse.status).toBe(200)
-      expect(await listResponse.json()).toMatchObject({
-        workspaces: [{ id: created.workspace.id, role: 'admin' }]
+      expect(await api.workspaces.list()).toMatchObject({
+        workspaces: [{ id: created.workspace.id, role: 'admin', owner: true }]
       })
 
-      const getResponse = await app.request(`/api/workspaces/${created.workspace.id}`)
-      expect(getResponse.status).toBe(200)
-      expect(await getResponse.json()).toMatchObject({ workspace: created.workspace })
+      expect(
+        await api.workspaces.get({ params: { workspaceId: created.workspace.id } })
+      ).toMatchObject({ workspace: created.workspace })
     } finally {
       await runtime.close()
     }
@@ -147,15 +131,9 @@ describe('Cloud workspace routes', () => {
   test('does not reveal another user workspace', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const createResponse = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Private', slug: 'private-space' })
+      const created = await contractClient(app).workspaces.create({
+        body: { name: 'Private', slug: 'private-space' }
       })
-      const created = await responseJSON(
-        createResponse,
-        v.object({ workspace: v.object({ id: v.string() }) })
-      )
       const bobApp = createCloudApp({
         config,
         database: runtime.database,
@@ -164,9 +142,42 @@ describe('Cloud workspace routes', () => {
         resolveSession: async () => bob
       })
 
-      const response = await bobApp.request(`/api/workspaces/${created.workspace.id}`)
-      expect(response.status).toBe(404)
-      expect(await response.json()).toEqual({ error: { code: 'not_found' } })
+      expect(
+        await outcome(
+          contractClient(bobApp).workspaces.get({ params: { workspaceId: created.workspace.id } })
+        )
+      ).toEqual({ status: 404, code: 'not_found' })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test("answers 404, and reports nothing, for another account's workspace entitlements", async () => {
+    const { app, runtime } = await testApp(alice)
+    try {
+      const created = await contractClient(app).workspaces.create({
+        body: { name: 'Private', slug: 'private-plan' }
+      })
+      const reported: unknown[] = []
+      const bobApp = createCloudApp({
+        config,
+        database: runtime.database,
+        auth: createBetterAuthAdapter(config, runtime.database),
+        objects: createMemoryObjectStore().store,
+        resolveSession: async () => bob,
+        reportError: async (error) => {
+          reported.push(error)
+        }
+      })
+
+      expect(
+        await outcome(
+          contractClient(bobApp).workspaces.entitlements({
+            params: { workspaceId: created.workspace.id }
+          })
+        )
+      ).toEqual({ status: 404, code: 'not_found' })
+      expect(reported).toEqual([])
     } finally {
       await runtime.close()
     }
@@ -175,27 +186,17 @@ describe('Cloud workspace routes', () => {
   test('validates workspace input and reports duplicate slugs', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const invalid = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: '' })
+      const api = contractClient(app)
+      expect(await outcome(api.workspaces.create({ body: { name: '' } }))).toMatchObject({
+        status: 400
       })
-      expect(invalid.status).toBe(400)
 
-      const body = JSON.stringify({ name: 'Team', slug: 'shared-team' })
-      const first = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body
+      const body = { name: 'Team', slug: 'shared-team' }
+      expect(await outcome(api.workspaces.create({ body }))).toBe('ok')
+      expect(await outcome(api.workspaces.create({ body }))).toEqual({
+        status: 409,
+        code: 'slug_conflict'
       })
-      expect(first.status).toBe(201)
-      const duplicate = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body
-      })
-      expect(duplicate.status).toBe(409)
-      expect(await duplicate.json()).toEqual({ error: { code: 'slug_conflict' } })
     } finally {
       await runtime.close()
     }
@@ -204,17 +205,9 @@ describe('Cloud workspace routes', () => {
   test("counts a workspace's invitations and resends on one budget, and caps the actor across workspaces", async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const createWorkspace = async (slug: string) => {
-        const created = await responseJSON(
-          await app.request('/api/workspaces', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: slug, slug })
-          }),
-          v.object({ workspace: v.object({ id: v.string() }) })
-        )
-        return created.workspace.id
-      }
+      const api = contractClient(app)
+      const createWorkspace = async (slug: string) =>
+        (await api.workspaces.create({ body: { name: slug, slug } })).workspace.id
       const first = await createWorkspace('first-team')
       const second = await createWorkspace('second-team')
       const third = await createWorkspace('third-team')
@@ -227,13 +220,14 @@ describe('Cloud workspace routes', () => {
             body: '{}'
           })
         ).status
-      const resend = async (workspaceId: string) =>
-        (
-          await app.request(
-            `/api/workspaces/${workspaceId}/invitations/${crypto.randomUUID()}/resend`,
-            { method: 'POST' }
-          )
-        ).status
+      const resend = async (workspaceId: string) => {
+        const resent = await outcome(
+          api.workspaces.resendInvitation({
+            params: { workspaceId, invitationId: crypto.randomUUID() }
+          })
+        )
+        return resent === 'ok' ? 200 : resent.status
+      }
 
       const { limit } = CLOUD_RATE_LIMITS.invitationMutation
       for (let sent = 0; sent < limit; sent++) {

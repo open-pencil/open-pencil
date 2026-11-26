@@ -8,6 +8,7 @@ Headless Vue 3 primitives and composables; the root app is one consumer. Primiti
 - `PropertySection`, `SegmentedControl`, and `PropertyList` under `packages/vue/src/primitives/` are controlled and editor-agnostic. Connect PropertyList events to selection and undo through `useEditorPropertyList()` or an app adapter; never call `useEditor()` from a primitive.
 - Compose property rows from `PanelGrid`, `PanelFieldGroup`, `PanelItemRow`, and `PropertyItemRow`; use `BindableValue`, `FillRoot`, and `FillSwatch` rather than rebuilding binding or picker infrastructure.
 - Binding-aware fields detach or mutate only on the first value change; opening and focusing are non-destructive.
+- Pickers group undo through `usePickerGesture` (`ColorPickerRoot`, the app's `FillPicker`): a press to its release is one step, a change with no press held is a step of its own, and Escape puts back only a press still held, otherwise closing and keeping changes. Route a picker's changes through it and end the step on its `commit`, never per update or per open picker (`tests/e2e/color-picker/history.spec.ts`).
 - Prefer models, events, and props over imperative slot actions except for explicitly renderless action primitives. Use VueUse for DOM refs and focus.
 - Preserve interaction gotchas when refactoring: splitter handles, NumberField pointer ownership, section dragging, panel containment, and number-spinner styling.
 
@@ -32,7 +33,7 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 - Commands use `packages/vue/src/editor/commands/registry.ts` for shortcuts, bindings, and menu IDs. Store `HotkeyChord` shortcuts (`Mod+D`) and format them at render time; labels and translations never contain shortcuts.
 - Canvas menu structure lives in `packages/vue/src/editor/menu-model/canvas.ts`; the app's `CanvasMenu.vue` renders it.
 - `useEditorEvent(event, handler)` in `packages/vue/src/editor/events/use.ts` wraps the editor event bus.
-- i18n uses narrow product-domain catalogs under `packages/vue/src/i18n/messages/` with matching locale files; namespaces of one domain share a folder (`messages/cloud/editor.ts`, `locales/<locale>/cloud/editor.json`) mapped in `LOCALE_FILE_NAMES` (`tools/checks/i18n/src/check-locales.ts`). Inspect existing domains instead of adding generic UI/component namespaces; prefer narrow `use*Messages()` composables over aggregate `useI18n()`. `bun run check:i18n` enforces structure, placeholder parity, and reviewed translation baselines; remove stale baseline identities when fixing existing debt.
+- i18n has one product-domain namespace per file, named by its path: `messages/panels/pickers.ts` is `panels/pickers`, translated in `locales/<locale>/panels/pickers.json`, registered in `messageDefaults` (`packages/vue/src/i18n/messages.ts`) and in each locale's `index.ts` (`LocaleTranslations`). Inspect existing domains instead of adding generic UI/component namespaces, and give a large feature a namespace of its own in its domain's folder instead of spreading it into the parent; read messages with `useMessages(namespace)`, or `messageStores` outside components. `bun run check:i18n` enforces structure, placeholder parity, and reviewed translation baselines; remove stale baseline identities when fixing existing debt.
 
 ## Documentation
 

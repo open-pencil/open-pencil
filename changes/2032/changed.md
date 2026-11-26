@@ -1,2 +1,0 @@
-- A coding agent's capabilities belong to its model profile: image input starts as the agent reports it and can be turned off, and Pi profiles have none (#2032).
-- Settings and guided setup show Review as not used yet, since nothing used the model assigned to it; its saved assignment is kept (#2032).

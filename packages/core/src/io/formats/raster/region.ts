@@ -3,7 +3,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { SkiaRenderer } from '#core/canvas'
+import { withOffscreenRenderer } from '#core/canvas/renderer/offscreen'
 
 import { drawRegionToImage } from './render'
 
@@ -27,15 +27,9 @@ export async function renderRegionToImage(
   scale: number,
   options: RegionRenderOptions = {}
 ): Promise<Uint8Array | null> {
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) return null
-  const renderer = new SkiaRenderer(ck, surface)
-  try {
+  return withOffscreenRenderer(ck, async (renderer) => {
     if (options.pageColor) renderer.pageColor = options.pageColor
-    await renderer.loadFonts()
     await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
     return drawRegionToImage(ck, renderer, graph, pageId, bounds, scale)
-  } finally {
-    renderer.destroy()
-  }
+  })
 }

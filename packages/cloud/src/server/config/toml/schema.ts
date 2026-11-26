@@ -17,6 +17,7 @@ const DEFAULT_SECRET_NAMES = {
   googleClientId: 'GOOGLE_CLIENT_ID',
   googleClientSecret: 'GOOGLE_CLIENT_SECRET',
   applePrivateKey: 'APPLE_PRIVATE_KEY',
+  githubClientSecret: 'GITHUB_CLIENT_SECRET',
   s3AccessKeyId: 'S3_ACCESS_KEY_ID',
   s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
   s3SessionToken: 'S3_SESSION_TOKEN',
@@ -52,8 +53,17 @@ const providerSchema = v.strictObject({
       private_key: defaultReference(DEFAULT_SECRET_NAMES.applePrivateKey),
       app_bundle_identifier: v.optional(textSchema)
     })
+  ),
+  github: v.optional(
+    v.strictObject({
+      client_id: configurableTextSchema,
+      client_secret: defaultReference(DEFAULT_SECRET_NAMES.githubClientSecret)
+    })
   )
 })
+
+/** Where replies go, when someone reads the email and writes back; `from` otherwise. */
+const replyToSchema = v.optional(v.pipe(v.string(), v.email()))
 
 const emailSchema = v.optional(
   v.variant('transport', [
@@ -61,6 +71,7 @@ const emailSchema = v.optional(
     v.strictObject({
       transport: v.literal('smtp'),
       from: textSchema,
+      reply_to: replyToSchema,
       smtp: v.strictObject({
         host: textSchema,
         port: positiveIntegerSchema,
@@ -73,7 +84,11 @@ const emailSchema = v.optional(
         })
       })
     }),
-    v.strictObject({ transport: v.literal('cloudflare'), from: textSchema })
+    v.strictObject({
+      transport: v.literal('cloudflare'),
+      from: textSchema,
+      reply_to: replyToSchema
+    })
   ]),
   { transport: 'none' }
 )
@@ -91,6 +106,15 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     trusted_origins: v.optional(v.array(urlSchema), []),
     // The server's editor works with files on this device without signing in to the server.
     local_editor: v.optional(v.boolean(), true),
+    // Other sites may show documents shared by link and community documents in a frame. Only the
+    // listed origins may, or any site when none are listed.
+    embedding: v.optional(
+      v.strictObject({
+        enabled: v.boolean(),
+        allowed_origins: v.optional(v.array(urlSchema), [])
+      }),
+      { enabled: false, allowed_origins: [] }
+    ),
     listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema })),
     // How a self-hosted server names itself on its public pages.
     branding: v.optional(
@@ -286,9 +310,21 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   ),
   /**
    * Optional: a workspace whose documents anyone may open read-only, without signing in or a
-   * link, as the deployment's community gallery. Everything saved there is public.
+   * link, as the deployment's community gallery. Everything saved there is public. `tour` names
+   * the gallery document the editor opens as its tour, and the docs landing shows.
    */
-  community: v.optional(v.strictObject({ workspace: v.pipe(v.string(), v.uuid()) })),
+  community: v.optional(
+    v.strictObject({
+      workspace: v.pipe(v.string(), v.uuid()),
+      tour: v.optional(v.pipe(v.string(), v.uuid()))
+    })
+  ),
+  /**
+   * Optional: lets people connect apps such as ChatGPT, Claude, or Grok to their account through
+   * OAuth. Apps register themselves (RFC 7591), so anyone may register one; each grant still takes
+   * the person's approval and reaches one workspace. Leave it out, or off, to accept no apps.
+   */
+  oauth: v.optional(v.strictObject({ enabled: v.boolean() })),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(
     v.strictObject({
@@ -296,7 +332,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       host: v.optional(urlSchema, POSTHOG_DEFAULT_HOST),
       project_api_key: v.optional(configurableTextSchema, {
         from_env: DEFAULT_SECRET_NAMES.posthogProjectAPIKey
-      })
+      }),
+      /** Send the account and record IDs an error involved; off, reports name neither. */
+      include_ids: v.optional(v.boolean(), false)
     })
   )
 })

@@ -1,6 +1,7 @@
 import { onMounted } from 'vue'
 
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { acpAgentFor } from '@open-pencil/core/constants'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { agentCommands } from '@/app/ai/agents/acp/commands'
 import {
@@ -16,14 +17,9 @@ import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 
 import { commandCompletion, referenceCompletion, type ComposerSections } from './complete'
 
-/** The ACP agent a provider ID names, or null for the built-in chat and Pi. */
-function acpAgentId(providerID: string): string | null {
-  return providerID.startsWith('acp:') ? providerID.slice('acp:'.length) : null
-}
-
 /** What `/` and `@` offer in a message field. */
 export function useComposerCompletions() {
-  const ai = useAIMessages()
+  const ai = useMessages('ai')
   const { providerID } = useAIChat()
 
   // Skills installed since the app started are offered without opening Settings first.
@@ -43,7 +39,7 @@ export function useComposerCompletions() {
    */
   function commands(): CommandCandidate[] {
     const review = { name: 'review', description: ai.value.reviewCommand, hint: null }
-    const agentId = acpAgentId(providerID.value)
+    const agentId = acpAgentFor(providerID.value)?.id
     if (agentId) {
       const own = (agentCommands.value[agentId] ?? []).filter(({ name }) => name !== review.name)
       return agentCommandCandidates([review, ...own])

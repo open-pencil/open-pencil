@@ -10,11 +10,13 @@ import {
   type Fill,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { slideRows } from '@open-pencil/scene-graph/slides'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { SkiaRenderer } from '#core/canvas'
 import { getCanvasKit } from '#core/canvaskit'
+import { createDocumentGraph } from '#core/editor/document-settings'
 import { exportPDFDocument } from '#core/io/formats/pdf'
 import { fontManager } from '#core/text/font/manager'
 
@@ -222,4 +224,25 @@ test('writes soft light into the PDF even after the canvas recorded the layer in
   } finally {
     renderer.destroy()
   }
+})
+
+test('a slide’s page is the slide, without the shadows that set it apart in the grid', async () => {
+  const graph = createDocumentGraph('slides', 'light')
+  const page = graph.getPages()[0].id
+  const [slide] = slideRows(graph, page)[0]
+  graph.updateNode(slide.id, {
+    effects: [
+      {
+        type: 'DROP_SHADOW',
+        color: { r: 0, g: 0, b: 0, a: 0.1 },
+        offset: { x: 0, y: 8 },
+        radius: 24,
+        spread: 0,
+        visible: true,
+        blendMode: 'NORMAL'
+      }
+    ]
+  })
+  const result = await exportPDFDocument(graph, [{ pageId: page, nodeIds: [slide.id] }])
+  expect(result?.pages).toEqual([{ label: undefined, width: 1920, height: 1080 }])
 })

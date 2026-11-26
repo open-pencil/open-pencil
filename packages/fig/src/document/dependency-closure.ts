@@ -1,5 +1,5 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { appendAll } from '@open-pencil/std/arrays'
 
 import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source-index'
 import { isComponentSetRecord } from '../node-change/convert'

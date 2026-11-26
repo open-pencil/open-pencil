@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ComponentBinding } from '@open-pencil/vue/controls/component-props'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { sceneNodeIcon } from '@/components/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -8,7 +8,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 
 const { binding, disabled } = defineProps<{ binding: ComponentBinding; disabled?: boolean }>()
 defineEmits<{ select: [id: string]; unbind: [binding: ComponentBinding] }>()
-const panels = usePanelMessages()
+const panels = useMessages('panels')
 </script>
 
 <template>

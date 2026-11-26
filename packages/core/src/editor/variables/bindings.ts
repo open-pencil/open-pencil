@@ -7,6 +7,7 @@ import {
   isNumericVariableBindingField,
   paintBindingTarget
 } from '@open-pencil/scene-graph/variables'
+import { errorMessage } from '@open-pencil/std/errors'
 
 import type { EditorContext } from '#core/editor/types'
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -53,10 +54,7 @@ export function createVariableBindingActions(ctx: EditorContext) {
         try {
           apply()
         } catch (error) {
-          console.warn(
-            'Redo variable binding failed:',
-            error instanceof Error ? error.message : String(error)
-          )
+          console.warn('Redo variable binding failed:', errorMessage(error))
         }
       },
       inverse: () => {
