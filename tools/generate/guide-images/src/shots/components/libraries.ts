@@ -1,6 +1,6 @@
-import { boxOf, buildScene, settle } from '../app.ts'
-import { buttons } from '../scenes.ts'
-import { picture, type Shot } from './shared.ts'
+import { boxOf, buildScene, settle } from '#guide-images/app'
+import { buttons } from '#guide-images/scenes'
+import { picture, type Shot } from '#guide-images/shots/shared'
 
 /** Every picture on this page, by name. */
 export const SHOTS: Record<string, Shot> = {

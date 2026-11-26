@@ -1,9 +1,8 @@
+import { boxOf, buildScene, layerBox, settle, showPlain } from '#guide-images/app'
+import { inside } from '#guide-images/compose'
+import { SCENE_RADIUS, buttons, toggle } from '#guide-images/scenes'
+import { PANEL_RADIUS, panelClip, picture, type Shot } from '#guide-images/shots/shared'
 import type { Page } from '@playwright/test'
-
-import { boxOf, buildScene, layerBox, settle, showPlain } from '../app.ts'
-import { inside } from '../compose.ts'
-import { SCENE_RADIUS, buttons, toggle } from '../scenes.ts'
-import { PANEL_RADIUS, panelClip, picture, type Shot } from './shared.ts'
 
 const ZOOM = 1.3
 

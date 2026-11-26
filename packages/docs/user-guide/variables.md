@@ -70,11 +70,14 @@ In code, **Applies when** says when a mode takes over. The CSS it writes shows u
 | Applies when | CSS |
 | --- | --- |
 | **Switched manually** | an attribute on an element, such as `[data-theme="dark"]` |
-| **System is in dark mode** or **light mode** | `@media (prefers-color-scheme: dark)` |
+| **System is in dark mode** | `@media (prefers-color-scheme: dark)` |
+| **System is in light mode** | `@media (prefers-color-scheme: light)` |
 | **High contrast is on** | `@media (prefers-contrast: more)` |
 | **Reduced motion is on** | `@media (prefers-reduced-motion: reduce)` |
-| **Screen is narrower than** or **wider than** a width | `@media (max-width: 640px)` |
-| **Container is narrower than** or **wider than** a width | `@container (max-width: 640px)` |
+| **Screen is narrower than** a width | `@media (max-width: 640px)` |
+| **Screen is wider than** a width | `@media (min-width: 640px)` |
+| **Container is narrower than** a width | `@container (max-width: 640px)` |
+| **Container is wider than** a width | `@container (min-width: 640px)` |
 | **Custom CSS** | any selector, or a `@media`, `@supports`, or `@container` query |
 
 The default mode is always on and goes in `:root`. A collection's **Switch attribute**, `data-theme` by default, is the attribute that turns its manual modes on. Change it to match your code, such as `data-color-scheme`.
