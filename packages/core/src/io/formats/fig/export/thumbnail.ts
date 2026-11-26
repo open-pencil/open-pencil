@@ -6,6 +6,7 @@ import type { Rect, Size } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { IS_BROWSER, IS_TAURI } from '#core/constants'
+import type { ThumbnailSubject } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
 
 const THUMBNAIL_1X1 = toUint8Array(
@@ -40,27 +41,47 @@ function placeholderThumbnail(): FigThumbnail {
 
 async function renderFigThumbnailPNG(
   graph: SceneGraph,
-  pageId: string,
+  { pageId, nodeIds }: ThumbnailSubject,
   options: FigThumbnailOptions
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = options
   if (ck && renderer) {
-    return renderThumbnail(ck, renderer, graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
+    return renderThumbnail(
+      ck,
+      renderer,
+      graph,
+      pageId,
+      THUMBNAIL_WIDTH,
+      THUMBNAIL_HEIGHT,
+      'contain',
+      nodeIds
+    )
   }
   if (!options.renderHeadlessThumbnail || IS_BROWSER || IS_TAURI) return null
   const { headlessRenderThumbnail } = await import('#core/io/formats/raster')
-  return headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
+  return headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, nodeIds)
 }
 
-/** The preview of `pageId`, or a 1×1 placeholder when there is nothing to draw or drawing fails. */
+/**
+ * The preview of `subject`, or a 1×1 placeholder when there is nothing to draw or drawing fails.
+ */
 export async function renderFigThumbnail(
   graph: SceneGraph,
-  pageId: string | undefined,
+  subject: ThumbnailSubject | null,
   options: FigThumbnailOptions
 ): Promise<FigThumbnail> {
-  const frame = pageId ? thumbnailFrame(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT) : null
-  if (!pageId || !frame) return placeholderThumbnail()
-  const png = await renderFigThumbnailPNG(graph, pageId, options).catch((error: unknown) => {
+  const frame = subject
+    ? thumbnailFrame(
+        graph,
+        subject.pageId,
+        THUMBNAIL_WIDTH,
+        THUMBNAIL_HEIGHT,
+        'contain',
+        subject.nodeIds
+      )
+    : null
+  if (!subject || !frame) return placeholderThumbnail()
+  const png = await renderFigThumbnailPNG(graph, subject, options).catch((error: unknown) => {
     console.warn('[.fig] Could not draw the file preview:', error)
     return null
   })

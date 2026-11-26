@@ -95,13 +95,14 @@ export async function headlessRenderThumbnail(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  nodeIds: readonly string[] = graph.getNode(pageId)?.childIds ?? []
 ): Promise<Uint8Array | null> {
   return withHeadlessExport(async (renderer, ck) => {
-    await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
+    await renderer.prepareForExport(graph, pageId, [...nodeIds])
     return withTextInkMeasurer(
       (node) => renderer.measureTextInk(node),
-      () => renderThumbnail(ck, renderer, graph, pageId, width, height)
+      () => renderThumbnail(ck, renderer, graph, pageId, width, height, 'contain', nodeIds)
     )
   })
 }

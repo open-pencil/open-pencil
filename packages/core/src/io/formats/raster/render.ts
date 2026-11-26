@@ -443,18 +443,23 @@ export interface ThumbnailFrame {
  */
 export type ThumbnailFit = 'contain' | 'letterbox'
 
-/** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
+/**
+ * The page region a thumbnail of `width` by `height` pixels shows, and its size: `nodeIds` whole,
+ * by default everything on the page.
+ */
 export function thumbnailFrame(
   graph: SceneGraph,
   pageId: string,
   width: number,
   height: number,
-  fit: ThumbnailFit = 'contain'
+  fit: ThumbnailFit = 'contain',
+  nodeIds?: readonly string[]
 ): ThumbnailFrame | null {
   const page = graph.getNode(pageId)
-  if (!page || page.childIds.length === 0) return null
+  const content = nodeIds ?? page?.childIds ?? []
+  if (!page || content.length === 0) return null
 
-  const bounds = computeContentBounds(graph, page.childIds)
+  const bounds = computeContentBounds(graph, content)
   if (!bounds) return null
 
   const contentW = bounds.maxX - bounds.minX
@@ -495,9 +500,10 @@ export function renderThumbnail(
   pageId: string,
   width: number,
   height: number,
-  fit: ThumbnailFit = 'contain'
+  fit: ThumbnailFit = 'contain',
+  nodeIds?: readonly string[]
 ): Uint8Array<ArrayBuffer> | null {
-  const frame = thumbnailFrame(graph, pageId, width, height, fit)
+  const frame = thumbnailFrame(graph, pageId, width, height, fit, nodeIds)
   if (!frame) return null
   const { bounds, scale, width: pixelW, height: pixelH } = frame
   // The page's own background, which the editor's page colour matches only while it is open.

@@ -1,0 +1,43 @@
+import { afterEach, describe, expect, test } from 'bun:test'
+
+import { createEditor, ReadOnlyDocumentError, type Editor } from '#core/editor'
+
+let editor: Editor
+
+afterEach(() => editor.dispose())
+
+function withFrames() {
+  editor = createEditor()
+  const pageId = editor.state.currentPageId
+  const cover = editor.graph.createNode('FRAME', pageId, { name: 'Cover' })
+  const shape = editor.graph.createNode('RECTANGLE', pageId, { name: 'Shape' })
+  return { cover, shape }
+}
+
+describe('Set as thumbnail', () => {
+  test('chooses a frame as one undo step, and Restore default thumbnail clears it', () => {
+    const { cover } = withFrames()
+    expect(editor.setDocumentThumbnailNode(cover.id)).toBe(true)
+    expect(editor.getDocumentThumbnail()).toBe(cover.id)
+    editor.undoAction()
+    expect(editor.getDocumentThumbnail()).toBeNull()
+    editor.redoAction()
+    expect(editor.getDocumentThumbnail()).toBe(cover.id)
+    expect(editor.setDocumentThumbnailNode(null)).toBe(true)
+    expect(editor.getDocumentThumbnail()).toBeNull()
+  })
+
+  test('refuses a layer that cannot be a thumbnail, and the one already chosen', () => {
+    const { cover, shape } = withFrames()
+    expect(editor.setDocumentThumbnailNode(shape.id)).toBe(false)
+    editor.setDocumentThumbnailNode(cover.id)
+    expect(editor.setDocumentThumbnailNode(cover.id)).toBe(false)
+  })
+
+  test('a read-only document keeps its thumbnail', () => {
+    const { cover } = withFrames()
+    editor.setReadOnly(true)
+    expect(() => editor.setDocumentThumbnailNode(cover.id)).toThrow(ReadOnlyDocumentError)
+    expect(editor.getDocumentThumbnail()).toBeNull()
+  })
+})

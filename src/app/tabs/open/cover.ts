@@ -1,6 +1,6 @@
 import { promiseTimeout } from '@vueuse/core'
 
-import { figThumbnailPageId } from '@open-pencil/core/io/formats/fig'
+import { documentThumbnailSubject } from '@open-pencil/core/io/formats/fig'
 
 import type { EditorStore } from '@/app/editor/session'
 import { cacheRecentFileCover, loadCachedRecentFileThumbnail } from '@/app/recent-files'
@@ -12,7 +12,7 @@ async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<vo
   if (await loadCachedRecentFileThumbnail(path)) return
   // A document without a page has no cover, so it never waits for a renderer, and a cover page
   // not shown is not loaded: showing it caches the cover then.
-  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
+  const thumbnailPageId = documentThumbnailSubject(store.graph)?.pageId
   if (!thumbnailPageId || thumbnailPageId !== store.state.currentPageId) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
@@ -34,15 +34,14 @@ export function refreshOpenedFigCover(path: string, store: EditorStore): void {
   })
 }
 
-/** Caches a `.fig` file's cover again each time its tab shows the cover page. */
+/** Caches a `.fig` file's cover again each time its tab shows the page its thumbnail is on. */
 export function watchOpenedFigCover(path: string, store: EditorStore): void {
   coverThumbnailListeners.get(store)?.()
-  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
-  if (!thumbnailPageId) return
   coverThumbnailListeners.set(
     store,
+    // Read as each page shows, since Set as thumbnail can move the thumbnail to another page.
     store.onEditorEvent('page:changed', (pageId) => {
-      if (pageId !== thumbnailPageId) return
+      if (pageId !== documentThumbnailSubject(store.graph)?.pageId) return
       refreshOpenedFigCover(path, store)
     })
   )
