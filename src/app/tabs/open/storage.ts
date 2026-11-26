@@ -1,4 +1,3 @@
-import { createDocumentGraph } from '@open-pencil/core'
 import { errorMessage } from '@open-pencil/std/errors'
 
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
@@ -17,7 +16,6 @@ import {
   type StorageLocation
 } from '@/app/integrations/storage'
 import { rememberRecentStorageDocument } from '@/app/recent-files'
-import { resolvedAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { getLocalCanvasStore, type LocalCanvasMeta } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
@@ -28,7 +26,7 @@ import {
   reusableTabStore,
   showImportedGraph
 } from '@/app/tabs/open/show'
-import { getTabsSnapshot, switchTab, type Tab } from '@/app/tabs/state'
+import { emptyDocumentGraph, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs/state'
 
 /**
  * Whether this device's copy can open in place of downloading: it has unsent changes or a
@@ -100,7 +98,7 @@ async function showStorageDocument(
   if (!given && document.revision === null && !(await local.getMeta(document.id))?.hasFig) {
     await showImportedGraph(
       store,
-      createDocumentGraph(document.kind ?? 'design', resolvedAppTheme.value),
+      emptyDocumentGraph(document.kind ?? 'design'),
       () => store.setStorageDocumentSource(binding, document.name),
       load
     )
