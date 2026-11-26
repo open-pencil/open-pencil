@@ -52,11 +52,17 @@ export function exported(graph: SceneGraph): DesignTokenSourceFile[] {
   }))
 }
 
-export function importInto(graph: SceneGraph, files: DesignTokenSourceFile[]) {
+export function editorImporting(graph: SceneGraph, files: DesignTokenSourceFile[]) {
   const editor = createEditor({ graph })
   const bundle = readDesignTokens(files)
   const plan = planTokenImport(graph, bundle, defaultTokenImportOptions(graph, bundle))
   return { editor, plan, result: editor.importDesignTokens(plan) }
+}
+
+export function importInto(graph: SceneGraph, files: DesignTokenSourceFile[]) {
+  const { editor, plan, result } = editorImporting(graph, files)
+  editor.dispose()
+  return { plan, result }
 }
 
 export function variableNamed(graph: SceneGraph, name: string): Variable {

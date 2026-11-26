@@ -33,12 +33,9 @@ test('a text style field a token writes as a literal lets its variable go', () =
   const [sourceStyle] = getSharedStyles(source, 'text')
   source.updateNode(sourceStyle.nodeId, { fontSize: 24 })
 
-  const { editor } = importInto(graph, exported(source))
-  try {
-    expect(graph.getNode(style.nodeId)?.boundVariables.fontSize).toBeUndefined()
-    reconcileVariableBindings(graph, { subtrees: [frame.id] })
-    expect(graph.getNode(layer.id)).toMatchObject({ fontSize: 24, textStyleId: style.id })
-  } finally {
-    editor.dispose()
-  }
+  importInto(graph, exported(source))
+
+  expect(graph.getNode(style.nodeId)?.boundVariables.fontSize).toBeUndefined()
+  reconcileVariableBindings(graph, { subtrees: [frame.id] })
+  expect(graph.getNode(layer.id)).toMatchObject({ fontSize: 24, textStyleId: style.id })
 })

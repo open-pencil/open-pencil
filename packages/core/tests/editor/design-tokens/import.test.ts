@@ -7,7 +7,15 @@ import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 import { exportDesignTokens, type DesignTokenSourceFile } from '#core/io/formats/design-tokens'
 
-import { blue, designSystem, exported, importInto, variableNamed, white } from './helpers'
+import {
+  blue,
+  designSystem,
+  editorImporting,
+  exported,
+  importInto,
+  variableNamed,
+  white
+} from './helpers'
 
 describe('design token import', () => {
   test('an export reads back into an empty document as it was', () => {
@@ -49,13 +57,17 @@ describe('design token import', () => {
 
   test('the whole import undoes in one step', () => {
     const graph = new SceneGraph()
-    const { editor } = importInto(graph, exported(designSystem()))
+    const { editor } = editorImporting(graph, exported(designSystem()))
 
-    editor.undo.undo()
+    try {
+      editor.undo.undo()
 
-    expect(graph.variableCollections.size).toBe(0)
-    expect(graph.variables.size).toBe(0)
-    expect(getSharedStyles(graph, 'text')).toEqual([])
+      expect(graph.variableCollections.size).toBe(0)
+      expect(graph.variables.size).toBe(0)
+      expect(getSharedStyles(graph, 'text')).toEqual([])
+    } finally {
+      editor.dispose()
+    }
   })
 
   test('importing into a document updates variables by name and adds the rest', () => {
