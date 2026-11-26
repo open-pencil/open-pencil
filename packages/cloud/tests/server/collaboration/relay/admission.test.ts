@@ -15,7 +15,7 @@ import { RELAY_CLOSE } from '#cloud/contract'
 import { type CollaborationRelay } from '#cloud/server'
 import * as Y from 'yjs'
 
-import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import { COLLAB_ACTIONS, encodeSyncReply, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 
@@ -154,7 +154,7 @@ describe('collaboration relay admission', () => {
     expect(textOfSyncReply(reply?.payload ?? new Uint8Array())).toHaveLength(4_000)
   })
 
-  test('lets a full room shrink, and takes edits again once it has', async () => {
+  test('frees a full room once an editor’s copy compacts what it deleted', async () => {
     const editor = new Y.Doc()
     const text = editor.getText('t')
     const change = (edit: () => void) => {
@@ -164,19 +164,45 @@ describe('collaboration relay admission', () => {
     }
     const inserts = [1, 2, 3].map(() => change(() => text.insert(0, 'x'.repeat(1_200))))
     const deletion = change(() => text.delete(0, text.length))
-    // The inserts fill the room exactly, so the deletion takes it past its bound.
     const full = inserts.reduce((total, update) => total + update.byteLength, 0)
     const { relay: hub } = startTestRelay({ maximumRoomBytes: full })
     const alice = await join(hub)
+    let answered = 0
+    // Alice answers what the relay asks as an editor does: with what she holds that it lacks.
+    const answer = (holding: Y.Doc) => {
+      for (const request of alice.messages(COLLAB_ACTIONS.syncStep1).slice(answered)) {
+        answered++
+        alice.send({
+          type: 'message',
+          namespace: COLLAB_ACTIONS.syncReply,
+          target: RELAY_SERVER_PEER,
+          payload: encodeSyncReply(holding, request.payload)
+        })
+      }
+    }
+    // She joins holding nothing, and sends her edits after.
+    answer(new Y.Doc())
     const send = (payload: Uint8Array) =>
       alice.send({ type: 'message', namespace: COLLAB_ACTIONS.yjsUpdate, target: null, payload })
     for (const insert of inserts) send(insert)
-    // Deleting adds nothing, so it goes through however full the room is.
+    // Deleting what the room holds adds nothing, so it goes through however full the room is.
     send(deletion)
     expect(alice.closed).toBeNull()
-    // The deletion freed the room, which a measure finds before turning the edit away.
+    // The full room asked Alice for her whole copy, which no longer holds what she deleted.
+    expect(alice.messages(COLLAB_ACTIONS.syncStep1)).toHaveLength(2)
+    answer(editor)
     send(change(() => text.insert(0, 'y'.repeat(1_200))))
     expect(alice.closed).toBeNull()
+
+    const bob = await join(hub, { permission: 'view' })
+    bob.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.syncStep1,
+      target: RELAY_SERVER_PEER,
+      payload: Y.encodeStateVector(new Y.Doc())
+    })
+    const [reply] = bob.messages(COLLAB_ACTIONS.syncReply)
+    expect(textOfSyncReply(reply?.payload ?? new Uint8Array())).toBe('y'.repeat(1_200))
   })
 
   test('counts deletions of what the room never received against its limit', async () => {
@@ -187,7 +213,8 @@ describe('collaboration relay admission', () => {
     const text = ghost.getText('t')
     text.insert(0, 'x'.repeat(1_000))
     for (let sent = 0; sent < 500 && alice.closed === null; sent++) {
-      text.delete(sent % 2 === 0 ? 0 : text.length - 1, 1)
+      // Every other character, so no two deletions join into one range.
+      text.delete(sent, 1)
       // Everything the ghost deleted, and none of its content.
       const deletions = Y.diffUpdateV2(Y.encodeStateAsUpdateV2(ghost), Y.encodeStateVector(ghost))
       alice.send({
@@ -198,6 +225,19 @@ describe('collaboration relay admission', () => {
       })
     }
     expect(alice.closed?.code).toBe(RELAY_CLOSE.messageTooLarge)
+  })
+
+  test('closes a peer whose update is cut short before its deletions', async () => {
+    const { relay: hub } = startTestRelay()
+    const alice = await join(hub)
+    const update = textUpdate('hello')
+    alice.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.yjsUpdate,
+      target: null,
+      payload: update.subarray(0, -1)
+    })
+    expect(alice.closed?.code).toBe(RELAY_CLOSE.protocol)
   })
 
   test('closes peers that send malformed document updates', async () => {
