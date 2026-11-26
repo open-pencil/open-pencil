@@ -4,6 +4,7 @@ import { randomHex } from '@open-pencil/std/random'
 import type { EditorContext } from '#core/editor/types'
 import {
   createSlidePlayer,
+  presentedFrames,
   presentedSlides,
   type PlayerScene,
   type SlidePlayer
@@ -85,19 +86,8 @@ export function createPresentActions(ctx: EditorContext) {
     )
   }
 
-  /**
-   * Presents the deck on the current page from `slideId`, or from its first slide; a skipped
-   * slide starts it at the next one. False when the page has no slides to present.
-   */
-  function present(slideId?: string | null): boolean {
-    const slides = presentedSlides(ctx.graph, ctx.state.currentPageId)
-    if (slides.length === 0) return false
-    // A skipped slide, which is not presented, starts the deck at the next one that is.
-    const deck = slideRows(ctx.graph, ctx.state.currentPageId)
-      .flat()
-      .map((slide) => slide.id)
-    const from = slideId ? deck.indexOf(slideId) : 0
-    const start = deck.slice(Math.max(0, from)).find((id) => slides.includes(id)) ?? slides[0]
+  /** Starts presenting `slides`, the layers presented in order, from `start`. */
+  function begin(slides: string[], start: string): void {
     stopPresenting()
     player = createSlidePlayer(ctx.graph, slides, start)
     player.start(seconds())
@@ -111,6 +101,32 @@ export function createPresentActions(ctx: EditorContext) {
       startedAt: Date.now()
     }
     schedule()
+  }
+
+  /**
+   * Presents the deck on the current page from `slideId`, or from its first slide; a skipped
+   * slide starts it at the next one. False when the page has no slides to present.
+   */
+  function present(slideId?: string | null): boolean {
+    const slides = presentedSlides(ctx.graph, ctx.state.currentPageId)
+    if (slides.length === 0) return false
+    // A skipped slide, which is not presented, starts the deck at the next one that is.
+    const deck = slideRows(ctx.graph, ctx.state.currentPageId)
+      .flat()
+      .map((slide) => slide.id)
+    const from = slideId ? deck.indexOf(slideId) : 0
+    begin(slides, deck.slice(Math.max(0, from)).find((id) => slides.includes(id)) ?? slides[0])
+    return true
+  }
+
+  /**
+   * Presents a design's frames as slides, without making it a deck: the selected ones at the top
+   * of the page, or all of them, top to bottom and left to right. False when there are none.
+   */
+  function presentFrames(ids: Iterable<string> = ctx.state.selectedIds): boolean {
+    const frames = presentedFrames(ctx.graph, ctx.state.currentPageId, ids)
+    if (frames.length === 0) return false
+    begin(frames, frames[0])
     return true
   }
 
@@ -161,6 +177,7 @@ export function createPresentActions(ctx: EditorContext) {
 
   return {
     present,
+    presentFrames,
     presentationScene,
     presentNext,
     presentPrevious,

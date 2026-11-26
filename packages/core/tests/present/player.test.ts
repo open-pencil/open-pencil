@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createDocumentGraph } from '@open-pencil/core'
-import { createSlidePlayer, presentedSlides } from '@open-pencil/core/present'
+import { createSlidePlayer, presentedFrames, presentedSlides } from '@open-pencil/core/present'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
   createSlide,
@@ -133,5 +133,20 @@ describe('presenting a deck', () => {
     player.next(0)
     expect(player.moving(1.5)).toBe(true)
     expect(player.moving(2.1)).toBe(false)
+  })
+})
+
+describe("presenting a design's frames", () => {
+  test('the chosen top-level frames, or all of them, present top to bottom then left to right', () => {
+    const graph = createDocumentGraph('design', 'light')
+    const pageId = graph.getPages()[0].id
+    const frame = (name: string, x: number, y: number) =>
+      graph.createNode('FRAME', pageId, { name, x, y, width: 100, height: 100 }).id
+    const right = frame('Right', 400, 0)
+    const left = frame('Left', 0, 0)
+    const below = frame('Below', 0, 300)
+    graph.createNode('RECTANGLE', pageId, { name: 'Loose' })
+    expect(presentedFrames(graph, pageId)).toEqual([left, right, below])
+    expect(presentedFrames(graph, pageId, [below, right])).toEqual([right, below])
   })
 })

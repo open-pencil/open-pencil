@@ -121,3 +121,31 @@ test('the Animate tab sets the transition of the slide on the stage', async () =
   expect(style).toBe('PUSH_FROM_BOTTOM')
   await editor.page.getByTestId('properties-tab-design').click()
 })
+
+test("a design's selected frames present as slides without making it a deck", async () => {
+  const frames = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageId = store.state.currentPageId
+    const frame = (name: string, x: number) =>
+      store.graph.createNode('FRAME', pageId, { name, x, y: 0, width: 400, height: 300 }).id
+    const ids = [frame('Second', 600), frame('First', 0), frame('Left out', 1200)]
+    store.select(ids.slice(0, 2))
+    return ids
+  })
+  await editor.page.getByTestId('slides-present').click()
+  await editor.page.getByTestId('slides-present-frames').click()
+  await expect(editor.page.getByTestId('slides-presentation')).toBeVisible()
+  const slides = await editor.page.evaluate(
+    () => window.openPencil?.getStore?.().state.presentation?.slideIds
+  )
+  expect(slides).toEqual([frames[1], frames[0]])
+  expect(await editor.page.evaluate(() => window.openPencil?.getStore?.().state.documentKind)).toBe(
+    'design'
+  )
+  await editor.page.keyboard.press('Escape')
+  await editor.page.evaluate((ids) => {
+    const store = window.openPencil?.getStore?.()
+    for (const id of ids) store?.graph.deleteNode(id)
+  }, frames)
+})

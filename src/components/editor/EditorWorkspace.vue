@@ -273,7 +273,7 @@ const { pending: roomPending } = useRoomActions()
       >
         <div class="flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5">
           <CollabPanel class="min-w-0 flex-1" />
-          <PresentButton v-if="resolveEditorProfile(store.state).filmstrip" />
+          <PresentButton />
           <IconButton
             :label="
               editor.startPreview({

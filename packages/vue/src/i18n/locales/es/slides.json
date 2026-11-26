@@ -79,5 +79,7 @@
   "afterPrevious": "Después de la anterior",
   "moveEarlier": "Mover antes",
   "moveLater": "Mover después",
-  "pickSlide": "Selecciona una diapositiva para animarla"
+  "pickSlide": "Selecciona una diapositiva para animarla",
+  "presentFrames": "Presentar marcos",
+  "presentFramesWithNotes": "Presentar marcos con vista del presentador"
 }

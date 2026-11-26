@@ -48,6 +48,28 @@ export function presentedSlides(graph: SceneGraph, pageId: string): string[] {
     .map((slide) => slide.id)
 }
 
+/** The layers that present as slides on a design's page: frames and components at its top. */
+const FRAME_TYPES = new Set(['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
+
+/**
+ * The frames of a design's page that present as slides: those of `ids` at the page's top level,
+ * or every one when none is chosen, in reading order: top to bottom, then left to right.
+ */
+export function presentedFrames(
+  graph: SceneGraph,
+  pageId: string,
+  ids: Iterable<string> = []
+): string[] {
+  const chosen = new Set(ids)
+  const frames = graph
+    .getChildren(pageId)
+    .filter((node) => node.visible && FRAME_TYPES.has(node.type))
+  const picked = frames.filter((node) => chosen.has(node.id))
+  return (picked.length > 0 ? picked : frames)
+    .toSorted((a, b) => a.y - b.y || a.x - b.x)
+    .map((node) => node.id)
+}
+
 /**
  * A deck being presented: the slide it shows, how many steps of that slide's build have played,
  * and the transitions and steps still moving. Times are seconds on the caller's clock, so the

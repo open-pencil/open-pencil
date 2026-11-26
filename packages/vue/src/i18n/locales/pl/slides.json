@@ -79,5 +79,7 @@
   "afterPrevious": "Po poprzedniej",
   "moveEarlier": "Przesuń wcześniej",
   "moveLater": "Przesuń później",
-  "pickSlide": "Zaznacz slajd, aby go animować"
+  "pickSlide": "Zaznacz slajd, aby go animować",
+  "presentFrames": "Prezentuj ramki",
+  "presentFramesWithNotes": "Prezentuj ramki w widoku prezentera"
 }

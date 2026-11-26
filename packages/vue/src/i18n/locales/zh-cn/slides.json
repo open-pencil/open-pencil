@@ -79,5 +79,7 @@
   "afterPrevious": "在上一项之后",
   "moveEarlier": "前移",
   "moveLater": "后移",
-  "pickSlide": "选择一张幻灯片以添加动画"
+  "pickSlide": "选择一张幻灯片以添加动画",
+  "presentFrames": "演示画框",
+  "presentFramesWithNotes": "以演讲者视图演示画框"
 }

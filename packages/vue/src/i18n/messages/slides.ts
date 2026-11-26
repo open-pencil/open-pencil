@@ -82,5 +82,7 @@ export const slideMessageDefaults = {
   afterPrevious: 'After previous',
   moveEarlier: 'Move earlier',
   moveLater: 'Move later',
-  pickSlide: 'Select a slide to animate it'
+  pickSlide: 'Select a slide to animate it',
+  presentFrames: 'Present frames',
+  presentFramesWithNotes: 'Present frames with presenter view'
 } as const
