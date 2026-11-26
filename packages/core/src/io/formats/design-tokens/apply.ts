@@ -200,6 +200,15 @@ function styleConsumers(graph: SceneGraph, style: SceneNode, kind: PlannedStyle[
   )
 }
 
+function tokenWritesLiteral(style: PlannedStyle, field: string): boolean {
+  if (Object.hasOwn(style.bindings, field)) {
+    return false
+  }
+  return style.kind === 'EFFECT'
+    ? effectBindingTarget(field) !== null
+    : Object.hasOwn(style.fields, field)
+}
+
 function applyStyles(
   target: TokenImportTarget,
   plan: TokenImportPlan,
@@ -210,11 +219,12 @@ function applyStyles(
     const node = existing ?? target.addStyle(style, { ...style.fields, name: style.name })
     const own = existing && changedFields(existing, style.fields)
     if (own) target.updateNode(node.id, own)
-    // An effect field the token now writes as a literal lets its variable go.
-    if (existing && style.kind === 'EFFECT') {
-      for (const field of Object.keys(node.boundVariables))
-        if (effectBindingTarget(field) && !Object.hasOwn(style.bindings, field))
+    if (existing) {
+      for (const field of Object.keys(node.boundVariables)) {
+        if (tokenWritesLiteral(style, field)) {
           target.unbindVariable(node.id, field)
+        }
+      }
     }
     if (own && node.source.id) {
       const patch = consumerPatch(node, style.kind)
