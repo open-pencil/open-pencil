@@ -82,8 +82,13 @@ export function createStrokedCard(graph: SceneGraph, pageId: string): PreviewLay
   return laidOut(graph, pageId, card)
 }
 
-/** A row that hugs a one-line label and a control, as wide as the label makes it. */
-export function createHuggingRow(graph: SceneGraph, pageId: string): PreviewLayoutScene {
+/** A top-level row that hugs its content, holding auto-sized text and, last, a control. */
+function huggingRow(
+  graph: SceneGraph,
+  pageId: string,
+  layout: Partial<SceneNode>,
+  fill: (row: SceneNode, text: (name: string, text: string, fontSize: number) => void) => void
+): PreviewLayoutScene {
   const button = createButton(graph, pageId)
   const row = graph.createNode('FRAME', pageId, {
     x: 120,
@@ -91,44 +96,38 @@ export function createHuggingRow(graph: SceneGraph, pageId: string): PreviewLayo
     layoutMode: 'HORIZONTAL',
     primaryAxisSizing: 'HUG',
     counterAxisSizing: 'HUG',
-    counterAxisAlign: 'MIN',
-    itemSpacing: 12
+    ...layout
   })
-  graph.createNode('TEXT', row.id, {
-    name: 'Label',
-    text: 'A label that stays on one line',
-    fontFamily: 'Inter',
-    fontSize: 14,
-    textAutoResize: 'WIDTH_AND_HEIGHT'
+  fill(row, (name, text, fontSize) => {
+    graph.createNode('TEXT', row.id, {
+      name,
+      text,
+      fontFamily: 'Inter',
+      fontSize,
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
   })
   graph.createInstance(button.id, row.id, { name: 'Control' })
   return laidOut(graph, pageId, row)
 }
 
+/** A row that hugs a one-line label and a control, as wide as the label makes it. */
+export function createHuggingRow(graph: SceneGraph, pageId: string): PreviewLayoutScene {
+  return huggingRow(graph, pageId, { counterAxisAlign: 'MIN', itemSpacing: 12 }, (_, text) =>
+    text('Label', 'A label that stays on one line', 14)
+  )
+}
+
 /** A row that aligns 32 px and 12 px text and a box by baseline. */
 export function createBaselineRow(graph: SceneGraph, pageId: string): PreviewLayoutScene {
-  const button = createButton(graph, pageId)
-  const row = graph.createNode('FRAME', pageId, {
-    x: 120,
-    y: 120,
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'HUG',
-    counterAxisSizing: 'HUG',
-    counterAxisAlign: 'BASELINE',
-    itemSpacing: 8
-  })
-  for (const [name, fontSize] of [
-    ['Big', 32],
-    ['Small', 12]
-  ] as const)
-    graph.createNode('TEXT', row.id, {
-      name,
-      text: name,
-      fontFamily: 'Inter',
-      fontSize,
-      textAutoResize: 'WIDTH_AND_HEIGHT'
-    })
-  graph.createNode('RECTANGLE', row.id, { name: 'Box', width: 20, height: 20 })
-  graph.createInstance(button.id, row.id, { name: 'Control' })
-  return laidOut(graph, pageId, row)
+  return huggingRow(
+    graph,
+    pageId,
+    { counterAxisAlign: 'BASELINE', itemSpacing: 8 },
+    (row, text) => {
+      text('Big', 'Big', 32)
+      text('Small', 'Small', 12)
+      graph.createNode('RECTANGLE', row.id, { name: 'Box', width: 20, height: 20 })
+    }
+  )
 }
