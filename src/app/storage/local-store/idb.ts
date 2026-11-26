@@ -129,17 +129,22 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       const meta = buildWriteMeta(input, existing, hasThumb)
       await metaStore.put(meta)
       await transaction.done
-      // The cover of this revision, or none: an earlier one no longer matches the file.
-      const coverDatabase = await covers.open()
-      if (input.coverBytes?.byteLength) {
-        await coverDatabase.put(
-          'cover',
-          { revision: meta.revision, bytes: storeBinary(input.coverBytes) },
-          input.id
-        )
-      } else {
-        await coverDatabase.delete('cover', input.id)
+      // The cover of this revision, or none: an earlier one no longer matches the file. A save
+      // that lost the race to a newer one leaves the newer cover in place.
+      const coverTransaction = (await covers.open()).transaction('cover', 'readwrite')
+      const coverStore = coverTransaction.objectStore('cover')
+      const stored = await coverStore.get(input.id)
+      if (!stored || stored.revision <= meta.revision) {
+        if (input.coverBytes?.byteLength) {
+          await coverStore.put(
+            { revision: meta.revision, bytes: storeBinary(input.coverBytes) },
+            input.id
+          )
+        } else {
+          await coverStore.delete(input.id)
+        }
       }
+      await coverTransaction.done
       return meta
     },
 
