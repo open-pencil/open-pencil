@@ -1,0 +1,26 @@
+[package]
+name = "open-pencil-fig"
+version = "0.1.0"
+description = "Reads Figma .fig files: the archive, an index over its Kiwi records, and pages with their instances expanded."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["figma", "fig", "kiwi", "design"]
+categories = ["parser-implementations", "graphics"]
+publish = ["crates-io"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# The raw exports a WebAssembly host calls (`alloc`, `open`, `expand_page`, …). Off by default, so
+# a crate depending on this one keeps those symbol names; `packages/fig/scripts/wasm.ts` turns it
+# on for the module the tests load.
+exports = []
+
+[dependencies]
+miniz_oxide = "0.9"
+rawzip = "0.5"
+ruzstd = "0.9"
