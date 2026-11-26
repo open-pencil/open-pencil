@@ -126,6 +126,7 @@ const PROPERTIES: &[&str] = &[
     "line-height",
     "letter-spacing",
     "word-spacing",
+    "direction",
     "text-align",
     "text-transform",
     "text-decoration-line",
@@ -471,6 +472,7 @@ fn default_styles() -> &'static HashMap<&'static str, String> {
     DEFAULTS.get_or_init(|| {
         [
             ("opacity", "1"),
+            ("direction", "ltr"),
             ("z-index", "auto"),
             ("overflow-x", "visible"),
             ("overflow-y", "visible"),

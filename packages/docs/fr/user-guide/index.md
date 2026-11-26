@@ -10,8 +10,8 @@ OpenPencil est un éditeur de design local et open source, compatible avec Figma
 
 ## Premiers pas
 
-- [Navigation dans la zone de travail](./canvas-navigation) — déplacer la vue, zoomer et utiliser l’outil Main ;
-- [Sélection et transformation](./selection-and-manipulation) — sélectionner, déplacer, redimensionner, faire pivoter et ordonner les objets.
+- [Navigation dans la zone de travail](/user-guide/canvas-navigation) — déplacer la vue, zoomer et utiliser l’outil Main ;
+- [Sélection et transformation](/user-guide/selection-and-manipulation) — sélectionner, déplacer, redimensionner, faire pivoter et ordonner les objets.
 
 ## Créer du contenu
 
@@ -22,7 +22,7 @@ OpenPencil est un éditeur de design local et open source, compatible avec Figma
 
 ## Organiser le document
 
-- [Calques et pages](./layers-and-pages) — arbre des calques, pages et propriétés ;
+- [Calques et pages](/user-guide/layers-and-pages) — arbre des calques, pages et propriétés ;
 - [Menu contextuel](./context-menu) — presse-papiers, groupes, composants et autres actions ;
 - [Ouvrir et enregistrer](/user-guide/files) — documents et pages web.
 - [Exporter](/user-guide/exporting) — images et SVG.

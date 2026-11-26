@@ -84,6 +84,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'color',
   'column-gap',
   'content',
+  'direction',
   'display',
   'fill',
   'fill-opacity',

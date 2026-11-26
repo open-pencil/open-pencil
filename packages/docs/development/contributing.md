@@ -4,13 +4,21 @@ The root [`CONTRIBUTING.md`](https://github.com/open-pencil/open-pencil/blob/mas
 
 See [Architecture](/development/architecture) for the system overview and [Testing](/development/testing) for test ownership, fixtures, and commands. Use the root `AGENTS.md` map when exact package ownership or paths matter; do not infer ownership from an older copied tree.
 
-## Quick start
+## Build from source
+
+You need [Bun](https://bun.sh/). The desktop app also needs [Rust](https://rustup.rs/) and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your system: Xcode Command Line Tools on macOS, Visual Studio Build Tools with "Desktop development with C++" on Windows, and the WebKitGTK development packages on Linux.
 
 ```sh
+git clone https://github.com/open-pencil/open-pencil.git
+cd open-pencil
 bun install
+bun run build:packages
 bun run dev:portless # Editor at https://open-pencil.localhost
 bun run docs:dev     # Docs at localhost:5173
+bun run tauri dev    # Desktop app
 ```
+
+`bun run tauri build` builds the desktop app for your system; add `--target universal-apple-darwin` for one macOS app for Apple silicon and Intel.
 
 The complete gate before a pull request is `bun run check`, `bun run format`, `bun run test:unit`, and `bun run test`. Rendering and other pixel-affecting changes require targeted visual coverage.
 
