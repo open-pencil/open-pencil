@@ -23,7 +23,16 @@ const SHADER: Fill = {
 }
 const SHADER_STROKE: Stroke = { ...SHADER, weight: 2, align: 'CENTER' }
 const RED = solidFill(1, 0, 0)
+const BLUE = solidFill(0, 0, 1)
 const BLUE_STROKE = solidStroke(0, 0, 1)
+const GRADIENT_STROKE: Stroke = {
+  ...BLUE_STROKE,
+  type: 'GRADIENT_LINEAR',
+  gradientStops: [
+    { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+    { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+  ]
+}
 
 interface Slide {
   root?: Partial<SceneNode>
@@ -74,6 +83,11 @@ const CASES: [string, Slide, Slide][] = [
   ],
   ['text fills', text({ fills: [SHADER, RED] }), text({ fills: [RED] })],
   [
+    'text run fills',
+    text({ fills: [RED], styleRuns: [{ start: 0, length: 1, style: { fills: [SHADER, BLUE] } }] }),
+    text({ fills: [RED], styleRuns: [{ start: 0, length: 1, style: { fills: [BLUE] } }] })
+  ],
+  [
     'text strokes',
     text({ fills: [RED], strokes: [SHADER_STROKE] }),
     text({ fills: [RED], strokes: [] })
@@ -96,5 +110,18 @@ describe('Figma shader paints in PPTX', () => {
     test(`${name} export as they do without the shader paint`, async () => {
       expect(await slide(withShader)).toEqual(await slide(without))
     })
+  }
+
+  for (const [owner, layer] of [
+    ['shape', shape],
+    ['slide', rooted]
+  ] as const) {
+    for (const strokes of [[SHADER_STROKE, GRADIENT_STROKE], [GRADIENT_STROKE]]) {
+      const paints = strokes.map((stroke) => stroke.type).join(' and ')
+      test(`a ${owner} with a ${paints} stroke draws as a picture`, async () => {
+        const { xml } = await slide(layer({ fills: [RED], strokes }))
+        expect(xml).toContain('<p:pic>')
+      })
+    }
   }
 })

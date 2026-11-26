@@ -252,6 +252,9 @@ function rootRasterReason(root: SceneNode): string | null {
   if (root.strokes.filter(isDrawnPaint).length > 1) {
     return 'multiple strokes'
   }
+  if (drawsNonSolidStroke(root)) {
+    return 'non-solid stroke'
+  }
   const fills = root.fills.filter(isDrawnPaint)
   if (fills.length > 1) return 'multiple fills'
   if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid frame background'
@@ -306,7 +309,7 @@ function getTextFallbackReason(node: SceneNode): string | null {
     return 'text stroke'
   }
   for (const run of node.styleRuns) {
-    const runFills = run.style.fills?.filter((fill) => fill.visible) ?? []
+    const runFills = run.style.fills?.filter(isDrawnPaint) ?? []
     if (runFills.length > 1 || runFills.some((fill) => fill.type !== 'SOLID')) {
       return 'unsupported text run fill'
     }
@@ -314,10 +317,17 @@ function getTextFallbackReason(node: SceneNode): string | null {
   return null
 }
 
+function drawsNonSolidStroke(node: SceneNode): boolean {
+  return node.strokes.some((stroke) => isDrawnPaint(stroke) && stroke.type !== 'SOLID')
+}
+
 function getShapeFallbackReason(node: SceneNode): string | null {
   const visibleFills = node.fills.filter(isDrawnPaint)
   if (visibleFills.some((fill) => fill.type.startsWith('GRADIENT'))) return 'gradient fill'
   if (visibleFills.length > 1) return 'multiple fills'
+  if (drawsNonSolidStroke(node)) {
+    return 'non-solid stroke'
+  }
   // Image-fill leaves become native pictures at the call site; containers
   // with an image background fall back so children stay aligned.
   if (visibleFills.some((fill) => fill.type === 'IMAGE') && node.childIds.length > 0) {
