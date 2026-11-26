@@ -143,12 +143,5 @@
   "commentSomeone": "Jemand",
   "openComment": "Kommentar öffnen",
   "commentSettings": "Du bekommst diese E-Mails, wie es deine Benachrichtigungseinstellungen vorsehen. Ändere sie in {link}.",
-  "commentSettingsLink": "deinen Kontoeinstellungen",
-  "waitlistSubject": "Bestätige deinen Platz auf der Warteliste für OpenPencil Cloud",
-  "waitlistHeading": "Bestätige deine E-Mail-Adresse",
-  "waitlistPreview": "Ein Klick, und du stehst auf der Warteliste für OpenPencil Cloud.",
-  "waitlist": "Danke für dein Interesse an OpenPencil Cloud. Bestätige diese Adresse, um auf die Warteliste zu kommen. Wir schreiben dir genau einmal: sobald Cloud für dich bereit ist.",
-  "waitlistAction": "Auf die Warteliste",
-  "waitlistNote": "Du hast dich nicht eingetragen? Ignoriere diese E-Mail, dann wird die Adresse in sieben Tagen gelöscht – oder {link}.",
-  "waitlistLeave": "lösche sie gleich jetzt"
+  "commentSettingsLink": "deinen Kontoeinstellungen"
 }
