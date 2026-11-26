@@ -12,7 +12,7 @@ import {
   type ForwardedRequestId,
   type IndexingPolicy
 } from '#cloud/server'
-import { Hono, type MiddlewareHandler } from 'hono'
+import { Hono, type Context, type Env, type MiddlewareHandler } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 
 import { communityPage, renderCommunityPage } from './community/page'
@@ -35,7 +35,8 @@ const EDITOR_PAGE = '/index.html'
 /**
  * The headers every page of the site carries, with who may frame it. Pages run only the site's
  * own scripts and Turnstile's on the portal, so an injected script tag or one from another host
- * never runs; they carry no inline script (the boot splash loads its own file). The editor compiles
+ * never runs; they carry no inline script (the boot splash loads its own file) beyond the blocks in
+ * `scriptHashes`, allowed by their exact text. The editor compiles
  * design JSX and code-tool snippets with `Function` and runs WebAssembly and workers from blobs,
  * which the policy keeps; plugins and AI providers reach other hosts through `fetch`, which it
  * leaves be. Another site learns only Cloud's origin, never an address such as a share link's;
@@ -46,7 +47,10 @@ const EDITOR_PAGE = '/index.html'
  * the page that opened it, which a separate browsing context group would keep from it. DNS
  * prefetching stays on for the hosts the editor reaches.
  */
-export function pageSecurity(frameAncestors: readonly string[]): MiddlewareHandler {
+export function pageSecurity(
+  frameAncestors: readonly string[],
+  scriptHashes: readonly string[] = []
+): MiddlewareHandler {
   const framed = !frameAncestors.includes("'none'")
   return secureHeaders({
     contentSecurityPolicy: {
@@ -55,7 +59,8 @@ export function pageSecurity(frameAncestors: readonly string[]): MiddlewareHandl
         "'unsafe-eval'",
         "'wasm-unsafe-eval'",
         'blob:',
-        'https://challenges.cloudflare.com'
+        'https://challenges.cloudflare.com',
+        ...scriptHashes
       ],
       workerSrc: ["'self'", 'blob:'],
       objectSrc: ["'none'"],
@@ -82,6 +87,20 @@ export function embedFrameAncestors(allowedOrigins: readonly string[]): string[]
 
 /** Desktop sign-in approval and the editor must never be framed by another site. */
 const sitePageSecurity = pageSecurity(["'none'"])
+
+/** Answers with a site page under the policy for site pages, allowing the inline scripts given. */
+async function securedPage<E extends Env>(
+  c: Context<E, string>,
+  response: Response,
+  scriptHashes: readonly string[] = []
+): Promise<Response> {
+  const security =
+    scriptHashes.length > 0 ? pageSecurity(["'none'"], scriptHashes) : sitePageSecurity
+  await security(c, async () => {
+    c.res = response
+  })
+  return c.res
+}
 
 const PAGE_HEADERS = { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }
 
@@ -140,19 +159,24 @@ export function createCloudServer(
     })
     // The gallery's pages say what they show to link previews and search engines, which read the
     // page as served rather than as its script draws it.
-    server.on(['GET', 'HEAD'], [...CLOUD_PORTAL_COMMUNITY_PAGES], sitePageSecurity, async (c) => {
+    server.on(['GET', 'HEAD'], [...CLOUD_PORTAL_COMMUNITY_PAGES], async (c) => {
       const page = await site(PORTAL_PAGE, c.req.raw)
-      if (!page) return c.notFound()
+      if (!page) return securedPage(c, await c.notFound())
       const community = await communityPage(api, c.req.raw, origin, c.req.param('documentId'))
       const html = await new Response(page.body).text()
       if ('meta' in community) {
-        return c.body(await renderCommunityPage(html, community), 200, PAGE_HEADERS)
+        const rendered = await renderCommunityPage(html, community)
+        return securedPage(
+          c,
+          new Response(rendered.html, { headers: PAGE_HEADERS }),
+          rendered.scriptHashes
+        )
       }
       // The page still loads and says what went wrong; the status and retry advice stay the API's.
       const headers = community.retryAfter
         ? { ...PAGE_HEADERS, 'Retry-After': community.retryAfter }
         : PAGE_HEADERS
-      return new Response(html, { status: community.status, headers })
+      return securedPage(c, new Response(html, { status: community.status, headers }))
     })
     const embedPages = [CLOUD_EMBED_PATH, `${CLOUD_EMBED_PATH}/*`]
     if (embedding) {

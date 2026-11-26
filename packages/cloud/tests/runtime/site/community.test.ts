@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import type { CommunityDocument } from '#cloud/contract'
 import { communityDocumentDescription } from '#cloud/runtime/site/community/content'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
+import { fromUint8Array } from 'js-base64'
 
 const DOCUMENT_ID = '0b6f4f9e-3c1a-4d7e-9a52-6f1c2d3e4f50'
 const REVISION_ID = '5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a'
@@ -162,6 +163,26 @@ describe('community pages', () => {
       url: `https://cloud.example/community/${DOCUMENT_ID}`,
       version: '0.17.0'
     })
+  })
+
+  test('allow exactly the served structured data in the page policy, and no other inline script', async () => {
+    for (const path of [`/community/${DOCUMENT_ID}`, '/community']) {
+      const page = await visit(server(true), path)
+      const policy = page.headers.get('Content-Security-Policy') ?? ''
+      const html = await page.text()
+      const json = /<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/.exec(html)?.[1]
+      if (json === undefined) throw new Error(`${path} has no structured data`)
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(json))
+      const scriptSrc = policy
+        .split(';')
+        .find((directive) => directive.trim().startsWith('script-src'))
+      expect(scriptSrc).toContain(`'sha256-${fromUint8Array(new Uint8Array(digest))}'`)
+      expect(scriptSrc).not.toContain('unsafe-inline')
+      expect(policy).toContain("frame-ancestors 'none'")
+    }
+    // A page that could not be drawn carries no block, so its policy allows none.
+    const limited = await visit(server('limited'), `/community/${DOCUMENT_ID}`)
+    expect(limited.headers.get('Content-Security-Policy')).not.toContain('sha256-')
   })
 
   test('list the gallery’s files with links to their pages', async () => {

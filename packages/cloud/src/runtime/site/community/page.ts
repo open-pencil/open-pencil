@@ -4,6 +4,7 @@ import {
   communityDocumentsSchema,
   type CommunityDocument
 } from '#cloud/contract'
+import { fromUint8Array } from 'js-base64'
 // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { createHead, transformHtmlTemplate as transformHTMLTemplate } from 'unhead/server'
 import * as v from 'valibot'
@@ -135,6 +136,23 @@ function structuredData({ meta, origin, documents, document }: CommunityPage) {
   }
 }
 
+/**
+ * The structured data as its script's text. `<` is written as `\u003c`, which JSON reads the same,
+ * so the text holds nothing that could close its script and is served exactly as it is hashed.
+ */
+function structuredDataText(page: CommunityPage): string {
+  return JSON.stringify(structuredData(page)).replaceAll('<', '\\u003c')
+}
+
+/** A Content Security Policy source that allows a script with exactly this text. */
+async function scriptHashSource(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return `'sha256-${fromUint8Array(new Uint8Array(digest))}'`
+}
+
+/** A community page as served, with the hashes of the inline scripts its policy must allow. */
+export type RenderedCommunityPage = { html: string; scriptHashes: string[] }
+
 const APP_ROOT = '<div id="app"></div>'
 
 /**
@@ -143,8 +161,12 @@ const APP_ROOT = '<div id="app"></div>'
  * root. The app replaces that content when it mounts; it is there for crawlers and link previews,
  * which read the page as served rather than as its script draws it.
  */
-export async function renderCommunityPage(html: string, page: CommunityPage): Promise<string> {
+export async function renderCommunityPage(
+  html: string,
+  page: CommunityPage
+): Promise<RenderedCommunityPage> {
   const { meta } = page
+  const structured = structuredDataText(page)
   const head = createHead()
   head.push({
     title: meta.title,
@@ -162,7 +184,7 @@ export async function renderCommunityPage(html: string, page: CommunityPage): Pr
         : [])
     ],
     link: [{ rel: 'canonical', href: meta.url }],
-    script: [{ type: 'application/ld+json', textContent: structuredData(page) }]
+    script: [{ type: 'application/ld+json', textContent: structured }]
   })
   // Vue's server renderer escapes every value it writes; a function replacement keeps `$`
   // patterns in names as they are.
@@ -172,5 +194,9 @@ export async function renderCommunityPage(html: string, page: CommunityPage): Pr
     description: meta.description
   })
   const filled = html.replace(APP_ROOT, () => `<div id="app">${content}</div>`)
-  return transformHTMLTemplate(head, filled)
+  return {
+    html: await transformHTMLTemplate(head, filled),
+    // The block is data that never runs, yet a browser checks it against the policy like a script.
+    scriptHashes: [await scriptHashSource(structured)]
+  }
 }
