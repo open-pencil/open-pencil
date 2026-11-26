@@ -254,7 +254,7 @@ function textStyleField(field: unknown): TextBindableField {
   )
 }
 
-const VariableReference = v.object({ id: v.string() })
+const variableReferenceSchema = v.object({ id: v.string() })
 
 /** The variable a text style binds, checked as Figma checks it: by object only. */
 function textStyleVariable(
@@ -265,7 +265,7 @@ function textStyleVariable(
   if (typeof variable !== 'object' || variable === null) {
     throw new TypeError(`in setBoundVariable: Expected node, got ${typeof variable}`)
   }
-  const { id } = parseFigma(VariableReference, variable, 'setBoundVariable', 'variable')
+  const { id } = parseFigma(variableReferenceSchema, variable, 'setBoundVariable', 'variable')
   const found = graph.variables.get(id)
   if (!found) throw new Error(`in setBoundVariable: The variable with id "${id}" does not exist`)
   if (found.type !== bindingVariableType(field)) {
