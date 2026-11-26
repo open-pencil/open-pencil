@@ -1,4 +1,4 @@
-import type { Fill, SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, TextDecoration } from '@open-pencil/scene-graph'
 
 import { linearGradient, solid } from '../paints'
 
@@ -30,6 +30,33 @@ export function createRangeFillScene(graph: SceneGraph, pageId: string): string[
         text: 'Open Pencil',
         fontSize: 52,
         textAutoResize: 'HEIGHT',
+        fills: layer,
+        styleRuns: [{ start: 5, length: 6, style: { fills: range } }]
+      }).id
+  )
+}
+
+/** Decorated rows whose underline or strikethrough ends in a range with fills of its own. */
+const DECORATED_ROWS: { decoration: TextDecoration; layer: Fill[]; range: Fill[] }[] = [
+  { decoration: 'UNDERLINE', layer: [INK], range: [RED_TO_BLUE] },
+  { decoration: 'STRIKETHROUGH', layer: [RED_TO_BLUE], range: [GREEN] },
+  { decoration: 'UNDERLINE', layer: [INK], range: [GREEN, { ...RED_TO_BLUE, opacity: 0.5 }] }
+]
+
+/** Three decorated texts whose second word has fills of its own; returns their IDs. */
+export function createRangeDecorationScene(graph: SceneGraph, pageId: string): string[] {
+  return DECORATED_ROWS.map(
+    ({ decoration, layer, range }, row) =>
+      graph.createNode('TEXT', pageId, {
+        name: `Range decorations ${row + 1}`,
+        x: 40,
+        y: 30 + row * 72,
+        width: 360,
+        height: 64,
+        text: 'Open Pencil',
+        fontSize: 52,
+        textAutoResize: 'HEIGHT',
+        textDecoration: decoration,
         fills: layer,
         styleRuns: [{ start: 5, length: 6, style: { fills: range } }]
       }).id
