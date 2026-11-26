@@ -28,7 +28,8 @@ export function footerColumns(messages: SiteMessages, localeIndex: string): Foot
     {
       title: messages.resources,
       links: [
-        { label: messages.docs, href: translated(LINKS.docs) },
+        // Getting Started is English only until it is translated.
+        { label: messages.docs, href: LINKS.docs },
         { label: messages.sdk, href: translated('/developers/sdk/') },
         { label: 'GitHub', href: LINKS.github },
         { label: 'Discord', href: DISCORD }
