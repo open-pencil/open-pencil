@@ -391,6 +391,7 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
     graph.figSchemaDeflated = figSchemaDeflated
     graph.documentColorSpace = documentColorSpace
     graph.clearAbsPosCache()
+    graph.sharedStyleIndex.invalidate()
     const touched = new Set([
       ...nodes.keys(),
       ...created,

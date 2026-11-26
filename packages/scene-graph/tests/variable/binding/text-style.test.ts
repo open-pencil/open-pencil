@@ -1,6 +1,7 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { captureTouchedCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { sharedStylePatch } from '@open-pencil/scene-graph/shared-styles'
@@ -511,5 +512,16 @@ describe('the style index', () => {
 
     expect(graph.getSharedStyleNode('style:renamed', 'TEXT')).toBe(style)
     expect(graph.getSharedStyleNode('style:body', 'TEXT')).toBeUndefined()
+  })
+
+  test('finds a style a rolled back edit deleted', () => {
+    const { graph, style } = styledText()
+    expect(graph.getSharedStyleNode('style:body', 'TEXT')).toBe(style)
+    const checkpoint = captureTouchedCheckpoint(graph)
+
+    graph.deleteNode(style.id)
+    checkpoint.restore()
+
+    expect(graph.getSharedStyleNode('style:body', 'TEXT')).toBe(style)
   })
 })
