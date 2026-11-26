@@ -12,6 +12,11 @@ export type TextMeasurer = (
 
 let globalTextMeasurer: TextMeasurer | null = null
 
+/** How far down a text's box its first baseline is drawn, or `undefined` where unknown. */
+export type TextBaselineMeasurer = (node: SceneNode) => number | undefined
+
+const baselineMeasurers: TextBaselineMeasurer[] = []
+
 const GLYPH_WIDTH_FACTOR = 0.6
 
 export function estimateTextSize(
@@ -197,4 +202,32 @@ export function autoLineHeight(node: SceneNode): number | undefined {
     paragraphSpacing: 0
   }
   return globalTextMeasurer?.(line)?.height
+}
+
+/**
+ * Lets layout align text by its first baseline, while a renderer with its fonts is installed: the
+ * editor's and headless export's. Without one, text aligns by its bottom edge. Returns a function
+ * that uninstalls it.
+ */
+export function installTextBaselineMeasurer(measurer: TextBaselineMeasurer): () => void {
+  baselineMeasurers.push(measurer)
+  return () => {
+    const index = baselineMeasurers.lastIndexOf(measurer)
+    if (index !== -1) baselineMeasurers.splice(index, 1)
+  }
+}
+
+/** Run `fn` with `measurer` installed: layout aligns text by its first baseline. */
+export function withTextBaselineMeasurer<T>(measurer: TextBaselineMeasurer, fn: () => T): T {
+  const uninstall = installTextBaselineMeasurer(measurer)
+  try {
+    return fn()
+  } finally {
+    uninstall()
+  }
+}
+
+/** How far down a text's box its first baseline is drawn, by the last installed measurer. */
+export function textBaseline(node: SceneNode): number | undefined {
+  return baselineMeasurers.at(-1)?.(node)
 }

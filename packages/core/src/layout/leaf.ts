@@ -14,7 +14,8 @@ import {
   estimateTextSize,
   getTextMeasurer,
   measureAutoWidthText,
-  measureTextForLayout
+  measureTextForLayout,
+  textBaseline
 } from './text-measurement'
 
 /**
@@ -73,6 +74,35 @@ function configureTextLeafWithoutMeasurer(
 }
 
 /**
+ * Whether a row aligns `node` by baseline, itself or a box holding it: a box aligns by its first
+ * line's baseline, as Figma aligns a frame holding text.
+ */
+function alignsByBaseline(graph: SceneGraph, node: SceneNode, parent: SceneNode): boolean {
+  let child = node
+  let row: SceneNode | undefined = parent
+  while (row && (row.layoutMode === 'HORIZONTAL' || row.layoutMode === 'VERTICAL')) {
+    const own = child.layoutAlignSelf
+    if (row.layoutMode === 'HORIZONTAL') {
+      if (own === 'BASELINE' || (own === 'AUTO' && row.counterAxisAlign === 'BASELINE')) return true
+    }
+    child = row
+    row = row.parentId ? graph.getNode(row.parentId) : undefined
+  }
+  return false
+}
+
+/** A text's first baseline, where a row aligns it by baseline; layout has no other use for it. */
+function setTextBaseline(
+  item: LayoutNode,
+  graph: SceneGraph,
+  child: SceneNode,
+  parent: SceneNode
+): void {
+  if (child.type === 'TEXT' && alignsByBaseline(graph, child, parent))
+    item.baseline = textBaseline(child) ?? null
+}
+
+/**
  * Sizes a child with no auto layout of its own in its auto layout parent: text measured as it
  * resizes, or estimated without a measurer, and any other layer at its own size.
  */
@@ -118,6 +148,7 @@ export function configureChildAsLeaf(
 
   const selfAlign = mapAlignSelf(child.layoutAlignSelf)
   if (selfAlign != null) item.style.alignSelf = selfAlign
+  setTextBaseline(item, graph, child, parent)
 
   applyLockedAspectRatio(item, child, parent)
   applyMinMaxConstraints(item, child)
