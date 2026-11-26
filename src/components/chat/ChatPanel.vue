@@ -46,7 +46,6 @@ import ChatCreditBalance from '@/components/chat/ChatCreditBalance.vue'
 import ChatFollowAgentsToggle from '@/components/chat/ChatFollowAgentsToggle.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
-import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
 import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
@@ -614,7 +613,6 @@ function handleStop() {
         @error="toast.error"
       />
 
-      <ChatPermissionDialog />
     </template>
   </div>
 </template>

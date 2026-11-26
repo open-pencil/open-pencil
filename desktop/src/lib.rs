@@ -4,6 +4,7 @@ mod credentials;
 mod explicit_sync;
 mod files;
 mod fonts;
+mod host;
 mod icons;
 mod launch;
 mod menu;
@@ -87,9 +88,25 @@ pub fn run() {
         .manage(launch::PendingRooms::default())
         .manage(NativeMenuState(Mutex::new(NativeMenuInputs::default())))
         .manage(launch::PendingCloudLinks::default())
+        .manage(host::HostProcesses::default())
+        .manage(host::permission::Permissions::default())
+        // A reload starts the editor afresh: the programs the old page started go with it.
+        .on_page_load(|webview, payload| {
+            if webview.label() == "main"
+                && payload.event() == tauri::webview::PageLoadEvent::Started
+            {
+                let app = webview.app_handle();
+                app.state::<host::HostProcesses>().stop_all(app);
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             agents::lookup::agent_lookup,
             agents::lookup::agent_workspace,
+            host::host_start,
+            host::host_write,
+            host::host_kill,
+            host::permission::permission_questions,
+            host::permission::permission_answer,
             files::fig::compress_fig_canvas,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,
@@ -144,9 +161,6 @@ pub fn run() {
             handle_menu_event(app, event.id().0.as_str());
         })
         .setup(move |app| {
-            // Before the main window exists, so its first script can already spawn.
-            capabilities.grant(app.handle())?;
-
             // Panics from here on are kept for the next launch to offer as a report.
             if let Ok(directory) = app.path().app_data_dir() {
                 system::crash::install_panic_hook(
@@ -237,6 +251,7 @@ pub fn run() {
                 has_visible_windows: false,
                 ..
             } => show_main_window(_app),
+            tauri::RunEvent::Exit => _app.state::<host::HostProcesses>().stop_all(_app),
             _ => {}
         });
 }

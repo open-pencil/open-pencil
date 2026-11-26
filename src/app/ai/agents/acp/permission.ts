@@ -1,83 +1,28 @@
-import type {
-  RequestPermissionRequest,
-  RequestPermissionResponse
-} from '@agentclientprotocol/sdk/unstable'
-import { computed, shallowRef } from 'vue'
-
-import { ACP_PERMISSION_TIMEOUT_MS, AGENT_INPUT_NOTIFY_DELAY_MS } from '@/constants'
-
-export interface PendingPermission {
-  request: RequestPermissionRequest
-  resolve: (response: RequestPermissionResponse) => void
-  timer: ReturnType<typeof setTimeout>
-  /** Calls `onUnanswered` if the request is still waiting by then. */
-  notice: ReturnType<typeof setTimeout> | null
-}
-
-export const permissionQueue = shallowRef<PendingPermission[]>([])
-export const currentPermission = computed(() => permissionQueue.value[0] ?? null)
-
-function findRejectOption(request: RequestPermissionRequest): string {
-  const reject = request.options.find((o) => o.kind.startsWith('reject'))
-  return reject?.optionId ?? request.options.at(0)?.optionId ?? ''
-}
-
-function removeEntry(entry: PendingPermission) {
-  clearTimeout(entry.timer)
-  if (entry.notice) clearTimeout(entry.notice)
-  permissionQueue.value = permissionQueue.value.filter((e) => e !== entry)
-}
+import { AGENT_INPUT_NOTIFY_DELAY_MS } from '@/constants'
 
 /**
- * Queues the request for the permission dialog. One left unanswered for a few seconds calls
- * `onUnanswered`, which notifies the person, as one answered at once needs no notification; it is
- * rejected once it times out. Aborting `signal`, as stopping the turn that asked does, takes it
- * off the dialog and answers it cancelled, as ACP asks of a client once a turn is cancelled.
+ * Tells the person when an agent has waited on the desktop app's permission window for a few
+ * seconds, as a question answered at once needs no notification. The window itself asks and
+ * answers (`desktop/src/host/permission.rs`); the editor hears only that an agent waits.
  */
-export function requestPermissionFromUser(
-  params: RequestPermissionRequest,
-  onUnanswered?: () => void,
-  signal?: AbortSignal
-): Promise<RequestPermissionResponse> {
-  if (signal?.aborted) return Promise.resolve({ outcome: { outcome: 'cancelled' } })
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      removeEntry(entry)
-      resolve({ outcome: { outcome: 'selected', optionId: findRejectOption(params) } })
-    }, ACP_PERMISSION_TIMEOUT_MS)
-    const notice = onUnanswered
-      ? setTimeout(() => {
-          entry.notice = null
-          onUnanswered()
+export function permissionNotifier(notify: ((title: string) => void) | null) {
+  const waiting: { title: string; timer: ReturnType<typeof setTimeout> }[] = []
+  return ({ title, waiting: asks }: { title: string; waiting: boolean }) => {
+    if (!notify) return
+    if (asks) {
+      const entry = {
+        title,
+        timer: setTimeout(() => {
+          waiting.splice(waiting.indexOf(entry), 1)
+          notify(title)
         }, AGENT_INPUT_NOTIFY_DELAY_MS)
-      : null
-
-    const entry: PendingPermission = { request: params, resolve, timer, notice }
-    permissionQueue.value = [...permissionQueue.value, entry]
-    signal?.addEventListener(
-      'abort',
-      () => {
-        if (!permissionQueue.value.includes(entry)) return
-        removeEntry(entry)
-        resolve({ outcome: { outcome: 'cancelled' } })
-      },
-      { once: true }
-    )
-  })
-}
-
-export function respondToPermission(optionId: string) {
-  const entry = permissionQueue.value.at(0)
-  if (!entry) return
-  removeEntry(entry)
-  entry.resolve({ outcome: { outcome: 'selected', optionId } })
-}
-
-export function rejectCurrentPermission() {
-  const entry = permissionQueue.value.at(0)
-  if (!entry) return
-  removeEntry(entry)
-  entry.resolve({
-    outcome: { outcome: 'selected', optionId: findRejectOption(entry.request) }
-  })
+      }
+      waiting.push(entry)
+      return
+    }
+    const index = waiting.findIndex((entry) => entry.title === title)
+    if (index === -1) return
+    clearTimeout(waiting[index]?.timer)
+    waiting.splice(index, 1)
+  }
 }

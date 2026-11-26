@@ -9,7 +9,11 @@ import type {
 import { toError } from '@open-pencil/std/errors'
 import { randomHex } from '@open-pencil/std/random'
 
-import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
+import {
+  spawnHarnessProcess,
+  type HarnessAuth,
+  type HarnessProcess
+} from '@/app/ai/agents/pi/process'
 import { compactionOf, type StepCompaction } from '@/app/ai/chat/compaction/marker'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'
 
@@ -97,7 +101,7 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
   constructor(
     private readonly sessionId: string,
     private readonly configuration: HarnessSessionConfiguration,
-    private readonly environment: Record<string, string>,
+    private readonly auth: HarnessAuth,
     private readonly spawnProcess: typeof spawnHarnessProcess = spawnHarnessProcess,
     /** Told each turn's tokens, which the Usage settings count with the chat's other models. */
     private readonly onUsage?: (usage: HarnessTurnUsage) => void
@@ -260,9 +264,8 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
   private async ensureProcess(): Promise<HarnessProcess> {
     if (this.process) return this.process
     this.destroyed = false
-    const environment = this.environment
     const process = await this.spawnProcess({
-      environment,
+      auth: this.auth,
       onUnexpectedClose: () => this.failAll(new Error('Harness process exited unexpectedly'))
     })
     this.process = process

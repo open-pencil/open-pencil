@@ -291,9 +291,7 @@ export function createChatSessionManager({
         mcpServers: await buildPiMCPServers(),
         skills: await harnessSkills()
       },
-      apiKey
-        ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
-        : { OPENPENCIL_HARNESS_AGENT_DIR: account?.agentDir ?? '' },
+      apiKey ? { apiKey } : account?.agentDir ? { agentDir: account.agentDir } : {},
       undefined,
       (usage) => recordModelStepCompleted({ provider: providerID.value, model, ...usage }, context)
     )

@@ -24,10 +24,10 @@ export interface ACPAgentDef {
   windowsInstallCommand?: string
   /**
    * The ACP auth method setup signs in with, once the agent offers it. `acp` methods run inside
-   * the agent through `authenticate`; `terminal` methods run the agent's command with `args`,
-   * which the desktop shell scope pins under `<command>-sign-in`.
+   * the agent through `authenticate`; `terminal` methods run the agent's own login, whose command
+   * line the desktop app holds (`desktop/src/host/program.rs`).
    */
-  signIn?: { via: 'acp'; method: string } | { via: 'terminal'; method: string; args: string[] }
+  signIn?: { via: 'acp'; method: string } | { via: 'terminal'; method: string }
   /**
    * Whether a saved chat continues the agent's own session through ACP `session/resume`, so the
    * agent keeps what was said. Set only for agents whose adapter is known to resume reliably.
@@ -51,11 +51,7 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     adapterPackage: '@agentclientprotocol/claude-agent-acp',
     setupURL: 'https://code.claude.com/docs/en/setup',
     installCommand: 'npm i -g @agentclientprotocol/claude-agent-acp',
-    signIn: {
-      via: 'terminal',
-      method: 'claude-ai-login',
-      args: ['--cli', 'auth', 'login', '--claudeai']
-    },
+    signIn: { via: 'terminal', method: 'claude-ai-login' },
     resumesSessions: true
   },
   {

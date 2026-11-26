@@ -98,10 +98,10 @@ export type DiscoveryError =
 export function createAgentDiscovery(options: {
   enabled: boolean
   lookup: () => Promise<AgentLookup>
-  install: (agent: ACPAgentDef, searchPath: string) => Promise<void>
-  installBridge?: (searchPath: string, manager: PackageManager) => Promise<void>
+  install: (agent: ACPAgentDef) => Promise<void>
+  installBridge?: (manager: PackageManager) => Promise<void>
   restartBridge?: () => Promise<void>
-  installHarness?: (searchPath: string, manager: PackageManager) => Promise<void>
+  installHarness?: (manager: PackageManager) => Promise<void>
 }) {
   const snapshot = shallowRef<AgentLookup | null>(null)
   const scanning = ref(false)
@@ -212,7 +212,7 @@ export function createAgentDiscovery(options: {
     installing.value = id
     error.value = null
     try {
-      await options.install(agent.definition, snapshot.value.searchPath)
+      await options.install(agent.definition)
       await refresh(true)
       if (
         agents.value.find((candidate) => candidate.definition.id === id)?.status !== 'available'
@@ -244,7 +244,7 @@ export function createAgentDiscovery(options: {
     try {
       if (!installed) {
         if (!options.installBridge) throw new Error('Canvas bridge setup is unavailable.')
-        await options.installBridge(snapshot.value.searchPath, manager)
+        await options.installBridge(manager)
         await refresh(true)
         if (!hasBridge() || bridgeOutdated())
           throw new Error('A matching MCP server was not found.')
@@ -274,7 +274,7 @@ export function createAgentDiscovery(options: {
     error.value = null
     try {
       if (!options.installHarness) throw new Error('Harness companion setup is unavailable.')
-      await options.installHarness(snapshot.value.searchPath, manager)
+      await options.installHarness(manager)
       await refresh(true)
       if (!hasHarness() || harnessOutdated()) error.value = 'harness-install'
     } catch {

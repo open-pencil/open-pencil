@@ -1,11 +1,9 @@
-import { Command } from '@tauri-apps/plugin-shell'
-
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 import { createDeferred } from '@open-pencil/std/async'
 import { MINUTE_MS } from '@open-pencil/std/timing'
 
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
-import { platformCommandEnv, resolveScopedCommand } from '@/app/tauri/command'
+import { startHostProgram } from '@/app/tauri/host'
 
 /** Long enough to sign in from a fresh browser, short enough not to leave a login waiting. */
 const SIGN_IN_TIMEOUT_MS = 5 * MINUTE_MS
@@ -26,11 +24,6 @@ export function findSignInURL(line: string): string | null {
   return /https:\/\/\S+/.exec(stripTerminalCodes(line))?.[0] ?? null
 }
 
-/** The scope entry that pins an agent's sign-in arguments in the desktop shell scope. */
-export function signInScope(agent: ACPAgentDef): string {
-  return `${agent.command}-sign-in`
-}
-
 export interface TerminalSignIn {
   /** Settles when the login exits: resolved when it signed in, rejected otherwise. */
   done: Promise<void>
@@ -46,30 +39,36 @@ export interface TerminalSignIn {
  */
 export async function startTerminalSignIn(
   agent: ACPAgentDef,
-  args: string[],
   onURL: (url: string) => void
 ): Promise<TerminalSignIn> {
-  const { searchPath } = await resolveSpawnTarget(agent)
-  const resolved = resolveScopedCommand(signInScope(agent), agent.command, args)
-  const command = Command.create(resolved.command, resolved.args, {
-    env: { ...platformCommandEnv(), ...(searchPath ? { PATH: searchPath } : {}) }
-  })
+  // Fails with the agent's own setup message when it is not installed.
+  await resolveSpawnTarget(agent)
   const finished = createDeferred<undefined>()
   let closed = false
   let urlSeen = false
-  command.stdout.on('data', (line: string) => {
-    const url = urlSeen ? null : findSignInURL(line)
-    if (!url) return
-    urlSeen = true
-    onURL(url)
+  let pending = ''
+  const child = await startHostProgram(
+    { kind: 'signIn', agent: agent.id },
+    {
+      onStdout: (data) => {
+        if (urlSeen) return
+        pending += data
+        const lines = pending.split('\n')
+        pending = lines.pop() ?? ''
+        const url = lines.map(findSignInURL).find((found) => found !== null)
+        if (!url) return
+        urlSeen = true
+        onURL(url)
+      },
+      onClose: ({ code }) => {
+        closed = true
+        if (code === 0) finished.resolve(undefined)
+        else finished.reject(new Error('Sign-in did not finish.'))
+      }
+    }
+  ).catch((error: unknown) => {
+    throw new Error('Sign-in could not start.', { cause: error })
   })
-  command.on('close', ({ code }) => {
-    closed = true
-    if (code === 0) finished.resolve(undefined)
-    else finished.reject(new Error('Sign-in did not finish.'))
-  })
-  command.on('error', () => finished.reject(new Error('Sign-in could not start.')))
-  const child = await command.spawn()
   const timer = setTimeout(() => {
     finished.reject(new Error('Sign-in timed out.'))
     void stop()

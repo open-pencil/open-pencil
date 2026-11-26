@@ -1,18 +1,15 @@
 import { invoke } from '@tauri-apps/api/core'
 import { homeDir } from '@tauri-apps/api/path'
-import { Command } from '@tauri-apps/plugin-shell'
 import { promiseTimeout } from '@vueuse/core'
 import { compact } from 'es-toolkit/array'
 
-import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { serializeDisabledTools } from '@open-pencil/mcp/tools'
+import { createDeferred } from '@open-pencil/std/async'
 import { errorMessage, toError } from '@open-pencil/std/errors'
 import { randomHex } from '@open-pencil/std/random'
 
-import { decodeTauriStderr } from '@/app/shell/ui'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
-import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
+import { startHostProgram, type HostChild, type HostClose } from '@/app/tauri/host'
 
 import { DEV_MCP_RESTART_PATH, type DevMCPConfiguration } from './dev-control'
 import {
@@ -24,7 +21,6 @@ import {
 import {
   classifySpawnFailure,
   mcpFailure,
-  MCP_EXECUTABLE,
   MCP_INSTALL_TARGET,
   MCPStartupError,
   type MCPFailure
@@ -69,7 +65,8 @@ interface MCPLookup {
 // While no app is attached, the spawned server waits this long for a register
 // or reconnect before closing itself and removing its discovery file. This
 // prevents a server that outlives a crashed/reloaded app from squatting the
-// port forever while still allowing brief renderer reloads (issue #488).
+// port forever while still allowing brief renderer reloads (issue #488). The
+// desktop app passes it as `OPENPENCIL_MCP_APP_TIMEOUT_MS` (`desktop/src/host/program.rs`).
 const MCP_APP_ATTACH_TIMEOUT_MS = 30_000
 // A server started from a cold npm shim can take longer than a few seconds to answer (14.8 s on
 // a Windows VM, issue #1167). The app waits this long for it, leaving the rest of the attach
@@ -260,45 +257,34 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
   // The app bundle directory (Tauri executableDir) is read-only and cannot be
   // used as a safe fallback for open_document, save_document, or export tools.
   const mcpRoot = mcpRootDirectory.value.trim() || (await resolveTauriHomeDir())
-  const resolved = resolvePlatformCommand(MCP_EXECUTABLE)
-  const command = Command.create(resolved.command, resolved.args, {
-    env: {
-      PORT: String(AUTOMATION_HTTP_PORT),
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
-      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
-      OPENPENCIL_MCP_TCP: '1',
-      OPENPENCIL_MCP_ROOT: mcpRoot,
-      OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
-      // Killing the shell wrapper on Windows leaves the server it started running; the app's end
-      // of the pipe closes with it, and the server exits on that.
-      OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1',
-      OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
-      OPENPENCIL_MCP_SCOPE: mcpScope()
-    }
-  })
-
   let startupStderr = ''
-  command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
-    if (startupStderr.length >= MAX_STARTUP_STDERR_LENGTH) return
-    startupStderr += decodeTauriStderr(raw).slice(
-      0,
-      MAX_STARTUP_STDERR_LENGTH - startupStderr.length
-    )
-  })
-
   let spawnedToken: string | null = null
-  let child: Awaited<ReturnType<typeof command.spawn>>
-  const childClosed = new Promise<{ code: number | null; signal: number | null }>((resolve) => {
-    command.on('close', (event) => {
-      resolve(event)
-      if (spawnedToken && runtimeAutomationAuthToken === spawnedToken) {
-        runtimeAutomationAuthToken = null
-      }
-    })
+  const closed = createDeferred<HostClose>()
+  const childClosed = closed.promise.then(({ code, signal }) => {
+    if (spawnedToken && runtimeAutomationAuthToken === spawnedToken) {
+      runtimeAutomationAuthToken = null
+    }
+    return { code, signal }
   })
-
+  let child: HostChild
   try {
-    child = await command.spawn()
+    // The desktop app starts the server on its port, with the editor's origin allowed to call it.
+    child = await startHostProgram(
+      {
+        kind: 'mcpServer',
+        authToken,
+        root: mcpRoot,
+        disabledTools: [...disabledMCPTools.value],
+        scope: mcpScope()
+      },
+      {
+        onStderr: (text) => {
+          if (startupStderr.length >= MAX_STARTUP_STDERR_LENGTH) return
+          startupStderr += text.slice(0, MAX_STARTUP_STDERR_LENGTH - startupStderr.length)
+        },
+        onClose: (event) => closed.resolve(event)
+      }
+    )
   } catch (error) {
     return rememberStartupError(error)
   }

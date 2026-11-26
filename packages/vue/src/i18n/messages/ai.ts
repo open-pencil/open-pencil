@@ -155,6 +155,14 @@ export const aiMessageDefaults = {
   unknownTool: 'Unknown tool',
   permissionRequestTitle: 'Permission request',
   permissionRequest: params('{tool} is requesting permission.'),
+  permissionToolRequest: params('{agent} asks to use {tool}.'),
+  permissionModeTitle: 'Run tools without asking?',
+  permissionModeRequest: params(
+    '{agent} asks to switch to {mode}. In that mode it runs commands and changes files without asking you first.'
+  ),
+  permissionModeAllow: 'Switch mode',
+  permissionModeKeep: 'Keep asking',
+  permissionMoreWaiting: params('{count} more waiting'),
   baseURLPlaceholder: 'Base URL (e.g. http://localhost:11434/v1)',
   modelIDPlaceholder: 'Model ID (e.g. llama-3.3-70b)',
   provider: 'AI Provider',

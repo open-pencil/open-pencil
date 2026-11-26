@@ -196,19 +196,12 @@ pub async fn agent_lookup() -> Result<AgentLookup, String> {
     .map_err(|_| "Could not discover local agents.".to_owned())
 }
 
-/// The folder coding agents start in. Starting them in the home folder lets them read its
-/// project settings (Codex reads `.codex` there) and, sandboxed, write anywhere in it.
+/// The folder coding agents start in (`crate::host::agent_workspace_dir`).
 #[tauri::command]
 pub fn agent_workspace(app: tauri::AppHandle) -> Result<String, String> {
-    use tauri::Manager;
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Could not find the app data folder: {e}"))?
-        .join("agent-workspace");
-    std::fs::create_dir_all(&dir)
-        .map_err(|e| format!("Could not create the agent workspace: {e}"))?;
-    Ok(dir.to_string_lossy().into_owned())
+    Ok(crate::host::agent_workspace_dir(&app)?
+        .to_string_lossy()
+        .into_owned())
 }
 
 #[cfg(test)]

@@ -58,7 +58,6 @@ export function createAgentAccounts(options: {
   ) => Promise<AgentAuthStatus | null>
   startTerminalSignIn: (
     agent: ACPAgentDef,
-    args: string[],
     onURL: (url: string) => void
   ) => Promise<TerminalSignIn>
 }) {
@@ -126,7 +125,7 @@ export function createAgentAccounts(options: {
     const run = { cancelled: false, signedIn: false }
     try {
       if (agent.signIn?.via === 'terminal') {
-        const login = await options.startTerminalSignIn(agent, agent.signIn.args, (url) =>
+        const login = await options.startTerminalSignIn(agent, (url) =>
           update(agent.id, { signInURL: url })
         )
         signIns.set(agent.id, {

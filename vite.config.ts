@@ -108,7 +108,7 @@ export default defineConfig(async ({ command, mode }) => {
       sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
       outDir,
       rolldownOptions: {
-        // The desktop Software Update window is its own page; a Cloud server adds its own
+        // The desktop Software Update and permission windows are pages of their own; a Cloud server adds its own
         // pages beside the editor, and the metrics dashboard builds alone.
         input: metrics
           ? { metrics: resolve(__dirname, 'metrics.html') }
@@ -116,7 +116,8 @@ export default defineConfig(async ({ command, mode }) => {
             ? { main: resolve(__dirname, 'index.html'), cloud: resolve(__dirname, 'cloud.html') }
             : {
                 main: resolve(__dirname, 'index.html'),
-                updater: resolve(__dirname, 'updater.html')
+                updater: resolve(__dirname, 'updater.html'),
+                permission: resolve(__dirname, 'permission.html')
               },
         output: { chunkFileNames }
       }

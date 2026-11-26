@@ -29,7 +29,6 @@ import {
   type AgentModelChoices,
   type SessionChoices
 } from '@/app/ai/agents/acp/options'
-import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import {
   AgentSessionResumeError,
   AgentSessionRetryError,
@@ -40,7 +39,8 @@ import {
   sessionRequests
 } from '@/app/ai/agents/acp/session'
 import { noteSubagents } from '@/app/ai/agents/acp/subagents'
-import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
+import { permissionNotifier } from '@/app/ai/agents/acp/permission'
+import { linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import type { AgentChild } from '@/app/ai/agents/process'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
@@ -194,7 +194,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private onChoices: ((choices: AgentModelChoices | null) => void) | null
   private onAgentChoices: ((choices: AgentChoices) => void) | null
   /** Ends the permission requests of the turn now running, which a stopped turn leaves behind. */
-  private turnPermissions: AbortController | null = null
   private startTimeoutMs: number | undefined
 
   constructor(options: {
@@ -292,8 +291,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           (subagent) => (this.store ? subagentAgent(this.store, subagent) : null)
         )
         let closed = false
-        const permissions = new AbortController()
-        this.turnPermissions = permissions
         // The reply's run collects the edits the agent's calls make in the chat's document.
         const store = this.store
         const run = store ? startAgentRun(store, session.chat) : null
@@ -301,7 +298,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
           if (closed) return
           closed = true
-          permissions.abort()
           session.onUpdate = null
           if (store && run) endRun(store, run)
           // The subagents' transcripts reach the chat in full before the reply closes.
@@ -421,7 +417,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
   async destroy(): Promise<void> {
     this.destroying = true
-    this.turnPermissions?.abort()
     const starting = this.starting
     this.starting = null
     await starting?.kill().catch(() => undefined)
@@ -445,11 +440,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     let openedChoices: SessionChoices | undefined
     const agentId = this.agentDef.id
     const { agentDef, store } = this
-    const ownToolApproval = createOwnToolApproval()
+    const permissionNotices = permissionNotifier(
+      store ? (title) => notifyPermissionWaiting(store, agentDef.name, title) : null
+    )
     let connection: AgentConnection
     try {
       connection = await connectAgent(agentDef, {
-        cwd: this.cwd,
         signal: abortSignal,
         timeoutMs: this.startTimeoutMs,
         stopMessage: 'The reply was stopped while the agent was starting.',
@@ -465,19 +461,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         onProcess: (process) => {
           this.starting = process
         },
-        requestPermission: (params) => {
-          const allowed = ownToolApproval.answer(params)
-          if (allowed) return allowed
-          const title = params.toolCall.title ?? ''
-          return requestPermissionFromUser(
-            params,
-            store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined,
-            this.turnPermissions?.signal
-          )
-        },
+        onPermission: permissionNotices,
         onSessionUpdate: (params) => {
           const { update } = params
-          ownToolApproval.noteUpdate(update)
           // The agent's MCP calls name only their own id; its updates say which subagent made them.
           if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
           // A subagent works in a session of its own: the reply keeps it as the subagent's transcript.
@@ -553,7 +539,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       openAgentSession(sessionRequests(connection.agent), this.agentDef, initialized, {
         cwd: this.cwd,
         mcpServers: tools.mcpServers,
-        meta: tools.meta,
         resume: this.resume,
         model: this.model,
         choices: this.choices()

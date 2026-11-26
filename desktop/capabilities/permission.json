@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "permission",
+  "description": "Capability for the permission window, which only the desktop app opens: it reads the window's events and closes itself. Agents' questions are read and answered through app commands that check the window's label (desktop/src/host/permission.rs).",
+  "windows": ["permission"],
+  "permissions": ["core:default", "core:window:allow-close"]
+}

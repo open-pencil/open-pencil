@@ -54,7 +54,8 @@ async function startOneOffAgent(
   const cwd = await workspace()
   const connection = await connectAgent(agentDef, {
     logId: `${agentDef.id} one-off`,
-    cwd,
+    // A one-off request reads an answer; nothing it asks to run is run.
+    refusesTools: true,
     signal,
     timeoutMs,
     launch,

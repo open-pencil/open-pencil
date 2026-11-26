@@ -79,9 +79,10 @@ async function openAuthSession(
 ) {
   const log = createStatusLog()
   let onUpdate: ((update: SessionUpdate) => void) | null = null
-  // Nothing runs in this connection, so every permission request is refused.
   const connection = await connectAgent(agent, {
     logId: `${agent.id} sign-in`,
+    // Nothing runs in this connection, so every permission request is refused.
+    refusesTools: true,
     timeoutMs: initializeTimeoutMs,
     launch,
     onSessionUpdate: ({ update }) => onUpdate?.(update),
@@ -130,8 +131,7 @@ async function checkTools(session: AuthSession, probe: ToolsProbe): Promise<OwnT
     await session.untilStopped(
       session.connection.agent.request(methods.agent.session.new, {
         cwd: await probe.cwd(),
-        mcpServers: link.mcpServers,
-        _meta: link.meta
+        mcpServers: link.mcpServers
       })
     )
     return await session.untilStopped(link.outcome())

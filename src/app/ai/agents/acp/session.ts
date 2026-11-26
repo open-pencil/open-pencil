@@ -25,13 +25,11 @@ import {
   type SessionChoices,
   type SessionOptionRequests
 } from './options'
-import type { OwnToolsLink } from './tools'
 
 /** What an agent session needs to open, whether it starts or continues a saved one. */
 export interface AgentSessionRequest {
   cwd: string
   mcpServers: McpServer[]
-  meta: OwnToolsLink['meta']
   /** The session a saved chat ran in, which the agent continues instead of starting anew. */
   resume: string | null
   /** The model the chat's profile names, which the session is put on; empty keeps the agent's. */
@@ -248,10 +246,10 @@ export async function openAgentSession(
   connection: SessionRequests,
   agentDef: ACPAgentDef,
   initialized: InitializeResponse,
-  { cwd, mcpServers, meta, resume, model = '', choices = {} }: AgentSessionRequest
+  { cwd, mcpServers, resume, model = '', choices = {} }: AgentSessionRequest
 ): Promise<OpenedAgentSession> {
   if (resume === null) {
-    const result = await connection.newSession({ cwd, mcpServers, _meta: meta })
+    const result = await connection.newSession({ cwd, mcpServers })
     return {
       sessionId: result.sessionId,
       ...(await startingSettings(connection, agentDef, result.sessionId, result, {
@@ -265,7 +263,7 @@ export async function openAgentSession(
   if (!canResume(agentDef, initialized)) throw new AgentSessionResumeError(agentDef)
   let result: ResumeSessionResponse
   try {
-    result = await connection.resumeSession({ sessionId: resume, cwd, mcpServers, _meta: meta })
+    result = await connection.resumeSession({ sessionId: resume, cwd, mcpServers })
   } catch (e) {
     // Retire confirmed missing sessions; sign-in keeps its own error, and anything else may pass.
     if (isMissingSession(e, agentDef.id)) throw new AgentSessionResumeError(agentDef, e)

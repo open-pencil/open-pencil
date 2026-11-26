@@ -3,8 +3,6 @@ import {
   methods,
   ndJsonStream,
   type ClientContext,
-  type RequestPermissionRequest,
-  type RequestPermissionResponse,
   type SessionNotification
 } from '@agentclientprotocol/sdk/unstable'
 
@@ -60,8 +58,6 @@ export const HOST_AGENT_LAUNCH: AgentLaunch = {
 export interface AgentConnectionOptions {
   /** Names the process in the log. */
   logId?: string
-  /** The folder the agent runs in; left out, wherever the app runs. */
-  cwd?: string
   /** Stopping ends whatever waits on the agent, and an agent that is still starting. */
   signal?: AbortSignal
   /** How long each bounded request may take. */
@@ -76,12 +72,15 @@ export interface AgentConnectionOptions {
   /** Told the process once it runs, so its owner can stop an agent that is still starting. */
   onProcess?: (child: AgentChild) => void
   /**
-   * Answers the agent's permission requests. Left out, every request is refused, for a connection
-   * in which nothing may run on its own.
+   * Refuses every permission request without asking, for a connection in which nothing may run;
+   * otherwise the desktop app asks the person in its permission window.
    */
-  requestPermission?: (
-    params: RequestPermissionRequest
-  ) => RequestPermissionResponse | Promise<RequestPermissionResponse>
+  refusesTools?: boolean
+  /**
+   * The agent waits on the person in the desktop app's permission window, or stopped waiting. The
+   * app answers its permission requests itself, so none reach the connection.
+   */
+  onPermission?: (event: { title: string; waiting: boolean }) => void
   /** What the agent reports about its sessions. */
   onSessionUpdate?: (params: SessionNotification) => void
   /** The login the agent reports, as Claude Code's and Codex's adapters do after they start. */
@@ -120,7 +119,6 @@ export async function connectAgent(
   agentDef: ACPAgentDef,
   {
     logId = agentDef.id,
-    cwd,
     signal,
     timeoutMs = AGENT_START_TIMEOUT_MS,
     stopMessage = 'The request was stopped.',
@@ -128,7 +126,8 @@ export async function connectAgent(
     stopping,
     onExit,
     onProcess,
-    requestPermission,
+    refusesTools,
+    onPermission,
     onSessionUpdate,
     onAuthStatus
   }: AgentConnectionOptions = {}
@@ -148,16 +147,16 @@ export async function connectAgent(
 
   let closing = false
   const starting = (async () => {
-    const { command, searchPath } = await launch.resolveTarget(agentDef)
+    // Fails with the agent's own setup message when it is not installed.
+    await launch.resolveTarget(agentDef)
     if (gaveUp.signal.aborted) throw new Error(stopMessage)
     return launch.spawn({
-      command,
-      args: agentDef.args,
+      agent: agentDef.id,
+      refusesTools,
       logId,
-      searchPath,
-      cwd,
       destroying: () => closing || stopping?.() === true,
-      onUnexpectedClose: () => onExit?.()
+      onUnexpectedClose: () => onExit?.(),
+      onPermission
     })
   })()
   let process: ACPProcess
@@ -172,10 +171,6 @@ export async function connectAgent(
   onProcess?.(child)
 
   const connection = client({ name: 'OpenPencil' })
-    .onRequest(
-      methods.client.session.requestPermission,
-      ({ params }) => requestPermission?.(params) ?? { outcome: { outcome: 'cancelled' } }
-    )
     .onNotification(methods.client.session.update, ({ params }) => onSessionUpdate?.(params))
     .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
       if (params) onAuthStatus?.(params)

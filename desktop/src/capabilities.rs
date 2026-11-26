@@ -5,15 +5,12 @@
 use std::ffi::OsStr;
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager, Runtime};
 
 /// The built-in updater: its plugin, the startup check, and the macOS menu item.
 const SELF_UPDATE_ENV: &str = "OPENPENCIL_SELF_UPDATE";
-/// Spawning host programs: ACP agents, `npm` installs, the MCP server, and the Pi harness.
+/// Starting host programs: ACP agents, `npm` installs, the MCP server, and the Pi harness
+/// (`crate::host`).
 const HOST_PROCESSES_ENV: &str = "OPENPENCIL_HOST_PROCESSES";
-
-/// Shell spawn permissions, left out of `app.security.capabilities` and granted at startup.
-const HOST_PROCESSES_CAPABILITY: &str = include_str!("../capabilities/host-processes.json");
 
 /// The main window's capability, for tests that check what it allows.
 #[cfg(test)]
@@ -38,14 +35,6 @@ impl DesktopCapabilities {
     pub fn init_script(&self) -> String {
         let json = serde_json::to_string(self).expect("two booleans serialize");
         format!("window.__OPENPENCIL_DESKTOP_CAPABILITIES__ = Object.freeze({json});")
-    }
-
-    /// Grants the shell spawn scope, without which the webview can start no host program.
-    pub fn grant<R: Runtime>(&self, app: &AppHandle<R>) -> tauri::Result<()> {
-        if self.host_processes {
-            app.add_capability(HOST_PROCESSES_CAPABILITY)?;
-        }
-        Ok(())
     }
 }
 
@@ -74,7 +63,6 @@ fn enabled(name: &str, value: Option<&OsStr>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tauri::utils::acl::capability::CapabilityFile;
 
     fn read(value: Option<&str>) -> bool {
         enabled("TEST", value.map(OsStr::new))
@@ -111,14 +99,5 @@ mod tests {
             capabilities.init_script(),
             r#"window.__OPENPENCIL_DESKTOP_CAPABILITIES__ = Object.freeze({"selfUpdate":false,"hostProcesses":true});"#
         );
-    }
-
-    #[test]
-    fn the_host_processes_capability_targets_the_main_window() {
-        let Ok(CapabilityFile::Capability(capability)) = HOST_PROCESSES_CAPABILITY.parse() else {
-            panic!("host-processes.json holds one valid capability");
-        };
-        assert_eq!(capability.identifier, "host-processes");
-        assert_eq!(capability.windows, ["main"]);
     }
 }
