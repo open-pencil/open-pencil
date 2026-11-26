@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import type { Fill } from '@open-pencil/scene-graph'
+import type { Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 
 import { BLACK_STROKE, rects, solid, svgOf } from './helpers'
 
@@ -60,3 +60,37 @@ test('a shape takes its fill opacity from its first drawn fill', () => {
   )
   expect(rects(svg)).toEqual(['<rect width="40" height="40" fill="#FF0000" fill-opacity="0.25"/>'])
 })
+
+const BLUE_LINE: Stroke = { ...BLACK_STROKE, color: { r: 0, g: 0, b: 1, a: 1 }, dashPattern: [] }
+const SHADER_LINE: Stroke = { ...BLUE_LINE, ...SHADER, weight: 12, dashPattern: [4, 4] }
+const STRAIGHT = { x: 0, y: 0 }
+const OPEN_PATH: VectorNetwork = {
+  vertices: [
+    { x: 0, y: 0 },
+    { x: 40, y: 20 }
+  ],
+  segments: [{ start: 0, end: 1, tangentStart: STRAIGHT, tangentEnd: STRAIGHT }],
+  regions: []
+}
+
+function drawnShapes(type: 'LINE' | 'VECTOR', strokes: Stroke[]): string {
+  const svg = svgOf(
+    (graph, pageId) => [
+      graph.createNode(type, pageId, {
+        width: 40,
+        height: type === 'LINE' ? 0 : 20,
+        strokeCap: 'TRIANGLE_FILLED',
+        strokes,
+        ...(type === 'VECTOR' ? { vectorNetwork: OPEN_PATH } : {})
+      }).id
+    ],
+    { colorSpace: 'srgb' }
+  )
+  return svg.slice(svg.indexOf('<g'), svg.indexOf('</g>')).replace(/^<g[^>]*>/, '')
+}
+
+for (const type of ['LINE', 'VECTOR'] as const) {
+  test(`a ${type} and its arrow heads draw by the first drawn stroke, past a shader stroke`, () => {
+    expect(drawnShapes(type, [SHADER_LINE, BLUE_LINE])).toBe(drawnShapes(type, [BLUE_LINE]))
+  })
+}

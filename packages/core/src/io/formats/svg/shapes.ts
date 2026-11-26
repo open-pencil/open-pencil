@@ -1,5 +1,6 @@
 import type { Fill, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { looseSegments, regionSVGPaths } from '@open-pencil/scene-graph/vector-network'
 import { appendAll } from '@open-pencil/std/arrays'
 
@@ -123,7 +124,7 @@ export function nodeShapeElements(
 
     case 'LINE': {
       // Where the canvas strokes it: to one side of the line, with its caps inside its length.
-      const stroke = node.strokes.find((item) => item.visible)
+      const stroke = node.strokes.find(isDrawnPaint)
       const {
         network,
         from: start,
