@@ -12,6 +12,7 @@ import { exportFigFile, parseFigFile } from './formats/fig'
 import { readPenDocument } from './formats/pen/read'
 import type { PPTXExportOptions } from './formats/pptx'
 import { rasterFormat } from './formats/raster/adapter'
+import { withBooleanOutlines } from './formats/svg/boolean/combine'
 import { extractExportGraph } from './subgraph'
 import { resolveExportNodes, singleExportNode, type ExportNodes } from './targets'
 import type {
@@ -243,9 +244,13 @@ async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promi
   const { writeDrawIOFile } = await import('@open-pencil/drawio')
   const { sceneGraphToDrawIO } = await import('./formats/drawio')
   const warnings: NonNullable<ExportResult['warnings']> = []
-  const diagram = sceneGraphToDrawIO(graph, target, {
-    onWarning: (warning) => warnings.push(warning)
-  })
+  const rootIds = 'pageIds' in target ? target.pageIds : target.nodeIds
+  const diagram = await withBooleanOutlines(graph, rootIds, async (booleanOutlines) =>
+    sceneGraphToDrawIO(graph, target, {
+      onWarning: (warning) => warnings.push(warning),
+      booleanOutlines
+    })
+  )
   return {
     format: 'drawio',
     mimeType: 'application/vnd.jgraph.mxfile',
@@ -433,8 +438,12 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { sceneNodesToTailwindJSX } = await import('@open-pencil/dom-css/export')
-    const { vectorElement } = await import('#core/io/formats/html/vectors')
-    const data = sceneNodesToTailwindJSX(request.graph, target.nodeIds, { vectorElement })
+    const { vectorElementWith } = await import('#core/io/formats/html/vectors')
+    const data = await withBooleanOutlines(request.graph, target.nodeIds, async (outlines) =>
+      sceneNodesToTailwindJSX(request.graph, target.nodeIds, {
+        vectorElement: vectorElementWith(outlines)
+      })
+    )
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'tailwind-jsx',
