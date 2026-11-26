@@ -3,7 +3,7 @@ import { basename, dirname, extname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
-import { compact } from 'es-toolkit'
+import * as v from 'valibot'
 
 import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
@@ -115,22 +115,19 @@ async function readInput(args: ImportArgs): Promise<ImportInput> {
 }
 
 /** The attributes a mode's selector gives the root element: `.dark` or `[data-theme=dark]`. */
-function rootAttributes(selector: string): Record<string, string> {
-  if (/^\.[\w-]+$/.test(selector)) return { class: selector.slice(1) }
-  const attribute = /^\[([\w-]+)(?:=(["']?)([\w-]+)\2)?\]$/.exec(selector)
-  if (!attribute)
-    throw new Error(`Invalid mode selector "${selector}". Use .class or [name=value].`)
-  return { [attribute[1]]: attribute.at(3) ?? '' }
-}
-
-/** Modes as `Light, Dark=.dark` writes them: a name, and the root's selector in that mode. */
-function parseModes(modes: string | undefined): ReadHTMLMode[] {
-  return compact((modes ?? '').split(',').map((mode) => mode.trim())).map((mode) => {
-    const separator = mode.indexOf('=')
-    if (separator === -1) return { name: mode.trim() }
-    const selector = mode.slice(separator + 1).trim()
-    return { name: mode.slice(0, separator).trim(), rootAttributes: rootAttributes(selector) }
+const modesSchema = v.array(
+  v.object({
+    name: v.pipe(v.string(), v.nonEmpty()),
+    rootAttributes: v.optional(v.record(v.string(), v.string()))
   })
+)
+
+/** The modes `--modes` gives as JSON, each a name and the root element's attributes in it. */
+function parseModes(modes: string | undefined): ReadHTMLMode[] {
+  if (modes === undefined) return []
+  const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), modesSchema), modes)
+  if (!parsed.success) throw new Error(`Invalid --modes: ${v.summarize(parsed.issues)}`)
+  return parsed.output
 }
 
 async function importHTML(
@@ -220,7 +217,7 @@ export default defineCommand({
     modes: {
       type: 'string',
       description:
-        'Variable modes and the root selector each is styled with, such as "Light, Dark=.dark"; implies --variables'
+        'Variable modes as JSON, each a name and the root element\'s attributes in it, such as \'[{"name":"Light"},{"name":"Dark","rootAttributes":{"class":"dark"}}]\'; implies --variables'
     },
     components: {
       type: 'boolean',
