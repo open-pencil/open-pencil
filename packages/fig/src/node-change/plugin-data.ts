@@ -24,6 +24,7 @@ import { effectBindingTarget, paintBindingTarget } from '@open-pencil/scene-grap
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import {
+  resolveTextStyleConsumptionEntry,
   resolveVariableConsumptionEntry,
   variableConsumptionEntries,
   VARIABLE_BINDING_FIELDS_INVERSE,
@@ -109,7 +110,9 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     Object.entries(bindings).filter(([field]) => !decidedByPaints(field))
   )
   for (const entry of variableConsumptionEntries(nc)) {
-    const binding = resolveVariableConsumptionEntry(entry)
+    const binding =
+      resolveVariableConsumptionEntry(entry) ??
+      (nc.styleType === 'TEXT' ? resolveTextStyleConsumptionEntry(entry) : undefined)
     if (binding) bindings[binding.field] = binding.variableId
     else if (entry.variableField && !referencesVariable(entry.variableData?.dataType)) {
       const field = VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]

@@ -53,6 +53,35 @@ export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
   fontFamily: 'FONT_FAMILY'
 }
 
+/**
+ * Kiwi's field for each binding a text style's record holds beyond a layer's. Figma writes a face
+ * bound by weight as FONT_STYLE too, to a number variable, which tells the two apart.
+ */
+const TEXT_STYLE_BINDING_FIELDS: Readonly<Record<string, string>> = {
+  fontStyle: 'FONT_STYLE',
+  fontWeight: 'FONT_STYLE',
+  paragraphSpacing: 'PARAGRAPH_SPACING',
+  paragraphIndent: 'PARAGRAPH_INDENT'
+}
+
+/** The text style field a record's entry binds where a layer's table has none. */
+function textStyleBindingField(entry: VariableConsumptionEntry): string | undefined {
+  if (entry.variableField === 'FONT_STYLE')
+    return entry.variableData?.resolvedDataType === 'FLOAT' ? 'fontWeight' : 'fontStyle'
+  if (entry.variableField === 'PARAGRAPH_SPACING') return 'paragraphSpacing'
+  if (entry.variableField === 'PARAGRAPH_INDENT') return 'paragraphIndent'
+  return undefined
+}
+
+/** A text style record's binding that a layer's table does not read, by variable ID. */
+export function resolveTextStyleConsumptionEntry(
+  entry: VariableConsumptionEntry
+): { field: string; variableId: string } | undefined {
+  const field = textStyleBindingField(entry)
+  const guid = field ? linearVariableExpression(entry.variableData)?.reference?.guid : undefined
+  return field && guid ? { field, variableId: guidToString(guid) } : undefined
+}
+
 export const VARIABLE_BINDING_FIELDS_INVERSE: Record<string, string> = Object.fromEntries(
   Object.entries(VARIABLE_BINDING_FIELDS).map(([field, kiwiField]) => [kiwiField, field])
 )
@@ -273,6 +302,9 @@ export function exportedVariableConsumptionEntries(
     if (field) fields.add(field)
   }
   return [...fields].flatMap((field) => {
+    const styleField =
+      node.sharedStyleType === 'TEXT' ? TEXT_STYLE_BINDING_FIELDS[field] : undefined
+    if (styleField) return [consumptionEntry(styleField, node.boundVariables[field], graph, ids)]
     const multiplier =
       (node.variableBindingScales[field] ?? 1) /
       (field === 'opacity' ? OPACITY_UNIT_PER_PERCENT : 1)
