@@ -246,6 +246,29 @@ describe('collaboration relay', () => {
     expect(tab.copyRequests()).toHaveLength(asked)
   })
 
+  test('sends an editor the deletion a copy request counts before the request', async () => {
+    const { relay: hub } = startTestRelay({ maximumRoomBytes: 64_000 })
+    const alice = await join(hub)
+    const bob = await join(hub)
+    const [first, second] = [editing(alice), editing(bob)]
+    first.answerJoin()
+    second.answerJoin()
+    first.edit(() => first.text.insert(0, 'a'.repeat(33_000)))
+    first.answerCopy()
+    // Bob's deletion makes the room ask Alice, the editor longest in it, for her copy.
+    second.edit(() => {
+      second.text.insert(0, 'z'.repeat(16_000))
+      second.text.delete(0, 10)
+    })
+    expect(first.copyRequests()).toHaveLength(2)
+    const request = alice.frames.lastIndexOf(first.copyRequests()[1] ?? alice.frames[0])
+    const deletion = alice.frames.findLastIndex(
+      (frame) => frame.type === 'message' && frame.namespace === COLLAB_ACTIONS.yjsUpdate
+    )
+    expect(deletion).toBeGreaterThan(-1)
+    expect(deletion).toBeLessThan(request)
+  })
+
   test('takes an editor’s compressed answer into the room', async () => {
     const { relay: hub } = startTestRelay()
     const editor = await join(hub)

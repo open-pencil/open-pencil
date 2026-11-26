@@ -310,14 +310,21 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
 
     if (target === RELAY_SERVER_PEER) {
-      if (content && answerAsServer(content, peer, namespace, payload, maximumRoomBytes)) {
+      if (!content) return
+      if (answerAsServer(content, peer, namespace, payload, maximumRoomBytes)) {
         changed(room, content)
+      } else {
+        // A copy that did not shrink the room may leave deletions taken while it was asked for.
+        askForCompaction(room, content)
       }
       return
     }
     if (updatesDocument(namespace)) {
       if (!content || !applyToRoom(content, peer, namespace, payload, maximumRoomBytes)) return
+      // Editors get the update before any request for a copy that counts it.
+      forward(room, peer, namespace, target, forwarded)
       changed(room, content)
+      return
     }
     forward(room, peer, namespace, target, forwarded)
   }
