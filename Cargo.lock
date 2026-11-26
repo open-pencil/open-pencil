@@ -408,7 +408,7 @@ dependencies = [
 [[package]]
 name = "blitz-dom"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=72ca31a350317da83dbf8cfc74d34b3bf56cd214#72ca31a350317da83dbf8cfc74d34b3bf56cd214"
+source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
 dependencies = [
  "app_units",
  "atomic_refcell",
@@ -454,7 +454,7 @@ dependencies = [
 [[package]]
 name = "blitz-html"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=72ca31a350317da83dbf8cfc74d34b3bf56cd214#72ca31a350317da83dbf8cfc74d34b3bf56cd214"
+source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
 dependencies = [
  "blitz-dom",
  "blitz-traits",
@@ -465,7 +465,7 @@ dependencies = [
 [[package]]
 name = "blitz-traits"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=72ca31a350317da83dbf8cfc74d34b3bf56cd214#72ca31a350317da83dbf8cfc74d34b3bf56cd214"
+source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
 dependencies = [
  "atomic_refcell",
  "bitflags 2.13.2",
@@ -1128,7 +1128,7 @@ dependencies = [
 [[package]]
 name = "debug_timer"
 version = "0.1.3"
-source = "git+https://github.com/open-pencil/blitz?rev=72ca31a350317da83dbf8cfc74d34b3bf56cd214#72ca31a350317da83dbf8cfc74d34b3bf56cd214"
+source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
 
 [[package]]
 name = "defmt"
@@ -1452,7 +1452,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1994,7 +1994,7 @@ dependencies = [
  "gobject-sys 0.21.5",
  "libc",
  "system-deps 7.0.8",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3762,6 +3762,7 @@ dependencies = [
  "parley",
  "serde_json",
  "stylo",
+ "stylo_dom",
  "stylo_static_prefs",
  "stylo_traits",
  "url",
@@ -4379,7 +4380,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4729,7 +4730,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4786,7 +4787,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5607,7 +5608,7 @@ dependencies = [
 [[package]]
 name = "stylo_taffy"
 version = "0.3.0-beta.4"
-source = "git+https://github.com/open-pencil/blitz?rev=72ca31a350317da83dbf8cfc74d34b3bf56cd214#72ca31a350317da83dbf8cfc74d34b3bf56cd214"
+source = "git+https://github.com/open-pencil/blitz?rev=50678c1e95aaad834abbcbd2987416adf49f4ce9#50678c1e95aaad834abbcbd2987416adf49f4ce9"
 dependencies = [
  "bitflags 2.13.2",
  "stylo",
@@ -6371,7 +6372,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -7384,7 +7385,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

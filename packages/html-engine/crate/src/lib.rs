@@ -4,6 +4,7 @@
 //! pumped until nothing is pending.
 
 mod references;
+mod states;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -292,7 +293,8 @@ pub fn open(html: &str, base_url: Option<&str>, width: u32, height: u32) {
         style_threading: StyleThreading::Sequential,
         ..DocumentConfig::default()
     };
-    let doc = HtmlDocument::from_html(html, config).into_inner();
+    let mut doc = HtmlDocument::from_html(html, config).into_inner();
+    states::force(&mut doc);
     SESSION.set(Some(Session {
         doc,
         net,

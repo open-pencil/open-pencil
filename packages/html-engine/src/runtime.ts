@@ -3,12 +3,9 @@ import { escapeAttribute } from 'entities'
 import {
   attachImages,
   backgroundImageURLs,
-  forceStates,
   parseFontFaceRules,
   parseHTMLDocument,
   parseStylesheetImports,
-  rootForcedStates,
-  withForcedStates,
   type CSSFontFaceRule,
   type CSSComputeOptions,
   type CSSRuntime,
@@ -342,24 +339,6 @@ function keepingFetch(
   }
 }
 
-/** A fetch whose stylesheets also match elements forced into a state. */
-function forcingStates(
-  fetch: DesignResourceFetch | undefined,
-  cssText: string,
-  baseURL: string | undefined
-): DesignResourceFetch | undefined {
-  if (!fetch) return undefined
-  // What CSS imports is a stylesheet whatever type it is served as.
-  const imported = new Set(parseStylesheetImports(cssText, baseURL))
-  return async (url, signal) => {
-    const resource = await fetch(url, signal)
-    if (!resource || !(isStylesheet(resource) || imported.has(url))) return resource
-    const css = new TextDecoder().decode(resource.bytes)
-    for (const address of parseStylesheetImports(css, resource.url)) imported.add(address)
-    return { ...resource, bytes: new TextEncoder().encode(forceStates(css)) }
-  }
-}
-
 /** A fetch that answers from what the engine already loaded before it asks `fetch`. */
 function loadedFirst(
   answered: ReadonlyMap<string, DesignResource>,
@@ -394,17 +373,12 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       // they become show them without fetching them again.
       const answered = new Map<string, DesignResource>()
       const fetch = keepingFetch(options.fetch, answered)
-      const forced = withForcedStates(document)
-      const body = serializeHTML(forced ?? document)
-      const forcedRoot = rootForcedStates(compute.rootAttributes)
-      const forces = forced !== null || forcedRoot !== null
-      const css = forces ? forceStates(cssText) : cssText
+      const body = serializeHTML(document)
       const pageFetch = fontFaceFetch(laidOut, cssText, { ...options, fetch })
-      const rootAttributes = forcedRoot ?? compute.rootAttributes
-      const capture = await laidOut.layout(documentHTML(body, css, rootAttributes), {
+      const capture = await laidOut.layout(documentHTML(body, cssText, compute.rootAttributes), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
-        fetch: forces ? forcingStates(pageFetch, css, options.baseURL) : pageFetch,
+        fetch: pageFetch,
         references: compute.references
       })
       const styled = structuredClone(document)
