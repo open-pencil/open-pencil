@@ -20,7 +20,16 @@ import { easingThumbnail } from './thumbnail'
  * An easing value's field: its thumbnail and name, which open the editor beside the panel, and
  * the variable button at its end, as a color's field holds its swatch, hex and button.
  */
-const { easing, label } = defineProps<{ easing: Easing; label: string }>()
+const {
+  easing,
+  label,
+  tone = 'form'
+} = defineProps<{
+  easing: Easing
+  label: string
+  /** `panel` in the Design panel, beside its other fields; `form` in the variable editor. */
+  tone?: 'panel' | 'form'
+}>()
 defineSlots<{ binding?(): unknown }>()
 const emit = defineEmits<{ update: [easing: Easing] }>()
 
@@ -34,7 +43,7 @@ const thumbnail = computed(() => easingThumbnail(easing))
 </script>
 
 <template>
-  <PaintField tone="form">
+  <PaintField :tone="tone">
     <template #preview>
       <component :is="thumbnail" :class="ui.thumbnail()" />
     </template>
