@@ -4,8 +4,7 @@ import type {
   Fetcher,
   R2Bucket,
   R2PutOptions,
-  RateLimit,
-  SendEmail
+  RateLimit
 } from '@cloudflare/workers-types/index'
 
 /**
@@ -26,10 +25,8 @@ export interface FeedbackBindings {
   DB: D1Database
   /** The metrics dashboard's built page, served only through the admin routes. */
   ASSETS: Fetcher
-  EMAIL: SendEmail
   PING_LIMITER: RateLimit
   INGEST_LIMITER: RateLimit
-  WAITLIST_LIMITER: RateLimit
   /** Counts report submissions and file uploads together. */
   REPORT_LIMITER: RateLimit
   /** Files people attach to error and problem reports, kept for `REPORT_FILE_RETENTION_DAYS`. */
@@ -38,10 +35,6 @@ export interface FeedbackBindings {
   REPORT_UPLOAD_SECRET: string
   POSTHOG_HOST: string
   POSTHOG_KEY: string
-  EMAIL_FROM: string
-  /** The sites whose Turnstile passes a sign-up accepts, separated by commas. */
-  TURNSTILE_HOSTNAMES: string
-  TURNSTILE_SECRET: string
   /** `owner/name` of the repository whose stars, downloads, and traffic are recorded. */
   GITHUB_REPOSITORY: string
   /** A fine-grained token that can read the repository's traffic (Administration: read). */
@@ -56,6 +49,10 @@ export interface FeedbackBindings {
   ACCESS_TEAM_DOMAIN: string
   /** The Access application's audience tag; a token for any other application is refused. */
   ACCESS_AUD: string
+  /** OpenPencil Cloud's Worker, whose internal API reports its daily usage counts. */
+  CLOUD: Fetcher
+  /** Cloud's internal API token, `OPENPENCIL_CLOUD_SERVICE_TOKEN` on the Cloud Worker. */
+  CLOUD_SERVICE_TOKEN: string
   /** PostHog's app host for its query API, which is not the ingestion host. */
   POSTHOG_APP_HOST: string
   POSTHOG_PROJECT_ID: string

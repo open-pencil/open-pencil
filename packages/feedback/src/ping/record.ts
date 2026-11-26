@@ -46,10 +46,19 @@ export async function recordPing(
   await runBatch(d1, [
     db
       .insertInto('usagePings')
-      .values({ ...build, day, count: 1 })
+      .values({ ...build, day, stepped: pingDays ? 1 : 0, count: 1 })
       .onConflict((conflict) =>
         conflict
-          .columns(['day', 'version', 'platform', 'arch', 'app', 'browser', 'usageStats'])
+          .columns([
+            'day',
+            'version',
+            'platform',
+            'arch',
+            'app',
+            'browser',
+            'usageStats',
+            'stepped'
+          ])
           .doUpdateSet((eb) => ({ count: eb('usagePings.count', '+', 1) }))
       )
       .compile(),

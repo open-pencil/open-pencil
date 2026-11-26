@@ -570,7 +570,6 @@
       "version": "0.17.0",
       "dependencies": {
         "@internationalized/date": "^3.12.3",
-        "@open-pencil/cloud": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/std": "workspace:*",
