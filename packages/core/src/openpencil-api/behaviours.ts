@@ -108,6 +108,21 @@ export class BehaviourHandle {
   }
 
   /**
+   * How the control eases between states: `{ duration, easing }`, the duration in seconds or
+   * `{ variable }` naming a TIMING variable, the easing a CSS easing, an easing name such as
+   * `OUT_CUBIC`, or `{ variable }` naming an EASING variable. Null changes state at once.
+   */
+  get transition(): NonNullable<BehaviourSpec['transition']> | null {
+    return this.spec.transition ?? null
+  }
+
+  set transition(transition: BehaviourSpec['transition'] | null) {
+    this.change(({ transition: _transition, ...spec }) =>
+      transition ? { ...spec, transition } : spec
+    )
+  }
+
+  /**
    * Hold a boolean or text value in the property named `property`; for a variant property,
    * `on` and `off` name its values, guessed from names like On and Off when left out.
    */

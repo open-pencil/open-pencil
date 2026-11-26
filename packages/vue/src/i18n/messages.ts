@@ -5,7 +5,9 @@ import { i18n } from '#vue/i18n/create'
 import { aiMessageDefaults } from '#vue/i18n/messages/ai'
 import { automationMessageDefaults } from '#vue/i18n/messages/automation'
 import { cloudMessageDefaults } from '#vue/i18n/messages/cloud/editor'
+import { cloudEmbedMessageDefaults } from '#vue/i18n/messages/cloud/embed'
 import { cloudPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal'
+import { appPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/apps'
 import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
 import { personPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/person'
 import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
@@ -38,6 +40,7 @@ import { statusMessageDefaults } from '#vue/i18n/messages/statuses'
 import { storageMessageDefaults } from '#vue/i18n/messages/storage'
 import { toolMessageDefaults } from '#vue/i18n/messages/tools'
 import { updatesMessageDefaults } from '#vue/i18n/messages/updates'
+import { variableEasingMessageDefaults } from '#vue/i18n/messages/variables/easing'
 import { variablesMessageDefaults } from '#vue/i18n/messages/variables/panel'
 import { variableTypeMessageDefaults } from '#vue/i18n/messages/variables/types'
 
@@ -49,7 +52,9 @@ export const messageDefaults = {
   ai: aiMessageDefaults,
   automation: automationMessageDefaults,
   'cloud/editor': cloudMessageDefaults,
+  'cloud/embed': cloudEmbedMessageDefaults,
   'cloud/portal': cloudPortalMessageDefaults,
+  'cloud/portal/apps': appPortalMessageDefaults,
   'cloud/portal/community': communityPortalMessageDefaults,
   'cloud/portal/person': personPortalMessageDefaults,
   'cloud/portal/plan': planPortalMessageDefaults,
@@ -82,6 +87,7 @@ export const messageDefaults = {
   storage: storageMessageDefaults,
   tools: toolMessageDefaults,
   updates: updatesMessageDefaults,
+  'variables/easing': variableEasingMessageDefaults,
   'variables/panel': variablesMessageDefaults,
   'variables/types': variableTypeMessageDefaults
 } as const

@@ -4,8 +4,8 @@ import IconShieldCheck from '~icons/lucide/shield-check'
 
 import { provideLandingMessages, type LandingMessages } from '../content/messages'
 import ActionButton from '../ui/ActionButton.vue'
-import BetaSection from './BetaSection.vue'
 import DownloadHero from './DownloadHero.vue'
+import NightlySection from './NightlySection.vue'
 import OtherWays from './OtherWays.vue'
 import PlatformFiles from './PlatformFiles.vue'
 import { data as releases } from './releases.data'
@@ -41,7 +41,11 @@ const system = useVisitorSystem()
       </header>
       <PlatformFiles :release="releases.stable" :current="system?.platform" />
     </section>
-    <BetaSection v-if="releases.beta" :release="releases.beta" :current="system?.platform" />
+    <NightlySection
+      v-if="releases.nightly"
+      :release="releases.nightly"
+      :current="system?.platform"
+    />
     <OtherWays />
   </div>
 </template>

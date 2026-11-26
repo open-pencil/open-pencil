@@ -14,6 +14,10 @@ import SdkFieldGroup from './components/SdkFieldGroup.vue'
 import SdkPropsTable from './components/SdkPropsTable.vue'
 import SdkRelatedLinks from './components/SdkRelatedLinks.vue'
 import SdkSlotsTable from './components/SdkSlotsTable.vue'
+import GuideImage from './guide/GuideImage.vue'
+import GuideLegend from './guide/GuideLegend.vue'
+import GuidePair from './guide/GuidePair.vue'
+import Keys from './guide/Keys.vue'
 import Layout from './Layout.vue'
 import { movedSection } from './moved-sections'
 
@@ -30,6 +34,10 @@ export default {
       if (moved) location.replace(moved)
     }
     app.use(TwoslashFloatingVue)
+    app.component('GuideImage', GuideImage)
+    app.component('GuideLegend', GuideLegend)
+    app.component('GuidePair', GuidePair)
+    app.component('Keys', Keys)
     app.component('SdkCard', SdkCard)
     app.component('SdkCardGroup', SdkCardGroup)
     app.component('SdkComponentAPI', SdkComponentAPI)

@@ -3,6 +3,7 @@ import DefaultTheme from 'vitepress/theme'
 
 import GitHubButton from './site/GitHubButton.vue'
 import OpenAppButton from './site/OpenAppButton.vue'
+import ShortcutsSetting from './site/ShortcutsSetting.vue'
 import SiteFooter from './site/SiteFooter.vue'
 import ThemeButton from './site/ThemeButton.vue'
 </script>
@@ -18,6 +19,9 @@ import ThemeButton from './site/ThemeButton.vue'
     </template>
     <template #nav-screen-content-after>
       <OpenAppButton place="screen" />
+    </template>
+    <template #sidebar-nav-after>
+      <ShortcutsSetting />
     </template>
     <template #layout-bottom>
       <SiteFooter />

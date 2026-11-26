@@ -1,62 +1,60 @@
 import {
-  accountEntitlementsResponseSchema,
-  billingTokenSchema,
   cloudAccessTokenCreatedResponseSchema,
   cloudAccessTokensResponseSchema,
   cloudAccountDeletionResponseSchema,
   cloudAccountMutationResponseSchema,
   cloudAccountSessionsResponseSchema,
   cloudAccountStatusResponseSchema,
+  cloudAppConnectionsResponseSchema,
   cloudAuthenticationMethodsResponseSchema,
   cloudMFAEnableResponseSchema,
   cloudMFARecoveryCodesResponseSchema,
   cloudMFAStatusResponseSchema,
   cloudMFAVerifyResponseSchema,
+  cloudOAuthDecisionResponseSchema,
+  cloudOAuthRequestResponseSchema,
   cloudPasskeysResponseSchema,
   cloudPictureResponseSchema,
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema,
-  notificationSettingsSchema,
   type CloudAccessTokenCreate,
+  type CloudOAuthDecision,
   type CloudSocialProvider,
   type NotificationSettings
 } from '#cloud/contract'
 
-import type { CloudCall, PortalRouteClients } from './request'
+import type { CloudCall, CloudContractCall, PortalRouteClients } from './request'
 
-export function createAccountAPI(call: CloudCall, { account, tokens, api }: PortalRouteClients) {
+export function createAccountAPI(
+  call: CloudCall,
+  callContract: CloudContractCall,
+  { account, tokens, apps, contract }: PortalRouteClients
+) {
   return {
     /** Which comments the account hears about by email. */
     notificationSettings(signal?: AbortSignal) {
-      return call(
-        (options) => api.account.notifications.$get(undefined, options),
-        notificationSettingsSchema,
+      return callContract(
+        (options) => contract.comments.notificationSettings(undefined, options),
         signal
       )
     },
     setNotificationSettings(settings: NotificationSettings, signal?: AbortSignal) {
-      return call(
-        (options) => api.account.notifications.$put({ json: settings }, options),
-        notificationSettingsSchema,
+      return callContract(
+        (options) => contract.comments.setNotificationSettings({ body: settings }, options),
         signal
       )
     },
     /** The account's plan, and the storage its workspaces hold together. */
     entitlements(signal?: AbortSignal) {
-      return call(
-        (options) => api.account.entitlements.$get(undefined, options),
-        accountEntitlementsResponseSchema,
+      return callContract(
+        (options) => contract.session.accountEntitlements(undefined, options),
         signal
       )
     },
     /** A short-lived token for the deployment's billing, for this account. */
     billingToken(signal?: AbortSignal) {
-      return call(
-        (options) => api.billing.token.$post(undefined, options),
-        billingTokenSchema,
-        signal
-      )
+      return callContract((options) => contract.session.billingToken(undefined, options), signal)
     },
     accountStatus(signal?: AbortSignal) {
       return call(
@@ -219,6 +217,37 @@ export function createAccountAPI(call: CloudCall, { account, tokens, api }: Port
     revokeAccessToken(id: string, signal?: AbortSignal) {
       return call(
         (options) => tokens.revoke.$post({ json: { id } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    /** The app asking to connect, from the signed request the approval page was sent. */
+    oauthRequest(query: string, signal?: AbortSignal) {
+      return call(
+        (options) => apps.oauth.request.$get({ query: { query } }, options),
+        cloudOAuthRequestResponseSchema,
+        signal
+      )
+    },
+    /** Allows the app into a workspace, or refuses it; answers where the browser goes next. */
+    decideOAuth(decision: CloudOAuthDecision, signal?: AbortSignal) {
+      return call(
+        (options) => apps.oauth.decision.$post({ json: decision }, options),
+        cloudOAuthDecisionResponseSchema,
+        signal
+      )
+    },
+    /** The apps the account connected, each with the workspace it reaches. */
+    appConnections(signal?: AbortSignal) {
+      return call(
+        (options) => apps.account.connections.$get(undefined, options),
+        cloudAppConnectionsResponseSchema,
+        signal
+      )
+    },
+    revokeAppConnection(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => apps.account.connections.revoke.$post({ json: { id } }, options),
         cloudAccountMutationResponseSchema,
         signal
       )

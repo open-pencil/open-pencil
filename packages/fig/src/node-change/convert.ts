@@ -34,6 +34,7 @@ import {
   extractPluginRelaunchData,
   readNodeChangePluginData
 } from './plugin-data'
+import { extractSlideSettings } from './slides'
 import { extractNodeStatus } from './status'
 import { styleRefId } from './style/refs'
 import { importStyleRuns } from './style/runs'
@@ -135,6 +136,9 @@ const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   CONNECTOR: 'CONNECTOR',
   SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT',
   STICKY: 'STICKY',
+  SLIDE: 'SLIDE',
+  SLIDE_ROW: 'SLIDE_ROW',
+  SLIDE_GRID: 'SLIDE_GRID',
   // Map to TEXT while retaining a format-neutral text path for rendering/editing.
   TEXT_PATH: 'TEXT'
 }
@@ -753,7 +757,9 @@ function withFiniteNumbers(nc: NodeChange): NodeChange {
     typeof value === 'number' &&
     !Number.isFinite(value) &&
     !(Number.isNaN(value) && MEANINGFUL_NAN_FIELDS.has(key))
-  if (!Object.entries(nc).some(([key, value]) => dropped(value, key))) return nc
+  // Nearly every record is finite, so look before copying: this runs once per layer.
+  const fields: Readonly<Record<string, unknown>> = nc
+  if (!Object.keys(fields).some((key) => dropped(fields[key], key))) return nc
   return omitBy(nc, dropped)
 }
 
@@ -831,6 +837,7 @@ export function nodeChangeToProps(
     variableModes: extractVariableModes(nc),
     exportSettings: extractExportSettings(nc),
     status: extractNodeStatus(nc),
+    slide: extractSlideSettings(nc),
     pluginData: extractPluginData(nc),
     librarySource: extractLibrarySource(nc),
     libraryLayerId: extractLibraryLayerId(nc),
@@ -1325,6 +1332,8 @@ export const FIGMA_RAW_NODE_FIELD_KEYS = [
   'codeSyntax',
   'lockMode',
   'slideThemeMap',
+  'objectAnimations',
+  'slideSpeakerNotes',
   'isSoftDeleted',
   'brushType',
   'scatterStrokeSettings',

@@ -9,7 +9,8 @@ export {
   WorkspaceNotFoundError,
   type WorkspaceMemberService
 } from './members'
-export { createWorkspaceRoutes, type WorkspaceRouteEnvironment } from './routes'
+export { createSessionProcedures, createWorkspaceProcedures } from './procedures'
+export { createWorkspaceRateLimits } from './routes'
 export {
   createWorkspaceService,
   WorkspaceSlugConflictError,

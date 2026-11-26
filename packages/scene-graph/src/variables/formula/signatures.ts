@@ -1,9 +1,13 @@
-import type { VariableFormulaOperator, VariableLiteral, VariableType } from '#scene-graph/types'
+import type {
+  VariableFormulaOperator,
+  VariableFormulaType,
+  VariableLiteral
+} from '#scene-graph/types'
 
 import { variableText, variableTruthy } from '../text'
 import { VariableFormulaError } from './tree'
 
-export type FormulaValueType = VariableType
+export type FormulaValueType = VariableFormulaType
 
 /** One set of operand types an operator takes, and the type it then gives. */
 export interface FormulaOverload {

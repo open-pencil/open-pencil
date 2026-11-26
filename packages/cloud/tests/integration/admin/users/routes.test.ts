@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { adminContractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   createBetterAuthAdapter,
   createCloudApp,
@@ -12,8 +12,6 @@ import {
   type TransactionalEmailService
 } from '#cloud/server'
 import { decryptTransactionalEmailPayload } from '#cloud/server/email'
-import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -28,12 +26,6 @@ const config = parseCloudServerConfig({
   googleClientId: 'google-client',
   googleClientSecret: 'google-secret'
 })
-
-/** What the route answers: done, or refused with a code. */
-const answerSchema = v.union([
-  v.object({ ok: v.literal(true) }),
-  v.object({ error: v.object({ code: v.string() }) })
-])
 
 const ADMIN_ID = 'aaaaaaaa-1111-4111-8111-111111111111'
 const EMAIL_SECRET = 'notice-test-secret-at-least-32-characters'
@@ -80,7 +72,7 @@ async function server(
   }))
   if (!password || !google) throw new Error('two methods')
   await runtime.database.insertInto('account').values([password, google]).execute()
-  const admin = testClient(
+  const admin = adminContractClient(
     createCloudApp({
       config,
       database: runtime.database,
@@ -89,13 +81,10 @@ async function server(
       resolveSession: async () => ada,
       transactionalEmail: email(queue)
     }),
-    undefined,
-    undefined,
-    { headers: { Origin: config.publicURL } }
-  ).api.admin
-  // The raw answer, so a refusal's status is checked along with its body.
+    { Origin: config.publicURL }
+  )
   const remove = (methodId: string, spelling = userId) =>
-    admin.users['remove-sign-in-method'].$post({ json: { userId: spelling, methodId } })
+    admin.removeSignInMethod({ body: { userId: spelling, methodId } })
   const left = async () =>
     (
       await runtime.database
@@ -105,10 +94,7 @@ async function server(
         .execute()
     ).map((method) => method.providerId)
   const offered = async () => {
-    const detail = await responseJSON(
-      await admin.users[':id'].$get({ param: { id: userId } }),
-      v.object({ methods: v.array(v.object({ provider: v.string(), canRemove: v.boolean() })) })
-    )
+    const detail = await admin.user({ params: { id: userId } })
     return detail.methods.map((method) => [method.provider, method.canRemove])
   }
   const queued = () =>
@@ -150,10 +136,9 @@ describe('admin people routes', () => {
   test('refuse an administrator’s own account however its ID is spelled', async () => {
     const { google, remove, left } = await server(ADMIN_ID, 'Ada')
     // The database matches a UUID in any case; the console's own-account rule has to as well.
-    const response = await remove(google.id, ADMIN_ID.toUpperCase())
-    expect(response.status).toBe(400)
-    expect(await responseJSON(response, answerSchema)).toEqual({
-      error: { code: 'self_admin_action_forbidden' }
+    expect(await outcome(remove(google.id, ADMIN_ID.toUpperCase()))).toEqual({
+      status: 400,
+      code: 'self_admin_action_forbidden'
     })
     expect(await left()).toHaveLength(2)
   })
@@ -168,15 +153,12 @@ describe('admin people routes', () => {
       ])
     )
     // Her Google account is the only way in that still works.
-    const refused = await remove(google.id)
-    expect(refused.status).toBe(400)
-    expect(await responseJSON(refused, answerSchema)).toEqual({
-      error: { code: 'last_authentication_method' }
+    expect(await outcome(remove(google.id))).toEqual({
+      status: 400,
+      code: 'last_authentication_method'
     })
     // The password lets no one in, so taking it away changes nothing.
-    const removed = await remove(password.id)
-    expect(removed.status).toBe(200)
-    expect(await responseJSON(removed, answerSchema)).toEqual({ ok: true })
+    expect(await remove(password.id)).toEqual({ ok: true })
     expect(await left()).toEqual(['google'])
   })
 
@@ -195,13 +177,13 @@ describe('admin people routes', () => {
         return id
       }
     }))
-    expect((await remove(password.id)).status).toBe(500)
+    expect(await outcome(remove(password.id))).toMatchObject({ status: 500 })
     expect(failedAfterQueueing).toBe(true)
     expect(await queued()).toEqual([])
     expect(await left()).toHaveLength(2)
 
     failing = false
-    expect((await remove(password.id)).status).toBe(200)
+    expect(await outcome(remove(password.id))).toBe('ok')
     expect(await left()).toEqual(['google'])
     const notices = await queued()
     expect(notices).toHaveLength(1)
@@ -226,8 +208,7 @@ describe('admin people routes', () => {
     const { admin, request, database } = await server(GRACE_ID, 'Grace')
     await request('pending')
 
-    const deleted = await admin.users.delete.$post({ json: { userId: GRACE_ID } })
-    expect(deleted.status).toBe(200)
+    expect(await outcome(admin.deleteUser({ body: { userId: GRACE_ID } }))).toBe('ok')
     // The account goes with its sign-in methods and its request.
     expect(
       await database.selectFrom('user').select('id').where('id', '=', GRACE_ID).execute()
@@ -236,16 +217,12 @@ describe('admin people routes', () => {
       await database.selectFrom('account').select('id').where('userId', '=', GRACE_ID).execute()
     ).toEqual([])
     expect(await database.selectFrom('enrollment').select('id').execute()).toEqual([])
-    const activity = await responseJSON(
-      await admin.audit.$get({ query: {} }),
-      v.object({
-        events: v.array(
-          v.object({ action: v.string(), subject: v.object({ name: v.nullable(v.string()) }) })
-        )
-      })
-    )
+    const activity = await admin.audit({ query: {} })
     expect(activity.events).toEqual([
-      expect.objectContaining({ action: 'user.deleted', subject: { name: 'Grace' } })
+      expect.objectContaining({
+        action: 'user.deleted',
+        subject: expect.objectContaining({ name: 'Grace' })
+      })
     ])
   })
 
@@ -253,10 +230,9 @@ describe('admin people routes', () => {
     const { admin, request, database } = await server(GRACE_ID, 'Grace')
     await request('approved')
 
-    const refused = await admin.users.delete.$post({ json: { userId: GRACE_ID } })
-    expect(refused.status).toBe(409)
-    expect(await responseJSON(refused, answerSchema)).toEqual({
-      error: { code: 'account_approved' }
+    expect(await outcome(admin.deleteUser({ body: { userId: GRACE_ID } }))).toEqual({
+      status: 409,
+      code: 'account_approved'
     })
     expect(
       await database.selectFrom('user').select('id').where('id', '=', GRACE_ID).execute()
@@ -270,8 +246,9 @@ describe('admin people routes', () => {
     await request('pending')
     await database.updateTable('enrollment').set({ approvedUserId: GRACE_ID }).execute()
 
-    const refused = await admin.users.delete.$post({ json: { userId: GRACE_ID } })
-    expect(refused.status).toBe(409)
+    expect(await outcome(admin.deleteUser({ body: { userId: GRACE_ID } }))).toMatchObject({
+      status: 409
+    })
     expect(
       await database.selectFrom('user').select('id').where('id', '=', GRACE_ID).execute()
     ).toHaveLength(1)

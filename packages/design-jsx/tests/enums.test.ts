@@ -17,23 +17,13 @@ import {
   TEXT_DIRECTION,
   type JSXEnum
 } from '#design-jsx/enums'
-import { createDesignJSXRenderer, sceneNodeToJSX } from '#design-jsx/index'
+import { sceneNodeToJSX } from '#design-jsx/index'
 
 import { SceneGraph, type StrokeCap } from '@open-pencil/scene-graph'
 
-const renderer = createDesignJSXRenderer<never>({
-  icon: () => Promise.resolve(null),
-  svg: () => null,
-  createArtwork: () => {
-    throw new Error('No artwork in these tests')
-  },
-  layout: () => {
-    // These props do not depend on layout.
-  },
-  vectorBounds: () => {
-    throw new Error('No vectors in these tests')
-  }
-})
+import { createPlainRenderer } from './renderer'
+
+const renderer = createPlainRenderer()
 
 async function render(source: string) {
   const graph = new SceneGraph()

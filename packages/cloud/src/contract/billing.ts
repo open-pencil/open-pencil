@@ -1,8 +1,4 @@
-import type { Hono } from 'hono'
-import type { BlankEnv, BlankInput } from 'hono/types'
 import * as v from 'valibot'
-
-import type { JSONRoute } from './routes'
 
 /**
  * The contract between Cloud, its editors, and the billing service a deployment advertises: what
@@ -222,21 +218,3 @@ export const billingErrorSchema = v.object({
   error: v.object({ code: billingErrorCodeSchema, message: v.optional(v.string()) })
 })
 export type BillingError = v.InferOutput<typeof billingErrorSchema>
-
-/** The billing service's routes, for a typed Hono client (`hc<CloudBillingAPI>`). */
-export type CloudBillingSchema = JSONRoute<
-  'get',
-  typeof CLOUD_BILLING_API_PATHS.catalog,
-  BlankInput,
-  BillingCatalog
-> &
-  JSONRoute<'get', typeof CLOUD_BILLING_API_PATHS.account, BlankInput, BillingAccount> &
-  JSONRoute<
-    'post',
-    typeof CLOUD_BILLING_API_PATHS.checkout,
-    { json: CheckoutRequest },
-    BillingRedirect
-  > &
-  JSONRoute<'post', typeof CLOUD_BILLING_API_PATHS.portal, BlankInput, BillingRedirect>
-
-export type CloudBillingAPI = Hono<BlankEnv, CloudBillingSchema>

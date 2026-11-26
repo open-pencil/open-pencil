@@ -7,6 +7,7 @@ export const communityPortalMessageDefaults = {
   communityEmpty: 'Nothing has been published here yet.',
   communityNoDesigns: 'No designs here yet.',
   communityNoBoards: 'No boards here yet.',
+  communityNoSlides: 'No slides here yet.',
   communityAllFiles: 'All files',
   communityOpenInBrowser: 'Open in browser',
   communityOpenInDesktop: 'Open in desktop app',

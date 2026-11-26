@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
-import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
@@ -14,8 +14,6 @@ import {
   StaticEntitlementSource,
   type CloudActor
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
-import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -39,26 +37,6 @@ const checksumOf = (letter: string) => `${letter.repeat(43)}=`
 
 type Image = { name: string; checksum: string; byteSize: number }
 
-const documentSchema = v.object({
-  document: v.object({ id: v.string(), currentRevisionId: v.nullable(v.string()) })
-})
-const offersSchema = v.object({
-  uploads: v.array(v.object({ checksum: v.string(), uploadId: v.string() }))
-})
-const downloadSchema = v.object({
-  document: v.object({
-    revisionId: v.string(),
-    images: v.array(
-      v.object({
-        name: v.string(),
-        checksum: v.string(),
-        byteSize: v.number(),
-        download: v.object({ url: v.string() })
-      })
-    )
-  })
-})
-
 async function testApp() {
   const runtime = await createCloudTestDatabase()
   const objects = createMemoryObjectStore()
@@ -78,18 +56,12 @@ async function testApp() {
     ),
     resolveSession: async () => alice
   })
-  const client = testClient(app)
-  const workspace = await responseJSON(
-    await client.api.workspaces.$post({ json: { name: 'Studio' } }),
-    v.object({ workspace: v.object({ id: v.string() }) })
-  )
-  const created = await responseJSON(
-    await client.api.workspaces[':workspaceId'].documents.$post({
-      param: { workspaceId: workspace.workspace.id },
-      json: { name: 'Poster' }
-    }),
-    documentSchema
-  )
+  const api = contractClient(app)
+  const workspace = await api.workspaces.create({ body: { name: 'Studio' } })
+  const created = await api.documents.create({
+    params: { workspaceId: workspace.workspace.id },
+    body: { name: 'Poster' }
+  })
   const documentId = created.document.id
   let current: string | null = null
   let saves = 0
@@ -111,62 +83,48 @@ async function testApp() {
 
   /** Uploads the images the workspace lacks, as the editor does before a save. */
   async function uploadImages(images: Image[]) {
-    const offers = await responseJSON(
-      await client.api.documents[':documentId'].images.$post({
-        param: { documentId },
-        json: { images: images.map(({ checksum, byteSize }) => ({ checksum, byteSize })) }
-      }),
-      offersSchema
-    )
+    const offers = await api.documents.requestImageUploads({
+      params: { documentId },
+      body: { images: images.map(({ checksum, byteSize }) => ({ checksum, byteSize })) }
+    })
     if (offers.uploads.length === 0) return offers.uploads
     for (const offer of offers.uploads) await store(offer.uploadId)
     // Naming an upload twice lands it once.
     const commits = offers.uploads.map(({ uploadId, checksum }) => ({ uploadId, checksum }))
-    const committed = await client.api.documents[':documentId'].images.commit.$post({
-      param: { documentId },
-      json: { uploads: [...commits, ...commits] }
+    await api.documents.commitImageUploads({
+      params: { documentId },
+      body: { uploads: [...commits, ...commits] }
     })
-    expect(committed.status).toBe(204)
     return offers.uploads
   }
 
-  /** Saves the document without its images, naming them instead. */
+  /**
+   * Saves the document without its images, naming them instead, and answers how the commit
+   * ended.
+   */
   async function save(images: Image[] = []) {
     saves++
     const checksum = checksumOf(String.fromCharCode(64 + saves))
-    const upload = await responseJSON(
-      await client.api.documents[':documentId'].uploads.$post({
-        param: { documentId },
-        json: { baseRevisionId: current, byteSize: FILE_BYTES, checksum, contentType: OCTETS }
-      }),
-      v.object({ id: v.string() })
-    )
-    await store(upload.id)
-    const response = await client.api.uploads[':uploadId'].commit.$post({
-      param: { uploadId: upload.id },
-      json: { checksum, images: images.map(({ name, checksum }) => ({ name, checksum })) }
+    const upload = await api.documents.createUpload({
+      params: { documentId },
+      body: { baseRevisionId: current, byteSize: FILE_BYTES, checksum, contentType: OCTETS }
     })
-    if (response.status !== 200) return response
-    current = (await responseJSON(response, documentSchema)).document.currentRevisionId
-    return response
+    await store(upload.id)
+    const commit = api.documents.commitUpload({
+      params: { uploadId: upload.id },
+      body: { checksum, images: images.map(({ name, checksum }) => ({ name, checksum })) }
+    })
+    const result = await outcome(commit)
+    if (result === 'ok') current = (await commit).document.currentRevisionId
+    return result
   }
 
   async function download() {
-    return (
-      await responseJSON(
-        await client.api.documents[':documentId'].$get({ param: { documentId } }),
-        downloadSchema
-      )
-    ).document
+    return (await api.documents.download({ params: { documentId } })).document
   }
 
   async function usage() {
-    return responseJSON(
-      await client.api.workspaces[':workspaceId'].usage.$get({
-        param: { workspaceId: workspace.workspace.id }
-      }),
-      v.object({ usage: v.object({ bytesUsed: v.number(), objectCount: v.number() }) })
-    )
+    return api.documents.usage({ params: { workspaceId: workspace.workspace.id } })
   }
 
   /** Moves saves and image requests back in time, as if they were made that long ago. */
@@ -197,31 +155,22 @@ async function testApp() {
 
   /** Links for images the document's live room names, as its people ask for them. */
   async function links(checksums: string[], document = documentId) {
-    return responseJSON(
-      await client.api.documents[':documentId'].images.links.$post({
-        param: { documentId: document },
-        json: { checksums }
-      }),
-      v.object({ images: v.array(v.object({ checksum: v.string(), byteSize: v.number() })) })
-    )
+    return api.documents.imageLinks({ params: { documentId: document }, body: { checksums } })
   }
 
   /** Another document in the same workspace. */
   async function createDocument(name: string) {
-    const created = await responseJSON(
-      await client.api.workspaces[':workspaceId'].documents.$post({
-        param: { workspaceId: workspace.workspace.id },
-        json: { name }
-      }),
-      documentSchema
-    )
+    const created = await api.documents.create({
+      params: { workspaceId: workspace.workspace.id },
+      body: { name }
+    })
     return created.document.id
   }
 
   return {
     runtime,
     objects,
-    client,
+    api,
     documentId,
     uploadImages,
     save,
@@ -241,7 +190,7 @@ describe('Cloud document images', () => {
     const context = await testApp()
     try {
       expect(await context.uploadImages([photo, logo])).toHaveLength(2)
-      expect((await context.save([photo, logo])).status).toBe(200)
+      expect(await context.save([photo, logo])).toBe('ok')
       const download = await context.download()
       expect(
         download.images.map(({ name, checksum, byteSize }) => ({ name, checksum, byteSize }))
@@ -250,10 +199,11 @@ describe('Cloud document images', () => {
       // The workspace has both, so the next save uploads neither, even under another name.
       const renamed = { ...photo, name: 'renamed' }
       expect(await context.uploadImages([renamed, logo])).toHaveLength(0)
-      expect((await context.save([renamed, logo])).status).toBe(200)
+      expect(await context.save([renamed, logo])).toBe('ok')
       expect((await context.usage()).usage).toEqual({
         bytesUsed: FILE_BYTES + photo.byteSize + logo.byteSize,
-        objectCount: 3
+        objectCount: 3,
+        documentCount: 1
       })
     } finally {
       await context.runtime.close()
@@ -270,11 +220,16 @@ describe('Cloud document images', () => {
       return createUpload(input)
     }
     try {
-      const response = await context.client.api.documents[':documentId'].images.$post({
-        param: { documentId: context.documentId },
-        json: { images: [photo, logo].map(({ checksum, byteSize }) => ({ checksum, byteSize })) }
-      })
-      expect(response.status).toBe(500)
+      expect(
+        await outcome(
+          context.api.documents.requestImageUploads({
+            params: { documentId: context.documentId },
+            body: {
+              images: [photo, logo].map(({ checksum, byteSize }) => ({ checksum, byteSize }))
+            }
+          })
+        )
+      ).toMatchObject({ status: 500 })
       const uploads = await context.runtime.database
         .selectFrom('upload')
         .select('status')
@@ -298,26 +253,25 @@ describe('Cloud document images', () => {
   test('refuses a save that names an image the workspace does not hold', async () => {
     const context = await testApp()
     try {
-      const response = await context.save([photo])
-      expect(response.status).toBe(422)
+      expect(await context.save([photo])).toMatchObject({ status: 422 })
       // Nor does committing images take a document's own upload.
-      const upload = await responseJSON(
-        await context.client.api.documents[':documentId'].uploads.$post({
-          param: { documentId: context.documentId },
-          json: {
-            baseRevisionId: null,
-            byteSize: FILE_BYTES,
-            checksum: checksumOf('Z'),
-            contentType: OCTETS
-          }
-        }),
-        v.object({ id: v.string() })
-      )
-      const asImage = await context.client.api.documents[':documentId'].images.commit.$post({
-        param: { documentId: context.documentId },
-        json: { uploads: [{ uploadId: upload.id, checksum: checksumOf('Z') }] }
+      const upload = await context.api.documents.createUpload({
+        params: { documentId: context.documentId },
+        body: {
+          baseRevisionId: null,
+          byteSize: FILE_BYTES,
+          checksum: checksumOf('Z'),
+          contentType: OCTETS
+        }
       })
-      expect(asImage.status).toBe(422)
+      expect(
+        await outcome(
+          context.api.documents.commitImageUploads({
+            params: { documentId: context.documentId },
+            body: { uploads: [{ uploadId: upload.id, checksum: checksumOf('Z') }] }
+          })
+        )
+      ).toMatchObject({ status: 422 })
       expect(
         await context.runtime.database.selectFrom('documentRevision').select('id').execute()
       ).toHaveLength(0)
@@ -332,19 +286,19 @@ describe('Cloud document images', () => {
       await context.uploadImages([photo])
       await context.save([photo])
       await context.save()
-      const history = await responseJSON(
-        await context.client.api.documents[':documentId'].versions.$get({
-          param: { documentId: context.documentId },
-          query: {}
-        }),
-        v.object({ versions: v.array(v.object({ id: v.string(), current: v.boolean() })) })
-      )
+      const history = await context.api.versions.list({
+        params: { documentId: context.documentId },
+        query: {}
+      })
       const first = history.versions.find((version) => !version.current)
       if (!first) throw new Error('Expected the first save in the history')
-      const restored = await context.client.api.documents[':documentId'].versions[
-        ':versionId'
-      ].restore.$post({ param: { documentId: context.documentId, versionId: first.id } })
-      expect(restored.status).toBe(200)
+      expect(
+        await outcome(
+          context.api.versions.restore({
+            params: { documentId: context.documentId, versionId: first.id }
+          })
+        )
+      ).toBe('ok')
       expect((await context.download()).images.map((image) => image.name)).toEqual([photo.name])
     } finally {
       await context.runtime.close()
@@ -394,24 +348,23 @@ describe('Cloud document images', () => {
       const other = await context.createDocument('Flyer')
       expect((await context.links([photo.checksum], other)).images).toHaveLength(1)
 
-      const created = await context.client.api.documents[':documentId'].shares.$post({
-        param: { documentId: context.documentId },
-        json: { permission: 'view' }
+      const share = await context.api.sharing.createShare({
+        params: { documentId: context.documentId },
+        body: { permission: 'view' }
       })
-      const share = await responseJSON(
-        created,
-        v.object({ share: v.object({ id: v.string() }), secret: v.string() })
+      expect(
+        await context.api.publicSharing.imageLinks({
+          params: { shareId: share.share.id },
+          body: { secret: share.secret, checksums: [photo.checksum] }
+        })
+      ).toMatchObject({ images: [{ checksum: photo.checksum }] })
+      const wrongSecret = await outcome(
+        context.api.publicSharing.imageLinks({
+          params: { shareId: share.share.id },
+          body: { secret: 'f'.repeat(48), checksums: [photo.checksum] }
+        })
       )
-      const guest = await context.client.api.shares[':shareId'].images.$post({
-        param: { shareId: share.share.id },
-        json: { secret: share.secret, checksums: [photo.checksum] }
-      })
-      expect(guest.status).toBe(200)
-      expect(await guest.json()).toMatchObject({ images: [{ checksum: photo.checksum }] })
-      const wrongSecret = await context.client.api.shares[':shareId'].images.$post({
-        param: { shareId: share.share.id },
-        json: { secret: 'f'.repeat(48), checksums: [photo.checksum] }
-      })
+      if (wrongSecret === 'ok') throw new Error('Expected the wrong secret to be refused')
       expect(wrongSecret.status).toBeGreaterThanOrEqual(400)
     } finally {
       await context.runtime.close()

@@ -365,6 +365,7 @@ export class SkiaRenderer {
   isRectangularType(type: string): boolean {
     return (
       type === 'FRAME' ||
+      type === 'SLIDE' ||
       type === 'RECTANGLE' ||
       type === 'ROUNDED_RECTANGLE' ||
       type === 'COMPONENT' ||

@@ -18,8 +18,8 @@ import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalAccessToken } from '../types'
 
 /**
- * The person's personal access tokens: each by its name and first characters, when it was made,
- * last used, and expires, with revoking asked once more. Making one is `create`'s dialog.
+ * The person's personal access tokens: each by its name and first characters, what it may do,
+ * when it was made, last used, and expires, with revoking asked once more. Making one is `create`'s dialog.
  */
 const {
   tokens,
@@ -56,6 +56,15 @@ const table = usePortalRows(() => tokens, {
           strong: true,
           detail: token.start ? `${token.start}…` : null
         })
+    }),
+    column.display({
+      id: 'access',
+      header: () => tokenMessages.value.accessTokenAccess,
+      meta: { role: 'tag' },
+      cell: ({ row: { original: token } }) =>
+        token.access === 'write'
+          ? tokenMessages.value.accessTokenWrite
+          : tokenMessages.value.accessTokenRead
     }),
     column.accessor('created', {
       header: () => tokenMessages.value.columnCreated,

@@ -54,7 +54,7 @@ test('keeps content that kept content assigns, wherever the file saved it', () =
 })
 
 test('keeps content that an override assigns, however deep it is nested', () => {
-  // The pinned schema types only `symbolID`; Figma nests overrides of nested instances.
+  // The codec types only `symbolID`; Figma nests overrides of nested instances.
   const overrides = [
     {
       guidPath: { guids: [guid(51)] },
