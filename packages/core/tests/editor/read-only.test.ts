@@ -59,7 +59,7 @@ describe('read-only documents', () => {
     expect([...editor.state.selectedIds]).toEqual([rect.id])
     editor.zoomToSelection()
     editor.pan(10, 10)
-    expect(editor.copySelectionAsText([rect.id])).toBe('Rect')
+    expect(editor.copySelectionAsJSX([rect.id])).toContain('Rect')
     expect(editor.getNode(rect.id)?.name).toBe('Rect')
     // The unsaved-changes tracker asks this on every node event, read-only or not.
     expect(editor.isSyncingComponents()).toBe(false)

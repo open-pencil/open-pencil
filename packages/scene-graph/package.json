@@ -432,6 +432,7 @@
   "dependencies": {
     "@noble/hashes": "^2.4.0",
     "@open-pencil/std": "workspace:*",
+    "bidi-js": "^1.1.0",
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
     "image-size": "^2.0.4",

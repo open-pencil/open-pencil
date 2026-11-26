@@ -369,6 +369,15 @@ export interface DragBlurRamp {
   cancel: () => void
 }
 
+/** Dragging a deck's selected slides to another place in its grid. */
+export interface DragSlides {
+  type: 'slides'
+  /** Shows where the slides land for a pointer at a canvas point and a screen point. */
+  update: (canvasX: number, canvasY: number, screenX: number, screenY: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
 /** Dragging a radius, point count, or ratio handle of the selected rectangle, polygon, or star. */
 export interface DragShapeHandle {
   type: 'shape-handle'
@@ -380,6 +389,7 @@ export interface DragShapeHandle {
 
 export type DragState =
   | DragShapeHandle
+  | DragSlides
   | DragBlurRamp
   | DragDraw
   | DragStickyDraw

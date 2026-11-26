@@ -2,9 +2,12 @@ import type { DesignDocument, DesignViewport } from '@open-pencil/dom-css'
 import {
   applyCSSTransforms,
   applyStacking,
+  bindThemeVariables,
   designDocumentToLayers,
   placeBackgroundPictures,
-  placeLayersFromLayout
+  placeLayersFromLayout,
+  type HTMLTheme,
+  type LayerSources
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { WHITE } from '@open-pencil/scene-graph/constants'
@@ -55,6 +58,13 @@ export async function sceneGraphFromStyledHTML(
      * the layers stay on the canvas as they are.
      */
     pageWindow?: DesignViewport
+    /** Imports the page's custom properties as variables, and binds the layers that use them. */
+    theme?: HTMLTheme
+    /**
+     * Makes components of the layers the page marks, as `createMarkedComponents` does. Passed in
+     * because only `readHTMLDocument` makes them, which keeps their code out of the editor.
+     */
+    createComponents?: (graph: SceneGraph, sources: LayerSources, page: DesignDocument) => void
   } = {}
 ): Promise<SceneGraph> {
   // Text is set in the first family of its `font-family` list there is a font for, the page's own
@@ -62,12 +72,8 @@ export async function sceneGraphFromStyledHTML(
   // `Helvetica Neue` on a system without it. Families the HTML engine already resolved name a
   // single font that loads.
   await resolvePageFontFamilies(styled, options.pageFamilies)
-  const { graph, boxes, transforms, svgs, stackings, backgroundPictures } = designDocumentToLayers(
-    styled,
-    {
-      pageName: options.pageName
-    }
-  )
+  const layers = designDocumentToLayers(styled, { pageName: options.pageName })
+  const { graph, boxes, transforms, svgs, sources, stackings, backgroundPictures } = layers
   // The page shows what a browser paints behind the page: its own background, or white.
   const background = parseCSSColor(styled.background) ?? WHITE
   for (const page of graph.getPages()) {
@@ -85,10 +91,16 @@ export async function sceneGraphFromStyledHTML(
   // Once laid out, so each takes its layer's final size.
   placeBackgroundPictures(graph, backgroundPictures)
   applyStacking(graph, stackings)
-  await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
+  const tinted = await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
+  const bindLayer = options.theme && bindThemeVariables(graph, options.theme, sources, svgs, tinted)
   applyCSSTransforms(graph, transforms)
+  options.createComponents?.(graph, sources, styled)
   if (options.pageWindow) {
-    for (const page of graph.getPages()) frameAsWindow(graph, page, options.pageWindow, background)
+    for (const page of graph.getPages()) {
+      const frame = frameAsWindow(graph, page, options.pageWindow, background)
+      // The window shows the page's background, which a theme may change.
+      if (frame && bindLayer && styled.canvas) bindLayer(frame, styled.canvas)
+    }
   }
   return graph
 }
@@ -102,9 +114,9 @@ function frameAsWindow(
   page: SceneNode,
   pageWindow: DesignViewport,
   background: Color
-): void {
+): SceneNode | null {
   const layers = graph.getChildren(page.id)
-  if (layers.length === 0) return
+  if (layers.length === 0) return null
   // Down to what the page draws, a box's children overflowing it included, as the page scrolls to.
   const bottom = maxOf(
     layers.map(
@@ -123,6 +135,7 @@ function frameAsWindow(
     fills: [{ type: 'SOLID', color: { ...background, a: 1 }, opacity: background.a, visible: true }]
   })
   for (const layer of layers) graph.reparentNode(layer.id, frame.id)
+  return frame
 }
 
 export { loadPageFontFaces } from './page-fonts'

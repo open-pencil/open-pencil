@@ -3,12 +3,16 @@
 //! fetched by the host: Blitz's requests queue up, the host answers them, and the document is
 //! pumped until nothing is pending.
 
+mod references;
+mod states;
+mod values;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use blitz_dom::node::SpecialElementData;
-use blitz_dom::{BaseDocument, DocumentConfig, Node, StyleThreading};
+use blitz_dom::{BaseDocument, DocumentConfig, LocalName, Node, QualName, StyleThreading, ns};
 use blitz_html::HtmlDocument;
 use blitz_traits::net::{Bytes, NetHandler, NetProvider, Request};
 use blitz_traits::shell::{ColorScheme, Viewport};
@@ -20,9 +24,14 @@ use style::computed_values::border_collapse::T as BorderCollapse;
 use style::properties::{LonghandId, PropertyDeclarationId};
 use style::servo_arc::Arc as ServoArc;
 use style::stylesheets::{CssRule, Stylesheet};
+use style::values::computed::Length;
 use style::values::generics::font::LineHeight;
+use style::values::generics::svg::SVGPaintKind;
+use style::values::generics::transform::Translate;
 use style::values::specified::box_::DisplayInside;
 use url::{Position, Url};
+
+use references::{Root, Scope};
 
 /// Computed properties the importer reads. Everything else is left out to keep captures small.
 /// Those in `default_styles` are reported only when they differ from their initial value; the
@@ -34,6 +43,7 @@ const PROPERTIES: &[&str] = &[
     "visibility",
     "opacity",
     "z-index",
+    "float",
     "overflow-x",
     "overflow-y",
     "box-sizing",
@@ -126,6 +136,7 @@ const PROPERTIES: &[&str] = &[
     "line-height",
     "letter-spacing",
     "word-spacing",
+    "direction",
     "text-align",
     "text-transform",
     "text-decoration-line",
@@ -274,6 +285,8 @@ pub fn fonts_reset() {
 }
 
 pub fn open(html: &str, base_url: Option<&str>, width: u32, height: u32) {
+    // Stylo keeps `:has()` behind a preference.
+    style_prefs::set_pref!("layout.css.has-selector.enabled", true);
     let net = Arc::new(QueueNet::default());
     let config = DocumentConfig {
         viewport: Some(Viewport::new(width, height, 1.0, ColorScheme::Light)),
@@ -283,13 +296,42 @@ pub fn open(html: &str, base_url: Option<&str>, width: u32, height: u32) {
         style_threading: StyleThreading::Sequential,
         ..DocumentConfig::default()
     };
-    let doc = HtmlDocument::from_html(html, config).into_inner();
+    let mut doc = HtmlDocument::from_html(html, config).into_inner();
+    states::force(&mut doc);
     SESSION.set(Some(Session {
         doc,
         net,
         in_flight: HashMap::new(),
         next_id: 0,
     }));
+}
+
+/// Gives the root element exactly these attributes, as another mode of a theme styles the page,
+/// such as `class="dark"`; the next capture shows the same elements restyled.
+pub fn restyle(attributes: &Map<String, Value>) {
+    with_session(|s| {
+        let Some(root) = s.doc.try_root_element().map(|root| root.id) else {
+            return;
+        };
+        let current: Vec<QualName> = s
+            .doc
+            .get_node(root)
+            .and_then(Node::attrs)
+            .map(|attrs| attrs.iter().map(|attr| attr.name.clone()).collect())
+            .unwrap_or_default();
+        let mut mutator = s.doc.mutate();
+        for name in current {
+            if !attributes.contains_key(&*name.local) {
+                mutator.clear_attribute(root, name);
+            }
+        }
+        for (name, value) in attributes {
+            let name = QualName::new(None, ns!(), LocalName::from(name.as_str()));
+            mutator.set_attribute(root, name, value.as_str().unwrap_or_default());
+        }
+        drop(mutator);
+        states::force(&mut s.doc);
+    })
 }
 
 fn with_session<R>(f: impl FnOnce(&mut Session) -> R) -> R {
@@ -339,9 +381,16 @@ fn rect(x: f32, y: f32, w: f32, h: f32) -> Value {
     json!([x, y, w, h])
 }
 
-/// The computed values of `COMPUTED_PROPERTIES`, such as `auto`, `50%`, `390px`, or `1.5`.
+/// The computed values of `COMPUTED_PROPERTIES`, such as `auto`, `50%`, `390px`, or `1.5`, and
+/// `currentcolor` for an SVG paint that is the element's color, which its resolved value hides.
 fn computed(node: &Node) -> Option<Value> {
     let styles = node.primary_styles()?;
+    let svg = styles.get_inherited_svg();
+    let paints = [("fill", &svg.fill.kind), ("stroke", &svg.stroke.kind)];
+    let current = paints
+        .into_iter()
+        .filter(|(_, kind)| matches!(kind, SVGPaintKind::Color(color) if color.is_currentcolor()))
+        .map(|(name, _)| (name.to_owned(), Value::from("currentcolor")));
     let out: Map<String, Value> = COMPUTED_PROPERTIES
         .iter()
         .map(|id| {
@@ -352,15 +401,34 @@ fn computed(node: &Node) -> Option<Value> {
             };
             (id.name().to_owned(), value.into())
         })
+        .chain(current)
         .collect();
     Some(Value::Object(out))
+}
+
+/// A `translate` that takes a percentage of the element's box, in pixels.
+fn translate_in_pixels(node: &Node) -> Option<String> {
+    let styles = node.primary_styles()?;
+    let Translate::Translate(x, y, z) = &styles.get_box().translate else {
+        return None;
+    };
+    if !x.has_percentage() && !y.has_percentage() {
+        return None;
+    }
+    let size = node.final_layout().size;
+    let x = x.resolve(Length::new(size.width)).px();
+    let y = y.resolve(Length::new(size.height)).px();
+    Some(format!("{x}px {y}px {}px", z.px()))
 }
 
 fn styles(doc: &BaseDocument, node: &Node, local: &[Url]) -> Value {
     let defaults = default_styles();
     let mut out = Map::new();
     for property in PROPERTIES {
-        let value = local_urls(doc.resolved_style_value(node.id, property), local);
+        let mut value = local_urls(doc.resolved_style_value(node.id, property), local);
+        if *property == "translate" {
+            value = translate_in_pixels(node).unwrap_or(value);
+        }
         // Stylo answers a property it does not implement with an empty value.
         if value.is_empty() {
             continue;
@@ -471,10 +539,12 @@ fn default_styles() -> &'static HashMap<&'static str, String> {
     DEFAULTS.get_or_init(|| {
         [
             ("opacity", "1"),
+            ("direction", "ltr"),
             ("z-index", "auto"),
             ("overflow-x", "visible"),
             ("overflow-y", "visible"),
             ("position", "static"),
+            ("float", "none"),
             ("flex-wrap", "nowrap"),
             ("flex-grow", "0"),
             ("flex-shrink", "1"),
@@ -641,13 +711,21 @@ fn is_table_part(node: &Node) -> bool {
     })
 }
 
+/// What capturing every node of a document needs.
+struct Context {
+    local: Vec<Url>,
+    /// Set when the capture reports which custom properties styles come from.
+    root: Option<Root>,
+}
+
 /// Captures a node and its subtree. `half_gutter` is half the collapsed-border gutter of the
 /// table a row, row group, or cell belongs to: Blitz lays collapsed borders out between the
 /// cells, where CSS gives each cell half of every border it shares (CSS 2.1 §17.6.2), so those
 /// boxes grow by it on each side to be the boxes a browser reports.
 fn capture_node(
     doc: &BaseDocument,
-    local: &[Url],
+    context: &Context,
+    scope: &Scope,
     node: &Node,
     out: &mut Vec<Value>,
     parent: Option<usize>,
@@ -668,7 +746,7 @@ fn capture_node(
     let Some(el) = node.element_data() else {
         // Document, comment, or doctype: walk its children only.
         for &child in &node.children {
-            capture_node(doc, local, &doc.tree()[child], out, parent, None);
+            capture_node(doc, context, scope, &doc.tree()[child], out, parent, None);
         }
         return;
     };
@@ -713,10 +791,17 @@ fn capture_node(
         };
         entry.insert("image".into(), kind.into());
     }
-    entry.insert("style".into(), styles(doc, node, local));
+    entry.insert("style".into(), styles(doc, node, &context.local));
     if let Some(computed) = computed(node) {
         entry.insert("computed".into(), computed);
     }
+    let passed = context.root.as_ref().map(|root| {
+        let (references, passed) =
+            references::of(doc, node, root, scope, &doc.guard().read(), PROPERTIES);
+        entry.insert("references".into(), references);
+        passed
+    });
+    let scope = passed.as_ref().unwrap_or(scope);
 
     if let Some(fragments) = node.inline_fragment_boxes() {
         let root = node
@@ -751,12 +836,13 @@ fn capture_node(
 
     let pseudo = |id: Option<blitz_traits::node_id::NodeId>| id.and_then(|id| doc.get_node(id));
     if let Some(before) = pseudo(el.before) {
-        capture_pseudo(doc, local, before, "::before", out, index);
+        capture_pseudo(doc, context, scope, before, "::before", out, index);
     }
     for &child in &node.children {
         capture_node(
             doc,
-            local,
+            context,
+            scope,
             &doc.tree()[child],
             out,
             Some(index),
@@ -764,41 +850,64 @@ fn capture_node(
         );
     }
     if let Some(after) = pseudo(el.after) {
-        capture_pseudo(doc, local, after, "::after", out, index);
+        capture_pseudo(doc, context, scope, after, "::after", out, index);
     }
 }
 
 fn capture_pseudo(
     doc: &BaseDocument,
-    local: &[Url],
+    context: &Context,
+    scope: &Scope,
     node: &Node,
     tag: &str,
     out: &mut Vec<Value>,
     parent: usize,
 ) {
     let before = out.len();
-    capture_node(doc, local, node, out, Some(parent), None);
+    capture_node(doc, context, scope, node, out, Some(parent), None);
     if let Some(Value::Object(entry)) = out.get_mut(before) {
         entry.insert("tag".into(), tag.into());
     }
 }
 
-pub fn capture() -> String {
+/// The document laid out; with `references`, also the root's custom properties and, for each
+/// element, the properties whose values come from them.
+pub fn capture(references: bool) -> String {
     with_session(|s| {
         s.doc.handle_messages();
         s.doc.resolve(0.0);
+        let mut root = references
+            .then(|| Root::of(&s.doc, &s.doc.guard().read()))
+            .flatten();
+        let root_styles = s.doc.try_root_element().and_then(|element| {
+            element
+                .primary_styles()
+                .map(|styles| ServoArc::clone(&styles))
+        });
+        if let (Some(root), Some(styles)) = (root.as_mut(), root_styles) {
+            root.type_values(s.doc.stylist_device(), &styles);
+        }
         let doc = &s.doc;
         let mut nodes = Vec::new();
-        let local = local_bases(doc);
-        capture_node(doc, &local, doc.root_node(), &mut nodes, None, None);
+        let context = Context {
+            local: local_bases(doc),
+            root,
+        };
+        let scope = Scope::default();
+        let root = doc.root_node();
+        capture_node(doc, &context, &scope, root, &mut nodes, None, None);
         let (w, h) = doc.viewport().window_size;
         // Values the nodes leave out are these; the host fills them back in.
         let initial: Map<String, Value> = default_styles()
             .iter()
             .map(|(property, value)| ((*property).to_owned(), value.clone().into()))
             .collect();
-        json!({ "engine": "blitz", "viewport": [w, h], "initial": initial, "nodes": nodes })
-            .to_string()
+        let mut out =
+            json!({ "engine": "blitz", "viewport": [w, h], "initial": initial, "nodes": nodes });
+        if let Some(root) = &context.root {
+            out["variables"] = root.to_json();
+        }
+        out.to_string()
     })
 }
 
@@ -923,8 +1032,17 @@ mod abi {
         super::fail(id)
     }
 
+    /// Takes the root element's attributes as a JSON object of strings.
     #[unsafe(no_mangle)]
-    pub extern "C" fn capture() -> usize {
-        set_output(super::capture().into_bytes())
+    pub extern "C" fn restyle(ptr: *const u8, len: usize) {
+        let text = unsafe { text(ptr, len) };
+        if let Ok(serde_json::Value::Object(attributes)) = serde_json::from_str(text) {
+            super::restyle(&attributes)
+        }
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn capture(references: bool) -> usize {
+        set_output(super::capture(references).into_bytes())
     }
 }

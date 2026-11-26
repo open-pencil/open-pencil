@@ -3,10 +3,15 @@ import { basename, dirname, extname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
+import * as v from 'valibot'
 
 import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
+import {
+  readHTMLDocument,
+  type ReadHTMLMode,
+  type ReadHTMLResult
+} from '@open-pencil/core/io/formats/html/import'
 import { fetchRemoteFile, type RemoteFileKind } from '@open-pencil/core/io/remote'
 import { errorMessage } from '@open-pencil/std/errors'
 
@@ -27,6 +32,9 @@ interface ImportArgs {
   pageName: string
   json?: boolean
   'icon-names': boolean
+  variables?: boolean
+  modes?: string
+  components?: boolean
 }
 
 /** The HTML to import, where it came from, the address it resolves against, and its title. */
@@ -106,6 +114,22 @@ async function readInput(args: ImportArgs): Promise<ImportInput> {
   }
 }
 
+/** The attributes a mode's selector gives the root element: `.dark` or `[data-theme=dark]`. */
+const modesSchema = v.array(
+  v.object({
+    name: v.pipe(v.string(), v.nonEmpty()),
+    rootAttributes: v.optional(v.record(v.string(), v.string()))
+  })
+)
+
+/** The modes `--modes` gives as JSON, each a name and the root element's attributes in it. */
+function parseModes(modes: string | undefined): ReadHTMLMode[] {
+  if (modes === undefined) return []
+  const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), modesSchema), modes)
+  if (!parsed.success) throw new Error(`Invalid --modes: ${v.summarize(parsed.issues)}`)
+  return parsed.output
+}
+
 async function importHTML(
   args: ImportArgs,
   { html, baseURL, webPage }: ImportInput
@@ -116,7 +140,9 @@ async function importHTML(
     tailwind: await tailwindCandidatesForArgs(args),
     pageName: args.pageName,
     matchIcon: args['icon-names'] ? createHeadlessIconMatcher() : undefined,
-    framed: webPage
+    framed: webPage,
+    variables: args.variables || args.modes ? { modes: parseModes(args.modes) } : undefined,
+    components: args.components
   })
 }
 
@@ -183,6 +209,21 @@ export default defineCommand({
       description: 'Scene graph page name (default: DOM/CSS)',
       default: 'DOM/CSS'
     },
+    variables: {
+      type: 'boolean',
+      description:
+        "Import the page's CSS custom properties as variables and bind the layers that use them"
+    },
+    modes: {
+      type: 'string',
+      description:
+        'Variable modes as JSON, each a name and the root element\'s attributes in it, such as \'[{"name":"Light"},{"name":"Dark","rootAttributes":{"class":"dark"}}]\'; implies --variables'
+    },
+    components: {
+      type: 'boolean',
+      description:
+        'Make components of elements marked with data-op-component and data-op-component-set'
+    },
     json: {
       type: 'boolean',
       description: 'Print a machine-readable summary to stdout'
@@ -208,7 +249,13 @@ export default defineCommand({
       printError(errorMessage(error))
       process.exit(1)
     }
-    const imported = await importHTML(args, input)
+    let imported: ReadHTMLResult
+    try {
+      imported = await importHTML(args, input)
+    } catch (error) {
+      printError(errorMessage(error))
+      process.exit(1)
+    }
     const output = await writeOutput(args, input.title, imported)
     const pages = imported.graph.getPages()
     const summary = {

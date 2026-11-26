@@ -1,0 +1,1 @@
+- draw.io, HTML, and Tailwind JSX exports draw boolean operations as their combined shape.

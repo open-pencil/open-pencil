@@ -66,26 +66,39 @@ function spanFontAttrs(fallback: SVGFallbackFace | undefined): Record<string, st
   return fallback ? { 'font-family': fallback.family } : {}
 }
 
-function isLogicalTextEnd(node: SceneNode, direction: 'LTR' | 'RTL'): boolean {
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'RIGHT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'LEFT')
-  )
+/**
+ * The side of the box a line of unmeasured text stands against: alignment names a side whatever
+ * the direction, as Figma aligns, and justified text, a single line here, starts where it reads
+ * from.
+ */
+function textSide(node: SceneNode, direction: 'LTR' | 'RTL'): 'left' | 'center' | 'right' {
+  switch (node.textAlignHorizontal) {
+    case 'CENTER':
+      return 'center'
+    case 'RIGHT':
+      return 'right'
+    case 'JUSTIFIED':
+      return direction === 'RTL' ? 'right' : 'left'
+    default:
+      return 'left'
+  }
 }
 
+/** The anchor that puts the text against its side: an anchor's start is where the text reads from. */
 function textAnchorForNode(
   node: SceneNode,
   direction: 'LTR' | 'RTL'
 ): 'middle' | 'end' | undefined {
-  if (node.textAlignHorizontal === 'CENTER') return 'middle'
-  if (isLogicalTextEnd(node, direction)) return 'end'
-  return undefined
+  const side = textSide(node, direction)
+  if (side === 'center') return 'middle'
+  const startSide = direction === 'RTL' ? 'right' : 'left'
+  return side === startSide ? undefined : 'end'
 }
 
 function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
-  if (node.textAlignHorizontal === 'CENTER') return round(node.width / 2)
-  if (isLogicalTextEnd(node, direction)) return round(node.width)
-  return 0
+  const side = textSide(node, direction)
+  if (side === 'center') return round(node.width / 2)
+  return side === 'right' ? round(node.width) : 0
 }
 
 /** Text with no measured layout: explicit newlines on their own baselines, otherwise one line. */

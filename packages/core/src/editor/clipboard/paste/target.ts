@@ -6,6 +6,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { acceptingParent } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
+import { canvasRootId } from '#core/editor/views'
 
 /**
  * Where ordinary paste and file drops insert; replacement paste uses its target's parent.
@@ -17,12 +18,16 @@ export function resolvePasteTarget(ctx: Pick<EditorContext, 'graph' | 'state'>):
 
 function pasteTargetCandidate(ctx: Pick<EditorContext, 'graph' | 'state'>): string {
   if (ctx.state.enteredContainerId) return ctx.state.enteredContainerId
+  const root = canvasRootId(ctx.graph, ctx.state)
   const ids = [...ctx.state.selectedIds]
-  if (ids.length !== 1) return ctx.state.currentPageId
+  if (ids.length !== 1) return root
   const node = ctx.graph.getNode(ids[0])
-  if (!node) return ctx.state.currentPageId
+  // A layer selected off the slide on the stage is hidden there, so the paste stays on the stage.
+  const offStage =
+    root !== ctx.state.currentPageId && node?.id !== root && !ctx.graph.isDescendant(ids[0], root)
+  if (!node || offStage) return root
   if (CONTAINER_TYPES.has(node.type) && node.type !== 'CANVAS') return node.id
-  return node.parentId ?? ctx.state.currentPageId
+  return node.parentId ?? root
 }
 
 /**
@@ -38,6 +43,11 @@ export function sourcePasteTarget(
   if (!id || rest.some((other) => other !== id)) return null
   if (ctx.state.selectedIds.size > 0 || ctx.state.enteredContainerId) return null
   if (!ctx.graph.getNode(id) || ctx.graph.pageOf(id) !== ctx.state.currentPageId) return null
+  // With a slide on the stage, layers go back only to a place on it, where they can be seen.
+  const root = canvasRootId(ctx.graph, ctx.state)
+  if (root !== ctx.state.currentPageId && id !== root && !ctx.graph.isDescendant(id, root)) {
+    return null
+  }
   return acceptingParent(ctx, id) === id ? id : null
 }
 
