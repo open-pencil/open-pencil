@@ -29,7 +29,7 @@ type SchemaCoverageBucket =
   | 'internalBookkeeping'
 
 const SCHEMA_PATH = 'packages/kiwi/src/fig/schema/fig.kiwi'
-const CODEC_PATH = 'packages/kiwi/src/fig/codec.ts'
+const NODE_CHANGE_RECORDS_PATH = 'packages/kiwi/src/fig/records.ts'
 
 function nodeChangeSchemaFields(): SchemaField[] {
   const schema = parseSchema(readFileSync(SCHEMA_PATH, 'utf8'))
@@ -40,8 +40,8 @@ function nodeChangeSchemaFields(): SchemaField[] {
 
 function modeledNodeChangeFields(): Set<string> {
   const source = ts.createSourceFile(
-    CODEC_PATH,
-    readFileSync(CODEC_PATH, 'utf8'),
+    NODE_CHANGE_RECORDS_PATH,
+    readFileSync(NODE_CHANGE_RECORDS_PATH, 'utf8'),
     ts.ScriptTarget.Latest,
     true
   )
