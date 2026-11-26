@@ -8,6 +8,7 @@ import type {
   SceneNode,
   TextLength
 } from '@open-pencil/scene-graph'
+import { BLACK } from '@open-pencil/scene-graph/constants'
 import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import {
   hasTextList,
@@ -24,7 +25,7 @@ import {
 } from '@open-pencil/scene-graph/text'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { fillToCSS, letterSpacingToCSS, lineHeightToCSS, showsOnlyShaders } from './css'
+import { cssColor, fillToCSS, letterSpacingToCSS, lineHeightToCSS, showsOnlyShaders } from './css'
 
 /** The character styles CSS writes, as a text layer and its runs hold them. */
 type CharacterStyle = Pick<
@@ -206,11 +207,22 @@ function spanCSS(
 ): DesignStyleDeclaration {
   const own = characterCSS(style, decorated, profile)
   const css = differing(own, base)
+  if (inheritsHiddenColor(style, css, base)) {
+    css.color = cssColor(BLACK, profile)
+  }
   const { unit, value } = style.letterSpacing
   if (unit === 'PERCENT' && value !== 0 && 'font-size' in css) {
     css['letter-spacing'] = own['letter-spacing']
   }
   return css
+}
+
+function inheritsHiddenColor(
+  style: CharacterStyle,
+  css: DesignStyleDeclaration,
+  base: DesignStyleDeclaration
+): boolean {
+  return base.color === 'transparent' && !('color' in css) && style.fills.some(isDrawnPaint)
 }
 
 /** What `css` sets differently from `base`. */

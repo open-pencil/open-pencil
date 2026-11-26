@@ -57,6 +57,24 @@ describe('Figma shader paints in HTML and Tailwind', () => {
     expect(run([SHADER]).html).toContain('<span style="color: transparent">there</span>')
   })
 
+  test('a text run CSS cannot colour stays visible in a text that shows only shaders', () => {
+    const gradient: Fill = {
+      ...BLUE,
+      type: 'GRADIENT_LINEAR',
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+      gradientStops: [
+        { position: 0, color: RED.color },
+        { position: 1, color: BLUE.color }
+      ]
+    }
+    const { html } = exported('TEXT', {
+      text: 'Hi there',
+      fills: [SHADER],
+      styleRuns: [{ start: 3, length: 5, style: { fills: [gradient] } }]
+    })
+    expect(html).toContain('<span style="color: #000000">there</span>')
+  })
+
   test("a text's colour binding is the one on its first drawn fill", () => {
     const colour = (boundVariables: Record<string, string>) => {
       const graph = designSystem()
