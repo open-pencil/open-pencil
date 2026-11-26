@@ -70,6 +70,20 @@ describe('text style bindings', () => {
     expect(text.boundVariables.fontSize).toBe(own.id)
   })
 
+  test('a text takes the weight its style binds in the mode it is in', () => {
+    const { graph, collection, roomy, style, frame, text } = styledText()
+    const weight = graph.createVariable('Body weight', 'FLOAT', collection.id, 400)
+    weight.valuesByMode[roomy] = 700
+    graph.updateNode(style.id, {
+      fontWeight: 400,
+      boundVariables: { ...style.boundVariables, fontWeight: weight.id }
+    })
+
+    reconcileVariableBindings(graph, { subtrees: [frame.id] })
+
+    expect(text.fontWeight).toBe(700)
+  })
+
   test('a text that starts using a style lets go of its own bindings of the style fields', () => {
     const { graph, collection, style, text } = styledText()
     const own = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
