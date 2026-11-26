@@ -379,8 +379,12 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
         fetch: pageFetch,
-        references: compute.references
+        references: compute.references,
+        modes: compute.modes
       })
+      const modes = capture.modes.map(
+        (other) => new Map(other.nodes.map((node) => [node.id, node]))
+      )
       const styled = structuredClone(document)
       const pairs = pairElements(styled, capture)
       for (const [element, node] of pairs) {
@@ -395,6 +399,20 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
         })
         if (compute.layout) element.layout = layoutOf(node)
         element.references = node.references
+        if (modes.length > 0) {
+          element.modes = modes.map((nodes, index) => {
+            const same = nodes.get(node.id)
+            const computedStyle = same && {
+              ...capture.modes[index].initial,
+              ...same.style,
+              ...same.computed
+            }
+            return {
+              computedStyle: computedStyle && withShorthands(computedStyle),
+              references: same?.references
+            }
+          })
+        }
         const image = imageOf(element, answered, options.baseURL)
         if (image) element.image = image
       }
@@ -407,6 +425,9 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
       styled.background = canvasBackground(capture)
       styled.customProperties = capture.variables
+      if (modes.length > 0) {
+        styled.modes = capture.modes.map((other) => ({ customProperties: other.variables }))
+      }
       return styled
     }
   }

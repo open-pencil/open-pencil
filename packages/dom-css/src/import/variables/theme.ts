@@ -1,4 +1,4 @@
-import type { DesignCustomProperty, DesignDocument } from '#dom-css/types'
+import type { DesignCustomProperty } from '#dom-css/types'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneGraph, Variable, VariableValue } from '@open-pencil/scene-graph'
@@ -8,10 +8,10 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { anyCSSColor } from '../css-values'
 import { expressionLabel, referencedProperty } from './expression'
 
-/** One mode of an imported theme: the page styled in it, with its root's custom properties. */
+/** One mode of an imported theme: its name, and its root's custom properties. */
 export interface ThemeMode {
   name: string
-  styled: DesignDocument
+  customProperties?: Record<string, DesignCustomProperty>
 }
 
 /** What a custom property holds as a variable: a color, or a number with how CSS reads it. */
@@ -30,7 +30,7 @@ function valueOf(property: DesignCustomProperty | undefined): CustomPropertyValu
 }
 
 function valueIn(mode: ThemeMode, property: string): CustomPropertyValue | null {
-  return valueOf(mode.styled.customProperties?.[property])
+  return valueOf(mode.customProperties?.[property])
 }
 
 /** A page's custom properties to import as variables, one mode per way the page was styled. */
@@ -85,7 +85,7 @@ export class ThemeVariables {
   }
 
   #createProperties({ modes }: HTMLTheme): void {
-    for (const property of Object.keys(modes[0].styled.customProperties ?? {})) {
+    for (const property of Object.keys(modes[0].customProperties ?? {})) {
       const value = valueIn(modes[0], property)
       if (!value) continue
       const variable = this.#graph.createVariable(
@@ -103,7 +103,7 @@ export class ThemeVariables {
           // A property a mode sets to something else entirely keeps the first mode's value.
           const own = valueIn(mode, property)
           const value = own?.type === variable.type ? own : valueIn(modes[0], property)
-          const declared = mode.styled.customProperties?.[property]?.declared
+          const declared = mode.customProperties?.[property]?.declared
           const alias = this.named(referencedProperty(declared))
           if (alias && alias.type === variable.type && alias.id !== variable.id)
             return { aliasId: alias.id }

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use blitz_dom::node::SpecialElementData;
-use blitz_dom::{BaseDocument, DocumentConfig, Node, StyleThreading};
+use blitz_dom::{BaseDocument, DocumentConfig, LocalName, Node, QualName, StyleThreading, ns};
 use blitz_html::HtmlDocument;
 use blitz_traits::net::{Bytes, NetHandler, NetProvider, Request};
 use blitz_traits::shell::{ColorScheme, Viewport};
@@ -302,6 +302,34 @@ pub fn open(html: &str, base_url: Option<&str>, width: u32, height: u32) {
         in_flight: HashMap::new(),
         next_id: 0,
     }));
+}
+
+/// Gives the root element exactly these attributes, as another mode of a theme styles the page,
+/// such as `class="dark"`; the next capture shows the same elements restyled.
+pub fn restyle(attributes: &Map<String, Value>) {
+    with_session(|s| {
+        let Some(root) = s.doc.try_root_element().map(|root| root.id) else {
+            return;
+        };
+        let current: Vec<QualName> = s
+            .doc
+            .get_node(root)
+            .and_then(Node::attrs)
+            .map(|attrs| attrs.iter().map(|attr| attr.name.clone()).collect())
+            .unwrap_or_default();
+        let mut mutator = s.doc.mutate();
+        for name in current {
+            if !attributes.contains_key(&*name.local) {
+                mutator.clear_attribute(root, name);
+            }
+        }
+        for (name, value) in attributes {
+            let name = QualName::new(None, ns!(), LocalName::from(name.as_str()));
+            mutator.set_attribute(root, name, value.as_str().unwrap_or_default());
+        }
+        drop(mutator);
+        states::force(&mut s.doc);
+    })
 }
 
 fn with_session<R>(f: impl FnOnce(&mut Session) -> R) -> R {
@@ -988,6 +1016,15 @@ mod abi {
     #[unsafe(no_mangle)]
     pub extern "C" fn fail(id: u32) {
         super::fail(id)
+    }
+
+    /// Takes the root element's attributes as a JSON object of strings.
+    #[unsafe(no_mangle)]
+    pub extern "C" fn restyle(ptr: *const u8, len: usize) {
+        let text = unsafe { text(ptr, len) };
+        if let Ok(serde_json::Value::Object(attributes)) = serde_json::from_str(text) {
+            super::restyle(&attributes)
+        }
     }
 
     #[unsafe(no_mangle)]

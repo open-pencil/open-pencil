@@ -110,6 +110,18 @@ describe('variables from custom properties', () => {
     expect(values(graph, 'a')).toMatchObject([{ r: 0, g: 0, b: 1 }])
   })
 
+  test('bind elements a mode adds generated content beside', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div class="box"><i id="ink" style="display:block;width:9px;height:9px;background:var(--ink)"></i></div>',
+      {
+        cssText:
+          ':root { --ink: #112233 } .dark { --ink: white } .dark .box::before { content: "+" }',
+        variables: VARIABLES
+      }
+    )
+    expect(bound(graph, named(graph, 'ink'), 'fills/0/color')).toBe('ink')
+  })
+
   test('compute lengths, colors, and numbers as the root does', async () => {
     const { graph } = await readHTMLDocument('<p>x</p>', {
       cssText:

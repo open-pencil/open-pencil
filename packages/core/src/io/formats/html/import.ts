@@ -180,33 +180,41 @@ export async function readHTMLDocument(
     ? await compileTailwindCSS(options.tailwind, { css: options.cssText })
     : options.cssText
   const modes = options.variables?.modes?.length ? options.variables.modes : DEFAULT_MODES
-  const style = async (mode: ReadHTMLMode) => {
+  const [first, ...others] = modes
+  const style = async () => {
     const styled = await htmlToDesignDocument(html, {
       ...styleOptions,
       cssText,
       compute: {
         ...styleOptions.compute,
-        rootAttributes: mode.rootAttributes,
-        references: options.variables !== undefined
+        rootAttributes: first.rootAttributes,
+        references: options.variables !== undefined,
+        // Every mode styles the same elements, so each records what it computes to in them.
+        modes: options.variables ? others.map((mode) => mode.rootAttributes ?? {}) : undefined
       }
     })
     await resolvePageFontFamilies(styled, pageFamilies)
     return styled
   }
-  let styled = await style(modes[0])
+  let styled = await style()
   if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) {
-    styled = await style(modes[0])
+    styled = await style()
   }
-  const readTheme = async (collection = DEFAULT_COLLECTION): Promise<HTMLTheme> => {
-    const pages = [styled]
-    for (const mode of modes.slice(1)) pages.push(await style(mode))
-    const themed: ThemeMode[] = modes.map(({ name }, index) => ({ name, styled: pages[index] }))
+  const theme = (collection = DEFAULT_COLLECTION): HTMLTheme => {
+    const properties = [
+      styled.customProperties,
+      ...(styled.modes ?? []).map((mode) => mode.customProperties)
+    ]
+    const themed: ThemeMode[] = modes.map(({ name }, index) => ({
+      name,
+      customProperties: properties[index]
+    }))
     return { collection, modes: themed }
   }
   const graph = await sceneGraphFromStyledHTML(styled, {
     pageName: options.pageName,
     matchIcon: options.matchIcon,
-    theme: options.variables && (await readTheme(options.variables.collection)),
+    theme: options.variables && theme(options.variables.collection),
     createComponents: options.components ? createMarkedComponents : undefined,
     pageWindow: options.framed ? (options.viewport ?? HTML_IMPORT_VIEWPORT) : undefined
   })

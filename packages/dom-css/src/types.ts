@@ -18,6 +18,12 @@ export interface DesignCustomProperty {
   number?: number
 }
 
+/** An element as another mode of a theme styles it. */
+export interface DesignElementMode {
+  computedStyle?: DesignStyleDeclaration
+  references?: DesignStyleDeclaration
+}
+
 export interface DesignDocument {
   type: 'document'
   children: DesignNode[]
@@ -36,6 +42,8 @@ export interface DesignDocument {
    * The root element's custom properties, by name, when the runtime was asked for references.
    */
   customProperties?: Record<string, DesignCustomProperty>
+  /** The root's custom properties in each further mode `CSSComputeOptions.modes` names. */
+  modes?: { customProperties?: Record<string, DesignCustomProperty> }[]
   sourceGraph?: SceneGraph
   /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
   tokens?: DesignTokens
@@ -55,6 +63,8 @@ export interface DesignElement {
    * writes them, when the runtime was asked for references.
    */
   references?: DesignStyleDeclaration
+  /** Its computed styles and references in each further mode `CSSComputeOptions.modes` names. */
+  modes?: DesignElementMode[]
   /** The picture an `<img>` shows, as the runtime that styled the page loaded it. */
   image?: DesignResource
   /**
@@ -129,6 +139,11 @@ export interface CSSComputeOptions {
   references?: boolean
   /** Attributes of the root element, such as the class a theme is switched with. */
   rootAttributes?: Record<string, string>
+  /**
+   * The root attributes of further modes of a theme, such as `{ class: 'dark' }`, to style the
+   * same elements in; each element records what it computes to in them (`DesignElement.modes`).
+   */
+  modes?: Record<string, string>[]
 }
 
 export interface CSSRuntime {

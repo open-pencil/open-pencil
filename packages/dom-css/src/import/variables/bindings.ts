@@ -1,4 +1,4 @@
-import type { DesignDocument, DesignElement } from '#dom-css/types'
+import type { DesignElement, DesignElementMode } from '#dom-css/types'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -14,28 +14,23 @@ import { ThemeVariables, type HTMLTheme, type ModeColor } from './theme'
 /** The element each layer was built from; its text layers come from the element that holds them. */
 export type LayerSources = Map<string, DesignElement>
 
-function elementsOf(parent: DesignDocument | DesignElement): DesignElement[] {
-  return parent.children.filter((child) => child.type === 'element')
+type ModeStyle = Required<DesignElementMode>
+
+/** What an element computes to in each mode of the theme, or null when a mode left it out. */
+function inModes(element: DesignElement, count: number): ModeStyle[] | null {
+  const own = { computedStyle: mergedStyle(element), references: element.references ?? {} }
+  const modes = [own, ...(element.modes ?? [])]
+  if (modes.length !== count) return null
+  const styled: ModeStyle[] = []
+  for (const { computedStyle, references } of modes) {
+    if (!computedStyle) return null
+    styled.push({ computedStyle, references: references ?? {} })
+  }
+  return styled
 }
 
-/**
- * Each element of the first mode's page with the same one in every mode, by position; elements a
- * mode adds or removes, such as generated content, end the pairing among their siblings.
- */
-function counterparts(modes: readonly DesignDocument[]): Map<DesignElement, DesignElement[]> {
-  const pairs = new Map<DesignElement, DesignElement[]>()
-  const pair = (parents: readonly (DesignDocument | DesignElement)[]) => {
-    const [first, ...others] = parents.map(elementsOf)
-    for (const [index, element] of first.entries()) {
-      const same = others.map((siblings) => siblings.at(index))
-      if (!same.every((other) => other?.tagName === element.tagName)) return
-      const all = [element, ...same.filter((other) => other !== undefined)]
-      pairs.set(element, all)
-      pair(all)
-    }
-  }
-  pair(modes)
-  return pairs
+function elementsOf(parent: DesignElement): DesignElement[] {
+  return parent.children.filter((child) => child.type === 'element')
 }
 
 /** Where a layer's number comes from: the field that binds, and the properties that all set it. */
@@ -81,11 +76,6 @@ function numberIn(node: SceneNode, field: string): number | null {
   return length?.unit === 'PIXELS' ? length.value : null
 }
 
-/** A property's computed number in an element's styles. */
-function styledNumber(element: DesignElement, property: string): number | null {
-  return parseCSSNumber(mergedStyle(element)[property])
-}
-
 function isSameNumber(value: number | undefined, other: number | null): boolean {
   return value !== undefined && other !== null && Math.abs(value - other) <= NUMBER_TOLERANCE
 }
@@ -123,26 +113,24 @@ class Binder {
   readonly #graph: SceneGraph
   readonly #theme: HTMLTheme
   readonly #variables: ThemeVariables
-  readonly #counterparts: Map<DesignElement, DesignElement[]>
 
   constructor(graph: SceneGraph, theme: HTMLTheme) {
     this.#graph = graph
     this.#theme = theme
     this.#variables = new ThemeVariables(graph, theme)
-    this.#counterparts = counterparts(theme.modes.map((mode) => mode.styled))
   }
 
   #isColor = (property: string) => this.#variables.named(property)?.type === 'COLOR'
 
   /** What a color is in each mode, or null when nothing about it is worth a variable. */
   #colors(element: DesignElement, property: string): ModeColor[] | null {
-    const same = this.#counterparts.get(element)
-    if (same?.length !== this.#theme.modes.length) return null
+    const modes = inModes(element, this.#theme.modes.length)
+    if (!modes) return null
     const colors: ModeColor[] = []
-    for (const other of same) {
-      const color = anyCSSColor(mergedStyle(other)[property])
+    for (const other of modes) {
+      const color = anyCSSColor(other.computedStyle[property])
       if (!color) return null
-      const reference = other.references?.[property]
+      const reference = other.references[property]
       colors.push({ expression: reference ? colorPart(reference, this.#isColor) : null, color })
     }
     return this.#worthBinding(colors) ? colors : null
@@ -174,11 +162,11 @@ class Binder {
   /** Binds numbers a single property gives, where its variable holds the layer's in every mode. */
   #bindNumbers(node: SceneNode, element: DesignElement): void {
     for (const [field, property] of numberSlots(node)) {
-      const same = this.#counterparts.get(element)
-      const names = same?.map((other) => referencedProperty(other.references?.[property])) ?? []
+      const modes = inModes(element, this.#theme.modes.length) ?? []
+      const names = modes.map((other) => referencedProperty(other.references[property]))
       const variable = this.#variables.named(names.at(0) ?? null)
       if (variable?.type !== 'FLOAT' || names.some((name) => name !== names[0])) continue
-      const others = (same ?? []).slice(1).map((other) => styledNumber(other, property))
+      const others = modes.slice(1).map((other) => parseCSSNumber(other.computedStyle[property]))
       const expected = [numberIn(node, field), ...others]
       // A text length or a radius takes a length; a unitless line height is no length.
       const unit = field === 'opacity' ? 'number' : 'length'
@@ -191,11 +179,11 @@ class Binder {
 
   /** Binds each shadow's color, matching the page's shadow list with the effects it became. */
   #bindShadows(node: SceneNode, element: DesignElement, property: 'box-shadow' | 'text-shadow') {
-    const same = this.#counterparts.get(element)
-    if (same?.length !== this.#theme.modes.length) return
-    const lists = same.map((other) => ({
-      computed: splitCSSLayers(mergedStyle(other)[property] ?? ''),
-      written: splitCSSLayers(other.references?.[property] ?? '')
+    const modes = inModes(element, this.#theme.modes.length)
+    if (!modes) return
+    const lists = modes.map((other) => ({
+      computed: splitCSSLayers(other.computedStyle[property] ?? ''),
+      written: splitCSSLayers(other.references[property] ?? '')
     }))
     let effect = 0
     for (const index of lists[0].computed.keys()) {

@@ -23,6 +23,7 @@ const EXPORTS = [
   'pump',
   'provide',
   'fail',
+  'restyle',
   'capture'
 ] as const
 
@@ -42,7 +43,12 @@ export interface HTMLEngineLayoutOptions {
   requestTimeoutMs?: number
   /** Report which of the root's custom properties each element's styles come from. */
   references?: boolean
+  /** The root attributes of further modes to restyle the laid-out document in and capture again. */
+  modes?: readonly Record<string, string>[]
 }
+
+/** A capture, with one per further mode the layout was asked for. */
+export type HTMLEngineLayout = HTMLEngineCapture & { modes: HTMLEngineCapture[] }
 
 /**
  * How long a request may take by default: as long as the browser runtime waits for an image, so
@@ -235,7 +241,7 @@ export class HTMLEngine {
     return size ? [[url, resource.url], `raster ${size[0]}x${size[1]}`] : null
   }
 
-  async #layout(html: string, options: HTMLEngineLayoutOptions): Promise<HTMLEngineCapture> {
+  async #layout(html: string, options: HTMLEngineLayoutOptions): Promise<HTMLEngineLayout> {
     checkViewport(options.viewport)
     const { width, height } = options.viewport
     this.#withText(html, (htmlPointer, htmlLength) =>
@@ -251,17 +257,28 @@ export class HTMLEngine {
         for (const key of urls) rasters.set(key, kind)
       }
     }
+    const capture = this.#capture(options)
+    restoreImageKinds(capture, rasters, options.baseURL)
+    const modes = (options.modes ?? []).map((attributes) => {
+      this.#withText(JSON.stringify(attributes), (pointer, length) =>
+        this.#exports.restyle(pointer, length)
+      )
+      return this.#capture(options)
+    })
+    return { ...capture, modes }
+  }
+
+  #capture(options: HTMLEngineLayoutOptions): HTMLEngineCapture {
     const parsed = v.safeParse(
       v.pipe(v.string(), v.parseJson(), captureSchema),
       this.#output(this.#exports.capture(options.references ? 1 : 0))
     )
     if (!parsed.success) throw new Error('The HTML engine captured a document in an unknown shape')
-    restoreImageKinds(parsed.output, rasters, options.baseURL)
     return parsed.output
   }
 
   /** Lays the document out once every resource it asks for is answered, and captures it. */
-  layout(html: string, options: HTMLEngineLayoutOptions): Promise<HTMLEngineCapture> {
+  layout(html: string, options: HTMLEngineLayoutOptions): Promise<HTMLEngineLayout> {
     return this.#layouts.run(() => this.#layout(html, options))
   }
 }
