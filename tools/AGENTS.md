@@ -77,7 +77,7 @@ How the `/demo` tour is structured and built: `packages/docs/development/demo-to
 
 ## Landing posters
 
-`tools/generate/guide-images/` shoots the user guide's pictures from a running editor in both themes and records their sizes in `packages/docs/.vitepress/theme/guide/sizes.json`. Run `bun run generate:guide-images [name ...]` beside `bun run dev`, with `GUIDE_IMAGES_ORIGIN` for another address, after a change to a pictured panel; nothing reshoots them in CI.
+`tools/generate/guide-images/` shoots the user guide's pictures, defined per page in `src/shots/<page>.ts`, from a running editor in both themes and records their sizes in `packages/docs/.vitepress/theme/guide/sizes.json`. Run `bun run generate:guide-images [name ...]` beside `bun run dev`, with `GUIDE_IMAGES_ORIGIN` for another address, after a change to a pictured panel; nothing reshoots them in CI.
 
 `tools/generate/landing-posters/` captures WebP stills of every docs landing stage, per locale, theme, and layout, from a production docs build served locally in headless Chromium with software WebGL. `build:production` in `packages/docs` runs it after `vitepress build`; it reuses `.cache/landing-posters/<fingerprint>` when the inputs in `src/fingerprint.ts` are unchanged and copies the stills into `dist`, and `generate:landing-posters` forces a capture. The docs deploy workflow spreads the capture over runners: one job runs `build:site`, four run the generator with `--shard i/4`, and the deploy job gathers their stills and runs it with `--assemble`, which fails on any missing still; dispatching it with `dry-run` builds and captures without deploying and keeps the stills as an artifact. A stage that starts depending on a new source tree adds it to `LANDING_POSTER_INPUTS`.
 

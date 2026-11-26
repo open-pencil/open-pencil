@@ -6,7 +6,8 @@ export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultThem
   {
     text: labels.overview,
     items: [
-      { text: labels.gettingStarted, link: `${prefix}/getting-started` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.gettingStarted, link: '/getting-started' },
       { text: labels.features, link: `${prefix}/overview/features` },
       { text: labels.comparison, link: `${prefix}/overview/comparison` },
       // English only until translated; locales link to the canonical page.
@@ -22,8 +23,10 @@ export const userGuideSidebar = (
   {
     text: labels.gettingAround,
     items: [
-      { text: labels.canvasNav, link: `${prefix}/user-guide/canvas-navigation` },
-      { text: labels.selection, link: `${prefix}/user-guide/selection-and-manipulation` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.canvasNav, link: '/user-guide/canvas-navigation' },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.selection, link: '/user-guide/selection-and-manipulation' },
       { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` }
     ]
   },
@@ -42,7 +45,8 @@ export const userGuideSidebar = (
   {
     text: labels.organizing,
     items: [
-      { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.layers, link: '/user-guide/layers-and-pages' },
       // English only until translated; locales link to the canonical page.
       { text: labels.files, link: '/user-guide/files' },
       { text: labels.exporting, link: '/user-guide/exporting' },

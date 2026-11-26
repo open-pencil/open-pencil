@@ -7,7 +7,8 @@ import type { Theme } from './app.ts'
 
 export interface Callout {
   number: number
-  side: 'left' | 'right'
+  /** The margin its number stands in, or `on` for a number on the picture itself, at `at`. */
+  side: 'left' | 'right' | 'on'
   /** Where its line meets the control, from the picture's corner. */
   at: Vector
 }
@@ -28,6 +29,8 @@ const LINE: Record<Theme, string> = { light: '#64748b', dark: '#94a3b8' }
 const EDGE: Record<Theme, string> = { light: '#0f172a14', dark: '#ffffff14' }
 
 function calloutMarkup({ number, side, at }: Callout, width: number): string {
+  if (side === 'on')
+    return `<b class="on" style="left:${at.x - 12}px;top:${at.y - 12}px">${number}</b>`
   const left = side === 'left'
   const line = left
     ? `left:${-REACH}px;width:${at.x + REACH}px`
@@ -50,16 +53,19 @@ export async function composePicture(
   { png, width, height, radius, callouts = [], pointer }: Picture,
   theme: Theme
 ): Promise<Buffer> {
+  const margins = callouts.some((callout) => callout.side !== 'on')
   await sheet.setContent(`
     <style>
       body { margin: 0; background: transparent }
-      #sheet { display: inline-block; padding: 8px ${callouts.length > 0 ? 48 : 16}px 12px }
+      #sheet { display: inline-block; padding: 8px ${margins ? 48 : 16}px 12px }
       #card { position: relative }
       img { display: block; border-radius: ${radius}px;
         box-shadow: 0 0 0 1px ${EDGE[theme]}, 0 1px 3px #0000001f, 0 4px 10px #0000001f }
       b, i, svg { position: absolute }
       b { width: 20px; height: 20px; border-radius: 10px; background: #2563eb; color: #fff;
         font: 600 11px/20px Inter, system-ui; text-align: center }
+      .on { width: 24px; height: 24px; border-radius: 12px; font-size: 13px; line-height: 24px;
+        box-shadow: 0 0 0 2px #fff, 0 2px 6px #0000004d }
       .line { height: 1px; background: ${LINE[theme]} }
       .end { width: 5px; height: 5px; border-radius: 3px; background: #2563eb }
       svg { filter: drop-shadow(0 1px 2px #0006) }

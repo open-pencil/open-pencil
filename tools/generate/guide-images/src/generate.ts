@@ -9,7 +9,7 @@ import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/works
 
 import { openApp, type Keyboard, type Theme } from './app.ts'
 import { composePicture } from './compose.ts'
-import { SHOTS } from './shots.ts'
+import { SHOTS } from './shots/index.ts'
 
 /** A running editor: `bun run dev`, or `GUIDE_IMAGES_ORIGIN` for one on another port. */
 const ORIGIN = process.env.GUIDE_IMAGES_ORIGIN ?? 'http://localhost:1420'
@@ -18,7 +18,7 @@ const IMAGES = 'packages/docs/public/guide'
 const SIZES = 'packages/docs/.vitepress/theme/guide/sizes.json'
 /** Pictures for high-density screens. */
 const PIXEL_RATIO = 2
-/** A laptop's window, tall enough for the Design panel's longest pictured section. */
+/** A laptop's window, tall enough for the Design panel's longest pictured section, unless a shot sets its own. */
 const VIEWPORT = { width: 1280, height: 900 }
 const THEMES: Theme[] = ['light', 'dark']
 
@@ -36,10 +36,10 @@ const USER_AGENTS: Record<Keyboard, { platform: string; userAgent: string }> = {
 }
 
 async function shoot(browser: Browser, name: string, theme: Theme): Promise<Buffer> {
-  const { keyboard = 'mac', take } = SHOTS[name]
+  const { keyboard = 'mac', window = VIEWPORT, take } = SHOTS[name]
   const { platform, userAgent } = USER_AGENTS[keyboard]
   const context = await browser.newContext({
-    viewport: VIEWPORT,
+    viewport: window,
     deviceScaleFactor: PIXEL_RATIO,
     userAgent
   })
