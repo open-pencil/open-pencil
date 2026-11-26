@@ -6,6 +6,7 @@ import { BLACK } from './constants'
 import { copyEffects, copyFills, copyLayoutGrids } from './copy'
 import type { SceneGraph } from './graph'
 import { newStrokeGeometry } from './node-defaults'
+import { scaledTextStyleLengths } from './scaling/node'
 import { STROKE_LINE_KEYS } from './strokes'
 import { styleRunReferences } from './text/references'
 import type {
@@ -157,19 +158,6 @@ export function styleDetachmentChanges(
   return next
 }
 
-/** The node of the shared style with `id`, when the document holds one of `type`. */
-export function findSharedStyle(
-  graph: SceneGraph,
-  id: string,
-  type: SharedStyleType
-): SceneNode | undefined {
-  if (!id) return undefined
-  for (const node of graph.getAllNodes()) {
-    if (node.sharedStyleType === type && node.source.id === id) return node
-  }
-  return undefined
-}
-
 /** A new local style's ID, in the shape Figma gives one: `S:` and a 40-digit hex key. */
 export function newSharedStyleId(): string {
   return `S:${randomHex(20)},`
@@ -225,8 +213,27 @@ export function sharedStylePatch(
   else if (kind === 'stroke') patch.strokes = strokesFromStyle(target, style)
   else if (kind === 'effect') patch.effects = copyEffects(style.effects)
   else if (kind === 'grid') patch.layoutGrids = copyLayoutGrids(style.layoutGrids)
-  else Object.assign(patch, structuredClone(pick(style, SHARED_STYLE_FIELDS.text)))
+  else {
+    const fields = structuredClone(pick(style, SHARED_STYLE_FIELDS.text))
+    Object.assign(patch, scaledTextStyleLengths(fields, target.componentScale))
+    // A text starting to use a text style lets go of its own bindings of the style's fields.
+    const dropped =
+      target.textStyleId === styleId
+        ? []
+        : Object.keys(target.boundVariables).filter(isTextStyleField)
+    if (dropped.length > 0) {
+      patch.boundVariables = omit(target.boundVariables, dropped)
+      patch.variableBindingScales = omit(target.variableBindingScales, dropped)
+    }
+  }
   return patch
+}
+
+const TEXT_STYLE_FIELD_SET: ReadonlySet<string> = new Set(SHARED_STYLE_FIELDS.text)
+
+/** Whether a text style sets `field`, so a text or range starting to use it lets its binding go. */
+export function isTextStyleField(field: string): boolean {
+  return TEXT_STYLE_FIELD_SET.has(field)
 }
 
 /** A layer leaving a shared style: it keeps the style's values, without the reference. */
