@@ -390,6 +390,19 @@ export function renderNodesToImage(
   nodeIds: string[],
   options: RenderOptions
 ): Uint8Array<ArrayBuffer> | null {
+  return renderer.withoutTextEdit(() =>
+    drawNodesToImage(ck, renderer, graph, pageId, nodeIds, options)
+  )
+}
+
+function drawNodesToImage(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  options: RenderOptions
+): Uint8Array<ArrayBuffer> | null {
   if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
     throw new Error('Raster export selection must stay on a single page')
   }
@@ -496,6 +509,20 @@ export function renderThumbnail(
   width: number,
   height: number,
   fit: ThumbnailFit = 'contain'
+): Uint8Array<ArrayBuffer> | null {
+  return renderer.withoutTextEdit(() =>
+    drawThumbnail(ck, renderer, graph, pageId, width, height, fit)
+  )
+}
+
+function drawThumbnail(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  width: number,
+  height: number,
+  fit: ThumbnailFit
 ): Uint8Array<ArrayBuffer> | null {
   const frame = thumbnailFrame(graph, pageId, width, height, fit)
   if (!frame) return null

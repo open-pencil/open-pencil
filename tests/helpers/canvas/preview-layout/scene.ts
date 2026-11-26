@@ -104,3 +104,31 @@ export function createHuggingRow(graph: SceneGraph, pageId: string): PreviewLayo
   graph.createInstance(button.id, row.id, { name: 'Control' })
   return laidOut(graph, pageId, row)
 }
+
+/** A row that aligns 32 px and 12 px text and a box by baseline. */
+export function createBaselineRow(graph: SceneGraph, pageId: string): PreviewLayoutScene {
+  const button = createButton(graph, pageId)
+  const row = graph.createNode('FRAME', pageId, {
+    x: 120,
+    y: 120,
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG',
+    counterAxisAlign: 'BASELINE',
+    itemSpacing: 8
+  })
+  for (const [name, fontSize] of [
+    ['Big', 32],
+    ['Small', 12]
+  ] as const)
+    graph.createNode('TEXT', row.id, {
+      name,
+      text: name,
+      fontFamily: 'Inter',
+      fontSize,
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+  graph.createNode('RECTANGLE', row.id, { name: 'Box', width: 20, height: 20 })
+  graph.createInstance(button.id, row.id, { name: 'Control' })
+  return laidOut(graph, pageId, row)
+}

@@ -107,6 +107,84 @@ test('saved glyphs remain authoritative with an available font and invalidate on
 })
 
 /**
+ * A text whose font is missing lays out live in a substitute face when a fill cannot paint its
+ * saved glyphs: a blended style run, or a noise fill over a solid one that still paints them. Its
+ * descenders run past a half-height line box, and the layer at half opacity keeps them whole.
+ */
+test('half-transparent text drawn live in a substitute face keeps its descenders', async () => {
+  await editor.page.evaluate((fontFamily) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Missing editor')
+    const bytes = new Uint8Array(37)
+    const view = new DataView(bytes.buffer)
+    for (const [index, [command, x, y]] of [
+      [1, 0.1, 0],
+      [2, 0.6, 0],
+      [2, 0.6, 0.7],
+      [2, 0.1, 0.7]
+    ].entries()) {
+      bytes[index * 9] = command
+      view.setFloat32(index * 9 + 1, x, true)
+      view.setFloat32(index * 9 + 5, y, true)
+    }
+    const black: Fill = {
+      type: 'SOLID',
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const multiplied: Fill = {
+      type: 'SOLID',
+      color: { r: 0.49, g: 0.23, b: 0.93, a: 1 },
+      opacity: 1,
+      visible: true,
+      blendMode: 'MULTIPLY'
+    }
+    const noise: Fill = {
+      type: 'NOISE',
+      color: { r: 0, g: 0, b: 1, a: 1 },
+      opacity: 1,
+      visible: true,
+      noiseType: 'MONOTONE',
+      density: 0.5
+    }
+    const shared = {
+      y: 100,
+      width: 160,
+      height: 32,
+      text: 'gyp',
+      fontFamily,
+      fontSize: 64,
+      lineHeight: { value: 50, unit: 'PERCENT' as const },
+      opacity: 0.5,
+      derivedTextGlyphs: [0, 1, 2].map((index) => ({
+        commandsBlob: bytes.slice(),
+        x: index * 40,
+        y: 32,
+        fontSize: 64,
+        firstCharacter: index
+      }))
+    }
+    store.graph.createNode('TEXT', store.state.currentPageId, {
+      ...shared,
+      x: 40,
+      fills: [black],
+      styleRuns: [{ start: 0, length: 3, style: { fills: [multiplied] } }]
+    })
+    store.graph.createNode('TEXT', store.state.currentPageId, {
+      ...shared,
+      x: 260,
+      fills: [black, noise]
+    })
+    store.requestRender()
+  }, SAVED_ONLY_FONT)
+  await waitForSettledScene(editor.page)
+  expect(await editor.canvas.screenshotCanvasRegion(440, 140)).toMatchSnapshot(
+    'substitute-face-descenders.png'
+  )
+})
+
+/**
  * Figma saves an emoji as a placeholder square 1 em wide, from 0.07 em below the baseline, with
  * the emoji's code points, and draws the emoji's image over it in its own colours: the text's
  * fill, here a half-transparent red or a gradient, colours the letters and never the emoji. A

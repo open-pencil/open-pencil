@@ -153,8 +153,17 @@ A web address is fetched with the stylesheets, fonts, and pictures its page link
 | `--tailwind` | | Tailwind utility candidates to compile and apply |
 | `--tailwind-file` | | File containing Tailwind utility candidates |
 | `--page-name` | | Scene graph page name (default: `DOM/CSS`) |
+| `--variables` | | Import the page's CSS custom properties as variables and bind the layers that use them |
+| `--modes` | | Variable modes as JSON, each a name and the root element's attributes in it; implies `--variables` |
+| `--components` | | Make components of the elements the page marks |
 | `--json` | | Print a machine-readable summary |
 | `--no-icon-names` | | Don't match inline SVG to the Iconify icons it draws |
+
+With `--variables`, each color, length, and number custom property the root element declares becomes a variable: one that is exactly `var(--other)` stays an alias, and `calc()` becomes its result. Paints, shadow colors, radii, spacing, and font sizes bind to the variable their winning declaration names. A color no single property gives gets a variable of its own: named after the property it fades, as `color-mix(in oklab, var(--primary) 80%, transparent)` is `primary 80%`, or after each mode's, as `background | input`, and otherwise numbered, as `Color 1`. `--modes` styles the page in each mode, with the attributes it gives the root element, such as `[{"name":"Light"},{"name":"Dark","rootAttributes":{"class":"dark"}}]`.
+
+With `--components`, `data-op-component="Card"` makes an element a main component, and `data-op-component-set="Button"` around components named by their properties, such as `data-op-component="Size=Small, State=Hover"`, a component set. Inside a component, `data-op-text`, `data-op-visible`, and `data-op-slot` name the text, boolean, or slot property an element sets.
+
+`data-force-state="hover focus-visible"` shows an element in states a static page cannot be in: `hover`, `active`, `focus`, and `focus-visible`.
 
 Inline SVG marked with `data-icon` becomes that icon, and other inline SVG that draws an Iconify icon from a popular set becomes that icon, as in the app. Matching downloads an icon index from jsDelivr and asks the Iconify API for the candidate icons by name, never sending the SVG; `--no-icon-names` turns matching off, and SVG named by `data-icon` still becomes its icon.
 
@@ -164,6 +173,7 @@ Examples:
 openpencil import card.html --css card.css -o card.fig
 openpencil import https://example.com -o example.fig
 openpencil import card.html --tailwind "flex flex-col gap-3 w-80 p-6 rounded-xl bg-white" -o card.fig
+openpencil import kit.html --css theme.css --modes '[{"name":"Light"},{"name":"Dark","rootAttributes":{"class":"dark"}}]' --components -o kit.fig
 ```
 
 ## eval

@@ -48,3 +48,14 @@ test('a top-level row that hugs its content is as wide in preview as on the canv
       .poll(() => previewBox(editor.page, row.id, name))
       .toMatchObject({ x: box.x, y: box.y, height: box.height })
 })
+
+test('a row aligned by baseline places text and boxes on the canvas as preview does', async () => {
+  const row = await scenes.build('createBaselineRow')
+  // Text aligns by its first baseline, the box by its bottom edge.
+  expect(row.boxes.Small.y).toBeGreaterThan(row.boxes.Box.y)
+  await startPreview()
+  for (const [name, box] of Object.entries(row.boxes))
+    await expect
+      .poll(() => previewBox(editor.page, row.id, name))
+      .toMatchObject({ y: Math.round(box.y) })
+})

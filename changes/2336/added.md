@@ -1,0 +1,3 @@
+- `openpencil import --variables` imports a page's CSS custom properties as variables and binds the layers that use them, with a mode per theme from `--modes`, which gives each mode's root attributes, such as a `dark` class.
+- `openpencil import --components` makes components, component sets, and text, boolean, and slot properties of the elements a page marks with `data-op-*` attributes.
+- Imported HTML shows elements in hover, active, and focus states marked with `data-force-state`, and the HTML engine matches `:has()`.

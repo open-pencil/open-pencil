@@ -1,7 +1,6 @@
+import type { DesignStyleDeclaration } from '#dom-css/types'
 import { parse } from '@acemir/cssom'
 import type { CSSStyleRuleLike } from '@acemir/cssom'
-
-import type { DesignStyleDeclaration } from '../types'
 
 function firstStyleRule(cssText: string): CSSStyleRuleLike | null {
   const [rule] = parse(cssText).cssRules
