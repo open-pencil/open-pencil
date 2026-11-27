@@ -79,7 +79,5 @@
   "afterPrevious": "Nach vorheriger",
   "moveEarlier": "Nach vorne",
   "moveLater": "Nach hinten",
-  "pickSlide": "Eine Folie auswählen, um sie zu animieren",
-  "presentFrames": "Frames präsentieren",
-  "presentFramesWithNotes": "Frames mit Referentenansicht präsentieren"
+  "pickSlide": "Eine Folie auswählen, um sie zu animieren"
 }

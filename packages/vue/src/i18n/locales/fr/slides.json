@@ -79,7 +79,5 @@
   "afterPrevious": "Après la précédente",
   "moveEarlier": "Avancer",
   "moveLater": "Reculer",
-  "pickSlide": "Sélectionnez une diapositive pour l’animer",
-  "presentFrames": "Présenter les cadres",
-  "presentFramesWithNotes": "Présenter les cadres en mode présentateur"
+  "pickSlide": "Sélectionnez une diapositive pour l’animer"
 }
