@@ -3,7 +3,6 @@ import { createApp } from 'vue'
 
 import '@/app.css'
 import { recordRuntimeError } from '@/app/diagnostics'
-
 import UpdaterView from '@/views/UpdaterView.vue'
 
 // Entry for the desktop Software Update window (`pages/updater.html`). It never

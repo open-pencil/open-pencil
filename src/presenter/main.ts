@@ -3,7 +3,6 @@ import { createApp } from 'vue'
 
 import '@/app.css'
 import { recordRuntimeError } from '@/app/diagnostics'
-
 import PresenterView from '@/views/PresenterView.vue'
 
 // Entry for the presenter's window (`pages/presenter.html`). It never boots the editor: the window
