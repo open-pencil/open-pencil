@@ -111,6 +111,21 @@ test.describe('typography details', () => {
     await expect(features.getByRole('switch', { name: 'Open digits' })).toBeChecked()
   })
 
+  test('more features shows a number style the selected texts differ in as mixed', async ({
+    page
+  }) => {
+    const text = typeDetailsDriver(page)
+    await text.open()
+    await text.selectWithSecondText([{ tag: 'TNUM', enabled: true }])
+    await page
+      .getByRole('region', { name: 'Typography' })
+      .getByRole('button', { name: 'More features' })
+      .click()
+    const features = page.locator('[data-property="font-features"]')
+    await expect(features.getByRole('combobox', { name: 'Number style' })).toHaveText(/Mixed/)
+    await expect(features.getByRole('combobox', { name: 'Position' })).toHaveText(/Normal/)
+  })
+
   test('small caps stay off for a font without them', async ({ page }) => {
     await typeDetailsDriver(page).open()
     const typography = page.getByRole('region', { name: 'Typography' })

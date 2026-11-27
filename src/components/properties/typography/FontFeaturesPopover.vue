@@ -31,10 +31,10 @@ import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
  * by section as Figma's type details list them, with the font's names for its stylistic sets and
  * character variants.
  */
-const { sections, features, enabled } = defineProps<{
+const { sections, featureSets, enabled } = defineProps<{
   sections: FontFeatureSections | null
-  /** The first selected text's features, which the number style and position are read from. */
-  features: readonly FontFeature[]
+  /** Each selected text's features, which the number style and position are read from. */
+  featureSets: readonly (readonly FontFeature[])[]
   enabled: (tag: string) => MixedValue<boolean>
 }>()
 const emit = defineEmits<{
@@ -42,6 +42,7 @@ const emit = defineEmits<{
 }>()
 
 const typography = useMessages('panels/typography')
+const panels = useMessages('panels')
 const common = useMessages('common')
 const startSide = useInlineSide('start')
 const { open: popupOpen, portalActive } = useRetainedPopup()
@@ -65,6 +66,12 @@ const FEATURE_LABELS = computed<Record<string, string>>(() => ({
   HLIG: typography.value.historicalLigatures,
   SINF: typography.value.scientificInferiors
 }))
+
+/** What every selected text shares, or '' (shown as Mixed) where they differ. */
+function shared<T extends string>(read: (features: readonly FontFeature[]) => T): T | '' {
+  const values = new Set(featureSets.map(read))
+  return values.size === 1 ? (values.values().next().value ?? '') : ''
+}
 
 function label(feature: FontFeatureInfo): string {
   if (feature.name) return feature.name
@@ -152,7 +159,8 @@ const groups = computed(() => {
               >
                 <AppSelect
                   :label="typography.numberStyle"
-                  :model-value="numberStyleOf(features)"
+                  :model-value="shared(numberStyleOf)"
+                  :placeholder="panels.mixed"
                   :options="
                     sections.numberStyles.map((style) => ({
                       value: style,
@@ -171,7 +179,8 @@ const groups = computed(() => {
               >
                 <AppSelect
                   :label="typography.numberPosition"
-                  :model-value="numberPositionOf(features)"
+                  :model-value="shared(numberPositionOf)"
+                  :placeholder="panels.mixed"
                   :options="
                     sections.numberPositions.map((position) => ({
                       value: position,

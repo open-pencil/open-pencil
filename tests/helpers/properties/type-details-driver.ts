@@ -27,6 +27,20 @@ export function typeDetailsDriver(page: Page) {
       })
     },
 
+    /** Adds a second text with `features` beside the first, and selects both. */
+    selectWithSecondText(features: { tag: string; enabled: boolean }[]) {
+      return page.evaluate(
+        ({ nodeId, fontFeatures }) => {
+          const store = window.openPencil?.getStore?.()
+          if (!store) throw new Error('OpenPencil store not initialized')
+          const second = store.createShape('TEXT', 120, 220, 300, 40)
+          store.updateNode(second, { text: 'Second 0123', fontSize: 24, fontFeatures })
+          store.select([nodeId, second])
+        },
+        { nodeId: textId(), fontFeatures: features }
+      )
+    },
+
     /** Edits the text with the characters from `start` to `end` selected. */
     selectCharacters(start: number, end: number) {
       return page.evaluate(

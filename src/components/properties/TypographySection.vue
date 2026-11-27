@@ -483,7 +483,7 @@ function decorated(value: MixedValue<string>): boolean {
         </label>
         <FontFeaturesPopover
           :sections="ctx.fontFeatures.value"
-          :features="ctx.node.value.fontFeatures"
+          :feature-sets="ctx.nodes.value.map((node) => node.fontFeatures)"
           :enabled="ctx.fontFeature"
           @set="(label, changes) => ctx.actions.setFontFeatures(label, changes)"
         />
