@@ -63,7 +63,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const Button = ui('Button')
     return {
       rows: rowsOf(BUTTON_STYLES.map(named), BUTTON_SIZES.map(named)),
-      cell: { width: 112, height: 48 },
+      cell: { width: 136, height: 52 },
       variants: BUTTON_STYLES.flatMap((style) =>
         BUTTON_SIZES.flatMap((size) =>
           STATES.map((state) => (
@@ -83,7 +83,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
   badge: (ui, { variant }) => {
     const Badge = ui('Badge')
     return {
-      variants: ['default', 'secondary', 'destructive', 'outline'].map((style) => (
+      variants: ['default', 'secondary', 'destructive', 'outline', 'ghost', 'link'].map((style) => (
         <Badge key={style} variant={style} {...variant({ Variant: named(style) })}>
           Badge
         </Badge>
@@ -126,7 +126,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const Toggle = ui('Toggle')
     return {
       rows: rowsOf(TOGGLE_STYLES.map(named), OFF_ON),
-      cell: { width: 96, height: 48 },
+      cell: { width: 112, height: 52 },
       variants: TOGGLE_STYLES.flatMap((style) =>
         OFF_ON.flatMap((value) =>
           STATES.map((state) => (
@@ -150,7 +150,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const Slider = ui('Slider')
     return {
       rows: ['Default'],
-      cell: { width: 272, height: 40 },
+      cell: { width: 248, height: 40 },
       variants: STATES.map((state) => (
         <Slider
           key={state}
@@ -181,7 +181,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const Input = ui('Input')
     return {
       rows: ['Default'],
-      cell: { width: 272, height: 48 },
+      cell: { width: 248, height: 48 },
       variants: STATES.map((state) => (
         <Input
           key={state}
@@ -196,7 +196,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const Textarea = ui('Textarea')
     return {
       rows: ['Default'],
-      cell: { width: 272, height: 96 },
+      cell: { width: 248, height: 96 },
       variants: STATES.map((state) => (
         <Textarea
           key={state}
@@ -352,13 +352,13 @@ function LabelledSet({
     <div className="flex flex-col gap-2">
       <div className="flex" style={{ paddingLeft: ROW_LABEL_WIDTH }}>
         {STATES.map((state) => (
-          <div key={state} className={label} style={{ width: cell.width }}>
+          <div key={state} className={`${label} shrink-0`} style={{ width: cell.width }}>
             {state}
           </div>
         ))}
       </div>
       <div className="flex">
-        <div className="flex flex-col" style={{ width: ROW_LABEL_WIDTH }}>
+        <div className="flex shrink-0 flex-col" style={{ width: ROW_LABEL_WIDTH }}>
           {rows.map((row) => (
             <div key={row} className={label} style={{ height: cell.height }}>
               {row}
@@ -423,7 +423,7 @@ export default function page(marks: KitMarks, modules: KitModules, about: KitAbo
           </RenderBoundary>
         </Section>
         <Section title="Examples in dark">
-          <div {...marks.mode('Dark')}>
+          <div {...marks.mode('Dark')} className="rounded-xl bg-background p-6">
             <RenderBoundary name={`The ${doc.title} examples`}>
               <Examples />
             </RenderBoundary>
@@ -448,7 +448,7 @@ export default function page(marks: KitMarks, modules: KitModules, about: KitAbo
         <Swatches colors={about.theme.colors} />
       </Section>
       <Section title="Colors in dark">
-        <div {...marks.mode('Dark')}>
+        <div {...marks.mode('Dark')} className="rounded-xl bg-background p-6">
           <Swatches colors={about.theme.colors} />
         </div>
       </Section>
@@ -489,14 +489,14 @@ export default function page(marks: KitMarks, modules: KitModules, about: KitAbo
   const cover = (
     <section
       {...marks.page('Cover')}
-      className="flex h-[720px] w-[1280px] flex-col justify-between bg-background p-16 text-foreground"
+      className="flex w-[1280px] flex-col gap-24 bg-background p-16 text-foreground"
     >
       <div className="flex flex-col gap-4">
         <h1 className="text-6xl font-semibold tracking-tight">shadcn/ui</h1>
         <p className="max-w-2xl text-xl text-muted-foreground">
-          Its components on Radix, as its CLI sets up a project with the nova style and the neutral
-          theme, in light and dark. Each page has a component with its variants in every state, and
-          the examples shadcn shows for it.
+          shadcn/ui's components as its CLI installs them on Radix, with the nova style and the
+          neutral theme, in light and dark. Each page has a component with its variants in every
+          state, and the examples shadcn shows for it.
         </p>
       </div>
       <p className="text-sm text-muted-foreground">
