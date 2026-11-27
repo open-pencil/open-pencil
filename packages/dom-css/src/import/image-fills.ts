@@ -6,7 +6,7 @@ import { computeImageHash, imageHeader } from '@open-pencil/scene-graph/images'
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { borderWidths, contentInsets, type ContentInsets } from './box'
 import { pickStyle } from './css-values'
-import { imagePicture, pictureSource } from './pictures'
+import { imagePicture, pictureSource, showsPicture } from './pictures'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -27,8 +27,8 @@ export function applyImageFill(
   element: DesignElement,
   style: DesignStyleDeclaration
 ): void {
+  if (!showsPicture(element)) return
   const source = pictureSource(element)
-  if (source === undefined) return
   const picture = imagePicture(element)
   // A picture nothing could draw keeps its address, which exporting the layer writes back.
   if (picture?.kind !== 'raster') {
