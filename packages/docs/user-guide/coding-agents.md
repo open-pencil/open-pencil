@@ -29,7 +29,7 @@ If you already use the agent in a terminal, it can set itself up: click **Copy s
 
 ## Choose the Model and Mode
 
-An agent is a model like any other in **Settings → Models**, so it can be the **Design agent**, do **Fast tasks**, write **Reviews**, or, when it reads images, be the **Vision** model. You can add the same agent twice with different settings.
+An agent is a model like any other in **Settings → Models**, so it can be the **Design agent**, do **Fast tasks**, write **Reviews**, or, when it reads images, be the **Vision** model. On **Fast tasks**, an agent names conversations, but the Design agent still writes summaries, and Pi does neither. You can add the same agent twice with different settings.
 
 In an agent's settings:
 
