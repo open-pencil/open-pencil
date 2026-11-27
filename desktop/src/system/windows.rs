@@ -25,7 +25,7 @@ pub async fn open_updater_window<R: Runtime>(
     }
     let (width, height) = UPDATER_SIZE;
     // A separate page, so the window never boots the editor.
-    WebviewWindowBuilder::new(&app, UPDATER, WebviewUrl::App("updater.html".into()))
+    WebviewWindowBuilder::new(&app, UPDATER, WebviewUrl::App("pages/updater.html".into()))
         .title(title)
         .inner_size(width, height)
         .min_inner_size(width, height)

@@ -116,14 +116,29 @@ function shadowedBy(docsRoot: string, from: string): string | null {
     : null
 }
 
+/**
+ * Cloudflare counts every rule after the first wildcard as dynamic and reads at most 100 of those,
+ * so plain rules placed after one are silently dropped once the count runs out.
+ */
+function validateRedirectOrder(redirects: { from: string }[]): string[] {
+  const wildcard = redirects.find((redirect) => /[*:]/.test(redirect.from))?.from
+  if (!wildcard) return []
+  return redirects
+    .slice(redirects.findIndex((redirect) => redirect.from === wildcard))
+    .filter((redirect) => !/[*:]/.test(redirect.from))
+    .map(
+      (redirect) =>
+        `Redirect '${redirect.from}' follows the wildcard rule '${wildcard}'; put wildcard rules last.`
+    )
+}
+
 function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
   if (!existsSync(redirectsPath)) return [`Missing redirects file '${redirectsPath}'.`]
 
-  const errors: string[] = []
   const source = readFileSync(redirectsPath, 'utf8')
   const redirects = parseCloudflareRedirects(source)
+  const errors = validateRedirectOrder(redirects)
   const seenSources = new Set<string>()
-
   for (const redirect of redirects) {
     const status = redirect.status ?? 302
     if (seenSources.has(redirect.from)) {

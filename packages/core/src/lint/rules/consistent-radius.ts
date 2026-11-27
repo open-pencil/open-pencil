@@ -1,9 +1,10 @@
+import { PILL_RADIUS } from '@open-pencil/scene-graph/corners'
+
 import { defineRule } from '#core/lint/rule'
 import { nearestValue } from '#core/lint/utils'
 
 /** Radii from the scale; the pill radius is offered only for a layer that already reads as one. */
 const SCALE = [0, 2, 4, 6, 8, 12, 16, 20, 24, 32]
-const PILL_RADIUS = 9999
 
 export default defineRule({
   meta: {

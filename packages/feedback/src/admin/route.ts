@@ -90,8 +90,8 @@ export function adminRoutes(services: FeedbackServices) {
       // The page and its files, from the Worker's static assets once Access has let the request in.
       .get('/admin/*', async (c) => {
         const url = new URL(c.req.url)
-        // Vite names the page after its source, `metrics.html`.
-        if (url.pathname === '/admin/') url.pathname = '/admin/metrics.html'
+        // Vite builds the page at its source's path, `pages/metrics.html`.
+        if (url.pathname === '/admin/') url.pathname = '/admin/pages/metrics.html'
         // By URL alone: the page must never come back as a 304 for a cached copy.
         const asset = await c.env.ASSETS.fetch(url.toString())
         if (!asset.ok) return c.notFound()

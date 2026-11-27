@@ -152,7 +152,7 @@ fn show<R: Runtime>(app: &AppHandle<R>) {
         let _ = window.set_focus();
         return;
     }
-    let built = WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::App("permission.html".into()))
+    let built = WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::App("pages/permission.html".into()))
         .title("OpenPencil")
         .inner_size(440.0, 420.0)
         .min_inner_size(360.0, 260.0)

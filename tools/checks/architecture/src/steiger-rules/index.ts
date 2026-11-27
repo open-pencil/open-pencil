@@ -322,9 +322,9 @@ const VIEW_ENTRYPOINTS = new Set([
   'src/main.ts',
   'src/router.ts',
   'src/views/editor.ts',
-  'src/updater.ts',
-  'src/permission.ts',
-  'src/presenter.ts',
+  'src/updater/main.ts',
+  'src/permission/main.ts',
+  'src/presenter/main.ts',
   'src/cloud/main.ts',
   'src/cloud/router.ts',
   'src/metrics/main.ts'
