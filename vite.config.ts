@@ -117,12 +117,12 @@ export default defineConfig(async ({ command, mode }) => {
             ? {
                 main: resolve(__dirname, 'index.html'),
                 cloud: resolve(__dirname, 'pages/cloud.html'),
-                presenter: resolve(__dirname, 'presenter.html')
+                presenter: resolve(__dirname, 'pages/presenter.html')
               }
             : {
                 main: resolve(__dirname, 'index.html'),
                 updater: resolve(__dirname, 'pages/updater.html'),
-                presenter: resolve(__dirname, 'presenter.html')
+                presenter: resolve(__dirname, 'pages/presenter.html')
               },
         output: { chunkFileNames }
       }
