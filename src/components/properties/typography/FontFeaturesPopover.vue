@@ -2,6 +2,7 @@
 import { PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
+import type { FontFeatureInfo } from '@open-pencil/core/text'
 import type { FontFeature } from '@open-pencil/scene-graph'
 import { focusStyles } from '@open-pencil/theme'
 import type { MixedValue } from '@open-pencil/vue/controls/node-props'
@@ -10,7 +11,6 @@ import {
   numberPositionOf,
   numberStyleChanges,
   numberStyleOf,
-  type FeatureToggle,
   type FontFeatureSections,
   type NumberPosition,
   type NumberStyle
@@ -66,7 +66,7 @@ const FEATURE_LABELS = computed<Record<string, string>>(() => ({
   SINF: typography.value.scientificInferiors
 }))
 
-function label(feature: FeatureToggle): string {
+function label(feature: FontFeatureInfo): string {
   if (feature.name) return feature.name
   const known = FEATURE_LABELS.value[feature.tag]
   if (known) return known

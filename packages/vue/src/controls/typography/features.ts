@@ -83,24 +83,18 @@ export type NumberStyle = 'DEFAULT' | 'PNUM_LNUM' | 'TNUM_LNUM' | 'PNUM_ONUM' | 
 /** Where a text's figures sit: on the baseline, or raised or lowered as small figures. */
 export type NumberPosition = 'NORMAL' | 'SUPS' | 'SUBS'
 
-/** A feature the panel turns on and off by itself, with the font's name for it, if it has one. */
-export interface FeatureToggle {
-  tag: string
-  name: string | null
-}
-
 /** The features a font offers, grouped as Figma's type details group them. */
 export interface FontFeatureSections {
   smallCaps: boolean
   forcedSmallCaps: boolean
-  letterCase: FeatureToggle[]
+  letterCase: FontFeatureInfo[]
   numberStyles: NumberStyle[]
   numberPositions: NumberPosition[]
-  numbers: FeatureToggle[]
-  letterforms: FeatureToggle[]
-  stylisticSets: FeatureToggle[]
-  characterVariants: FeatureToggle[]
-  other: FeatureToggle[]
+  numbers: FontFeatureInfo[]
+  letterforms: FontFeatureInfo[]
+  stylisticSets: FontFeatureInfo[]
+  characterVariants: FontFeatureInfo[]
+  other: FontFeatureInfo[]
 }
 
 const LETTER_CASE = ['CASE', 'CPSP']

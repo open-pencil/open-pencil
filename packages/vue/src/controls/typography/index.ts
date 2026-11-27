@@ -7,7 +7,6 @@ export {
   numberPositionOf,
   numberStyleChanges,
   numberStyleOf,
-  type FeatureToggle,
   type FontFeatureSections,
   type NumberPosition,
   type NumberStyle
