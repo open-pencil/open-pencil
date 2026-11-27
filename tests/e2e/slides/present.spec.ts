@@ -43,6 +43,13 @@ test('a control on a slide stays live while the deck is presented', async () => 
   await deck.present(first)
   const control = island(editor.page, ids.instanceId).getByRole('switch')
   await expect(control).toHaveAttribute('aria-checked', 'false')
+  // It shows where the slide has the layer, the slide as large as fits in the middle.
+  const area = await editor.page.getByTestId('slide-islands').boundingBox()
+  const box = await control.boundingBox()
+  if (!area || !box) throw new Error('Expected the islands and the control to be shown')
+  const scale = Math.min(area.width / 1920, area.height / 1080)
+  expect(box.x).toBeCloseTo(area.x + (area.width - 1920 * scale) / 2 + 400 * scale, 0)
+  expect(box.y).toBeCloseTo(area.y + (area.height - 1080 * scale) / 2 + 300 * scale, 0)
   await control.click()
   await expect(control).toHaveAttribute('aria-checked', 'true')
   // The click worked the control; it did not move the deck on.
