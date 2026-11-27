@@ -162,6 +162,7 @@ export function useAppMenu() {
     'text.bold': 'bold',
     'text.italic': 'italic',
     'text.underline': 'underline',
+    'text.link': 'addLink',
     'arrange.align-left': 'arrangeAlignLeft',
     'arrange.align-center': 'arrangeAlignCenter',
     'arrange.align-right': 'arrangeAlignRight',

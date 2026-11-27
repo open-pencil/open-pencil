@@ -1,4 +1,4 @@
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type HyperlinkTarget, type SceneNode } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import { prefetchFigmaSchema } from '#core/clipboard'
@@ -440,6 +440,16 @@ export function createEditor(options?: EditorOptions) {
       ),
     getTextSelectionStyle: textSelectionStyle.selectionStyle,
     layerChanges: textSelectionStyle.layerChanges,
+    /** Links the selected characters of a text, or all of it, or removes their link with `null`. */
+    setTextLink: (id: string, link: HyperlinkTarget | null) =>
+      textSelectionStyle.linkSelection(id, link, (target, next) =>
+        nodes.updateNodeWithUndo(target, next, link ? 'Add link' : 'Remove link')
+      ),
+    /** The link of a text's selected characters, or of its first character. */
+    getTextLink: (id: string): HyperlinkTarget | null => {
+      const node = ctx.graph.getNode(id)
+      return node ? textSelectionStyle.selectionLink(node) : null
+    },
 
     // Alignment (align, flip, rotate)
     ...alignment,

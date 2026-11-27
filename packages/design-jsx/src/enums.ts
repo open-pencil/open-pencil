@@ -139,7 +139,14 @@ export const TEXT_AUTO_RESIZE = jsxEnum<TextAutoResize>({
 export const TEXT_DIRECTION = lowercaseEnum<TextDirection>(['AUTO', 'LTR', 'RTL'])
 export const TEXT_DECORATION = lowercaseEnum<TextDecoration>(['NONE', 'UNDERLINE', 'STRIKETHROUGH'])
 export const TEXT_DECORATION_STYLE = lowercaseEnum<TextDecorationStyle>(['SOLID', 'DOTTED', 'WAVY'])
-export const TEXT_CASE = lowercaseEnum<TextCase>(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
+export const TEXT_CASE = lowercaseEnum<TextCase>([
+  'ORIGINAL',
+  'UPPER',
+  'LOWER',
+  'TITLE',
+  'SMALL_CAPS',
+  'SMALL_CAPS_FORCED'
+])
 
 export const FIGJAM_TEXT_SIZE = jsxEnum<FigJamTextSize>({
   small: 'small',

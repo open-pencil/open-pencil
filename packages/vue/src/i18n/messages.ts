@@ -32,6 +32,7 @@ import { panelMessageDefaults } from '#vue/i18n/messages/panels'
 import { behaviourPanelMessageDefaults } from '#vue/i18n/messages/panels/behaviours'
 import { libraryPanelMessageDefaults } from '#vue/i18n/messages/panels/libraries'
 import { pickerPanelMessageDefaults } from '#vue/i18n/messages/panels/pickers'
+import { typographyPanelMessageDefaults } from '#vue/i18n/messages/panels/typography'
 import { recoveryMessageDefaults } from '#vue/i18n/messages/recovery'
 import { renameMessageDefaults } from '#vue/i18n/messages/rename'
 import { settingsMessageDefaults } from '#vue/i18n/messages/settings'
@@ -80,6 +81,7 @@ export const messageDefaults = {
   'panels/behaviours': behaviourPanelMessageDefaults,
   'panels/libraries': libraryPanelMessageDefaults,
   'panels/pickers': pickerPanelMessageDefaults,
+  'panels/typography': typographyPanelMessageDefaults,
   recovery: recoveryMessageDefaults,
   rename: renameMessageDefaults,
   settings: settingsMessageDefaults,

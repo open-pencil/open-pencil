@@ -24,6 +24,29 @@ const UNLOADED_FONT_METRICS: FontDecorationMetrics = {
   strikethroughThickness: 0.06818
 }
 
+/** The font, face, and size a decoration takes its metrics from. */
+type DecorationFace = Pick<
+  CharacterStyle,
+  'fontFamily' | 'fontWeight' | 'italic' | 'fontStyle' | 'fontSize'
+>
+
+/** Its font's decoration metrics, or Figma's Inter's while the font is not loaded. */
+function decorationMetrics(style: DecorationFace): FontDecorationMetrics {
+  return fontDecorationMetricsSync(style.fontFamily, faceStyleKey(style)) ?? UNLOADED_FONT_METRICS
+}
+
+/**
+ * The underline a text draws where it sets neither offset nor thickness, in pixels: its font's, at
+ * its size, which a panel fixing either starts from.
+ */
+export function automaticUnderline(style: DecorationFace): { offset: number; thickness: number } {
+  const metrics = decorationMetrics(style)
+  return {
+    offset: metrics.underlineTop * style.fontSize,
+    thickness: metrics.underlineThickness * style.fontSize
+  }
+}
+
 /** A glyph where it stands, as saved and freshly laid-out glyphs both give it. */
 export type PlacedGlyph = Pick<
   DerivedTextGlyph,
@@ -213,8 +236,7 @@ function decorationRects(
   lines: LineSpan[],
   styles: readonly CharacterStyle[]
 ): TextDecorationRect[] {
-  const metrics =
-    fontDecorationMetricsSync(style.fontFamily, faceStyleKey(style)) ?? UNLOADED_FONT_METRICS
+  const metrics = decorationMetrics(style)
   const size = style.fontSize
   const underline = style.textDecoration === 'UNDERLINE'
   // Figma measures from the baseline rounded to a whole pixel. An underline's offset and

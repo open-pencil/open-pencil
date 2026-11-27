@@ -123,6 +123,13 @@ export function uniformLetterSpacing(node: SceneNode): TextLength | undefined {
   return pixels.length === 1 ? pixelLength(pixels[0]) : undefined
 }
 
+/** Small caps, which CSS writes as a font variant rather than a transform of the letters. */
+export function textCaseToFontVariantCaps(value: SceneNode['textCase']): string | undefined {
+  if (value === 'SMALL_CAPS') return 'small-caps'
+  if (value === 'SMALL_CAPS_FORCED') return 'all-small-caps'
+  return undefined
+}
+
 export function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
   if (value === 'UPPER') return 'uppercase'
   if (value === 'LOWER') return 'lowercase'
@@ -188,6 +195,7 @@ function characterCSS(
     'letter-spacing': letterSpacingToCSS(style.letterSpacing),
     'line-height': style.lineHeight === null ? 'normal' : lineHeightToCSS(style.lineHeight),
     'text-transform': textCaseToCSS(style.textCase) ?? 'none',
+    'font-variant-caps': textCaseToFontVariantCaps(style.textCase) ?? 'normal',
     ...(decorated ? decorationCSS(style, profile) : {})
   }
 }

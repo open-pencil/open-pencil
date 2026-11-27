@@ -684,6 +684,7 @@ de:panels.colorProfileDisplayP3
 es:panels.iconSetNeedsNewerMacOS
 es:panels.colorProfileSRGB
 es:panels.colorProfileDisplayP3
+es:panels/typography.positionNormal
 fr:panels.iconSetNeedsNewerMacOS
 fr:files.openURLSizeMobile
 fr:panels.colorProfileSRGB
@@ -691,6 +692,9 @@ fr:panels.colorProfileDisplayP3
 fr:variables/easing.iosWeb
 fr:variables/easing.android
 fr:panels/behaviours.transition
+fr:panels/typography.fractions
+fr:panels/typography.numberPosition
+fr:panels/typography.verticalTrimStandard
 it:panels.iconSetNeedsNewerMacOS
 it:panels.colorProfileSRGB
 it:panels.colorProfileDisplayP3
@@ -698,6 +702,8 @@ pl:panels.iconSetNeedsNewerMacOS
 pt-br:panels.iconSetNeedsNewerMacOS
 pt-br:panels.colorProfileSRGB
 pt-br:panels.colorProfileDisplayP3
+pt-br:panels/typography.link
+pt-br:panels/typography.positionNormal
 ru:panels.iconSetNeedsNewerMacOS
 ru:panels.colorProfileSRGB
 ru:panels.colorProfileDisplayP3
@@ -721,6 +727,7 @@ it:variables/easing.iosWeb
 it:variables/easing.android
 it:variables/types.easing
 it:panels/behaviours.transitionEasing
+it:panels/typography.verticalTrimStandard
 ja:cloud/portal.methodProvider
 ja:variables/easing.iosWeb
 ja:variables/easing.android
@@ -746,6 +753,10 @@ de:variables/easing.android
 de:variables/types.easing
 de:variables/types.timing
 de:panels/behaviours.transitionEasing
+de:panels/typography.link
+de:panels/typography.numberPosition
+de:panels/typography.positionNormal
+de:panels/typography.verticalTrimStandard
 pl:settings.importing
 pl:panels.gradient
 pl:files.openURLSizeTablet

@@ -19,7 +19,7 @@ It exposes:
 - horizontal and vertical alignment, including justification
 - text case and direction
 - ending truncation and maximum lines
-- OpenType feature toggles
+- OpenType feature toggles, and `fontFeatures`: the features the first text's font offers, by section
 - variable font axes (`axes`, `opticalSizeAuto`)
 - list style (`listType`, `null` when the paragraphs differ) and hanging lists
 - helpers for changing family, face, weight, alignment, and decorations

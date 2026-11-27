@@ -91,6 +91,7 @@ const CHARACTER_PROPERTIES = [
   'line-height',
   'white-space',
   'text-transform',
+  'font-variant-caps',
   'text-decoration-line',
   'text-decoration-style',
   'text-decoration-color',
@@ -127,10 +128,16 @@ function decorationStyle(value: string | undefined): SceneNode['textDecorationSt
   return 'SOLID'
 }
 
-function textCaseFromCSS(value: string | undefined): SceneNode['textCase'] {
-  if (value === 'uppercase') return 'UPPER'
-  if (value === 'lowercase') return 'LOWER'
-  if (value === 'capitalize') return 'TITLE'
+/** The case `text-transform` gives the letters, else the small caps `font-variant-caps` draws. */
+function textCaseFromCSS(
+  transform: string | undefined,
+  variantCaps: string | undefined
+): SceneNode['textCase'] {
+  if (transform === 'uppercase') return 'UPPER'
+  if (transform === 'lowercase') return 'LOWER'
+  if (transform === 'capitalize') return 'TITLE'
+  if (variantCaps === 'small-caps') return 'SMALL_CAPS'
+  if (variantCaps === 'all-small-caps') return 'SMALL_CAPS_FORCED'
   return 'ORIGINAL'
 }
 
@@ -153,6 +160,7 @@ export function characterStyleFromCSS(
   // `normal` is automatic, a null; a value CSS writes some other way keeps the base.
   const parsedLineHeight = parseCSSLineHeight(lineHeight)
   const textTransform = pickStyle(style, 'text-transform')
+  const variantCaps = pickStyle(style, 'font-variant-caps')
   return {
     fontFamily: family || base.fontFamily,
     fontSize: parseCSSNumber(pickStyle(style, 'font-size')) ?? base.fontSize,
@@ -184,7 +192,10 @@ export function characterStyleFromCSS(
       pickStyle(style, 'text-decoration-skip-ink') === undefined
         ? base.textDecorationSkipInk
         : pickStyle(style, 'text-decoration-skip-ink') !== 'none',
-    textCase: textTransform === undefined ? base.textCase : textCaseFromCSS(textTransform)
+    textCase:
+      textTransform === undefined && variantCaps === undefined
+        ? base.textCase
+        : textCaseFromCSS(textTransform, variantCaps)
   }
 }
 

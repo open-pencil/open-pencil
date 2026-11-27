@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { TextCase } from '@open-pencil/scene-graph'
 import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
+import type { FontFeatureSections } from '@open-pencil/vue/controls/typography'
 import { useMessages } from '@open-pencil/vue/i18n'
 import { TypographyControlsRoot } from '@open-pencil/vue/primitives/TypographyControls'
 
@@ -11,9 +13,12 @@ import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import DecorationSettings from '@/components/properties/typography/DecorationSettings.vue'
 import FontAxisField from '@/components/properties/typography/FontAxisField.vue'
+import FontFeaturesPopover from '@/components/properties/typography/FontFeaturesPopover.vue'
 import LetterSpacingField from '@/components/properties/typography/LetterSpacingField.vue'
 import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
+import LinkField from '@/components/properties/typography/LinkField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
@@ -26,6 +31,7 @@ import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const panels = useMessages('panels')
+const typography = useMessages('panels/typography')
 const menu = useMessages('menu')
 const fonts = useMessages('fonts')
 const fontLoader = { load: loadFont }
@@ -40,12 +46,29 @@ const verticalAlignmentOptions = computed(() => [
   { value: 'CENTER', label: panels.value.alignCenterVertically },
   { value: 'BOTTOM', label: panels.value.alignBottom }
 ])
-const textCaseOptions = computed(() => [
-  { value: 'ORIGINAL', label: panels.value.textCaseOriginal },
-  { value: 'UPPER', label: panels.value.textCaseUpper },
-  { value: 'LOWER', label: panels.value.textCaseLower },
-  { value: 'TITLE', label: panels.value.textCaseTitle }
+const verticalTrimOptions = computed(() => [
+  { value: 'NONE', label: typography.value.verticalTrimStandard },
+  { value: 'CAP_HEIGHT', label: typography.value.verticalTrimCapHeight }
 ])
+/** The cases a text can take; small caps only where its font draws them. */
+function textCaseOptions(sections: FontFeatureSections | null) {
+  return [
+    { value: 'ORIGINAL', label: panels.value.textCaseOriginal },
+    { value: 'UPPER', label: panels.value.textCaseUpper },
+    { value: 'LOWER', label: panels.value.textCaseLower },
+    { value: 'TITLE', label: panels.value.textCaseTitle },
+    {
+      value: 'SMALL_CAPS',
+      label: typography.value.textCaseSmallCaps,
+      disabled: !sections?.smallCaps
+    },
+    {
+      value: 'SMALL_CAPS_FORCED',
+      label: typography.value.textCaseSmallCapsForced,
+      disabled: !sections?.forcedSmallCaps
+    }
+  ]
+}
 const listOptions = computed(() => [
   { value: 'NONE', label: panels.value.listNone },
   { value: 'UNORDERED', label: panels.value.listBulleted },
@@ -77,6 +100,16 @@ const commonFeatures = computed(() => [
 function picked<T>(value: MixedValue<T>): T | '' {
   return value === MIXED ? '' : value
 }
+
+/** A value every text layer shares, or null when they differ. */
+function shared<T>(value: MixedValue<T>): T | null {
+  return value === MIXED ? null : value
+}
+
+/** Whether every text layer is underlined, or every one struck through. */
+function decorated(value: MixedValue<string>): boolean {
+  return value === 'UNDERLINE' || value === 'STRIKETHROUGH'
+}
 </script>
 
 <template>
@@ -84,7 +117,11 @@ function picked<T>(value: MixedValue<T>): T | '' {
     <PanelSection v-if="ctx.node.value" :label="panels.typography" data-test-id="typography">
       <SharedStyleField kind="text" :label="panels.textStyle" />
 
-      <div class="mb-1.5 flex min-w-0 items-center gap-1.5">
+      <PanelFieldGroup
+        :label="panels.fontFamily"
+        class="mb-1.5"
+        :ui="{ container: 'flex-row items-center gap-1.5' }"
+      >
         <FontPicker
           class="min-w-0 flex-1"
           :model-value="picked(ctx.merged('fontFamily'))"
@@ -121,7 +158,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
             class="size-3.5 shrink-0 text-warning-action"
           />
         </Tip>
-      </div>
+      </PanelFieldGroup>
 
       <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.fontWeight">
@@ -238,6 +275,17 @@ function picked<T>(value: MixedValue<T>): T | '' {
             </template>
           </SegmentedControl>
         </PanelFieldGroup>
+
+        <PanelFieldGroup :label="typography.verticalTrim" class="mb-3">
+          <AppSelect
+            :label="typography.verticalTrim"
+            :model-value="picked(ctx.merged('leadingTrim'))"
+            :placeholder="panels.mixed"
+            :options="verticalTrimOptions"
+            data-property="vertical-trim"
+            @update:model-value="ctx.actions.setLeadingTrim($event as 'NONE' | 'CAP_HEIGHT')"
+          />
+        </PanelFieldGroup>
       </div>
 
       <div class="border-t border-border pt-3">
@@ -286,16 +334,30 @@ function picked<T>(value: MixedValue<T>): T | '' {
           </div>
         </PanelFieldGroup>
 
+        <DecorationSettings
+          v-if="decorated(ctx.merged('textDecoration'))"
+          :node="ctx.node.value"
+          :decoration="ctx.merged('textDecoration') as 'UNDERLINE' | 'STRIKETHROUGH'"
+          :decoration-style="picked(ctx.merged('textDecorationStyle'))"
+          :skip-ink="picked(ctx.merged('textDecorationSkipInk'))"
+          :fills="shared(ctx.merged('textDecorationFills'))"
+          @style="ctx.actions.setDecorationStyle($event)"
+          @skip-ink="ctx.actions.setDecorationSkipInk($event)"
+          @update="(key, value) => ctx.actions.updateProp(key, value)"
+          @commit="(key) => ctx.actions.commitProp(key, null, null)"
+          @cancel="(key) => ctx.actions.cancelProp(key)"
+        />
+
+        <LinkField v-if="ctx.nodes.value.length === 1" :node-id="ctx.node.value.id" />
+
         <PanelGrid :columns="2" class="mb-3">
           <PanelFieldGroup :label="panels.textCase">
             <AppSelect
               :label="panels.textCase"
               :model-value="picked(ctx.merged('textCase'))"
               :placeholder="panels.mixed"
-              :options="textCaseOptions"
-              @update:model-value="
-                ctx.actions.setTextCase($event as 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE')
-              "
+              :options="textCaseOptions(ctx.fontFeatures.value)"
+              @update:model-value="ctx.actions.setTextCase($event as TextCase)"
             />
           </PanelFieldGroup>
           <PanelFieldGroup :label="panels.truncation">
@@ -413,6 +475,12 @@ function picked<T>(value: MixedValue<T>): T | '' {
             @update:model-value="ctx.actions.setFontFeature(feature.tag, $event)"
           />
         </label>
+        <FontFeaturesPopover
+          :sections="ctx.fontFeatures.value"
+          :features="ctx.node.value.fontFeatures"
+          :enabled="ctx.fontFeature"
+          @set="(label, changes) => ctx.actions.setFontFeatures(label, changes)"
+        />
       </div>
     </PanelSection>
   </TypographyControlsRoot>

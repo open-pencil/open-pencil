@@ -8,7 +8,12 @@ import type {
   TextFontVariations,
   TextStyle
 } from '@open-pencil/canvaskit'
-import type { CharacterStyleOverride, ColorProfile, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  ColorProfile,
+  SceneNode,
+  TextCase
+} from '@open-pencil/scene-graph'
 import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
@@ -86,14 +91,30 @@ export function textFontVariations(
   return merged.map((variation) => ({ axis: variation.axis, value: variation.value }))
 }
 
+/** The features small caps turn on: capitals' small forms too when forced. */
+const SMALL_CAPS_FEATURES: Partial<Record<TextCase, readonly string[]>> = {
+  SMALL_CAPS: ['smcp'],
+  SMALL_CAPS_FORCED: ['smcp', 'c2sc']
+}
+
+/**
+ * The OpenType features a text or range asks for, with the small capitals its case draws, which
+ * the font's own features give, as in Figma.
+ */
 export function textFontFeatures(
-  features: SceneNode['fontFeatures'] | undefined
+  features: SceneNode['fontFeatures'] | undefined,
+  textCase?: TextCase
 ): TextFontFeatures[] | undefined {
-  if (!features || features.length === 0) return undefined
-  return features.map((feature) => ({
+  const own = (features ?? []).map((feature) => ({
     name: feature.tag.toLowerCase(),
     value: feature.enabled ? 1 : 0
   }))
+  const smallCaps = (textCase && SMALL_CAPS_FEATURES[textCase]) ?? []
+  const drawn = [
+    ...own.filter((feature) => !smallCaps.includes(feature.name)),
+    ...smallCaps.map((name) => ({ name, value: 1 }))
+  ]
+  return drawn.length > 0 ? drawn : undefined
 }
 
 /**
@@ -217,7 +238,10 @@ function pushStyleRun(
         loaded: runLoaded
       })
     ),
-    fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
+    fontFeatures: textFontFeatures(
+      style.fontFeatures ?? node.fontFeatures,
+      style.textCase ?? node.textCase
+    ),
     letterSpacing: textLengthPixels(style.letterSpacing ?? node.letterSpacing, runFontSize),
     heightMultiplier: runLineHeight ? runLineHeight / runFontSize : undefined,
     halfLeading
@@ -357,7 +381,7 @@ export function buildSkParagraph(
         loaded: nodeLoaded
       })
     ),
-    fontFeatures: textFontFeatures(node.fontFeatures),
+    fontFeatures: textFontFeatures(node.fontFeatures, node.textCase),
     letterSpacing: textLengthPixels(node.letterSpacing, baseFontSize),
     heightMultiplier: baseLineHeight ? baseLineHeight / baseFontSize : undefined,
     halfLeading

@@ -6,7 +6,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
 :::
 
-**Coverage:** 128 of 156 Figma feature items addressed — 112 ✅ fully supported, 16 🟡 partial, 28 🔲 not yet. Last updated: 2026-10-27.
+**Coverage:** 129 of 156 Figma feature items addressed — 115 ✅ fully supported, 14 🟡 partial, 27 🔲 not yet. Last updated: 2026-11-27.
 
 ## Interface & Navigation
 
@@ -89,9 +89,9 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Text styles | 🟡 | Character-level styling while editing; applies named text styles from `.fig`, libraries, and design tokens; no UI to create or edit a style |
 | Text resizing modes (auto, fixed, hug) | ✅ | Auto width, Auto height, and Fixed size in Layout |
 | Bulleted & numbered lists | ✅ | Nested bulleted and numbered lists with list and paragraph spacing and hanging markers; <kbd>⇧</kbd><kbd>⌘</kbd><kbd>8</kbd> / <kbd>7</kbd> |
-| Links in text | 🟡 | Links on character ranges round-trip through `.fig`, the clipboard, HTML, and the plugin API; no panel control to add one |
+| Links in text | ✅ | Links on character ranges round-trip through `.fig`, the clipboard, HTML, and the plugin API; the Typography section's Link field and <kbd>⌘</kbd><kbd>K</kbd> while editing add one to the selected characters |
 | Emojis & smart symbols | ✅ | Color emoji draw with the system emoji font, edit as one character, and survive `.fig` and the clipboard |
-| OpenType features | 🟡 | Every feature a file sets renders and round-trips; the panel toggles only ligatures, contextual alternates, and kerning |
+| OpenType features | ✅ | Every feature a file sets renders and round-trips; the panel toggles ligatures, contextual alternates, and kerning, offers small caps where the font has them, and lists the font's other features, with its own names for stylistic sets and character variants, under More features |
 | Variable fonts | ✅ | Named styles draw at their axis values and optical size follows the font size, as in Figma; the Typography section and the plugin API set any axis, and optical size can be set by hand |
 | CJK text support | ✅ | Language-aware CJK fallback fonts load before first paint, including Traditional Chinese and split web fonts |
 | RTL text support | ✅ | Text direction Auto, LTR, or RTL with Arabic shaping; auto layout flows right to left |

@@ -591,6 +591,10 @@
         "id": "text.underline",
         "label": "Underline",
         "accelerator": "CmdOrCtrl+U"
+      },
+      {
+        "id": "text.link",
+        "label": "Add link"
       }
     ]
   },

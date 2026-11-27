@@ -65,7 +65,11 @@ describe('character ranges in .fig style overrides', () => {
       {
         start: 6,
         length: 2,
-        style: { hyperlink: { type: 'NODE', value: '3:4' }, fillStyleId: null }
+        style: {
+          textCase: 'SMALL_CAPS',
+          hyperlink: { type: 'NODE', value: '3:4' },
+          fillStyleId: null
+        }
       }
     ])
   })

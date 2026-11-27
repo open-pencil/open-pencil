@@ -147,6 +147,17 @@ describe('text export', () => {
     expect(html).toContain('loud <span style="text-transform: none">quiet</span>')
   })
 
+  test('writes small caps as a font variant, a range of them on its span', () => {
+    const { html } = text({
+      text: 'small CAPS',
+      textCase: 'SMALL_CAPS',
+      styleRuns: [{ start: 6, length: 4, style: { textCase: 'SMALL_CAPS_FORCED' } }]
+    })
+    expect(html).toContain('font-variant-caps: small-caps')
+    expect(html).not.toContain('text-transform')
+    expect(html).toContain('small <span style="font-variant-caps: all-small-caps">CAPS</span>')
+  })
+
   test('writes linked characters as a link in the look of the text around it', () => {
     const { graph, node, html } = text({
       text: 'Read the docs now',
