@@ -77,32 +77,24 @@ test('a text on a deleted style keeps the variables the style bound', async () =
     modeID,
     variableData: { dataType: 'FLOAT', value: { floatValue: value } }
   })
-  const file = records().map((record) =>
-    record.name === 'Deleted'
-      ? {
-          ...record,
-          parameterConsumptionMap: {
-            entries: [
-              {
-                variableField: 'FONT_SIZE',
-                variableData: {
-                  dataType: 'ALIAS',
-                  resolvedDataType: 'FLOAT',
-                  value: { alias: { guid: size } }
-                }
-              }
-            ]
-          }
+  const boundSize = {
+    entries: [
+      {
+        variableField: 'FONT_SIZE',
+        variableData: {
+          dataType: 'ALIAS',
+          resolvedDataType: 'FLOAT',
+          value: { alias: { guid: size } }
         }
-      : record.name === 'Label'
-        ? {
-            ...record,
-            variableModeBySetMap: {
-              entries: [{ variableSetID: { guid: set }, variableModeID: roomy }]
-            }
-          }
-        : record
-  )
+      }
+    ]
+  }
+  const roomyMode = { entries: [{ variableSetID: { guid: set }, variableModeID: roomy }] }
+  const file = records().map((record) => {
+    if (record.name === 'Deleted') return { ...record, parameterConsumptionMap: boundSize }
+    if (record.name === 'Label') return { ...record, variableModeBySetMap: roomyMode }
+    return record
+  })
   const session = createFigDocumentSession(
     await figArchiveOf([
       ...file,
