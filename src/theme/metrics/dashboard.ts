@@ -56,18 +56,6 @@ export const metricsNetworksTheme = {
   }
 } as const
 
-/** Campaigns as a compact table: what showed where, and what people did with it. */
-export const metricsCampaignsTheme = {
-  slots: {
-    table: 'w-full table-fixed text-xs',
-    row: 'h-9 border-b border-border last:border-b-0 [&>th]:h-7 [&>th]:text-2xs [&>th]:font-normal [&>th]:text-muted',
-    name: 'truncate pe-3 text-start',
-    campaign: 'font-medium',
-    placement: 'ms-1.5 text-muted',
-    number: 'w-16 text-end tabular-nums'
-  }
-} as const
-
 /** Presets as rows beside a month calendar; the trigger shows the preset and its days. */
 export const metricsRangePickerTheme = {
   slots: {
