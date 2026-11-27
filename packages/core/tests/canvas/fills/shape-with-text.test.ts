@@ -8,7 +8,7 @@ import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
 
-import { expectRgbaPixels } from './helpers'
+import { expectRgbaPixels } from '../helpers'
 
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
