@@ -1,4 +1,3 @@
-import { once } from 'es-toolkit'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { homeLocation } from '@/app/home/location'
@@ -12,9 +11,10 @@ import { homeLocation } from '@/app/home/location'
  * Safari 27 (and WebKitGTK) resolves a second import of such a module before it finishes, so the
  * second route's component is not there yet (https://bugs.webkit.org/show_bug.cgi?id=242740).
  */
-const editorViews = once(() => import('./views/editor'))
-const EditorLayout = () => editorViews().then((views) => views.EditorLayout)
-const WorkspaceView = () => editorViews().then((views) => views.WorkspaceView)
+let editorViews: Promise<typeof import('./views/editor')> | undefined
+const loadEditorViews = () => (editorViews ??= import('./views/editor'))
+const EditorLayout = () => loadEditorViews().then((views) => views.EditorLayout)
+const WorkspaceView = () => loadEditorViews().then((views) => views.WorkspaceView)
 const EmbedView = () => import('./views/embed/EmbedView.vue')
 
 const router = createRouter({
