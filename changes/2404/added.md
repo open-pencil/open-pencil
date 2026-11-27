@@ -1,0 +1,1 @@
+- Add "Presenting in OpenPencil" to the community gallery: an example deck with transitions, build steps, a live switch, motion timed by variables, and speaker notes.
