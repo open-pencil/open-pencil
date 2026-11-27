@@ -190,15 +190,13 @@ describe('local-first library service', () => {
     const { mirror, service } = await mirroredService()
     // The summary arrived; the revision body never did: the mid-sync mirror state a
     // manifest read used to deadlock on.
-    await mirror.cacheSummaries([
-      {
-        libraryId: 'still-syncing',
-        name: 'Still syncing',
-        latestRevisionId: 'r-next',
-        publishedAt: '2026-01-01T00:00:00.000Z',
-        assetCount: 2
-      }
-    ])
+    await mirror.cacheSummary({
+      libraryId: 'still-syncing',
+      name: 'Still syncing',
+      latestRevisionId: 'r-next',
+      publishedAt: '2026-01-01T00:00:00.000Z',
+      assetCount: 2
+    })
     const getRevision = spyOn(mirror, 'getRevision')
     const editor = createEditorStore(new SceneGraph())
 
@@ -253,15 +251,13 @@ describe('local-first library service', () => {
     const revision = await publish(origin, 'design-system', 80)
     await mirror.cacheRevision(revision)
     // The summary arrived but the revision body did not: a mid-sync mirror row.
-    await mirror.cacheSummaries([
-      {
-        libraryId: 'half-synced',
-        name: 'Half synced',
-        latestRevisionId: 'r-not-yet',
-        publishedAt: '2026-01-01T00:00:00.000Z',
-        assetCount: 3
-      }
-    ])
+    await mirror.cacheSummary({
+      libraryId: 'half-synced',
+      name: 'Half synced',
+      latestRevisionId: 'r-not-yet',
+      publishedAt: '2026-01-01T00:00:00.000Z',
+      assetCount: 3
+    })
     const editor = createEditorStore(new SceneGraph())
 
     const components = await service.forEditor(editor).listComponents({})

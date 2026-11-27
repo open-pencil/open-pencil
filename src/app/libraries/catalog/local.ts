@@ -28,6 +28,9 @@ const DATABASE_NAME = APP_DATABASE_NAMES.libraries
 /** Most recent manifests `getManifest` hands out without rebuilding revision graphs. */
 const MANIFEST_CACHE_LIMIT = 200
 
+/** Ancestry deeper than this proves nothing either way; the write is accepted on doubt. */
+const ANCESTRY_SCAN_LIMIT = 100
+
 const libraryDatabase = defineAppDatabase<LocalLibraryDatabase>({
   name: APP_DATABASE_NAMES.libraries,
   version: 2,
@@ -128,10 +131,11 @@ export class LocalLibraryCatalog implements LibraryCatalog {
       revision: serializeLibraryRevision(revision)
     })
     if (updateLatest) {
-      await this.#putSummaryIfNotOlder(transaction, {
+      await this.#putSummaryUnlessAncestor(transaction, {
         libraryId: manifest.libraryId,
         name: manifest.name,
         latestRevisionId: manifest.revisionId,
+        previousRevisionId: manifest.previousRevisionId,
         publishedAt: manifest.publishedAt,
         assetCount: manifest.assets.length
       })
@@ -140,20 +144,56 @@ export class LocalLibraryCatalog implements LibraryCatalog {
   }
 
   /**
-   * Writes a `latest` row only when it is at least as new as the stored one, compared by
-   * `publishedAt` inside the transaction the write belongs to. A stale row can arrive after
-   * a newer one — a probe's summary racing a publish's mirror write — and must not roll
-   * `latest` back. A tie keeps the stored row: a same-`publishedAt` rewrite carries no new
-   * information, and the clock skew it would cover is bounded by back-to-back publishes in
-   * the same millisecond.
+   * Writes a `latest` row unless its revision is the stored head or a proven ancestor of it,
+   * inside the transaction the write belongs to. The chain — not `publishedAt`, a publisher
+   * clock that skews — is what orders revisions: a head is never its own ancestor, so a
+   * legitimate remote head is accepted whatever clock stamped it, while a stale observation
+   * racing a publish's mirror write is proven stale by the chain and rejected. Ancestry that
+   * cannot be proven (a revision body still syncing, or a chain longer than the scan limit)
+   * accepts the write on doubt: the probe's etag bookkeeping heals a wrongly accepted row,
+   * while a wrongly rejected remote head had no way back. Returns whether the stored row
+   * names the incoming revision — write applied, or already stored.
    */
-  async #putSummaryIfNotOlder<Stores extends ('latest' | 'revisions')[]>(
+  async #putSummaryUnlessAncestor<Stores extends ('latest' | 'revisions')[]>(
     transaction: IDBPTransaction<LocalLibraryDatabase, Stores, 'readwrite'>,
     summary: LibrarySummary
-  ): Promise<void> {
+  ): Promise<boolean> {
     const stored = await transaction.objectStore('latest').get(summary.libraryId)
-    if (stored && stored.publishedAt >= summary.publishedAt) return
+    if (!stored) {
+      await transaction.objectStore('latest').put(summary, summary.libraryId)
+      return true
+    }
+    if (stored.latestRevisionId === summary.latestRevisionId) return true
+    if (await this.#isAncestor(transaction, stored, summary.latestRevisionId)) return false
     await transaction.objectStore('latest').put(summary, summary.libraryId)
+    return true
+  }
+
+  /**
+   * Whether `candidateId` is a proven ancestor of the head the stored summary names. The
+   * first step can come from the stored summary's own `previousRevisionId`, which covers a
+   * head whose revision body is still syncing; deeper steps walk the bodies the mirror
+   * holds. Any missing body ends the proof — accept-on-doubt, never reject on absence.
+   */
+  async #isAncestor<Stores extends ('latest' | 'revisions')[]>(
+    transaction: IDBPTransaction<LocalLibraryDatabase, Stores, 'readwrite'>,
+    stored: LibrarySummary,
+    candidateId: string
+  ): Promise<boolean> {
+    if (stored.previousRevisionId === candidateId) return true
+    let currentId: string | null = stored.latestRevisionId
+    for (let depth = 0; depth < ANCESTRY_SCAN_LIMIT; depth++) {
+      const storedRevision = await transaction
+        .objectStore('revisions')
+        .get([stored.libraryId, currentId])
+      if (!storedRevision) return false
+      const parent: string | null = storedRevision.revision.manifest.previousRevisionId
+      if (parent === candidateId) return true
+      if (!parent) return false
+      currentId = parent
+    }
+    // A chain past the scan limit proves nothing either way.
+    return false
   }
 
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
@@ -177,6 +217,7 @@ export class LocalLibraryCatalog implements LibraryCatalog {
         libraryId: manifest.libraryId,
         name: manifest.name,
         latestRevisionId: manifest.revisionId,
+        previousRevisionId: manifest.previousRevisionId,
         publishedAt: manifest.publishedAt,
         assetCount: manifest.assets.length
       },
@@ -208,15 +249,18 @@ export class LocalLibraryCatalog implements LibraryCatalog {
     return (await database.getKey('revisions', [libraryId, revisionId])) != null
   }
 
-  /** Writes `latest` rows without the revisions they point at; bodies follow the needs. */
-  async cacheSummaries(summaries: readonly LibrarySummary[]): Promise<void> {
-    if (summaries.length === 0) return
+  /**
+   * Writes a `latest` row without the revision it points at; the body follows the needs.
+   * Resolves whether the stored row names the incoming revision — write applied or already
+   * stored — so the probe records its manifest etag only for a row projecting the manifest
+   * it actually read.
+   */
+  async cacheSummary(summary: LibrarySummary): Promise<boolean> {
     const database = await this.#database.open()
-    const transaction = database.transaction('latest', 'readwrite')
-    for (const summary of summaries) {
-      await this.#putSummaryIfNotOlder(transaction, summary)
-    }
+    const transaction = database.transaction(['latest', 'revisions'], 'readwrite')
+    const named = await this.#putSummaryUnlessAncestor(transaction, summary)
     await transaction.done
+    return named
   }
 
   /**

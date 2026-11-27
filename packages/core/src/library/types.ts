@@ -59,6 +59,12 @@ export interface LibrarySummary {
   libraryId: string
   name: string
   latestRevisionId: string
+  /**
+   * The revision the head follows — the publish order `publishedAt` cannot prove, since
+   * publisher clocks skew. Absent only in manifests written before summaries carried it.
+   */
+  previousRevisionId?: string | null
+  /** Display only; publisher-stamped, never an ordering input. */
   publishedAt: string
   assetCount: number
 }

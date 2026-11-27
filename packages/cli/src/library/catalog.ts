@@ -85,6 +85,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
         libraryId: manifest.libraryId,
         name: manifest.name,
         latestRevisionId: manifest.revisionId,
+        previousRevisionId: manifest.previousRevisionId,
         publishedAt: manifest.publishedAt,
         assetCount: manifest.assets.length
       }

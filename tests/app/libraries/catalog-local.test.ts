@@ -27,13 +27,15 @@ function libraryGraph(width = 80) {
 function revision(
   libraryId: string,
   width: number,
-  publishedAt: string
+  publishedAt: string,
+  previousRevisionId?: string
 ): Promise<ComponentLibraryRevision> {
   return createLibraryRevision({
     libraryId,
     name: `Library ${libraryId}`,
     graph: libraryGraph(width),
-    publishedAt
+    publishedAt,
+    previousRevisionId
   })
 }
 
@@ -43,64 +45,163 @@ function summaryOf({ manifest }: ComponentLibraryRevision): LibrarySummary {
     libraryId: manifest.libraryId,
     name: manifest.name,
     latestRevisionId: manifest.revisionId,
+    previousRevisionId: manifest.previousRevisionId,
     publishedAt: manifest.publishedAt,
     assetCount: manifest.assets.length
   }
 }
 
-describe('local catalog latest ordering', () => {
-  test('a stale probe summary does not roll latest back to an older revision', async () => {
+describe('local catalog latest ordering by revision-chain identity', () => {
+  test('a stale probe summary proven an ancestor of the stored head is rejected', async () => {
     const catalog = isolatedCatalog()
-    // A concurrent publish already advanced latest; the probe's summary predates it.
-    const newer = await revision('design-system', 120, '2026-01-02T00:00:00.000Z')
-    const older = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
-    await catalog.cacheRevision(newer)
-    await catalog.cacheSummaries([summaryOf(older)])
+    const parent = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
+    const child = await revision(
+      'design-system',
+      120,
+      '2026-01-02T00:00:00.000Z',
+      parent.manifest.revisionId
+    )
+    await catalog.cacheRevision(child)
+    // A probe raced a publish and read the world before it: the parent it names is an
+    // ancestor of the stored head, so the row must not move.
+    const named = await catalog.cacheSummary(summaryOf(parent))
 
+    expect(named).toBe(false)
     expect(await catalog.listLibraries()).toMatchObject([
-      { latestRevisionId: newer.manifest.revisionId }
+      { latestRevisionId: child.manifest.revisionId }
+    ])
+  })
+
+  test('a skewed-clock publish child is accepted: publisher clocks order nothing', async () => {
+    const catalog = isolatedCatalog()
+    const parent = await revision('design-system', 80, '2026-01-02T00:00:00.000Z')
+    // The child was published from a clock behind its parent's — under a `publishedAt`
+    // ordering this write was rejected and the mirror wedged on the stale row for good.
+    const child = await revision(
+      'design-system',
+      120,
+      '2026-01-01T00:00:00.000Z',
+      parent.manifest.revisionId
+    )
+    await catalog.cacheRevision(parent)
+    const named = await catalog.cacheSummary(summaryOf(child))
+
+    expect(named).toBe(true)
+    expect(await catalog.listLibraries()).toMatchObject([
+      { latestRevisionId: child.manifest.revisionId }
+    ])
+  })
+
+  test('a probe summary naming the revision already stored reports success without writing', async () => {
+    const catalog = isolatedCatalog()
+    const head = await revision('design-system', 120, '2026-01-02T00:00:00.000Z')
+    await catalog.cacheRevision(head)
+
+    expect(await catalog.cacheSummary(summaryOf(head))).toBe(true)
+    expect(await catalog.listLibraries()).toMatchObject([
+      { latestRevisionId: head.manifest.revisionId }
     ])
   })
 
   test('a fresh probe summary still advances latest', async () => {
     const catalog = isolatedCatalog()
-    const older = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
-    const newer = await revision('design-system', 120, '2026-01-02T00:00:00.000Z')
-    await catalog.cacheRevision(older)
+    const parent = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
+    const child = await revision(
+      'design-system',
+      120,
+      '2026-01-02T00:00:00.000Z',
+      parent.manifest.revisionId
+    )
+    await catalog.cacheRevision(parent)
     // The summary arrived; its revision body follows through the needs pass.
-    await catalog.cacheSummaries([summaryOf(newer)])
+    const named = await catalog.cacheSummary(summaryOf(child))
 
+    expect(named).toBe(true)
     expect(await catalog.listLibraries()).toMatchObject([
-      { latestRevisionId: newer.manifest.revisionId }
+      { latestRevisionId: child.manifest.revisionId }
     ])
   })
 
-  test('an older mirrored write does not roll latest back either', async () => {
+  test('an ancestor-proven stale mirrored write is rejected, its body still stored', async () => {
     const catalog = isolatedCatalog()
-    const newer = await revision('design-system', 120, '2026-01-02T00:00:00.000Z')
-    const older = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
-    await catalog.cacheRevision(newer)
-    // A stale pull lands its body late; it must not move latest back.
-    await catalog.cacheRevision(older)
+    const parent = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
+    const child = await revision(
+      'design-system',
+      120,
+      '2026-01-02T00:00:00.000Z',
+      parent.manifest.revisionId
+    )
+    await catalog.cacheRevision(child)
+    // A stale pull lands its body late; it must not move latest back, but the body itself
+    // is content-addressed and always worth keeping.
+    await catalog.cacheRevision(parent)
 
     expect(await catalog.listLibraries()).toMatchObject([
-      { latestRevisionId: newer.manifest.revisionId }
+      { latestRevisionId: child.manifest.revisionId }
     ])
     expect(
-      (await catalog.getRevision('design-system', older.manifest.revisionId)).manifest.revisionId
-    ).toBe(older.manifest.revisionId)
+      (await catalog.getRevision('design-system', parent.manifest.revisionId)).manifest.revisionId
+    ).toBe(parent.manifest.revisionId)
   })
 
-  test('a publishedAt tie keeps the row already stored', async () => {
+  test('a rival revision that cannot be proven an ancestor is accepted, even at a publishedAt tie', async () => {
     const catalog = isolatedCatalog()
     const stored = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
     const rival = await revision('design-system', 120, '2026-01-01T00:00:00.000Z')
     expect(rival.manifest.revisionId).not.toBe(stored.manifest.revisionId)
     await catalog.cacheRevision(stored)
-    await catalog.cacheSummaries([summaryOf(rival)])
+    // Two unrelated chains share no ancestry: the rival may well be the remote's head,
+    // and rejecting it on a clock tie wedged the mirror. Accept-on-doubt is the correct
+    // direction — the probe's etag bookkeeping heals a truly stale write.
+    const named = await catalog.cacheSummary(summaryOf(rival))
 
+    expect(named).toBe(true)
     expect(await catalog.listLibraries()).toMatchObject([
-      { latestRevisionId: stored.manifest.revisionId }
+      { latestRevisionId: rival.manifest.revisionId }
+    ])
+  })
+
+  test('ancestry that cannot be proven without bodies accepts the write', async () => {
+    const catalog = isolatedCatalog()
+    const parent = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
+    const child = await revision(
+      'design-system',
+      120,
+      '2026-01-02T00:00:00.000Z',
+      parent.manifest.revisionId
+    )
+    // A row written before summaries carried the chain link — or by a peer still writing
+    // them — and both revision bodies still syncing: nothing can prove the parent is an
+    // ancestor of the child, so the write is accepted on doubt.
+    const linkless = { ...summaryOf(child) }
+    delete linkless.previousRevisionId
+    expect(await catalog.cacheSummary(linkless)).toBe(true)
+    const named = await catalog.cacheSummary(summaryOf(parent))
+
+    expect(named).toBe(true)
+    expect(await catalog.listLibraries()).toMatchObject([
+      { latestRevisionId: parent.manifest.revisionId }
+    ])
+  })
+
+  test('the stored summary’s own parent link proves the first step while the head body syncs', async () => {
+    const catalog = isolatedCatalog()
+    const parent = await revision('design-system', 80, '2026-01-01T00:00:00.000Z')
+    const child = await revision(
+      'design-system',
+      120,
+      '2026-01-02T00:00:00.000Z',
+      parent.manifest.revisionId
+    )
+    // The row names the child but the child's body never landed: the chain walk has
+    // nothing to read, and only the summary's own `previousRevisionId` can still prove
+    // the parent stale.
+    expect(await catalog.cacheSummary(summaryOf(child))).toBe(true)
+    const named = await catalog.cacheSummary(summaryOf(parent))
+
+    expect(named).toBe(false)
+    expect(await catalog.listLibraries()).toMatchObject([
+      { latestRevisionId: child.manifest.revisionId }
     ])
   })
 })
