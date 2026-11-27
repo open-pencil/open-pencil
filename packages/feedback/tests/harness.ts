@@ -93,7 +93,7 @@ export async function createTestService() {
     ASSETS: {
       async fetch(input: RequestInfo | URL) {
         const { pathname } = new URL(input instanceof Request ? input.url : String(input))
-        if (pathname === '/admin/metrics.html')
+        if (pathname === '/admin/pages/metrics.html')
           return new Response('<!doctype html><title>Metrics</title>', {
             headers: { 'Content-Type': 'text/html' }
           })
