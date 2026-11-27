@@ -10,6 +10,8 @@ import type {
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
 } from '#cloud/email'
+import type * as OAuth from '#cloud/server/oauth/tables'
+import type { UsageTables } from '#cloud/server/usage/tables'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -90,8 +92,10 @@ export interface DocumentTable {
   id: string
   workspaceId: string
   name: string
+  /** What the file is, in a few sentences, for the community gallery; see migration 020. */
+  description: Generated<string | null>
   /** A design or a board; see migration 027. */
-  kind: Generated<'design' | 'board'>
+  kind: Generated<'design' | 'board' | 'slides'>
   currentRevisionId: string | null
   collaborationEpoch: Generated<number>
   version: Generated<number>
@@ -208,6 +212,8 @@ export interface DocumentRevisionTable {
   documentId: string
   parentRevisionId: string | null
   storageObjectId: string
+  /** The workspace image drawn as the revision's cover, or null for none; see migration 022. */
+  coverChecksum: Generated<string | null>
   createdBy: string
   createdAt: TimestampColumn
 }
@@ -521,7 +527,7 @@ export interface InvitationSendTable {
   sentAt: TimestampColumn
 }
 
-export interface CloudDatabase {
+export interface CloudDatabase extends UsageTables {
   account: Account
   session: Session
   twoFactor: TwoFactorTable
@@ -566,6 +572,10 @@ export interface CloudDatabase {
   commentRead: CommentReadTable
   commentEmail: CommentEmailTable
   notificationSetting: NotificationSettingTable
+  oauthClient: OAuth.OAuthClientTable
+  oauthAccessToken: OAuth.OAuthAccessTokenTable
+  oauthRefreshToken: OAuth.OAuthRefreshTokenTable
+  oauthConsent: OAuth.OAuthConsentTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

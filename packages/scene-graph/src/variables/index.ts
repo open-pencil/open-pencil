@@ -6,14 +6,16 @@ import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
 import { bindingOverrideField, setInstanceOverride } from '../instances/overrides'
 import { siblingOrderKeys } from '../order-keys'
-import type {
-  Effect,
-  SceneNode,
-  Variable,
-  VariableCollection,
-  VariableCollectionMode,
-  VariableType,
-  VariableValue
+import {
+  TEXT_BINDABLE_FIELDS,
+  type Effect,
+  type SceneNode,
+  type TextBindableField,
+  type Variable,
+  type VariableCollection,
+  type VariableCollectionMode,
+  type VariableType,
+  type VariableValue
 } from '../types'
 import {
   isNumericVariableBindingField,
@@ -35,14 +37,43 @@ import { applyBoundPaintColor } from './paints'
 
 export * from './resolution'
 
+/**
+ * Variables a list shows: every one but those deleted, on their own or with their collection,
+ * which only their bindings still reach.
+ */
+export function liveVariables(graph: SceneGraph): Variable[] {
+  return [...graph.variables.values()].filter(
+    (variable) =>
+      !variable.deleted && !graph.variableCollections.get(variable.collectionId)?.deleted
+  )
+}
+
+/** Collections a list shows: every one but those deleted. */
+export function liveCollections(graph: SceneGraph): VariableCollection[] {
+  return [...graph.variableCollections.values()].filter((collection) => !collection.deleted)
+}
+
+/**
+ * A collection's deleted variables, which its `variableIds` leave out. A deleted collection's
+ * variables are all deleted.
+ */
+export function deletedVariablesOf(graph: SceneGraph, collectionId: string): Variable[] {
+  return [...graph.variables.values()].filter(
+    (variable) => variable.collectionId === collectionId && variable.deleted
+  )
+}
+
 export function addVariable(graph: SceneGraph, variable: Variable): void {
   graph.willChangeVariable(variable.id)
   graph.variables.set(variable.id, variable)
   const collection = graph.variableCollections.get(variable.collectionId)
-  if (collection && !collection.variableIds.includes(variable.id)) {
-    graph.willChangeCollection(collection.id)
-    collection.variableIds.push(variable.id)
-  }
+  if (!collection) return
+  // A collection lists its live variables, so one replaced by its deleted record leaves the list.
+  if (collection.variableIds.includes(variable.id) === !variable.deleted) return
+  graph.willChangeCollection(collection.id)
+  collection.variableIds = variable.deleted
+    ? collection.variableIds.filter((id) => id !== variable.id)
+    : [...collection.variableIds, variable.id]
 }
 
 export function removeVariable(graph: SceneGraph, id: string): void {
@@ -80,11 +111,14 @@ export function addCollection(graph: SceneGraph, collection: VariableCollection)
   graph.variableCollections.set(collection.id, collection)
 }
 
-function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
+/** The value a new variable of this type starts with, unless it is given one. */
+export function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
   if (value !== undefined) return value
   if (type === 'COLOR') return { ...BLACK }
-  if (type === 'FLOAT') return 0
+  if (type === 'FLOAT' || type === 'TIMING') return 0
   if (type === 'BOOLEAN') return false
+  // Figma starts an easing as IN_CUBIC with no numbers, which it shows as Ease in.
+  if (type === 'EASING') return { easing: 'IN_CUBIC' }
   return ''
 }
 
@@ -141,6 +175,7 @@ export function removeCollection(graph: SceneGraph, id: string): void {
     for (const varId of Array.from(collection.variableIds)) {
       removeVariable(graph, varId)
     }
+    for (const variable of deletedVariablesOf(graph, id)) removeVariable(graph, variable.id)
   }
   graph.willChangeCollection(id)
   graph.variableCollections.delete(id)
@@ -244,7 +279,7 @@ export function getVariablesForCollection(graph: SceneGraph, collectionId: strin
 }
 
 export function getVariablesByType(graph: SceneGraph, type: VariableType): Variable[] {
-  return [...graph.variables.values()].filter((v) => v.type === type)
+  return liveVariables(graph).filter((v) => v.type === type)
 }
 
 /** Checks that an effect binding names an effect the node has, a property it binds, and its type. */
@@ -290,6 +325,42 @@ function preparePaintBinding(
   }
 }
 
+const TEXT_BINDABLE: ReadonlySet<string> = new Set(TEXT_BINDABLE_FIELDS)
+
+function isTextBindableField(field: string): field is TextBindableField {
+  return TEXT_BINDABLE.has(field)
+}
+
+/**
+ * Checks the variable's type against a scalar, text, boolean, or text style field, and says
+ * whether the field is one of those. A text style binds every field a range of characters can,
+ * its face by style or by weight.
+ */
+function assertFieldVariableType(node: SceneNode, field: string, variable: Variable): boolean {
+  if (isNumericVariableBindingField(field)) {
+    if (variable.type !== 'FLOAT')
+      throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
+    return true
+  }
+  if (STRING_BINDING_FIELDS.has(field)) {
+    const types: readonly VariableType[] =
+      field === 'text' ? TEXT_CONTENT_VARIABLE_TYPES : ['STRING']
+    if (!types.includes(variable.type))
+      throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
+    return true
+  }
+  if (BOOLEAN_BINDING_FIELDS.has(field)) {
+    if (!VISIBILITY_VARIABLE_TYPES.some((type) => type === variable.type))
+      throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
+    return true
+  }
+  if (node.sharedStyleType !== 'TEXT' || !isTextBindableField(field)) return false
+  const type: VariableType = field === 'fontStyle' ? 'STRING' : 'FLOAT'
+  if (variable.type !== type)
+    throw new Error(`Cannot bind ${variable.type} variable to text style field "${field}"`)
+  return true
+}
+
 export function bindVariable(
   graph: SceneGraph,
   nodeId: string,
@@ -311,29 +382,8 @@ export function bindVariable(
   const effect = effectBindingTarget(field)
   if (effect) assertEffectBinding(node.effects, effect, variable.type, field)
 
-  if (isNumericVariableBindingField(field) && variable.type !== 'FLOAT') {
-    throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
-  }
-
-  const textTypes: readonly VariableType[] =
-    field === 'text' ? TEXT_CONTENT_VARIABLE_TYPES : ['STRING']
-  if (STRING_BINDING_FIELDS.has(field) && !textTypes.includes(variable.type)) {
-    throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
-  }
-
-  if (
-    BOOLEAN_BINDING_FIELDS.has(field) &&
-    !VISIBILITY_VARIABLE_TYPES.some((type) => type === variable.type)
-  ) {
-    throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
-  }
-
   const isKnownField =
-    isNumericVariableBindingField(field) ||
-    STRING_BINDING_FIELDS.has(field) ||
-    BOOLEAN_BINDING_FIELDS.has(field) ||
-    paint !== null ||
-    effect !== null
+    assertFieldVariableType(node, field, variable) || paint !== null || effect !== null
 
   if (!isKnownField) {
     throw new Error(`Unknown binding field "${field}"`)
@@ -396,10 +446,13 @@ function markBoundVariablesOverrideOnInstance(
 }
 
 export * from './bindings'
+export * from './style-bindings'
 export * from './corners'
+export * from './easing'
 export * from './formula'
 export * from './formula/schema'
 export * from './lookup'
+export * from './motion'
 export * from './paints'
 export * from './schema'
 export * from './text'

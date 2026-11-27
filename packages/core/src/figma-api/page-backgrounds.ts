@@ -65,14 +65,22 @@ export function setPageBackgrounds(
   if (backgrounds.length > 1 || backgrounds.some((paint) => paint.type !== 'SOLID')) {
     throw new Error('Page backgrounds currently support at most one solid paint')
   }
+  graph.updateNode(page.id, { source: pageSourceWithBackgrounds(page, backgrounds) })
+}
 
+/**
+ * `page`'s source data storing `backgrounds` as its background paints, whatever paints they are,
+ * for a write that keeps what the page already holds, such as converting its colors.
+ */
+export function pageSourceWithBackgrounds(
+  page: SceneNode,
+  backgrounds: readonly Fill[]
+): SceneNode['source'] {
   const rawNodeFields = structuredClone(page.source.fig.rawNodeFields)
   rawNodeFields.backgroundPaints = backgrounds.map((fill) => fillToKiwiPaint(fill))
   if (backgrounds[0]) rawNodeFields.backgroundColor = structuredClone(backgrounds[0].color)
-  graph.updateNode(page.id, {
-    source: {
-      ...structuredClone(page.source),
-      fig: { ...structuredClone(page.source.fig), rawNodeFields }
-    }
-  })
+  return {
+    ...structuredClone(page.source),
+    fig: { ...structuredClone(page.source.fig), rawNodeFields }
+  }
 }

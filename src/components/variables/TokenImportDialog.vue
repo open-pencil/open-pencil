@@ -79,9 +79,7 @@ const livePlan = computed(() => {
 const plan = useHeldContent(livePlan, open)
 const liveCollections = computed(() => {
   void store.state.sceneVersion
-  return [...store.graph.variableCollections.values()].filter(
-    (collection) => !isLibraryCollection(collection)
-  )
+  return store.graph.getLiveCollections().filter((collection) => !isLibraryCollection(collection))
 })
 const existingCollections = useHeldContent(liveCollections, open)
 const styleCount = computed(

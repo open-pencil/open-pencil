@@ -25,11 +25,11 @@ flowchart LR
 
 | Subpath                           | Contents                                                                   |
 | --------------------------------- | -------------------------------------------------------------------------- |
-| `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
-| `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
+| `@open-pencil/cloud/contract`     | Valibot schemas and the API's oRPC contract, shared by every side          |
+| `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the contract's client |
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
 | `@open-pencil/cloud/errors`       | The PostHog error reporter, for services beside Cloud; only `posthog-node` |
-| `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
+| `@open-pencil/cloud/server`       | The contract's procedures, Hono routes, and services; all injected         |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 
 The Cloudflare runtime, `src/runtime/cloudflare`, isn't a subpath: Wrangler bundles it from
@@ -254,9 +254,20 @@ sequenceDiagram
 
 The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
 document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
+It holds the document encoded, as V2 updates it merges and diffs, never as a `Y.Doc`: a document's
+structures take about ten times its encoded size in memory, which a room of a few megabytes would
+not have on Cloudflare. Encoded updates keep the content of what the document deleted, so once a
+room that deleted something has grown by a quarter, at least 1 MiB, since it was last compacted,
+or by half the room it had left below its limit, the relay asks the editor longest in it for its
+whole copy, with the sync request every peer already answers. An editor's copy has what it deleted
+collected; the relay adds whatever it holds that the copy lacks, deletions included, and takes the
+result when it is smaller. Each ask costs a few passes over the whole room, about a second of CPU
+for a 30 MB room, so a room that only grows, as an import does, is never asked.
 A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
-typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
-the room closes, a fresh snapshot replaces it. Snapshots are files in the object store beside the
+typical edit, rather than rewriting the room. Once the log reaches 500 updates, or both 4 MiB and a
+quarter of the snapshot, or a compaction shrank the room, a fresh snapshot replaces it; a closing
+room writes one only when at least a quarter of its snapshot changed. Rooms are saved as V1
+updates, as they always were. Snapshots are files in the object store beside the
 documents' revisions, which a room's row names, so the database holds only the updates since the
 last one. A compaction records its file before writing it and points the room at it last, so a
 replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
@@ -273,8 +284,9 @@ which may not be lower. A larger frame, such as a big paste, the first editor's 
 document, or a newcomer's sync reply, travels as fragments in a row that the receiver joins again.
 The relay joins an editor's fragments up to the room's limit and holds viewers and peers not yet
 admitted to one message, so only an editor can make it buffer more. A room's document may hold at
-most 256 MiB, or 32 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an editor's
-update that would grow it past that is refused, while one that only deletes always goes through. A peer the relay turns away for good, for a
+most 256 MiB encoded, or 24 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an
+editor's update that would grow it past that is refused, while one that only deletes what the room
+holds always goes through, and frees the room once it is compacted. A peer the relay turns away for good, for a
 ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.
@@ -433,8 +445,14 @@ token of that account.
 The tool builds each example in its manifest (`src/examples.ts`; the tour is the editor's demo
 document) and saves it as the editor does, through `saveCloudDocument` in
 `@open-pencil/cloud/client`: the document is created the first time, gets a new revision only when
-its file changed, and, given a version, has its current state named after the release once. A run
-with the same files and version changes nothing.
+its file changed, takes the manifest's description when it differs, and, given a version, has its
+current state named after the release once. A run with the same files, descriptions, and version
+changes nothing.
+
+A document's description says what the file is, and editors set it with `PATCH
+/api/documents/:id`; it is not a change to the file, so the document's last change stays. The
+gallery's pages show it and give it to search engines and link previews, falling back to the newest
+named version's notes, which say what changed in that release.
 
 `[community] tour` names the gallery document editors open as their tour: discovery advertises it as
 `community.tourDocumentId`, and the editor and the docs landing download it with `fetchCommunityTour`
@@ -580,7 +598,11 @@ Services that decide entitlements, such as billing, write them through the inter
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
 `PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
 private transport of their own, and read an account's seats at
-`GET /api/internal/accounts/:userId/seats`. Every write carries an
+`GET /api/internal/accounts/:userId/seats`. The operator's dashboard reads the deployment's use at
+`GET /api/internal/usage/daily?start=&end=`, with the service token or the `[usage_report]` table's
+token, which reaches nothing else: per UTC day, sign-ups, active accounts (signed in or
+saved a revision), documents created, and revisions, with today's totals, as counts only; saves and
+active accounts are counted as they happen, since cleanup deletes old revisions and sign-ins. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.
@@ -724,6 +746,12 @@ and the same check serves the official service and self-hosted ones. Entitlement
 token is signed, so a plan change reaches the service within one token lifetime; asking Cloud on
 every request would have made model calls depend on Cloud's database. Entitlements are pushed to
 Cloud rather than read from billing, so documents keep opening when billing is down.
+
+**2026-11 · The relay holds rooms encoded.** A relay holding each room as a `Y.Doc` ran out of a
+Durable Object's 128 MB at rooms of about 15 MB, and was reset each time an editor rejoined. It
+merges and diffs encoded updates instead, which take about the memory of their result, and leaves
+collecting what a room deleted to an editor, whose copy of the document already did. Turning large
+rooms away was ruled out: some documents' only copy was their room.
 
 **2026-10 · On Cloudflare, a Durable Object per document runs the relay.** The relay holds a room's
 Yjs document and its peers in memory, which a stateless Worker can't, and keeping every epoch of a

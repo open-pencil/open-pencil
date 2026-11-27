@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { behaviourSchema } from '../behaviours/schema'
 import type { OkHCLPayload } from '../color/okhcl'
+import { exportColorProfileSchema } from '../color/schema'
 import { commentThreadsSchema } from '../comments/schema'
 import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
@@ -70,7 +71,7 @@ const exportSettingsSchema: v.GenericSchema<unknown, ExportSetting[]> = v.array(
       ),
       contentsOnly: v.optional(v.boolean()),
       useAbsoluteBounds: v.optional(v.boolean()),
-      colorProfile: v.optional(v.picklist(['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'])),
+      colorProfile: v.optional(exportColorProfileSchema),
       svgOutlineText: v.optional(v.boolean()),
       svgIdAttribute: v.optional(v.boolean()),
       svgSimplifyStroke: v.optional(v.boolean())
@@ -193,6 +194,15 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
     'sourceLibraryPublication',
     'bookkeeping',
     sourceLibraryPublicationSchema
+  ),
+  /**
+   * The layer chosen as the document's thumbnail, on the DOCUMENT node. Figma keeps its own
+   * choice outside the file, so a `.fig` carries only this one.
+   */
+  thumbnail: jsonPluginDataField(
+    'thumbnail',
+    'bookkeeping',
+    v.pipe(v.string(), v.nonEmpty(), v.maxLength(64))
   ),
   /** Canvas comment threads, deleted ones included, on the DOCUMENT node. */
   comments: jsonPluginDataField('comments', 'bookkeeping', commentThreadsSchema),

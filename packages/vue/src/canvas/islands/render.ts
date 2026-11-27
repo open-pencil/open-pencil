@@ -14,6 +14,7 @@ import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { wrapRole } from './controls'
 import IslandShader from './IslandShader.vue'
 import type { IslandState } from './state'
+import { layerTransition } from './transition'
 
 export interface IslandRenderContext {
   /** The island's layers in their current states. */
@@ -22,6 +23,13 @@ export interface IslandRenderContext {
   controls: ReadonlyMap<string, ControlModel>
   roles: ReadonlyMap<string, ControlRole>
   state: IslandState
+  /** Each control's transition declarations by its layer path; empty while motion is off. */
+  transitions: ReadonlyMap<string, Record<string, string>>
+  /**
+   * Layers kept where they are but not shown, by ID, as a presentation holds back a layer its
+   * build has not brought on or has taken off: they take no pointer or focus.
+   */
+  hidden?: ReadonlySet<string>
 }
 
 /** How a role's wrapper changes the element it wraps. */
@@ -62,9 +70,13 @@ export function renderElement(
     Object.entries({
       ...(override.tag === 'button' ? BUTTON_RESET : {}),
       ...element.inlineStyle,
+      // A layer keeps its element through a state change, so its new look eases in.
+      ...layerTransition(context.transitions, path),
       ...override.style
     }).filter(([key]) => !omitted.has(key))
   )
+  if (element.sourceSceneNodeId && context.hidden?.has(element.sourceSceneNodeId))
+    style.visibility = 'hidden'
   const content =
     override.children ?? (() => element.children.map((child) => renderNode(context, child, path)))
   // A shader fill plays behind the content, whatever draws the content, from the canvas's own

@@ -141,4 +141,58 @@ describe('exporting variable bindings of imported layers', () => {
       { pluginID: 'other-plugin', key: 'boundVariables', value: 'kept' }
     ])
   })
+
+  // Figma saved the style bound; one face entry clears it, whether it named the style or the weight.
+  test('clears the face and paragraph bindings an imported text style let go of', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const collection = graph.createCollection('Type')
+    const spacing = graph.createVariable('spacing', 'FLOAT', collection.id, 4)
+    const alias = (variableField: string, resolvedDataType: string) => ({
+      variableField,
+      variableData: {
+        dataType: 'ALIAS',
+        resolvedDataType,
+        value: { alias: { guid: { sessionID: 1, localID: 9 } } }
+      }
+    })
+    const style = graph.createNode('TEXT', page.id, { name: 'Body', sharedStyleType: 'TEXT' })
+    graph.updateNode(style.id, {
+      boundVariables: { paragraphIndent: spacing.id },
+      source: {
+        ...style.source,
+        id: '1:5',
+        fig: {
+          ...style.source.fig,
+          rawNodeFields: {
+            parameterConsumptionMap: {
+              entries: [
+                alias('FONT_STYLE', 'FLOAT'),
+                alias('PARAGRAPH_SPACING', 'FLOAT'),
+                alias('PARAGRAPH_INDENT', 'FLOAT')
+              ]
+            }
+          }
+        }
+      }
+    })
+    const updated = graph.getNode(style.id)
+    if (!updated) throw new Error('Expected the style node')
+
+    const [change] = sceneNodeToKiwi(
+      updated,
+      { sessionID: 1, localID: 5 },
+      0,
+      { value: 2 },
+      graph,
+      []
+    )
+
+    const entries = change.parameterConsumptionMap?.entries ?? []
+    expect(
+      entries
+        .map((entry) => `${entry.variableField} ${entry.variableData?.dataType ?? 'cleared'}`)
+        .toSorted()
+    ).toEqual(['FONT_STYLE cleared', 'PARAGRAPH_INDENT ALIAS', 'PARAGRAPH_SPACING cleared'])
+  })
 })

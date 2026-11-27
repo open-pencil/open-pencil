@@ -59,7 +59,7 @@ describe('bindVariable emits node:updated event', () => {
 
 /** Variables whose only color matches the tests' 50% gray paint. */
 const GRAY_VARIABLES = {
-  counts: { COLOR: 1, FLOAT: 0, STRING: 0, BOOLEAN: 0 },
+  counts: { COLOR: 1, FLOAT: 0, STRING: 0, BOOLEAN: 0, EASING: 0, TIMING: 0 },
   colorsByHex: new Map([['#808080', { id: 'v1', name: 'Gray' }]])
 }
 
@@ -105,6 +105,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
+      colorProfile: 'srgb' as const,
       isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
@@ -158,6 +159,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
+      colorProfile: 'srgb' as const,
       isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),

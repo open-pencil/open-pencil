@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { Fill, GradientTransform } from '@open-pencil/scene-graph'
+import type { ColorProfile, Fill, GradientTransform } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 import { paintTransformSchema } from '@open-pencil/scene-graph/paints'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -45,8 +45,8 @@ function parseTransform(
   )
 }
 
-export function fillFromValue(value: string | Color | Fill): Fill {
-  if (!isFill(value)) return colorToFill(value)
+export function fillFromValue(value: string | Color | Fill, profile: ColorProfile): Fill {
+  if (!isFill(value)) return colorToFill(value, profile)
   const fill = structuredClone(value)
   // A paint written as an object, as export writes an image, gives its transforms as Figma's rows.
   for (const field of TRANSFORM_FIELDS) {

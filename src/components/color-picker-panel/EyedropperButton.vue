@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onScopeDispose, ref } from 'vue'
 
+import { convertColor } from '@open-pencil/scene-graph/color'
 import { useEditor } from '@open-pencil/vue'
 import {
   cancelEyedropperSample,
   offersEyedropper,
   requestEyedropperSample
 } from '@open-pencil/vue/canvas/eyedropper'
+import { useColorSpace } from '@open-pencil/vue/controls/color-model'
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
@@ -17,6 +19,7 @@ const editor = useEditor()
 const tools = useMessages('tools')
 const offered = computed(() => offersEyedropper(editor))
 const sampling = ref(false)
+const stored = useColorSpace()
 
 /** Starts sampling, or, pressed again while it samples, gives the sample up. */
 async function pick() {
@@ -27,8 +30,12 @@ async function pick() {
   sampling.value = true
   try {
     const sampled = await requestEyedropperSample(editor)
+    if (!sampled) return
+    // The sample is in the document's profile; a picker of colors kept in another, such as a
+    // shader's sRGB ones, takes the same color in its own.
+    const color = convertColor(sampled, editor.graph.documentColorSpace, stored.value, 'map')
     // The picker keeps its own opacity; the sample only brings the color.
-    if (sampled) ctx.updateColor({ ...sampled, a: ctx.color.a })
+    ctx.updateColor({ ...color, a: ctx.color.a })
   } finally {
     sampling.value = false
   }

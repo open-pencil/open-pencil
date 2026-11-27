@@ -5,10 +5,11 @@ import type {
   Paragraph,
   ParagraphBuilder,
   TextFontFeatures,
-  TextFontVariations
+  TextFontVariations,
+  TextStyle
 } from '@open-pencil/canvaskit'
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { CharacterStyleOverride, ColorProfile, SceneNode } from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
@@ -54,20 +55,20 @@ export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ell
   return opts
 }
 
-function getParagraphTextAlign(
-  ck: CanvasKit,
-  node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-) {
-  const direction = resolveNodeTextDirection(node)
+/**
+ * Alignment names a side of the box whatever the direction, as Figma aligns; the last line of
+ * justified text starts where its paragraph reads from.
+ */
+function getParagraphTextAlign(ck: CanvasKit, node: Pick<SceneNode, 'textAlignHorizontal'>) {
   switch (node.textAlignHorizontal) {
     case 'CENTER':
       return ck.TextAlign.Center
     case 'RIGHT':
-      return direction === 'RTL' ? ck.TextAlign.Left : ck.TextAlign.Right
+      return ck.TextAlign.Right
     case 'JUSTIFIED':
       return ck.TextAlign.Justify
     default:
-      return direction === 'RTL' ? ck.TextAlign.Right : ck.TextAlign.Left
+      return ck.TextAlign.Left
   }
 }
 
@@ -118,12 +119,47 @@ function drawnFontStyle(
 export function styleRunColor(
   ck: CanvasKit,
   style: SceneNode['styleRuns'][number]['style'],
-  baseColor: Float32Array
+  baseColor: Float32Array,
+  space: ColorProfile
 ): Float32Array {
   const visibleFill = style.fills?.find((fill) => fill.visible && fill.type === 'SOLID')
   if (!visibleFill) return baseColor
-  const color = resolveRGBAForPreview(visibleFill.color).color
+  const color = toExtendedSRGB(normalizeColor(visibleFill.color), space)
   return ck.Color4f(color.r, color.g, color.b, color.a * visibleFill.opacity)
+}
+
+/**
+ * A text style's color. CanvasKit keeps `color` in 8-bit sRGB, which clips a wide-gamut color, and
+ * draws `foregroundColor` with float components, so both carry it; a pushed foreground paint, as
+ * a gradient fill draws with, still takes their place.
+ */
+function textColor(color: Float32Array) {
+  return { color, foregroundColor: color }
+}
+
+/**
+ * What a paragraph's style runs draw in when a pass paints them rather than colours them: the
+ * layer's paint, or a run's own one, over `background`, a clear paint the build deletes.
+ */
+interface RunPaints {
+  layer?: ParagraphPaintStyle
+  range?: ParagraphBuildOptions['rangePaint']
+  background?: Paint
+}
+
+/** Pushes the layer's paint for the whole paragraph, when it has one, and returns the run paints. */
+function pushRunPaints(
+  ck: CanvasKit,
+  builder: ParagraphBuilder,
+  baseTextStyle: TextStyle,
+  { foregroundPaint, rangePaint }: ParagraphBuildOptions
+): RunPaints {
+  if (!foregroundPaint && !rangePaint) return {}
+  const background = new ck.Paint()
+  background.setColor(ck.TRANSPARENT)
+  if (!foregroundPaint) return { range: rangePaint, background }
+  builder.pushPaintStyle(new ck.TextStyle(baseTextStyle), foregroundPaint, background)
+  return { layer: { foreground: foregroundPaint, background }, range: rangePaint, background }
 }
 
 function styleRunLanguage(
@@ -142,7 +178,7 @@ function pushStyleRun(
   baseFontSize: number,
   fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
-  paintStyle?: ParagraphPaintStyle
+  paints: RunPaints
 ): void {
   const ck = r.ck
   const runFontSize = style.fontSize ?? baseFontSize
@@ -162,8 +198,9 @@ function pushStyleRun(
   const runKey = faceStyleKey(runFace)
   const runLoaded = loadedFace(runFamily, runWeight, runItalic, runKey)
 
+  const runColor = styleRunColor(ck, style, baseColor, r.documentColorSpace ?? 'srgb')
   const textStyle = new ck.TextStyle({
-    color: styleRunColor(ck, style, baseColor),
+    ...textColor(runColor),
     fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
@@ -185,7 +222,12 @@ function pushStyleRun(
     heightMultiplier: runLineHeight ? runLineHeight / runFontSize : undefined,
     halfLeading
   })
-  pushParagraphStyle(builder, textStyle, paintStyle)
+  const own = paints.range?.(style)
+  pushParagraphStyle(
+    builder,
+    textStyle,
+    own && paints.background ? { foreground: own, background: paints.background } : paints.layer
+  )
 }
 
 /** `text[start, end)` in the case each of its characters has. */
@@ -206,7 +248,7 @@ function addStyledRuns(
   baseFontSize: number,
   fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
-  paintStyle?: ParagraphPaintStyle
+  paints: RunPaints
 ): void {
   const text = node.text
   // A run that starts or ends inside a surrogate pair moves to its end, as Skia would shape each
@@ -226,7 +268,7 @@ function addStyledRuns(
       baseFontSize,
       fontFamilies,
       halfLeading,
-      paintStyle
+      paints
     )
     addParagraphText(builder, node, start, end)
     builder.pop()
@@ -272,9 +314,10 @@ export function buildSkParagraph(
   r: TextRenderer,
   node: ParagraphNode,
   color?: Float32Array,
-  { halfLeading = false, foregroundPaint }: ParagraphBuildOptions = {},
+  options: ParagraphBuildOptions = {},
   block: ParagraphBlockOptions = {}
 ): Paragraph {
+  const { halfLeading = false } = options
   const ck = r.ck
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
@@ -297,7 +340,7 @@ export function buildSkParagraph(
   const nodeLoaded = loadedFace(nodeFamily, node.fontWeight, node.italic, nodeKey)
 
   const baseTextStyle = {
-    color: baseColor,
+    ...textColor(baseColor),
     fontFamilies: fontFamilies(nodeFamily, node),
     fontSize: baseFontSize,
     locale: node.textLanguage ?? undefined,
@@ -332,34 +375,19 @@ export function buildSkParagraph(
   if (!r.fontProvider) throw new Error('Font provider not initialized')
   const builder = makeParagraphBuilder(ck, paraStyle, r.fontProvider)
 
-  let background: Paint | undefined
+  let paints: RunPaints = {}
   try {
-    let paintStyle: ParagraphPaintStyle | undefined
-    if (foregroundPaint) {
-      background = new ck.Paint()
-      background.setColor(ck.TRANSPARENT)
-      paintStyle = { foreground: foregroundPaint, background }
-      builder.pushPaintStyle(new ck.TextStyle(baseTextStyle), foregroundPaint, background)
-    }
+    paints = pushRunPaints(ck, builder, baseTextStyle, options)
     if (block.firstLineIndent) addFirstLineIndent(ck, builder, block.firstLineIndent)
     if (node.styleRuns.length === 0) {
       addParagraphText(builder, node, 0, node.text.length)
     } else {
-      addStyledRuns(
-        r,
-        builder,
-        node,
-        baseColor,
-        baseFontSize,
-        fontFamilies,
-        halfLeading,
-        paintStyle
-      )
+      addStyledRuns(r, builder, node, baseColor, baseFontSize, fontFamilies, halfLeading, paints)
     }
 
     return builder.build()
   } finally {
     builder.delete()
-    background?.delete()
+    paints.background?.delete()
   }
 }

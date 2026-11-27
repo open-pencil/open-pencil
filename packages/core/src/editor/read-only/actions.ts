@@ -19,6 +19,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getCollection',
   'getCollectionCount',
   'getCollections',
+  'getDocumentThumbnail',
   'getComponentPropertyAuthoring',
   'getComponentPropertyBindings',
   'getComponentSetPropertyDefs',
@@ -134,12 +135,25 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'zoomToPreviousFrame',
   'zoomToSelection',
 
+  // Slide view
+  'focusSlide',
+  'focusAdjacentSlide',
+
   // Preview
   'leaveCanvasView',
   'resetPlay',
   'startPlay',
   'stopPlay',
   'togglePlay',
+
+  // Presenting
+  'present',
+  'presentFrames',
+  'presentationScene',
+  'presentNext',
+  'presentPrevious',
+  'presentSlide',
+  'stopPresenting',
 
   // Copying out
   'copySelectionAsJSX',

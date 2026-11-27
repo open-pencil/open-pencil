@@ -42,10 +42,12 @@ import { planComponentConstruction } from './components'
 import { DecodedMap } from './decoded-map'
 import { collectSceneDependencies } from './dependency-closure'
 import {
+  cyclicHierarchy,
   inheritComponentPropertyDefinitions,
   inheritFromAncestors,
   linkedPropertyCopies
 } from './property-inheritance'
+import { savedSlotContent } from './slot-content'
 import { vectorStyleTable } from './style-dependencies'
 import { createDocumentVariables, type DocumentVariables } from './variables'
 
@@ -121,13 +123,15 @@ interface ReaderRecords {
 
 /**
  * Gives a record the fields of the styles it names, as do its overrides, its text's ranges and its
- * vector's regions, whose style table entry may name a style without its paints.
+ * vector's regions, whose style table entry may name a style without its paints. A style's own
+ * record keeps its fields: Figma ignores the style references it carries, even one naming itself.
  */
 function resolveStyleFields(
   styles: Parameters<typeof applyStyleRefsToFields>[0],
   node: NodeChange,
   assets: ReadonlyMap<string, string>
 ): void {
+  if (node.styleType) return
   applyStyleRefsToFields(styles, node, assets)
   paintTextRangesFromFillStyles(styles, node, assets)
   for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
@@ -226,7 +230,7 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
   /** Records whose preparation is running: preparing an ancestor reaches them only in a cycle. */
   const preparing = new Set<NodeChange>()
   const prepare = (header: NodeChange, whole: WholeRecord): NodeChange => {
-    if (preparing.has(header)) throw new Error('Cyclic component-property ancestry')
+    if (preparing.has(header)) throw cyclicHierarchy(header)
     preparing.add(header)
     try {
       const record = decodeRecord(header)
@@ -436,6 +440,10 @@ function createScopedReader(
     pages,
     get resources() {
       return structuredClone(resources.map(whole))
+    },
+    /** Slot content frames on the internal canvas and the records below them, whole. */
+    get slotContent() {
+      return structuredClone(savedSlotContent(changes, whole))
     },
     bindingDiagnostics,
     /** A record's copies of its set's properties, each by its own id to the set property's. */

@@ -114,6 +114,9 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
     billingEndpoint: config.billing?.endpoint,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
+      : undefined,
+    usageReportToken: config.usage_report
+      ? requiredSecret(environment, config.usage_report.token)
       : undefined
   }
 }
@@ -162,6 +165,8 @@ export function parseCloudDeploymentConfig(
     indexingPolicy: config.deployment.indexing,
     trustedOrigins: config.deployment.trusted_origins,
     localEditor: config.deployment.local_editor,
+    embeddingEnabled: config.deployment.embedding.enabled,
+    embeddingOrigins: config.deployment.embedding.allowed_origins,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
     minimumEditorVersion: config.deployment.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),
@@ -213,6 +218,7 @@ export function parseCloudDeploymentConfig(
     ...workerConfig(config),
     ...serviceConfig(config, environment),
     legal: legalConfig(config),
+    oauthEnabled: config.oauth?.enabled ?? false,
     community: config.community
       ? { workspaceId: config.community.workspace, tourDocumentId: config.community.tour }
       : undefined,

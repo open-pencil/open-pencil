@@ -1,102 +1,59 @@
 ---
+pageClass: guide
 title: Exporting
-description: Export images, SVG, and .fig subsets, and open .fig or .pen documents in OpenPencil.
+description: Save layers as images, PDF, or slides, or copy them into another app.
 ---
 
 # Exporting
 
-Export individual nodes as images or `.fig` subsets, and open full `.fig` or `.pen` documents.
+Save a layer as a file, or copy it straight into another app. To keep working on a design later, [save the document](./files) instead.
 
-## Image Export
+## Export a Layer
 
-Select a node and use the Export section in the properties panel.
+1. Select one or more layers. With nothing selected, you export the page.
+2. In the Design panel, click **+** beside **Export**.
+3. Choose a size and a format.
+4. Click **Export**.
 
-### Export Settings
+<GuideLegend>
 
-- **Scale** — 0.5×, 0.75×, 1×, 1.5×, 2×, 3×, or 4× (hidden for SVG — vectors are resolution-independent)
-- **Format** — PNG (transparent background), JPG (white background), WEBP (transparent background), SVG (vector), `.fig` (native document subset)
+<GuideImage name="exporting/panel" alt="The Export settings with four numbered controls" />
 
-You can add multiple export settings to export the same node at different scales or formats in one go. A live preview with a checkerboard background shows what will be exported.
+1. **Scale** sets the image size. Pick one or type your own, such as `2.5`.
+2. **Format** sets the file type.
+3. **Export** saves every row as a file. Several files arrive in one ZIP.
+4. **Preview** shows what you'll get.
 
-### Export Methods
+</GuideLegend>
 
-| Method | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Keyboard shortcut | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>E</kbd> |
-| Context menu | Right-click <kbd>→</kbd> Export… | Right-click <kbd>→</kbd> Export… |
-| Properties panel | Click "Export" button | Click "Export" button |
+To get a layer at several sizes, click **+** again. Each new row doubles the scale of the last.
 
-The exported file is saved via a native dialog (desktop) or browser download.
+## Choose a Format
 
-## Copy/Paste as
+| For | Use |
+| --- | --- |
+| Screenshots and images with transparency | PNG |
+| Photos, where transparency doesn't matter | JPG |
+| Smaller images for the web | WEBP |
+| Icons and artwork that stay sharp at any size | SVG |
+| Printing and sharing pages | PDF |
+| Presentations | PPTX |
+| Diagrams | draw.io |
 
-In addition to file export, you can copy the selection to the clipboard in multiple formats via the context menu (right-click → Copy/Paste as):
+Scale applies only to PNG, JPG, and WEBP.
 
-| Action | Shortcut (Mac) | Shortcut (Win/Linux) |
-|--------|----------------|----------------------|
-| Copy as text | — | — |
-| Copy as SVG | — | — |
-| Copy as PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Copy as JSX | — | — |
+**File → Export Selection** also saves a `.fig` file with just the selected layers.
 
-- **Copy as text** — copies visible text content from the selection
-- **Copy as SVG** — copies the selection as SVG markup (paste into code editors, Inkscape, etc.)
-- **Copy as PNG** — renders at 2× and copies to the clipboard (ready to paste into Slack, Notion, etc.)
-- **Copy as JSX** — copies the OpenPencil JSX representation (compatible with `renderJsx()`)
+## Copy Into Another App
 
-## .fig File Operations
+Right-click a layer and choose **Copy/Paste as**.
 
-OpenPencil uses the .fig format for full documents — the same binary format as Figma.
+<GuideLegend>
 
-### Opening Files
+<GuideImage name="exporting/copy-as" other="exporting/copy-as-other" alt="The Copy/Paste as menu" />
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Open file | <kbd>⌘</kbd><kbd>O</kbd> | <kbd>Ctrl</kbd> + <kbd>O</kbd> |
+- **Copy as PNG** is for chats and documents. Press <Keys mac="⇧ ⌘ C" other="Ctrl Shift C" />.
+- **Copy as SVG** is for code and vector editors.
+- **Copy as JSX** is for code.
 
-A file picker dialog opens, filtered for `.fig` and `.pen` files. On the desktop app, this uses the native OS dialog.
-
-**File → Open from URL…** opens a web address. A web page opens as editable layers, with the stylesheets and pictures it links; an image or an SVG opens in a new design, and a `.fig`, `.pen`, or other supported document opens as it would from your computer. The desktop app fetches any address. In the browser, only sites that let other sites read them can be opened, and the dialog says so when a site does not. The desktop app first loads the page in a hidden, private window where its scripts run, waits until the page has gone a moment without changing, for up to 30 seconds, and opens what it built then, so a single-page app usually opens with its content. A page that keeps changing is opened as it stands at that point, and one that cannot be loaded this way opens from the HTML its server sends. The browser app runs no page scripts and opens the HTML the server sends.
-
-Under the address, choose the window size the page is laid out at: Desktop (1440 × 900), Tablet (768 × 1024), or Mobile (390 × 844). The page lays out as it would in a window of that size and sits in a frame of that width. In the desktop app, turn off **Run the page’s scripts** to open the HTML the server sends instead, for example when rendering lands on a cookie banner or a sign-in page. Both choices are remembered for the next open.
-
-The dialog closes once the address is read, and the page opens in a new tab that shows how far it has got: running the page’s scripts, loading its stylesheets and pictures with a count of the files loaded so far, then laying out. Closing the tab cancels the open, and the desktop app closes the hidden window at once.
-
-You can also drag a `.fig`, `.pen`, HTML, or other supported document onto the window; it opens in a new tab. Images, SVG files, and HTML pages dropped on the canvas are placed in the document instead, an HTML page as editable layers laid out as a browser would, and any other file reports that it can't be opened.
-
-**File → Place…** does the same from a file picker: it places images, SVG files, and HTML pages in the middle of the view.
-
-### Saving Files
-
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Save | <kbd>⌘</kbd><kbd>S</kbd> | <kbd>Ctrl</kbd> + <kbd>S</kbd> |
-| Save As | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>S</kbd> |
-
-- **Save** overwrites the currently open file without a dialog
-- **Save As** opens a save dialog to choose a new location
-
-Saved files are compressed and include a thumbnail image for preview in file browsers.
-
-With nothing selected, the **Document** section of the Design panel sets how tightly the document is compressed. **Fast** matches Figma's own saves. **Smaller** and **Smallest** make the file smaller and take longer to save, which is most noticeable on large documents and least on files made mostly of images. The choice is stored in the file, and Figma opens all three.
-
-### Round-trip Compatibility
-
-Files exported from OpenPencil can be opened in Figma, and vice versa. The .fig format preserves all node types, properties, fills, strokes, effects, vector data, and layout settings.
-
-## Keyboard Shortcuts
-
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Export selection | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>E</kbd> |
-| Copy as PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Open file | <kbd>⌘</kbd><kbd>O</kbd> | <kbd>Ctrl</kbd> + <kbd>O</kbd> |
-| Save | <kbd>⌘</kbd><kbd>S</kbd> | <kbd>Ctrl</kbd> + <kbd>S</kbd> |
-| Save As | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>S</kbd> |
-
-## Tips
-
-- Use 2× or 3× scale when exporting for high-DPI screens.
-- JPG always uses a white background — use PNG or WEBP if you need transparency.
-- Use SVG export when you need a vector format for further editing in Illustrator, Inkscape, or code.
-- The thumbnail in exported .fig files enables preview in file browsers and Figma's file picker.
+</GuideLegend>

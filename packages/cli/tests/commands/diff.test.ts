@@ -54,6 +54,12 @@ describe('diff CLI', () => {
     expect(result.diff).toContain(`/Logo #${LOGO} removed`)
     expect(result.diff).toContain('opacity={0.5}')
 
+    const piped = await runCLI(['diff', 'apply', '-', FIXTURE, '--dry-run', '--json'], {
+      stdin: shown.stdout
+    })
+    expect(piped.exitCode).toBe(0)
+    expect(JSON.parse(piped.stdout)).toMatchObject({ applied: 1, failed: 0 })
+
     const stalePath = join(dir, 'stale.diff')
     await writeFile(stalePath, shown.stdout.replace('-name="Logo"', '-name="Other"'))
     const stale = await runCLI(['diff', 'apply', stalePath, FIXTURE, '--dry-run', '--json'])

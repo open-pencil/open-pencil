@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { colorSchema } from '../color/schema'
 import { finiteNumberSchema } from '../primitives/schema'
+import { EASING_CURVES } from '../types'
 
 export const variableAliasSchema = v.object({ aliasId: v.string() })
 export const variableColorExpressionSchema = v.object({
@@ -29,3 +30,43 @@ export const variableCollectionSchema = v.looseObject({
   modes: v.array(v.unknown()),
   variableIds: v.array(v.unknown())
 })
+
+export const cubicBezierSchema = v.object({
+  x1: finiteNumberSchema,
+  y1: finiteNumberSchema,
+  x2: finiteNumberSchema,
+  y2: finiteNumberSchema
+})
+
+const positiveSchema = v.pipe(finiteNumberSchema, v.minValue(0))
+
+export const springSchema = v.object({
+  stiffness: positiveSchema,
+  damping: positiveSchema,
+  // A spring without mass has no motion to compute.
+  mass: v.pipe(finiteNumberSchema, v.gtValue(0)),
+  type: v.optional(v.picklist(['NORMALIZED', 'PHYSICAL'])),
+  platform: v.optional(v.picklist(['IOS_WEB', 'ANDROID']))
+})
+
+export const easingSchema = v.object({
+  easing: v.picklist(EASING_CURVES),
+  bezier: v.optional(cubicBezierSchema),
+  spring: v.optional(springSchema)
+})
+
+/** A duration or easing as a spec writes it: a value, or a variable by name or ID. */
+const variableReferenceSchema = v.object({ variable: v.string() })
+
+/**
+ * A duration and easing as scripts, tools, and JSX write them: seconds or a TIMING variable; a CSS
+ * easing such as `ease-out` or `cubic-bezier(…)`, an easing name such as `GENTLE_SPRING`, an
+ * easing as stored, or an EASING variable.
+ */
+export const motionSpecSchema = v.object({
+  duration: v.optional(
+    v.union([v.pipe(v.number(), v.finite(), v.minValue(0)), variableReferenceSchema])
+  ),
+  easing: v.optional(v.union([v.string(), variableReferenceSchema, easingSchema]))
+})
+export type MotionSpec = v.InferOutput<typeof motionSpecSchema>

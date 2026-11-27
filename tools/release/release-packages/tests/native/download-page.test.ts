@@ -28,6 +28,23 @@ test('the download page lists every installer a release publishes', () => {
   ])
 })
 
+test('the download page lists every installer a nightly publishes', () => {
+  const nightly = desktopTargets.flatMap((target) =>
+    desktopAssets(target, '0.18.0-nightly.20261123')
+  )
+  const installers = nightly.filter((file) => !file.name.endsWith('.app.tar.gz'))
+  const files = installers.map((file) => classifyAsset(asset(file.name)))
+  expect(files.map((file) => file && `${file.platform}/${file.arch}/${file.format}`)).toEqual([
+    'mac/arm64/dmg',
+    'mac/x64/dmg',
+    'windows/x64/exe',
+    'windows/arm64/exe',
+    'linux/x64/appimage',
+    'linux/x64/deb',
+    'linux/x64/rpm'
+  ])
+})
+
 test('the download page leaves out updater payloads and signatures', () => {
   const updaters = published.filter((file) => file.name.endsWith('.app.tar.gz'))
   expect(updaters).not.toBeEmpty()
@@ -47,7 +64,7 @@ test('the download page leaves out OpenPencil Chromium', () => {
 
 test('a platform lists Apple Silicon or x64 first, then installers in format order', () => {
   const files = published.flatMap((file) => classifyAsset(asset(file.name)) ?? [])
-  const release = { version: VERSION, date: '', url: '', files, checksums: null, notes: '' }
+  const release = { version: VERSION, date: '', url: '', files, checksums: null }
   expect(filesFor(release, 'mac').map((file) => file.arch)).toEqual(['arm64', 'x64'])
   expect(filesFor(release, 'windows').map((file) => `${file.arch} ${file.format}`)).toEqual([
     'x64 exe',

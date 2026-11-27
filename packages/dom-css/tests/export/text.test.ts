@@ -210,9 +210,26 @@ describe('letter-spaced text export', () => {
 
   test('takes a spacing written as a token back by the token', () => {
     const spacing = 'var(--tracking-wide)'
-    expect(letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, spacing, '200px')).toEqual({
-      width: `calc(200px + ${spacing})`,
-      'margin-right': `calc(-1 * ${spacing})`
+    expect(letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, spacing, { width: '200px' })).toEqual(
+      {
+        width: `calc(200px + ${spacing})`,
+        'margin-right': `calc(-1 * ${spacing})`
+      }
+    )
+  })
+
+  test('widens the limits on the width by the spacing too', () => {
+    expect(
+      letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, '2px', {
+        width: '100px',
+        'max-width': '100px',
+        'min-width': '50px'
+      })
+    ).toEqual({
+      width: 'calc(100px + 2px)',
+      'max-width': 'calc(100px + 2px)',
+      'min-width': 'calc(50px + 2px)',
+      'margin-right': '-2px'
     })
   })
 
@@ -274,5 +291,66 @@ describe('letter-spaced text export', () => {
 
   test('leaves unspaced text as it is', () => {
     expect(style({ textAutoResize: 'HEIGHT' })).not.toHaveProperty('margin-right')
+  })
+})
+
+describe('text alignment export', () => {
+  // Alignment names a side whatever the direction, so right-to-left text aligned left says so:
+  // a browser starts it at the right otherwise.
+  test.each([
+    { textDirection: 'LTR', textAlignHorizontal: 'LEFT', css: undefined },
+    { textDirection: 'RTL', textAlignHorizontal: 'LEFT', css: 'left' },
+    { textDirection: 'RTL', textAlignHorizontal: 'RIGHT', css: 'right' },
+    { textDirection: 'LTR', textAlignHorizontal: 'JUSTIFIED', css: 'justify' }
+  ] as const)(
+    'writes $textDirection text aligned $textAlignHorizontal as text-align $css',
+    ({ textDirection, textAlignHorizontal, css }) => {
+      const { html } = text({ text: 'Hello', textDirection, textAlignHorizontal })
+      if (css) expect(html).toContain(`text-align: ${css}`)
+      else expect(html).not.toContain('text-align')
+    }
+  )
+
+  // Width and text-align apply only to a box that holds lines, which an inline span is not.
+  test('gives text on the canvas a box for its width and alignment', () => {
+    const { html } = text({ text: 'Hello', textAlignHorizontal: 'RIGHT' })
+    expect(html).toContain('display: inline-block')
+    expect(html).toContain('width: 200px')
+    expect(html).toContain('text-align: right')
+  })
+
+  test('leaves text in a frame to the frame layout', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 300, height: 100 })
+    graph.createNode('TEXT', frame.id, { text: 'Hello', width: 200, height: 40 })
+    const html = serializeHTML(
+      sceneNodeToDesignDocument(graph, frame.id, { includeSourceIds: false })
+    )
+    expect(html).toContain('position: absolute')
+    expect(html).not.toContain('inline-block')
+  })
+
+  // A frame that flows right to left exports `direction: rtl`, which its text would inherit.
+  test('keeps left-to-right text in a right-to-left frame left to right', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      width: 300,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      layoutDirection: 'RTL'
+    })
+    graph.createNode('TEXT', frame.id, {
+      text: 'Hello',
+      fontFamily: 'Inter',
+      fontSize: 16,
+      width: 200,
+      height: 40
+    })
+    const html = serializeHTML(
+      sceneNodeToDesignDocument(graph, frame.id, { includeSourceIds: false })
+    )
+    expect(html).toContain('direction: rtl')
+    expect(html).toContain('direction: ltr')
+    expect(html).not.toContain('text-align')
   })
 })

@@ -1,0 +1,1 @@
+- Underlines, strikethroughs, and keycap frames now draw in all the paints of a text range with its own fills, a range whose fills were all removed draws nothing after a .fig round trip, and SVG export writes a range's gradient across its layer (#2385).

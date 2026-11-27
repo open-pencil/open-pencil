@@ -15,19 +15,5 @@
   "bucket": "Bucket",
   "region": "Region",
   "accessKeyID": "Zugriffsschlüssel-ID",
-  "secretAccessKey": "Geheimer Zugriffsschlüssel",
-  "cloudTitle": "OpenPencil Cloud",
-  "cloudDescription": "Der Arbeitsbereich deines Teams, für dich gehostet: Live-Synchronisierung, Freigabelinks, Team-Bibliotheken und gehostete KI, ganz ohne eigenen Bucket. Trag dich in die Warteliste ein, und wir schreiben dir, sobald es losgeht.",
-  "waitlistEmail": "E-Mail-Adresse",
-  "waitlistPlaceholder": "du@example.com",
-  "waitlistJoin": "Auf die Warteliste",
-  "waitlistConfirmHuman": "Bestätige, dass du ein Mensch bist",
-  "waitlistInvalid": "Gib eine gültige E-Mail-Adresse ein.",
-  "waitlistJoined": "Schau in dein Postfach",
-  "waitlistJoinedDetail": "Öffne den Link, den wir dir geschickt haben, um deine Adresse zu bestätigen. Wir schreiben dir nur zu OpenPencil Cloud.",
-  "waitlistRefused": "Wir konnten nicht bestätigen, dass du kein Bot bist. Versuch es noch einmal.",
-  "waitlistLimited": "Zu viele Versuche. Versuch es in einer Minute noch einmal.",
-  "waitlistFailed": "Die Warteliste ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal.",
-  "waitlistUnavailable": "Von hier aus ist die Anmeldung nicht möglich. Trag dich auf openpencil.dev ein.",
-  "waitlistOpenWebsite": "Auf openpencil.dev eintragen"
+  "secretAccessKey": "Geheimer Zugriffsschlüssel"
 }

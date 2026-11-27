@@ -3,8 +3,14 @@ import { pickBy } from 'es-toolkit'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import { BOARD_GRID } from '#core/constants'
-import { BOARD_TOOL_SHORTCUTS, BOARD_TOOLS, TOOL_SHORTCUTS } from '#core/editor/tool-registry'
+import {
+  BOARD_TOOL_SHORTCUTS,
+  BOARD_TOOLS,
+  DECK_TOOL_SHORTCUTS,
+  TOOL_SHORTCUTS
+} from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
+import type { PlayerScene } from '#core/present/player'
 
 import {
   LAYER_EDIT_LEVELS,
@@ -43,28 +49,34 @@ type DocumentBehaviour = Pick<
   | 'sectionTitles'
   | 'lint'
   | 'rulers'
+  | 'filmstrip'
   | 'panelsOpen'
 >
 
 /** What the canvas's view decides: how the pointer, keys, chrome, and panels behave. */
 type ViewBehaviour = Omit<EditorProfile, keyof DocumentBehaviour>
 
+const DESIGN_BEHAVIOUR: DocumentBehaviour = {
+  edits: true,
+  tools: null,
+  pathEdits: 'all',
+  layerEdits: 'all',
+  toolKeys: TOOL_SHORTCUTS,
+  snapGrid: 1,
+  dotGrid: null,
+  pixelGrid: true,
+  framesOpen: true,
+  sectionTitles: 'fill',
+  lint: true,
+  rulers: true,
+  filmstrip: false,
+  panelsOpen: true
+}
+
 const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
-  design: {
-    edits: true,
-    tools: null,
-    pathEdits: 'all',
-    layerEdits: 'all',
-    toolKeys: TOOL_SHORTCUTS,
-    snapGrid: 1,
-    dotGrid: null,
-    pixelGrid: true,
-    framesOpen: true,
-    sectionTitles: 'fill',
-    lint: true,
-    rulers: true,
-    panelsOpen: true
-  },
+  design: DESIGN_BEHAVIOUR,
+  // A slide is drawn with everything a design is.
+  slides: { ...DESIGN_BEHAVIOUR, toolKeys: DECK_TOOL_SHORTCUTS, filmstrip: true },
   board: {
     edits: true,
     tools: BOARD_TOOLS,
@@ -78,6 +90,7 @@ const DOCUMENT_BEHAVIOURS: Readonly<Record<DocumentKind, DocumentBehaviour>> = {
     sectionTitles: 'outline',
     lint: false,
     rulers: false,
+    filmstrip: false,
     panelsOpen: false
   }
 }
@@ -88,7 +101,8 @@ const EDIT_BEHAVIOUR: ViewBehaviour = {
   editChrome: true,
   live: null,
   panels: true,
-  leaveTo: null
+  leaveTo: null,
+  presentation: null
 }
 
 /** A preview runs the design: the canvas only pans, and its controls take the pointer. */
@@ -99,12 +113,27 @@ function playBehaviour(revision: number): ViewBehaviour {
     editChrome: false,
     live: { revision },
     panels: false,
-    leaveTo: EDIT_VIEW
+    leaveTo: EDIT_VIEW,
+    presentation: null
+  }
+}
+
+/** A presentation shows the deck alone, as `scene` gives it: no tools, no chrome, no edits. */
+function presentBehaviour(scene: () => PlayerScene): ViewBehaviour {
+  return {
+    pointer: 'pan',
+    shortcuts: 'view',
+    editChrome: false,
+    live: null,
+    panels: false,
+    leaveTo: EDIT_VIEW,
+    presentation: scene
   }
 }
 
 function viewBehaviour(view: CanvasView): ViewBehaviour {
-  return view.id === 'play' ? playBehaviour(view.revision) : EDIT_BEHAVIOUR
+  if (view.id === 'play') return playBehaviour(view.revision)
+  return view.id === 'present' ? presentBehaviour(view.scene) : EDIT_BEHAVIOUR
 }
 
 /** The tools both offer; null offers every tool. */

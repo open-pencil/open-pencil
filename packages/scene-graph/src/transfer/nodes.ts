@@ -1,6 +1,9 @@
+import { readBehaviour, withBehaviour } from '../behaviours/model'
+import { mapTransitionVariables, transitionVariableIds } from '../behaviours/transition'
 import { cloneNodeProps } from '../copy'
 import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
 import { referencedStyleIds } from '../shared-styles'
+import { mapSlideVariables, slideVariableIds } from '../slides/motion'
 import { styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
@@ -9,9 +12,12 @@ import type { VariableTransferReferences } from './variables'
 
 export function semanticTransferReferences(node: SceneNode): string[] {
   const runs = styleRunReferences(node.styleRuns)
+  const behaviour = readBehaviour(node)
   return [
     ...(node.componentId ? [node.componentId] : []),
     ...Object.values(node.boundVariables),
+    ...(behaviour ? transitionVariableIds(behaviour) : []),
+    ...slideVariableIds(node),
     ...runs.variables,
     ...referencedStyleIds(node),
     ...Object.entries(node.componentPropertyAssignments).flatMap(([id, value]) => [id, value]),
@@ -98,6 +104,20 @@ export function prepareNodeTransfer(
     return propertyId ? [{ ...reference, propertyId }] : []
   })
   result.componentPropertyAssignments = values(source.componentPropertyAssignments)
+  // A behaviour's transition follows the variables the copy brings; one it left behind is let go,
+  // and the transition keeps its own value.
+  const behaviour = readBehaviour(source)
+  if (behaviour && transitionVariableIds(behaviour).length > 0)
+    result.pluginData = withBehaviour(
+      source,
+      mapTransitionVariables(behaviour, (id) => refs.variables.get(id))
+    )
+  // So do a slide's transition and a layer's animation.
+  if (slideVariableIds(source).length > 0)
+    Object.assign(
+      result,
+      mapSlideVariables(source, (id) => refs.variables.get(id))
+    )
   // Variant values are keyed by display names, unlike definition-ID assignments.
   result.componentPropertyValues = { ...source.componentPropertyValues }
   return result

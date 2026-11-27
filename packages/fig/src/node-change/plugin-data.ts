@@ -9,6 +9,7 @@ import type {
   PluginRelaunchDataEntry,
   SceneNode
 } from '@open-pencil/scene-graph'
+import { EXPORT_COLOR_PROFILE_NAMES } from '@open-pencil/scene-graph/color'
 import { compactExportSetting, type ExportFormatId } from '@open-pencil/scene-graph/export-format'
 import { clampExportScale } from '@open-pencil/scene-graph/export-scale'
 import {
@@ -23,9 +24,10 @@ import { effectBindingTarget, paintBindingTarget } from '@open-pencil/scene-grap
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import {
+  consumptionEntryFields,
+  resolveTextStyleConsumptionEntry,
   resolveVariableConsumptionEntry,
   variableConsumptionEntries,
-  VARIABLE_BINDING_FIELDS_INVERSE,
   referencesVariable
 } from './variable/bindings'
 import { effectBindingsFromKiwi } from './variable/effects'
@@ -108,12 +110,17 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     Object.entries(bindings).filter(([field]) => !decidedByPaints(field))
   )
   for (const entry of variableConsumptionEntries(nc)) {
-    const binding = resolveVariableConsumptionEntry(entry)
-    if (binding) bindings[binding.field] = binding.variableId
-    else if (entry.variableField && !referencesVariable(entry.variableData?.dataType)) {
-      const field = VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]
-      if (field) bindings = omit(bindings, [field])
-    }
+    const binding =
+      resolveVariableConsumptionEntry(entry) ??
+      (nc.styleType === 'TEXT' ? resolveTextStyleConsumptionEntry(entry) : undefined)
+    // A face binds by style or by weight, so the record's FONT_STYLE replaces the other one.
+    if (binding)
+      bindings = {
+        ...omit(bindings, consumptionEntryFields(entry, nc.styleType === 'TEXT')),
+        [binding.field]: binding.variableId
+      }
+    else if (entry.variableField && !referencesVariable(entry.variableData?.dataType))
+      bindings = omit(bindings, consumptionEntryFields(entry, nc.styleType === 'TEXT'))
   }
   nc.fillPaints?.forEach((paint, i) => {
     const variableGuid = paint.colorVar?.value?.alias?.guid
@@ -154,7 +161,6 @@ function nativeEnum<const T extends string>(names: readonly T[], value: unknown)
 }
 
 const CONSTRAINT_TYPES = ['CONTENT_SCALE', 'CONTENT_WIDTH', 'CONTENT_HEIGHT'] as const
-const COLOR_PROFILES = ['DOCUMENT', 'SRGB', 'DISPLAY_P3_V4'] as const
 const SVG_ID_MODES = ['IF_NEEDED', 'ALWAYS'] as const
 
 const nativeExportSettingSchema = v.looseObject({
@@ -188,7 +194,7 @@ function exportSettingFromNative(
     suffix: native.suffix,
     contentsOnly: native.contentsOnly,
     useAbsoluteBounds: native.useAbsoluteBounds,
-    colorProfile: nativeEnum(COLOR_PROFILES, native.colorProfile),
+    colorProfile: nativeEnum(EXPORT_COLOR_PROFILE_NAMES, native.colorProfile),
     svgOutlineText: native.svgOutlineText,
     svgIdAttribute: svgIDMode === undefined ? undefined : svgIDMode === 'ALWAYS',
     svgSimplifyStroke:

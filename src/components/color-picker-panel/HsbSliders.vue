@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/scene-graph/color'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
+const colorCSS = useColorCSS()
 const pickerMessages = useMessages('panels/pickers')
 </script>
 
@@ -16,7 +17,7 @@ const pickerMessages = useMessages('panels/pickers')
     channel="saturation"
     color-space="hsb"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hsbSaturation)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hsbSaturation)"
     data-test-id="color-slider-hsb-s"
     @update="ctx.onRekaColorUpdate"
   />
@@ -27,7 +28,7 @@ const pickerMessages = useMessages('panels/pickers')
     channel="brightness"
     color-space="hsb"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hsbBrightness)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hsbBrightness)"
     data-test-id="color-slider-hsb-b"
     @update="ctx.onRekaColorUpdate"
   />

@@ -4,6 +4,7 @@ import { createEditor, playIslandRoots, resolvePlayState } from '@open-pencil/co
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { emptyBehaviour, findLayerByPath, layerPath } from '@open-pencil/scene-graph/behaviours'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+import { createSlide, createSlideGrid, createSlideRow } from '@open-pencil/scene-graph/slides'
 import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 /** A Switch set (State × Interaction) and a card frame holding an Off instance with a label. */
@@ -53,6 +54,15 @@ function switchCard() {
 describe('preview islands', () => {
   test('a top-level layer holding a control is an island; main components and empty layers are not', () => {
     const { graph, pageId, card } = switchCard()
+    expect(playIslandRoots(graph, pageId)).toEqual([card.id])
+  })
+
+  test("in a deck, a slide's own layers holding controls are islands, not the deck", () => {
+    const { graph, pageId, card } = switchCard()
+    const grid = createSlideGrid(graph, pageId)
+    const slide = createSlide(graph, createSlideRow(graph, grid.id).id)
+    graph.reparentNode(card.id, slide.id)
+    graph.createNode('TEXT', slide.id, { name: 'Title' })
     expect(playIslandRoots(graph, pageId)).toEqual([card.id])
   })
 

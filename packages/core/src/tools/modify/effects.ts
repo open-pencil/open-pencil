@@ -4,6 +4,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { DEFAULT_SHADOW_COLOR } from '#core/constants'
 import type { FigmaEffect } from '#core/figma-api/effects'
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setEffects = defineTool({
@@ -41,7 +42,9 @@ export const setEffects = defineTool({
           }
         : {
             type: args.type,
-            color: args.color ? parseColor(args.color) : { ...DEFAULT_SHADOW_COLOR },
+            color: args.color
+              ? parseColor(args.color, graphOf(figma).documentColorSpace)
+              : { ...DEFAULT_SHADOW_COLOR },
             offset: { x: args.offset_x, y: args.offset_y },
             radius: args.radius,
             spread: args.spread,

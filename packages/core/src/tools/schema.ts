@@ -13,7 +13,7 @@ import {
 import { omit } from 'es-toolkit/object'
 import * as v from 'valibot'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { DocumentKind, SceneNode } from '@open-pencil/scene-graph'
 import {
   MAX_FONT_SIZE,
   MAX_LAYOUT_ANGLE,
@@ -56,6 +56,11 @@ interface ToolMetadata {
   inputExposure: Readonly<Partial<Record<string, ToolExposure>>>
   capabilities: readonly ToolCapability[]
   availability: 'default' | 'eval'
+  /**
+   * The documents the tool is for, such as decks for the slide tools, or null for every one.
+   * An agent sees it only while such a document is open, so it costs no context elsewhere.
+   */
+  documentKinds: readonly DocumentKind[] | null
 }
 
 export interface ToolDef extends ToolMetadata {
@@ -73,9 +78,9 @@ export interface ToolDef extends ToolMetadata {
 
 type ToolDefinitionMetadata = Omit<
   ToolMetadata,
-  'exposure' | 'inputExposure' | 'capabilities' | 'availability'
+  'exposure' | 'inputExposure' | 'capabilities' | 'availability' | 'documentKinds'
 > &
-  Partial<Pick<ToolMetadata, 'exposure' | 'capabilities' | 'availability'>>
+  Partial<Pick<ToolMetadata, 'exposure' | 'capabilities' | 'availability' | 'documentKinds'>>
 
 export function defineTool<P extends v.ObjectEntries, R>(
   def: ToolDefinitionMetadata & {
@@ -99,6 +104,7 @@ export function defineTool<P extends v.ObjectEntries, R>(
       toolChangesDocument(def) ? 'document:write' : 'document:read'
     ],
     availability: def.availability ?? 'default',
+    documentKinds: def.documentKinds ?? null,
     get mutates() {
       return def.execution.mutation !== 'none'
     },
@@ -135,6 +141,16 @@ export function toolChangesDocument(def: Pick<ToolDef, 'execution'>): boolean {
 
 export function isToolExposed(def: Pick<ToolDef, 'exposure'>, target: ToolInterface): boolean {
   return def.exposure[target] !== false
+}
+
+/** Whether a tool is for any of these open documents: one for every document always is. */
+export function isToolForDocuments(
+  def: Pick<ToolDef, 'documentKinds'>,
+  open: Iterable<DocumentKind>
+): boolean {
+  if (!def.documentKinds) return true
+  const kinds = new Set(open)
+  return def.documentKinds.some((kind) => kinds.has(kind))
 }
 
 export function toolInputFor(

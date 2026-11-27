@@ -91,7 +91,13 @@ const files = useMessages('files')
         <span :class="ui.body()">
           <span :class="ui.name()">
             <span v-if="document.kind" class="sr-only">
-              {{ document.kind === 'board' ? files.createBoard : files.createDesign }},
+              {{
+                {
+                  design: files.createDesign,
+                  board: files.createBoard,
+                  slides: files.createSlides
+                }[document.kind ?? 'design']
+              }},
             </span>
             {{ document.name }}
           </span>

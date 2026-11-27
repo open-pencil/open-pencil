@@ -1,0 +1,1 @@
+- Large Cloud documents no longer rewrite their whole saved room when someone leaves after a small change, and editors wait longer between attempts to rejoin a room that keeps failing (#2337).

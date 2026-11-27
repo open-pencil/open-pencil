@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { renderNodesToPPTX, type PPTXExportStats, BUILTIN_IO_FORMATS } from '@open-pencil/core/io'
+import { createSlide, defaultSlideSettings, slideRows } from '@open-pencil/scene-graph/slides'
 import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { createDocumentGraph } from '#core/editor/document-settings'
 
 import {
   SLIDE_WIDTH_IN,
@@ -543,4 +546,51 @@ describe('renderNodesToPPTX()', () => {
     expect(files['ppt/slides/slide1.xml']).toBeDefined()
     expect(files['ppt/slides/slide2.xml']).toBeDefined()
   })
+})
+
+test('a deck’s slides keep their speaker notes, and a skipped one is hidden', async () => {
+  const graph = createDocumentGraph('slides', 'light')
+  const [first] = slideRows(graph, pageId(graph))[0]
+  const second = createSlide(graph, expectDefined(first.parentId))
+  graph.updateNode(first.id, {
+    slide: { ...defaultSlideSettings(), notes: 'Open with the numbers' }
+  })
+  graph.updateNode(second.id, { slide: { ...defaultSlideSettings(), skipped: true } })
+  const data = expectDefined(
+    await renderNodesToPPTX(graph, pageId(graph), [first.id, second.id], {
+      rasterize: stubRasterize
+    })
+  )
+  const files = unzipPPTX(data)
+  expect(slideXML(files, 1)).not.toContain('show="0"')
+  expect(slideXML(files, 2)).toContain('show="0"')
+  const notes = Object.entries(files)
+    .filter(([path]) => path.startsWith('ppt/notesSlides/') && path.endsWith('.xml'))
+    .map(([, bytes]) => new TextDecoder().decode(bytes))
+  expect(notes.some((xml) => xml.includes('Open with the numbers'))).toBe(true)
+})
+
+test('a slide’s grid shadows leave it editable', async () => {
+  const graph = createDocumentGraph('slides', 'light')
+  const [slide] = slideRows(graph, pageId(graph))[0]
+  const shadow = (y: number, radius: number) => ({
+    type: 'DROP_SHADOW' as const,
+    color: { r: 0, g: 0, b: 0, a: 0.1 },
+    offset: { x: 0, y },
+    radius,
+    spread: 0,
+    visible: true,
+    blendMode: 'NORMAL' as const
+  })
+  graph.updateNode(slide.id, { effects: [shadow(2, 8), shadow(8, 24)] })
+  graph.createNode('RECTANGLE', slide.id, { width: 100, height: 100, fills: [solidFill(1, 0, 0)] })
+  let stats: PPTXExportStats | undefined
+  await renderNodesToPPTX(graph, pageId(graph), [slide.id], {
+    rasterize: stubRasterize,
+    onStats: (value) => {
+      stats = value
+    }
+  })
+  expect(stats?.fallback).toBe(0)
+  expect(stats?.editable).toBeGreaterThan(0)
 })

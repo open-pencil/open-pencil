@@ -1,0 +1,18 @@
+{
+  "name": "@open-pencil/fig-schema-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#fig-schema/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/fig": "workspace:*",
+    "@open-pencil/kiwi": "workspace:*",
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "es-toolkit": "^1.52.0",
+    "fflate": "^0.8.3"
+  }
+}

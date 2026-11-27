@@ -3,7 +3,9 @@ import type { LocaleTranslations } from '#vue/i18n/messages'
 import ai from './ai.json'
 import automation from './automation.json'
 import cloudEditor from './cloud/editor.json'
+import cloudEmbed from './cloud/embed.json'
 import cloudPortal from './cloud/portal.json'
+import cloudPortalApps from './cloud/portal/apps.json'
 import cloudPortalCommunity from './cloud/portal/community.json'
 import cloudPortalPerson from './cloud/portal/person.json'
 import cloudPortalPlan from './cloud/portal/plan.json'
@@ -32,10 +34,12 @@ import recovery from './recovery.json'
 import rename from './rename.json'
 import settings from './settings.json'
 import shapes from './shapes.json'
+import slides from './slides.json'
 import statuses from './statuses.json'
 import storage from './storage.json'
 import tools from './tools.json'
 import updates from './updates.json'
+import variablesEasing from './variables/easing.json'
 import variablesPanel from './variables/panel.json'
 import variablesTypes from './variables/types.json'
 
@@ -43,7 +47,9 @@ export default {
   ai,
   automation,
   'cloud/editor': cloudEditor,
+  'cloud/embed': cloudEmbed,
   'cloud/portal': cloudPortal,
+  'cloud/portal/apps': cloudPortalApps,
   'cloud/portal/community': cloudPortalCommunity,
   'cloud/portal/person': cloudPortalPerson,
   'cloud/portal/plan': cloudPortalPlan,
@@ -72,10 +78,12 @@ export default {
   rename,
   settings,
   shapes,
+  slides,
   statuses,
   storage,
   tools,
   updates,
+  'variables/easing': variablesEasing,
   'variables/panel': variablesPanel,
   'variables/types': variablesTypes
 } satisfies LocaleTranslations

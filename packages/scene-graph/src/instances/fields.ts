@@ -55,6 +55,8 @@ export const INSTANCE_FOLLOWED_FIELDS = [
   'pointCount',
   'starInnerRadius',
   'shapeWithTextType',
+  'slide',
+  'animation',
   'shapeUserHeight',
   'shapeTruncates'
 ] as const

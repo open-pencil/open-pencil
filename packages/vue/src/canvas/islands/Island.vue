@@ -3,6 +3,7 @@ import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { resolvePlayState } from '@open-pencil/core'
 import { vectorElement } from '@open-pencil/core/io'
+import { autoLineHeight } from '@open-pencil/core/layout'
 import {
   behaviourControls,
   controlRoles,
@@ -14,18 +15,24 @@ import { useEditor } from '#vue/editor/context'
 import { renderNode } from './render'
 import { useShadowContainer } from './shadow'
 import { createIslandState, instanceStates } from './state'
+import { islandTransitions, useIslandMotion } from './transition'
 
 /**
  * One live island: a top-level layer that holds controls, rendered as DOM in its own shadow
  * root, with each control running as its Reka UI component. The design's variants draw the
  * controls' states; the document never changes.
  */
-const { rootId, revision, tokens } = defineProps<{
+const { rootId, revision, tokens, faded } = defineProps<{
   rootId: string
   /** Changing it starts every control again as designed. */
   revision: number
   /** The document's variables as custom properties, shared by every island of the canvas. */
   tokens: CSSStyleSheet
+  /**
+   * Layers kept where they are but not shown, as a presentation keeps a layer whose build has
+   * not brought it on, or has taken it off, without moving what is around it.
+   */
+  faded?: ReadonlySet<string>
 }>()
 const editor = useEditor()
 
@@ -36,6 +43,11 @@ const controls = computed(() => {
   return behaviourControls(editor.graph, rootId)
 })
 const roles = computed(() => controlRoles(controls.value))
+const motion = useIslandMotion()
+const transitions = computed(() => {
+  void editor.state.sceneVersion
+  return motion.value ? islandTransitions(editor.graph, rootId, controls.value.values()) : new Map()
+})
 const state = shallowRef(createIslandState(controls.value))
 watch(
   () => [rootId, revision, [...controls.value.keys()].join('\n')],
@@ -45,7 +57,12 @@ watch(
 const projection = computed(() => {
   void editor.state.sceneVersion
   const graph = resolvePlayState(editor.graph, rootId, instanceStates(controls.value, state.value))
-  const [root] = sceneNodeToDesignDocument(graph, rootId, { vectorElement }).children
+  // The island is laid where the layer is, so the layer is not placed in its parent again.
+  const [root] = sceneNodeToDesignDocument(graph, rootId, {
+    placeRoots: false,
+    vectorElement,
+    canvasMetrics: { autoLineHeight }
+  }).children
   return { graph, root }
 })
 
@@ -54,7 +71,15 @@ function Layers() {
   const { graph, root } = projection.value
   return root
     ? renderNode(
-        { graph, rootId, controls: controls.value, roles: roles.value, state: state.value },
+        {
+          graph,
+          rootId,
+          controls: controls.value,
+          roles: roles.value,
+          state: state.value,
+          transitions: transitions.value,
+          hidden: faded
+        },
         root,
         ''
       )

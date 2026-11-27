@@ -34,6 +34,7 @@ import type { FigmaInstanceOverride } from './overrides'
 import type { FigmaPaint } from './paints'
 import type { PluginDataMethods } from './plugin-data'
 import type { FigmaNodeProxy } from './proxy'
+import type { PluginSlideTransition } from './slides'
 import type { FigmaLetterSpacing, FigmaLineHeight } from './text'
 import type { FigmaDecorationColor } from './text/style'
 import type { FigmaTransform } from './types'
@@ -163,6 +164,10 @@ export abstract class FigmaNodeMembers {
   declare authorVisible: boolean | undefined
   declare isWideWidth: boolean | undefined
   declare shapeType: ShapeWithTextType | undefined
+  /** On slides alone, as in Figma. */
+  declare isSkippedSlide: boolean | undefined
+  declare getSlideTransition: () => PluginSlideTransition
+  declare setSlideTransition: (transition: PluginSlideTransition) => void
   /** On pages alone, as in Figma. */
   declare loadAsync: () => Promise<void>
   declare resetOverrides: () => void

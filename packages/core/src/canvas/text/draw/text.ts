@@ -1,16 +1,18 @@
 import type { Canvas } from '@open-pencil/canvaskit'
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { withTextParagraph } from '#core/canvas/text'
 import { canDrawSavedText, drawDerivedText, drawsSavedText } from '#core/canvas/text/derived'
 import { drawLaidOutEmoji, drawSavedEmoji } from '#core/canvas/text/emoji'
+import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import { DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { mayHoldEmoji } from '#core/text/emoji'
 
 import { drawTextLayout } from './decorations'
+import { drawLaidOutText, drawOwnPaints, drawsOwnPaintsApart } from './ranges'
 
 export function hasOverflowPathTextPaint(node: SceneNode): boolean {
   return (
@@ -24,21 +26,28 @@ function hasComplexTextFill(fill?: Fill): boolean {
   return fill !== undefined && fill.type !== 'SOLID'
 }
 
-function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
-  if (!r.fontsLoaded || !r.fontProvider) return false
-  // Apply the shader directly to native glyphs: coverage layers add another rounding pass.
-  return withTextParagraph(
+/**
+ * One pass of the layer's fills over laid-out text: a complex fill's shader applied to the native
+ * glyphs, as coverage layers would add another rounding pass, or a solid fill's colour.
+ */
+function drawLaidOutPass(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  painted: boolean,
+  options: ParagraphBuildOptions,
+  ownApart: boolean
+): void {
+  withTextParagraph(
     r,
     node,
-    r.ck.Color4f(0, 0, 0, 1),
-    {
-      halfLeading: true,
-      foregroundPaint: r.fillPaint
-    },
+    painted ? r.ck.Color4f(0, 0, 0, 1) : r.fillPaint.getColor(),
+    painted
+      ? { halfLeading: true, foregroundPaint: r.fillPaint, ...options }
+      : { halfLeading: true, ...options },
     (paragraph, prepared) => {
       const y = textVerticalOffset(node, paragraph.getHeight())
-      drawTextLayout(r.ck, canvas, node, prepared, y, r.fillPaint)
-      return true
+      drawTextLayout(r.ck, canvas, node, prepared, y, r.fillPaint, r.documentColorSpace, ownApart)
     }
   )
 }
@@ -58,13 +67,35 @@ function drawResolvedPathText(
   )
 }
 
-/** Whether the text is drawn from the editor's own layout, which leaves its emoji to be drawn. */
-function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
+/** Whether the text can be drawn from the editor's own layout rather than its saved glyphs. */
+function laysOutText(r: SkiaRenderer, node: SceneNode): boolean {
   if (!r.fontsLoaded || !r.fontProvider || node.textPathData !== null) return false
   const readiness = r.nodeFontReadiness(node)
   // Edited text draws its paragraph even after its fonts gave up, so its emoji draw over it too.
-  const laidOut = readiness !== 'pending' && (readiness !== 'exhausted' || !drawsSaved(r, node))
-  return laidOut && mayHoldEmoji(shownText(node))
+  return readiness !== 'pending' && (readiness !== 'exhausted' || !drawsSaved(r, node))
+}
+
+/** Whether the text is drawn from the editor's own layout, which leaves its emoji to be drawn. */
+function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
+  return laysOutText(r, node) && mayHoldEmoji(shownText(node))
+}
+
+/**
+ * What a text draws in paints of its own, once whatever fills of the layer could draw: the
+ * layer's passes leave it out. Text without a visible fill draws nothing, and text drawn from its
+ * saved glyphs draws its ranges' colours with them.
+ */
+export function drawTextOwnPaints(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): void {
+  if (!drawsOwnPaintsApart(node) || !node.fills.some((fill) => fill.visible)) return
+  if ((drawsSaved(r, node) && drawsSavedText(node)) || !laysOutText(r, node)) return
+  canvas.save()
+  drawOwnPaints(r, canvas, node, graph)
+  canvas.restore()
 }
 
 /**
@@ -105,6 +136,15 @@ function drawsSaved(r: SkiaRenderer, node: SceneNode): boolean {
 /** Whether every fill of the text draws its saved glyphs, on its path or for want of its fonts. */
 export function drawsOnlySavedGlyphs(r: SkiaRenderer, node: SceneNode): boolean {
   return (node.derivedTextGlyphs?.length ?? 0) > 0 && drawsSaved(r, node) && drawsSavedText(node)
+}
+
+/** Whether a fill of the text draws its saved glyphs, while another may lay it out live. */
+export function drawsSomeSavedGlyphs(r: SkiaRenderer, node: SceneNode): boolean {
+  return (
+    (node.derivedTextGlyphs?.length ?? 0) > 0 &&
+    drawsSaved(r, node) &&
+    node.fills.some((fill) => fill.visible && canDrawSavedText(node, fill))
+  )
 }
 
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
@@ -149,20 +189,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.restore()
     return
   }
-  if (hasComplexTextFill(fill) && drawPaintedText(r, canvas, node)) {
-    canvas.restore()
-    return
-  }
   if (r.fontsLoaded && r.fontProvider) {
-    withTextParagraph(
-      r,
-      node,
-      r.fillPaint.getColor(),
-      { halfLeading: true },
-      (paragraph, prepared) => {
-        const paragraphY = textVerticalOffset(node, paragraph.getHeight())
-        drawTextLayout(r.ck, canvas, node, prepared, paragraphY, r.fillPaint)
-      }
+    const painted = hasComplexTextFill(fill)
+    drawLaidOutText(r, node, (options, ownApart) =>
+      drawLaidOutPass(r, canvas, node, painted, options, ownApart)
     )
   } else if (r.chromeFonts.text) {
     const fontSize = node.fontSize || DEFAULT_FONT_SIZE

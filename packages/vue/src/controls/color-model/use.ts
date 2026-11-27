@@ -20,6 +20,7 @@ import {
   withHue,
   withRGBChannel
 } from '#vue/controls/color-model/model'
+import { useColorSpaces } from '#vue/controls/color-model/space'
 import type {
   ColorFieldFormat,
   HSBChannel,
@@ -41,13 +42,21 @@ export function useColorModel(options: UseColorModelOptions) {
   const localFormat = ref<ColorFieldFormat>(options.defaultFormat ?? 'rgb')
   const color = computed(() => toValue(options.color))
   const sourceOkHCL = computed(() => toValue(options.okhcl))
-  const value = computed(() => createColorModelValue(color.value, sourceOkHCL.value))
+  // The profiles provided for the calling component: OkHCL values are read and made in the stored
+  // one, and slider previews show in the one the canvas presents.
+  const spaces = useColorSpaces()
+  const space = computed(() => spaces.value.stored)
+  const value = computed(() => createColorModelValue(color.value, sourceOkHCL.value, space.value))
   const format = computed(() => toValue(options.format) ?? localFormat.value)
   const hex = computed(() => colorToHexRaw(color.value))
   const sliderPreview = computed(() => createSliderPreviewModel(value.value))
-  const sliderGradient = computed(() => createSliderGradientModel(value.value))
-  const okhclSliderPreview = computed(() => createOkHCLSliderPreviewModel(value.value.okhcl))
-  const okhclSliderGradient = computed(() => createOkHCLSliderGradientModel(value.value.okhcl))
+  const sliderGradient = computed(() => createSliderGradientModel(value.value, spaces.value))
+  const okhclSliderPreview = computed(() =>
+    createOkHCLSliderPreviewModel(value.value.okhcl, space.value)
+  )
+  const okhclSliderGradient = computed(() =>
+    createOkHCLSliderGradientModel(value.value.okhcl, spaces.value)
+  )
 
   function emitColor(nextColor: Color): Color {
     if (!colorsEqual(color.value, nextColor)) options.onUpdate?.(nextColor)
@@ -99,7 +108,7 @@ export function useColorModel(options: UseColorModelOptions) {
     }
 
     const next = applyOkHCLPatch(value.value.okhcl, patch)
-    emitColor(okhclToRGBA(next))
+    emitColor(okhclToRGBA(next, space.value))
     return next
   }
 

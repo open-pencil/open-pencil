@@ -39,7 +39,8 @@ const view = ref<'grid' | 'list'>('grid')
 const kindOptions = computed(() => [
   { value: 'all', label: files.value.allFiles },
   { value: 'design', label: files.value.createDesign },
-  { value: 'board', label: files.value.createBoard }
+  { value: 'board', label: files.value.createBoard },
+  { value: 'slides', label: files.value.createSlides }
 ])
 
 const documents = computed(() => (state.value.status === 'ready' ? state.value.documents : []))
@@ -61,6 +62,12 @@ function metadata(document: CommunityDocument): string {
 function open(document: CommunityDocument) {
   void router.push(cloudCommunityPagePath(document.id))
 }
+
+const emptyKind = computed(() => {
+  if (kind.value === 'board') return communityMessages.value.communityNoBoards
+  if (kind.value === 'slides') return communityMessages.value.communityNoSlides
+  return communityMessages.value.communityNoDesigns
+})
 
 useHead({ title: () => communityMessages.value.communityTitle })
 </script>
@@ -157,9 +164,7 @@ useHead({ title: () => communityMessages.value.communityTitle })
             ? files.noMatchingFiles({ query: query.trim() })
             : documents.length === 0
               ? communityMessages.communityEmpty
-              : kind === 'board'
-                ? communityMessages.communityNoBoards
-                : communityMessages.communityNoDesigns
+              : emptyKind
         }}
       </p>
     </section>

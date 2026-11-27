@@ -1,7 +1,8 @@
 import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
-import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { ColorProfile, Fill, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { styleRunAt } from '@open-pencil/scene-graph/text'
 
 import type { TextLayout } from '#core/canvas/text/layout'
@@ -100,45 +101,67 @@ function drawWave(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint
   wave.delete()
 }
 
-/** Draws decorations in their own paints, or in `textPaint` where the text's has no colour. */
-export function drawTextDecorations(
+/** Draws one decoration in `paint`, or in `colour` in its place; `paint` is left as it was. */
+export function drawDecoration(
   ck: CanvasKit,
   canvas: Canvas,
-  rects: readonly TextDecorationRect[],
-  textPaint: Paint
+  rect: TextDecorationRect,
+  paint: Paint,
+  colour?: Color
 ): void {
-  for (const rect of rects) {
-    const fill = solidColor(rect.fills)
-    const paint = textPaint.copy()
-    try {
-      paint.setAntiAlias(true)
-      paint.setStyle(ck.PaintStyle.Fill)
-      if (fill?.type === 'SOLID') {
-        const { r: red, g, b, a } = resolveRGBAForPreview(fill.color).color
-        paint.setShader(null)
-        paint.setColorComponents(red, g, b, a * fill.opacity)
-      }
-      if (rect.style === 'DOTTED') drawDots(ck, canvas, rect, paint)
-      else if (rect.style === 'WAVY') drawWave(ck, canvas, rect, paint)
-      else canvas.drawRect(ck.XYWHRect(rect.x, rect.y, rect.width, rect.height), paint)
-    } finally {
-      paint.delete()
+  const drawn = paint.copy()
+  try {
+    drawn.setAntiAlias(true)
+    drawn.setStyle(ck.PaintStyle.Fill)
+    if (colour) {
+      drawn.setShader(null)
+      drawn.setColorComponents(colour.r, colour.g, colour.b, colour.a)
     }
+    if (rect.style === 'DOTTED') drawDots(ck, canvas, rect, drawn)
+    else if (rect.style === 'WAVY') drawWave(ck, canvas, rect, drawn)
+    else canvas.drawRect(ck.XYWHRect(rect.x, rect.y, rect.width, rect.height), drawn)
+  } finally {
+    drawn.delete()
   }
 }
 
 /**
- * Draws laid-out text and its decorations, `y` below the node's top. The decorations are kept
- * with the prepared text, which its cache replaces when an input of the text changes.
+ * Draws decorations: those in the layer's fills in each pass's `textPaint`, as the text's glyphs
+ * are, and the rest in their own colour, or, with `ownApart`, not at all, as they are drawn once,
+ * apart, in all of their paints.
  */
-/** The frames of the text's keycaps, which its layout leaves to be drawn, in their text's colour. */
-function drawKeycapFrames(
+export function drawTextDecorations(
+  ck: CanvasKit,
+  canvas: Canvas,
+  rects: readonly TextDecorationRect[],
+  textPaint: Paint,
+  space: ColorProfile,
+  layerFills: readonly Fill[],
+  ownApart = false
+): void {
+  for (const rect of rects) {
+    if (rect.fills === layerFills) {
+      drawDecoration(ck, canvas, rect, textPaint)
+      continue
+    }
+    if (ownApart) continue
+    const fill = solidColor(rect.fills)
+    const colour = fill && toExtendedSRGB(normalizeColor(fill.color), space)
+    drawDecoration(ck, canvas, rect, textPaint, colour && { ...colour, a: colour.a * fill.opacity })
+  }
+}
+
+/**
+ * The frames of the text's keycaps, which its layout leaves to be drawn, each in the paint
+ * `paintAt` gives its style run, if it gives one.
+ */
+export function drawKeycapFrames(
   ck: CanvasKit,
   canvas: Canvas,
   node: SceneNode,
   layout: TextLayout,
   y: number,
-  paint: Paint
+  paintAt: (run?: StyleRun) => Paint | null
 ): void {
   const text = shownText(node)
   if (!text.includes(COMBINING_KEYCAP)) return
@@ -149,39 +172,62 @@ function drawKeycapFrames(
     sourceIndexAt.set(shownIndex, sourceIndex)
     shownIndex += character.length
   }
-  const runPaint = paint.copy()
-  try {
-    for (const glyph of laidOutGlyphs(node, layout, text, y) ?? []) {
-      const character = glyph.firstCharacter
-      if (character === undefined || text[character] !== COMBINING_KEYCAP) continue
-      // The frame takes the colour the paragraph gives its mark: its style run's, if it has one.
-      const source = sourceIndexAt.get(character) ?? character
-      const run = styleRunAt(node.styleRuns, source)
-      runPaint.setColor(run ? styleRunColor(ck, run.style, paint.getColor()) : paint.getColor())
-      // On the whole pixel its character is drawn on.
-      drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y), glyph.fontSize, runPaint)
-    }
-  } finally {
-    runPaint.delete()
+  for (const glyph of laidOutGlyphs(node, layout, text, y) ?? []) {
+    const character = glyph.firstCharacter
+    if (character === undefined || text[character] !== COMBINING_KEYCAP) continue
+    const source = sourceIndexAt.get(character) ?? character
+    const paint = paintAt(styleRunAt(node.styleRuns, source))
+    // On the whole pixel its character is drawn on.
+    if (paint) drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y), glyph.fontSize, paint)
   }
 }
 
+/** The decorations of laid-out text `y` below the node's top, kept with the prepared text. */
+export function textLayoutDecorations(
+  node: SceneNode,
+  prepared: PreparedText,
+  y: number
+): readonly TextDecorationRect[] {
+  if (prepared.decorations?.y !== y) {
+    const glyphs = laidOutGlyphs(node, prepared.paragraph, shownText(node), y)
+    const rects = glyphs ? textDecorationRects(node, laidOutDecoratedGlyphs(glyphs)) : []
+    prepared.decorations = { y, rects }
+  }
+  return prepared.decorations.rects
+}
+
+/**
+ * Draws laid-out text and its decorations, `y` below the node's top. The decorations are kept
+ * with the prepared text, which its cache replaces when an input of the text changes. With
+ * `ownApart`, what has paints of its own is left to be drawn once, apart from the layer's passes.
+ */
 export function drawTextLayout(
   ck: CanvasKit,
   canvas: Canvas,
   node: SceneNode,
   prepared: PreparedText,
   y: number,
-  textPaint: Paint
+  textPaint: Paint,
+  space: ColorProfile,
+  ownApart = false
 ): void {
   const layout = prepared.paragraph
   layout.draw(canvas, 0, y)
-  drawKeycapFrames(ck, canvas, node, layout, y, textPaint)
-  if (!hasDecoration(node)) return
-  if (prepared.decorations?.y !== y) {
-    const glyphs = laidOutGlyphs(node, layout, shownText(node), y)
-    const rects = glyphs ? textDecorationRects(node, laidOutDecoratedGlyphs(glyphs)) : []
-    prepared.decorations = { y, rects }
+  let runPaint: Paint | undefined
+  try {
+    // A frame takes the colour the paragraph gives its mark: its style run's, if it has one.
+    drawKeycapFrames(ck, canvas, node, layout, y, (run) => {
+      if (ownApart && run?.style.fills) return null
+      runPaint ??= textPaint.copy()
+      runPaint.setColor(
+        run ? styleRunColor(ck, run.style, textPaint.getColor(), space) : textPaint.getColor()
+      )
+      return runPaint
+    })
+  } finally {
+    runPaint?.delete()
   }
-  drawTextDecorations(ck, canvas, prepared.decorations.rects, textPaint)
+  if (!hasDecoration(node)) return
+  const rects = textLayoutDecorations(node, prepared, y)
+  drawTextDecorations(ck, canvas, rects, textPaint, space, node.fills, ownApart)
 }

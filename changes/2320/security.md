@@ -1,0 +1,1 @@
+- The desktop app runs its windows under a content security policy that allows scripts only from the app itself, so an inline script or event handler in imported or pasted markup cannot run.

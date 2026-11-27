@@ -1,9 +1,12 @@
 import { appendAll } from '@open-pencil/std/arrays'
 
+import { readBehaviour } from '../behaviours/model'
+import { transitionVariableIds } from '../behaviours/transition'
 import type { SceneGraph } from '../graph'
 import { imagePaintHashes } from '../images'
 import { overriddenBindingField } from '../instances/overrides'
 import { referencedStyleIds, sharedStyleLayers } from '../shared-styles'
+import { slideVariableIds } from '../slides/motion'
 import { styleRunReferences } from '../text/references'
 import type { SceneNode } from '../types'
 import { isUnsupportedVariableValue, variableValueReferences } from '../variables/value'
@@ -24,12 +27,18 @@ export interface LayerDependencies {
   images: Set<string>
 }
 
-/** The variables a layer names: its own bindings, its characters', and its overrides'. */
+/**
+ * The variables a layer names: its own bindings, its characters', its overrides', and those its
+ * behaviour's transition, slide transition and animation follow.
+ */
 export function layerVariableIds(node: SceneNode): string[] {
   const { self, descendants } = node.instanceOverrides
   const overridden = [...self, ...[...descendants.values()].flatMap((fields) => [...fields])]
+  const behaviour = readBehaviour(node)
   return [
     ...Object.values(node.boundVariables),
+    ...(behaviour ? transitionVariableIds(behaviour) : []),
+    ...slideVariableIds(node),
     ...styleRunReferences(node.styleRuns).variables,
     ...overridden.flatMap(([field, value]) =>
       typeof value === 'string' && overriddenBindingField(field) !== null ? [value] : []

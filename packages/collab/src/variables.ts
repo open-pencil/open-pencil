@@ -81,7 +81,10 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
       if (!collection) continue
       const listed = new Set(collection.variableIds)
       const missing = [...variables.values()]
-        .filter((variable) => variable.collectionId === id && !listed.has(variable.id))
+        .filter(
+          (variable) =>
+            variable.collectionId === id && !variable.deleted && !listed.has(variable.id)
+        )
         .map((variable) => variable.id)
         .toSorted()
       if (missing.length === 0) continue

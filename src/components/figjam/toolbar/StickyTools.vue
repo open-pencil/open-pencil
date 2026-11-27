@@ -20,13 +20,13 @@ const figjam = useMessages('figjam')
 const panels = useMessages('panels')
 const styles = tv(theme)()
 const { swatches, selected } = useStickySwatches(() => sticky.color.value)
-const hex = computed(() => swatches.value.find((swatch) => swatch.value === selected.value)?.hex)
+const css = computed(() => swatches.value.find((swatch) => swatch.value === selected.value)?.css)
 </script>
 
 <template>
   <ToolbarMenu :label="figjam.changeColor" property="toolbar-color">
     <template #trigger>
-      <span :class="styles.dot()" :style="{ backgroundColor: hex }" />
+      <span :class="styles.dot()" :style="{ backgroundColor: css }" />
     </template>
     <FigJamSwatches
       :label="panels.stickyColor"

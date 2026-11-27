@@ -1,8 +1,7 @@
 import type { EditorState } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
+import type { ColorProfile } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-
-import type { PresentationColorSpace } from '#vue/canvas/surface/color-space'
 
 /**
  * Options for {@link useCanvas}.
@@ -46,7 +45,7 @@ export interface UseCanvasOptions {
    * Reports the color space the canvas actually presents, including fallbacks, or null
    * when no surface could be configured.
    */
-  onPresentation?: (colorSpace: PresentationColorSpace | null) => void
+  onPresentation?: (colorSpace: ColorProfile | null) => void
   /**
    * Supplies the view state rendered by this canvas. Defaults to `editor.state`.
    *

@@ -18,7 +18,7 @@ const discovery = parseCloudDiscovery({
     emailPassword: { signIn: true, signUp: true, minimumPasswordLength: 8 },
     enterpriseSSO: false
   },
-  capabilities: { documents: true, workspaces: true, collaboration: true }
+  capabilities: { documents: true, workspaces: true, collaboration: true, embedding: false }
 })
 
 const CREDENTIALS = { email: 'ada@example.com', password: 'correct horse' }

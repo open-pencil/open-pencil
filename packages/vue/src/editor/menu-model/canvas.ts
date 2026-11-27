@@ -17,6 +17,7 @@ type CanvasMenuCommand =
   | 'selection.ungroupWhenAvailable'
   | 'selection.moveToPageWhenAvailable'
   | 'selection.arrangeWhenAvailable'
+  | 'selection.thumbnailWhenAvailable'
 
 type CanvasMenuGroup = readonly CanvasMenuCommand[]
 
@@ -59,6 +60,7 @@ const CANVAS_MENU_GROUPS = [
   ],
   ['selection.toggleVisibility', 'selection.toggleLock'],
   ['selection.flipHorizontal', 'selection.flipVertical'],
+  ['selection.thumbnailWhenAvailable'],
   ['selection.arrangeWhenAvailable']
 ] satisfies readonly CanvasMenuGroup[]
 
@@ -122,6 +124,18 @@ function iconItems({ commandMenuItem, selection }: CanvasMenuOptions): MenuEntry
   return selection.isIcon.value ? [commandMenuItem('selection.detachIcon')] : []
 }
 
+/** Set as thumbnail on a layer that can be one, or Restore default thumbnail on the one that is. */
+function thumbnailItems({ commandMenuItem, selection }: CanvasMenuOptions): MenuEntry[] {
+  switch (selection.thumbnailAction.value) {
+    case 'set':
+      return [commandMenuItem('selection.setAsThumbnail')]
+    case 'restore':
+      return [commandMenuItem('selection.restoreDefaultThumbnail')]
+    default:
+      return []
+  }
+}
+
 function conditionalCommand(command: CanvasMenuCommand, options: CanvasMenuOptions): MenuEntry[] {
   switch (command) {
     case 'selection.moveToPageWhenAvailable':
@@ -136,6 +150,8 @@ function conditionalCommand(command: CanvasMenuCommand, options: CanvasMenuOptio
       return instanceItems(options)
     case 'selection.iconActions':
       return iconItems(options)
+    case 'selection.thumbnailWhenAvailable':
+      return thumbnailItems(options)
     case 'selection.ungroupWhenAvailable':
       return options.selection.canUngroup.value
         ? [options.commandMenuItem('selection.ungroup')]

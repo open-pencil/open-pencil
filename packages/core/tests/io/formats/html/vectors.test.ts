@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { buildIconData } from '#core/icons/artwork'
 import { placeIcon } from '#core/icons/render'
@@ -20,6 +21,32 @@ const gradient: Fill = {
 }
 
 describe('vector layers in HTML export', () => {
+  test('draw a boolean operation as its combined shape', async () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { width: 60, height: 60 })
+    const blue: Fill = { ...gradient, type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 } }
+    const boolean = graph.createNode('BOOLEAN_OPERATION', frame.id, {
+      width: 40,
+      height: 40,
+      booleanOperation: 'SUBTRACT',
+      fills: [{ ...blue, color: { r: 1, g: 0, b: 0, a: 1 } }]
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 40, height: 40, fills: [blue] })
+    graph.createNode('RECTANGLE', boolean.id, {
+      x: 10,
+      y: 10,
+      width: 20,
+      height: 20,
+      fills: [blue]
+    })
+
+    const { html } = await renderNodesToHTML(graph, [frame.id])
+    const svg = expectDefined(/<svg[\s\S]*<\/svg>/.exec(html))[0]
+    expect(svg).not.toMatch(/#0000ff/i)
+    expect(svg.match(/<path /g)).toHaveLength(1)
+    expect(svg.match(/ d="([^"]*)"/)?.[1].match(/M/g)).toHaveLength(2)
+  })
+
   test('draw their paths as inline SVG with def ids of their own', async () => {
     const graph = new SceneGraph()
     const frame = graph.createNode('FRAME', graph.getPages()[0].id, {

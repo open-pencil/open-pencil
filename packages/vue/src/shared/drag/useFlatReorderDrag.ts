@@ -25,7 +25,12 @@ export interface FlatReorderItem {
 
 export interface UseFlatReorderDragOptions<TItem extends FlatReorderItem> {
   items: () => readonly TItem[]
-  onMove: (sourceId: string, targetIndex: number) => void
+  onMove?: (sourceId: string, targetIndex: number) => void
+  /**
+   * Dropping beside an item, for lists in groups, where the item says which group the drop joins
+   * and an unchanged index may still change it.
+   */
+  onPlace?: (sourceId: string, targetId: string, side: 'before' | 'after') => void
   /** Dropping onto the middle of an item, for lists where items can merge. */
   onCombine?: (sourceId: string, targetId: string) => void
   /** Which drops each target takes; by default before and after, never onto. */
@@ -68,6 +73,7 @@ function edgeForInstruction(
 export function useFlatReorderDrag<TItem extends FlatReorderItem>({
   items,
   onMove,
+  onPlace,
   onCombine,
   operations = () => REORDER_ONLY,
   axis = 'vertical',
@@ -157,6 +163,14 @@ export function useFlatReorderDrag<TItem extends FlatReorderItem>({
         onCombine?.(sourceId, targetId)
         return
       }
+      if (onPlace) {
+        onPlace(
+          sourceId,
+          targetId,
+          dropInstruction.operation === 'reorder-before' ? 'before' : 'after'
+        )
+        return
+      }
 
       const currentItems = items()
       const startIndex = currentItems.findIndex((item) => getId(item) === sourceId)
@@ -168,7 +182,7 @@ export function useFlatReorderDrag<TItem extends FlatReorderItem>({
         closestEdgeOfTarget: edgeForInstruction(dropInstruction, axis)
       })
 
-      if (targetIndex !== startIndex) onMove(sourceId, targetIndex)
+      if (targetIndex !== startIndex) onMove?.(sourceId, targetIndex)
     }
   })
 

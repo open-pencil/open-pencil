@@ -1,9 +1,22 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import {
+  createSlide,
+  createSlideRow,
+  defaultSlideSettings,
+  slideRows
+} from '@open-pencil/scene-graph/slides'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { createDocumentGraph } from '#core/editor/document-settings'
 import { FigmaAPI } from '#core/figma-api'
-import { MAX_PDF_PAGES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
+import {
+  MAX_PDF_PAGES,
+  PDFPlanError,
+  planExportPDFPages,
+  planPDFPages
+} from '#core/io/formats/pdf/plan'
 
 /** Page "Cards" (Front, Back, hidden Draft), page "Posters" (Poster), empty page "Blank". */
 function document() {
@@ -112,5 +125,45 @@ describe('planPDFPages', () => {
     expect(() => planPDFPages(graph, { mode: 'frames', currentPageId: cards.id })).toThrow(
       /limit is 200/
     )
+  })
+})
+
+describe('a deck', () => {
+  /** Slides 1, a skipped one, and 3, in that order across two sections. */
+  function deck() {
+    const graph = createDocumentGraph('slides', 'light')
+    const page = graph.getPages()[0].id
+    const [first] = slideRows(graph, page)[0]
+    const firstRow = expectDefined(first.parentId)
+    const skipped = createSlide(graph, firstRow)
+    graph.updateNode(skipped.id, { slide: { ...defaultSlideSettings(), skipped: true } })
+    const grid = expectDefined(graph.getNode(firstRow)?.parentId)
+    const third = createSlide(graph, createSlideRow(graph, grid).id)
+    return { graph, page, ids: [first.id, skipped.id, third.id] }
+  }
+
+  test('a whole deck makes a page for each slide in order, leaving out skipped ones', () => {
+    const { graph, page: deckPage, ids } = deck()
+    const pages = planExportPDFPages({ graph, target: { scope: 'document' } })
+    expect(pages?.map((spec) => spec.nodeIds)).toEqual([[ids[0]], [ids[2]]])
+    // The Export section exports the page it shows when nothing is selected.
+    const page = planExportPDFPages({ graph, target: { scope: 'page', pageId: deckPage } })
+    expect(page?.map((spec) => spec.nodeIds)).toEqual([[ids[0]], [ids[2]]])
+  })
+
+  test('slides picked keep the deck’s order, skipped ones included', () => {
+    const { graph, ids } = deck()
+    const target = { scope: 'selection' as const, nodeIds: [ids[2], ids[1]] }
+    const pages = planExportPDFPages({ graph, target })
+    expect(pages?.map((spec) => spec.nodeIds)).toEqual([[ids[1]], [ids[2]]])
+  })
+
+  test('layers that are not all slides export as one page, as in a design', () => {
+    const { graph, page, ids } = deck()
+    const box = graph.createNode('RECTANGLE', ids[0], { width: 10, height: 10 })
+    const target = { scope: 'selection' as const, nodeIds: [ids[0], box.id] }
+    expect(planExportPDFPages({ graph, target })).toEqual([
+      { pageId: page, nodeIds: target.nodeIds }
+    ])
   })
 })

@@ -1,8 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { decode } from 'js-base64'
+
 import { parseDrawIOFile } from '@open-pencil/drawio'
-import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type Effect, type Fill, type SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex, convertColor } from '@open-pencil/scene-graph/color'
 import {
   boundEndpoint,
   connectorSublayers,
@@ -146,6 +149,37 @@ describe('saving a draw.io file', () => {
       sourcePoint: { x: 100, y: 100 },
       targetPoint: { x: 300, y: 100 }
     })
+  })
+
+  test('a boolean operation goes as an SVG image of its combined shape', async () => {
+    const graph = new SceneGraph()
+    const red: Fill = {
+      type: 'SOLID',
+      color: { r: 1, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const blue: Fill = { ...red, color: { r: 0, g: 0, b: 1, a: 1 } }
+    const boolean = graph.createNode('BOOLEAN_OPERATION', graph.getPages()[0].id, {
+      width: 40,
+      height: 40,
+      booleanOperation: 'SUBTRACT',
+      fills: [red]
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 40, height: 40, fills: [blue] })
+    graph.createNode('RECTANGLE', boolean.id, {
+      x: 10,
+      y: 10,
+      width: 20,
+      height: 20,
+      fills: [blue]
+    })
+    const [cell] = expectDefined(parseDrawIOFile(await write(graph))).pages[0]?.cells ?? []
+    const image = String(cell.style.values.image)
+    const svg = decode(image.slice('data:image/svg+xml,'.length))
+    expect(svg).not.toContain('#0000FF')
+    expect(svg.match(/<path /g)).toHaveLength(1)
+    expect(svg.match(/ d="([^"]*)"/)?.[1].match(/M/g)).toHaveLength(2)
   })
 
   test('a layer drawn as an SVG picture reports its background blur and what SVG cannot draw', async () => {
@@ -375,5 +409,23 @@ describe('exporting part of a design as draw.io', () => {
     // Off the shape's right side, 10 + 60 across and 20 + 40 / 2 down in the group at 100, 100,
     // by the gap a joined end leaves.
     expect(edge?.geometry.sourcePoint).toEqual({ x: 176, y: 140 })
+  })
+})
+
+describe('a document in a color profile', () => {
+  test('a Display P3 document writes its colors brought inside sRGB, and stays as it was', async () => {
+    const graph = new SceneGraph()
+    graph.documentColorSpace = 'display-p3'
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id, {
+      width: 40,
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const xml = await write(graph)
+    const mapped = colorToHex(convertColor({ r: 1, g: 0, b: 0, a: 1 }, 'display-p3', 'srgb', 'map'))
+    expect(xml).toContain(`fillColor=${mapped}`)
+    expect(graph.documentColorSpace).toBe('display-p3')
+    expect(graph.getNode(rect.id)?.fills[0].color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
   })
 })

@@ -7,12 +7,11 @@ import IconPenTool from '~icons/lucide/pen-tool'
 import IconTerminal from '~icons/lucide/square-terminal'
 
 import { LINKS } from '../content/links'
-import { useLandingMessages, useLocalePath } from '../content/messages'
+import { useLandingMessages } from '../content/messages'
 import ActionButton from '../ui/ActionButton.vue'
 import CopyCommand from './CopyCommand.vue'
 
 const messages = useLandingMessages()
-const localePath = useLocalePath()
 </script>
 
 <template>
@@ -47,7 +46,7 @@ const localePath = useLocalePath()
         <dd>{{ messages.download.others.source.detail }}</dd>
         <dd class="action">
           <ActionButton
-            :href="localePath('/getting-started') + '#building-from-source'"
+            href="/development/contributing#build-from-source"
             :icon="IconBookOpen"
             small
           >

@@ -1,5 +1,6 @@
 import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph/behaviours'
 
+import type { MotionControl } from '#vue/controls/motion'
 import type { VariantDefinitionControl } from '#vue/controls/variants'
 
 /** A boolean value of the behaviour: the variant or boolean property that holds it. */
@@ -66,6 +67,8 @@ export interface BehaviourControl {
   values: BehaviourValueControl[]
   parts: BehaviourPartControl[]
   states: BehaviourStatesControl
+  /** Null until a transition is added: the control changes state at once. */
+  transition: MotionControl | null
   /** Ids of required values and parts that are still unbound, in contract order. */
   missing: string[]
 }

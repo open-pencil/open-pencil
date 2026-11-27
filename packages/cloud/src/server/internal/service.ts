@@ -1,10 +1,11 @@
+import { setAccountEntitlementsSchema } from '#cloud/contract'
 import { accountSeats } from '#cloud/server/billing/seats'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createAccountEntitlementRepository } from '#cloud/server/policy'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-import { setAccountEntitlementsSchema } from './schema'
+import { dailyUsage, type UsageRange } from './usage'
 
 export type SetAccountEntitlementsInput = v.InferInput<typeof setAccountEntitlementsSchema>
 
@@ -41,6 +42,11 @@ export function createInternalService(database: Kysely<CloudDatabase>) {
     async accountSeats(userId: string): Promise<number | null> {
       const account = await entitlements.account(userId)
       return account ? accountSeats(database, userId) : null
+    },
+
+    /** The deployment's use per UTC day of `range`, and its totals now, as counts alone. */
+    dailyUsage(range: UsageRange) {
+      return dailyUsage(database, range)
     }
   }
 }

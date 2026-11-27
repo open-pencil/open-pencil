@@ -82,5 +82,10 @@
   "behaviourStateDisabled": "Desactivado",
   "behaviourStateInvalid": "No válido",
   "behaviourStateUnset": "Ninguno",
-  "behaviourStateField": "Estado {state}"
+  "behaviourStateField": "Estado {state}",
+  "transition": "Transición",
+  "addTransition": "Animar cambios de estado",
+  "removeTransition": "Cambiar de estado al instante",
+  "transitionDuration": "Duración",
+  "transitionEasing": "Aceleración"
 }

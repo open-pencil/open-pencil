@@ -4,16 +4,19 @@ import { unusedAuthAdapter } from '#cloud-tests/helpers/auth'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import { createContractClient } from '#cloud/client'
+import { internalContract, type setAccountEntitlementsSchema } from '#cloud/contract'
 import {
   CLOUD_FEATURE_KEYS,
   createCloudApp,
   DatabaseEntitlementSource,
   parseCloudServerConfig
 } from '#cloud/server'
-import { testClient } from 'hono/testing'
+import { recordActiveAccount, recordSave } from '#cloud/server/usage/activity'
 import * as v from 'valibot'
 
 const SERVICE_TOKEN = 'billing-service-token-with-at-least-32-characters'
+const USAGE_TOKEN = 'dashboard-usage-token-with-at-least-32-characters'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -25,7 +28,8 @@ const config = parseCloudServerConfig({
   s3Bucket: 'openpencil',
   s3AccessKeyId: 'openpencil',
   s3SecretAccessKey: 'openpencil-secret',
-  internalServiceToken: SERVICE_TOKEN
+  internalServiceToken: SERVICE_TOKEN,
+  usageReportToken: USAGE_TOKEN
 })
 
 async function testApp() {
@@ -42,16 +46,17 @@ async function testApp() {
     objects: createMemoryObjectStore().store,
     resolveSession: async () => null
   })
-  const entitlements = testClient(app).api.internal.accounts[':userId'].entitlements
+  // Services call the internal API over plain HTTP, so the tests send what they would.
   const put = (
     userId: string,
-    json: Parameters<typeof entitlements.$put>[0]['json'],
+    json: v.InferInput<typeof setAccountEntitlementsSchema>,
     token = SERVICE_TOKEN
   ) =>
-    entitlements.$put(
-      { param: { userId }, json },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
+    app.request(`/api/internal/accounts/${userId}/entitlements`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(json)
+    })
   const enabled = () =>
     new DatabaseEntitlementSource(runtime.database).boolean(
       { type: 'user', id: userId },
@@ -115,6 +120,38 @@ describe('internal entitlements API', () => {
     }
   })
 
+  test("answers a service's contract client, which reads refusals as it chooses", async () => {
+    const context = await testApp()
+    try {
+      const client = (token: string) =>
+        createContractClient(internalContract, 'http://localhost:8787/api/internal', {
+          fetch: async (input, init) => context.app.request(new Request(input, init)),
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'omit',
+          refusal: (status, body) => new Error(`HTTP ${status} ${JSON.stringify(body)}`)
+        })
+      const billing = client(SERVICE_TOKEN)
+      const set = (userId: string) =>
+        billing.setAccountEntitlements({
+          params: { userId },
+          body: { values: { services: { enabled: true } }, source: 'billing', externalVersion: 1 }
+        })
+      expect(await set(context.userId)).toEqual({ applied: true })
+      expect(await context.enabled()).toBe(true)
+      expect(await billing.accountSeats({ params: { userId: context.userId } })).toEqual({
+        seats: 0
+      })
+      await expect(set(crypto.randomUUID())).rejects.toThrow(
+        'HTTP 404 {"error":{"code":"not_found"'
+      )
+      await expect(
+        client('x'.repeat(48)).accountSeats({ params: { userId: context.userId } })
+      ).rejects.toThrow('HTTP 401 {"error":{"code":"unauthorized"}}')
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('counts the people who can edit across the workspaces an account owns, once each', async () => {
     const context = await testApp()
     try {
@@ -162,17 +199,173 @@ describe('internal entitlements API', () => {
         [context.userId, 'editor']
       ])
 
-      const seats = testClient(context.app).api.internal.accounts[':userId'].seats
-      const response = await seats.$get(
-        { param: { userId: context.userId } },
-        { headers: { Authorization: `Bearer ${SERVICE_TOKEN}` } }
-      )
+      const seats = (userId: string) =>
+        context.app.request(`/api/internal/accounts/${userId}/seats`, {
+          headers: { Authorization: `Bearer ${SERVICE_TOKEN}` }
+        })
+      const response = await seats(context.userId)
       expect(await responseJSON(response, v.object({ seats: v.number() }))).toEqual({ seats: 2 })
-      const unknown = await seats.$get(
-        { param: { userId: crypto.randomUUID() } },
-        { headers: { Authorization: `Bearer ${SERVICE_TOKEN}` } }
-      )
+      const unknown = await seats(crypto.randomUUID())
       expect(unknown.status).toBe(404)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+})
+
+describe('internal usage API', () => {
+  const usage = (
+    context: Awaited<ReturnType<typeof testApp>>,
+    query: string,
+    token = SERVICE_TOKEN
+  ) =>
+    context.app.request(`/api/internal/usage/daily?${query}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+  test('counts each UTC day of the range, quiet days as zeros, and the totals now', async () => {
+    const context = await testApp()
+    try {
+      const { database } = context.runtime
+      // The owner from `testApp` signed up today, outside the range.
+      const early = crypto.randomUUID()
+      const late = crypto.randomUUID()
+      await database
+        .insertInto('user')
+        .values([
+          {
+            id: early,
+            name: 'Early',
+            email: 'early@example.com',
+            emailVerified: true,
+            createdAt: '2026-11-01T00:00:00.000Z'
+          },
+          {
+            id: late,
+            name: 'Late',
+            email: 'late@example.com',
+            emailVerified: true,
+            createdAt: '2026-11-03T23:59:59.000Z'
+          }
+        ])
+        .execute()
+      const workspaceId = crypto.randomUUID()
+      await database
+        .insertInto('workspace')
+        .values({ id: workspaceId, name: 'W', slug: 'w', createdBy: early, ownerId: early })
+        .execute()
+      const documentId = crypto.randomUUID()
+      const trashedId = crypto.randomUUID()
+      await database
+        .insertInto('document')
+        .values([
+          {
+            id: documentId,
+            workspaceId,
+            name: 'Kept',
+            currentRevisionId: null,
+            createdBy: early,
+            createdAt: '2026-11-01T10:00:00.000Z'
+          },
+          {
+            id: trashedId,
+            workspaceId,
+            name: 'Trashed',
+            currentRevisionId: null,
+            createdBy: early,
+            createdAt: '2026-11-03T10:00:00.000Z',
+            deletedAt: '2026-11-04T10:00:00.000Z'
+          },
+          // Deleted forever, waiting out cleanup's grace: counted nowhere.
+          {
+            id: crypto.randomUUID(),
+            workspaceId,
+            name: 'Purged',
+            currentRevisionId: null,
+            createdBy: early,
+            createdAt: '2026-11-02T10:00:00.000Z',
+            deletedAt: '2026-11-04T10:00:00.000Z',
+            purgedAt: '2026-11-05T10:00:00.000Z'
+          }
+        ])
+        .execute()
+      // Saves and sign-ins are counted as they happen; cleanup may have deleted their rows since.
+      await recordSave(database, early, new Date('2026-11-01T11:00:00.000Z'))
+      await recordSave(database, early, new Date('2026-11-01T12:00:00.000Z'))
+      await recordSave(database, late, new Date('2026-11-03T23:59:59.000Z'))
+      // Early signs in on the day they also save: still one active account that day.
+      await recordActiveAccount(database, early, new Date('2026-11-01T09:00:00.000Z'))
+      await recordActiveAccount(database, late, new Date('2026-11-01T09:00:00.000Z'))
+      // An account deleted meanwhile leaves no mark.
+      await recordActiveAccount(database, crypto.randomUUID(), new Date('2026-11-01T09:00:00.000Z'))
+      await database
+        .insertInto('workspaceStorageUsage')
+        .values({ workspaceId, committedBytes: 1234 })
+        .execute()
+
+      const response = await usage(context, 'start=2026-11-01&end=2026-11-03')
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({
+        days: [
+          {
+            day: '2026-11-01',
+            signUps: 1,
+            activeAccounts: 2,
+            documentsCreated: 1,
+            revisions: 2
+          },
+          { day: '2026-11-02', signUps: 0, activeAccounts: 0, documentsCreated: 0, revisions: 0 },
+          { day: '2026-11-03', signUps: 1, activeAccounts: 1, documentsCreated: 1, revisions: 1 }
+        ],
+        totals: { accounts: 3, documents: 1, workspaces: 1, storageBytes: 1234 }
+      })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('the usage token reads usage and nothing else', async () => {
+    const context = await testApp()
+    try {
+      const range = 'start=2026-11-01&end=2026-11-01'
+      expect((await usage(context, range, USAGE_TOKEN)).status).toBe(200)
+      // It can't count seats or set a plan, even for an account that exists.
+      const seats = await context.app.request(`/api/internal/accounts/${context.userId}/seats`, {
+        headers: { Authorization: `Bearer ${USAGE_TOKEN}` }
+      })
+      expect(seats.status).toBe(401)
+      const plan = await context.put(
+        context.userId,
+        { values: { services: { enabled: true } }, source: 'billing', externalVersion: 1 },
+        USAGE_TOKEN
+      )
+      expect(plan.status).toBe(401)
+      // No plan was written.
+      expect(await context.enabled()).toBeNull()
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('refuses callers without the service token, and ranges it cannot answer', async () => {
+    const context = await testApp()
+    try {
+      expect((await usage(context, 'start=2026-11-01&end=2026-11-01', 'x'.repeat(48))).status).toBe(
+        401
+      )
+      for (const query of [
+        'start=2026-11-03&end=2026-11-01',
+        'start=2026-02-30&end=2026-03-01',
+        'start=2025-01-01&end=2026-11-01',
+        'start=yesterday&end=2026-11-01',
+        // The calendar's last day has no next midnight to count up to.
+        'start=9999-12-31&end=9999-12-31',
+        'end=2026-11-01'
+      ]) {
+        const response = await usage(context, query)
+        expect({ query, status: response.status }).toEqual({ query, status: 400 })
+      }
+      expect((await usage(context, 'start=2026-11-01&end=2026-11-01')).status).toBe(200)
     } finally {
       await context.runtime.close()
     }

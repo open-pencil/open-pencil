@@ -53,6 +53,7 @@ export default defineConfig(async ({ command, mode }) => {
     },
     define: {
       __OPENPENCIL_APP_VERSION__: JSON.stringify(packageJson.version),
+      __OPENPENCIL_CLOUD__: JSON.stringify(cloud),
       __OPENPENCIL_CLOUD_SITE__: JSON.stringify(cloudSite),
       ...donationDefine(__dirname),
       __OPENPENCIL_OFFICIAL_CLOUD_URL__: JSON.stringify(
@@ -107,15 +108,21 @@ export default defineConfig(async ({ command, mode }) => {
       sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
       outDir,
       rolldownOptions: {
-        // The desktop Software Update window is its own page; a Cloud server adds its own
-        // pages beside the editor, and the metrics dashboard builds alone.
+        // The desktop Software Update window and a deck's presenter window are their own pages;
+        // a Cloud server adds its own pages beside the editor, and the metrics dashboard builds
+        // alone.
         input: metrics
           ? { metrics: resolve(__dirname, 'metrics.html') }
           : cloudSite
-            ? { main: resolve(__dirname, 'index.html'), cloud: resolve(__dirname, 'cloud.html') }
+            ? {
+                main: resolve(__dirname, 'index.html'),
+                cloud: resolve(__dirname, 'cloud.html'),
+                presenter: resolve(__dirname, 'presenter.html')
+              }
             : {
                 main: resolve(__dirname, 'index.html'),
-                updater: resolve(__dirname, 'updater.html')
+                updater: resolve(__dirname, 'updater.html'),
+                presenter: resolve(__dirname, 'presenter.html')
               },
         output: { chunkFileNames }
       }

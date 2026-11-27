@@ -109,6 +109,25 @@ lease_ms = 180000
 `
 
 describe('Cloud TOML deployment configuration', () => {
+  test('lets other sites embed documents only where the deployment enables it', () => {
+    const embedding = (table: string) =>
+      parseCloudDeploymentTOML(
+        minimalSource.replace(
+          'trusted_origins = ["https://app.example.com"]',
+          `trusted_origins = ["https://app.example.com"]\n${table}`
+        ),
+        environment
+      )
+    expect(embedding('embedding = { enabled = true }')).toMatchObject({
+      embeddingEnabled: true,
+      embeddingOrigins: []
+    })
+    expect(
+      embedding('embedding = { enabled = true, allowed_origins = ["https://wiki.example"] }')
+    ).toMatchObject({ embeddingEnabled: true, embeddingOrigins: ['https://wiki.example'] })
+    expect(() => embedding('embedding = { enabled = true, origins = [] }')).toThrow()
+  })
+
   test('reads GitHub’s client secret from GITHUB_CLIENT_SECRET', () => {
     const source = minimalSource.replace(
       '[authentication.providers.google]',
@@ -131,6 +150,8 @@ describe('Cloud TOML deployment configuration', () => {
       enrollmentMode: 'approval',
       enrollmentAdminNotificationEmails: ['admin@example.com'],
       localEditor: true,
+      embeddingEnabled: false,
+      embeddingOrigins: [],
       emailPasswordEnabled: true,
       emailPasswordSignUpEnabled: false,
       emailPasswordMinimumLength: 16,
@@ -344,6 +365,28 @@ provider = "posthog"
         environment
       ).errorTracking?.includeIds
     ).toBe(true)
+  })
+
+  test('reads the usage report token only when its table is there', () => {
+    const plain = parseCloudDeploymentTOML(minimalSource, environment)
+    expect(plain.usageReportToken).toBeUndefined()
+    const config = parseCloudDeploymentTOML(`${minimalSource}\n[usage_report]\n`, {
+      ...environment,
+      OPENPENCIL_CLOUD_USAGE_TOKEN: 'usage-token-with-at-least-32-characters'
+    })
+    expect(config.usageReportToken).toBe('usage-token-with-at-least-32-characters')
+    expect(() =>
+      parseCloudDeploymentTOML(`${minimalSource}\n[usage_report]\n`, environment)
+    ).toThrow()
+    // A usage token equal to the service token would reach every internal route.
+    const same = 'shared-token-with-at-least-32-characters'
+    expect(() =>
+      parseCloudDeploymentTOML(`${minimalSource}\n[internal_api]\n\n[usage_report]\n`, {
+        ...environment,
+        OPENPENCIL_CLOUD_SERVICE_TOKEN: same,
+        OPENPENCIL_CLOUD_USAGE_TOKEN: same
+      })
+    ).toThrow('must differ')
   })
 
   test('advertises services and billing only when configured', () => {

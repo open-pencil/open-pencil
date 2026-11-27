@@ -28,6 +28,7 @@ import {
   commitPaintMutation,
   paintBindingTargets
 } from '@/components/properties/paint/binding'
+import DeletedVariableMark from '@/components/properties/paint/DeletedVariableMark.vue'
 import { useGradientEditing } from '@/components/properties/paint/gradient-edit'
 import { createFillOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -164,7 +165,12 @@ function updateSolidColor(
               @update:opacity="actions.patch(index, { opacity: $event })"
             >
               <template #preview>
+                <DeletedVariableMark
+                  v-if="binding.variable?.deleted"
+                  :label="panels.variableDeleted"
+                />
                 <FillPicker
+                  v-else
                   :fill="displayFill(fill, binding.resolvedValue)"
                   :okhcl="
                     createFillOkhclAdapter(okhcl, activeNode, index, (update) =>

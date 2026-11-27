@@ -1,4 +1,4 @@
-export { scaleNodeChanges } from './node'
+export { scaleNodeChanges, scaledTextStyleLengths } from './node'
 export {
   MIN_RESCALE,
   rescaleNodeChanges,

@@ -17,7 +17,7 @@ function byName<T extends { name: string }>(items: Iterable<T>, name: string): N
 export function lookupCollection(graph: SceneGraph, ref: string): NamedLookup<VariableCollection> {
   const byId = graph.variableCollections.get(ref)
   if (byId) return { kind: 'found', value: byId }
-  return byName(graph.variableCollections.values(), ref)
+  return byName(graph.getLiveCollections(), ref)
 }
 
 /** The mode of `collection` with this ID or, failing that, the one with this exact name. */

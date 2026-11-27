@@ -26,6 +26,7 @@ import {
   commitPaintMutation,
   paintBindingTargets
 } from '@/components/properties/paint/binding'
+import DeletedVariableMark from '@/components/properties/paint/DeletedVariableMark.vue'
 import { useGradientEditing } from '@/components/properties/paint/gradient-edit'
 import { createStrokeOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -173,7 +174,12 @@ function onToggleSides(nodes: readonly SceneNode[]) {
             @update:opacity="actions.patch(index, { opacity: $event })"
           >
             <template #preview>
+              <DeletedVariableMark
+                v-if="binding.variable?.deleted"
+                :label="panels.variableDeleted"
+              />
               <FillPicker
+                v-else
                 :label="panels.stroke"
                 :fill="displayStroke(stroke, binding.resolvedValue)"
                 :okhcl="
