@@ -101,10 +101,10 @@ describe('text case while text is edited', () => {
     expect(node().styleRuns).toEqual([])
   })
 
-  test('show only the layer properties of the selected characters', async () => {
+  test("show the selected characters' styles and bindings, but not their link", async () => {
     const { editor, node } = await editingWorld()
     const style = expectDefined(editor.getTextSelectionStyle(node()), 'selection style')
-    expect(Object.keys(style)).not.toContain('boundVariables')
+    expect(style).toMatchObject({ textStyleId: null, fillStyleId: null, boundVariables: {} })
     expect(Object.keys(style)).not.toContain('hyperlink')
   })
 })
