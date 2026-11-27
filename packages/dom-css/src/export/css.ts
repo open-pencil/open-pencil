@@ -69,7 +69,13 @@ export function borderWidths(node: SceneNode): Record<BorderSide, number> {
  * cover an inset shadow; an image has no children, so this alone answers for a parent.
  */
 export function strokeDrawsAsShadows(node: SceneNode): boolean {
-  return projectedStroke(node) !== undefined && node.dashPattern.length === 0
+  const projected = projectedStroke(node)
+  return projected !== undefined && !strokeIsDashed(projected.stroke)
+}
+
+/** Whether a stroke draws dashed; one without its own dash draws solid. */
+export function strokeIsDashed(stroke: Stroke): boolean {
+  return (stroke.dashPattern ?? []).length > 0
 }
 
 export function strokeColorToCSS(

@@ -41,6 +41,16 @@ describe('Figma shader paints in HTML and Tailwind', () => {
     expect(exported('RECTANGLE', { strokes: [solid] })).toEqual({ html, tailwind })
   })
 
+  test('a border is dashed as its first drawn stroke is', () => {
+    const solid: Stroke = { ...RED, weight: 2, align: 'INSIDE', dashPattern: [] }
+    const dashed: Stroke = { ...solid, dashPattern: [4, 2] }
+    const border = (strokes: Stroke[]) =>
+      exported('RECTANGLE', { strokes, dashPattern: strokes[0].dashPattern ?? [] })
+    expect(border([{ ...SHADER_STROKE, dashPattern: [4, 2] }, solid])).toEqual(border([solid]))
+    expect(border([{ ...SHADER_STROKE, dashPattern: [] }, dashed])).toEqual(border([dashed]))
+    expect(border([dashed]).html).toContain('dashed')
+  })
+
   test("a border's colour binding is the one on its first drawn stroke", () => {
     const border = (boundVariables: Record<string, string>) => {
       const graph = designSystem()

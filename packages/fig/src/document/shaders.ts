@@ -10,8 +10,8 @@ interface ShaderPaint {
 }
 
 /**
- * Visit every shader paint and effect a record names: its own, its overrides', and those its text
- * ranges and vector regions name in their style tables.
+ * Visit every shader paint and effect a record names: its own, its text decorations', its
+ * overrides', and those its text ranges and vector regions name in their style tables.
  */
 function forEachShaderPaint(node: NodeChange, visit: (paint: ShaderPaint) => void): void {
   forEachOverrideRecord(node, (source) => {
@@ -23,6 +23,7 @@ function forEachShaderPaint(node: NodeChange, visit: (paint: ShaderPaint) => voi
       const paints: ShaderPaint[] = [
         ...(record.fillPaints ?? []),
         ...(record.strokePaints ?? []),
+        ...(record.textDecorationFillPaints ?? []),
         ...(record.effects ?? [])
       ]
       for (const paint of paints) if (paint.type === 'CUSTOM' && paint.customEffectId) visit(paint)

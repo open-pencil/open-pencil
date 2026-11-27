@@ -43,15 +43,19 @@ export function heldShaderAssets(graph: SceneGraph): Set<string> {
 }
 
 /**
- * The shaders a layer names: in its fills and strokes, its text ranges' and vector regions' fills,
- * and its kept Figma effects.
+ * The shaders a layer names: in its fills and strokes, its text decorations' fills, its text
+ * ranges' and vector regions' fills, and its kept Figma effects.
  */
 function shaderReferences(node: SceneNode): ShaderReference[] {
   const references: ShaderReference[] = []
   for (const paint of [
     ...node.fills,
     ...node.strokes,
-    ...node.styleRuns.flatMap((run) => run.style.fills ?? []),
+    ...node.textDecorationFills,
+    ...node.styleRuns.flatMap((run) => [
+      ...(run.style.fills ?? []),
+      ...(run.style.textDecorationFills ?? [])
+    ]),
     ...(node.vectorNetwork?.regions.flatMap((region) => region.fills ?? []) ?? [])
   ]) {
     if (!isFigmaShaderPaint(paint)) continue
@@ -72,25 +76,25 @@ function shaderReferences(node: SceneNode): ShaderReference[] {
 /**
  * Finds the shader definitions a layer names, so a copy carries each to Figma beside the layer, as
  * an instance carries its component. A definition is found by its library key and version, or by
- * the Figma ID a paint read from a file names it by.
+ * the Figma ID a paint read from a file names it by. Definitions pasted from other files can share
+ * that ID, and an ID alone cannot tell which one the paint means, so it finds every one.
  */
 export function shaderDefinitionFinder(graph: SceneGraph): (node: SceneNode) => SceneNode[] {
   const byAsset = new Map<string, SceneNode>()
-  const byId = new Map<string, SceneNode>()
+  const byId = new Map<string, SceneNode[]>()
+  const addId = (id: string, node: SceneNode) => byId.set(id, [...(byId.get(id) ?? []), node])
   for (const node of graph.getAllNodes()) {
     if (node.type !== 'CODE_COMPONENT') continue
     const key = definitionAssetKey(node)
     if (key !== undefined) byAsset.set(key, node)
-    byId.set(node.id, node)
-    if (node.source.id) byId.set(node.source.id, node)
+    addId(node.id, node)
+    if (node.source.id && node.source.id !== node.id) addId(node.source.id, node)
   }
   if (byId.size === 0) return () => []
   return (node) =>
     shaderReferences(node).flatMap((reference) => {
-      const definition =
-        reference.key !== undefined
-          ? byAsset.get(shaderAssetKey(reference.key, reference.version))
-          : byId.get(reference.id ?? '')
+      if (reference.key === undefined) return byId.get(reference.id ?? '') ?? []
+      const definition = byAsset.get(shaderAssetKey(reference.key, reference.version))
       return definition ? [definition] : []
     })
 }

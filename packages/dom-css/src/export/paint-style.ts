@@ -8,6 +8,7 @@ import {
   fillToCSS,
   gradientToCSS,
   projectedStroke,
+  strokeIsDashed,
   strokeColorToCSS,
   strokeDrawsAsShadows
 } from './css'
@@ -29,7 +30,7 @@ export function addStroke(
   if (!literalColor || !projected) return
   const { stroke, index } = projected
   const color = css(`strokes/${index}/color`, literalColor)
-  const borderStyle = node.dashPattern.length > 0 ? 'dashed' : 'solid'
+  const borderStyle = strokeIsDashed(stroke) ? 'dashed' : 'solid'
   if (!node.independentStrokeWeights) {
     style.border = `${css('strokeWeight', px(stroke.weight))} solid ${color}`
     if (borderStyle !== 'solid') style['border-style'] = borderStyle

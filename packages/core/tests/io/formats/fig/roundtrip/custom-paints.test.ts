@@ -231,6 +231,21 @@ describe('Figma shader paints through a .fig archive', () => {
     )
   })
 
+  test("opening a text whose decoration has a shader paint brings the shader's definition", async () => {
+    const text = record(10, 'TEXT', 1, {
+      name: 'Plate',
+      size: { x: 40, y: 20 },
+      fillPaints: [SOLID],
+      textDecoration: 'UNDERLINE',
+      textDecorationFillPaints: [LIBRARY_SHADER],
+      textData: { characters: 'Hi there' }
+    })
+    const graph = await parseFigFile(archiveOf(LIBRARY_SHADER, true, text), { populate: 'all' })
+    expect([...graph.nodes.values()].filter((node) => node.type === 'CODE_COMPONENT')).toHaveLength(
+      1
+    )
+  })
+
   test("opening a shader paint brings the shader's definition onto the internal page", async () => {
     const { graph } = await opened(LIBRARY_SHADER, true)
     const definition = expectDefined(

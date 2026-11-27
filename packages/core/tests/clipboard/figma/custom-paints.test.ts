@@ -28,7 +28,7 @@ const SHADER: Paint = {
   componentPropAssignments: ASSIGNMENTS
 }
 
-function figmaCopy(withDefinition = false, shader: Paint = SHADER): string {
+function figmaCopy(withDefinition = false, shader: Paint = SHADER, key = SHADER_ASSET.key): string {
   const records = [
     { guid: guid(0, 0), type: 'DOCUMENT', phase: 'CREATED', name: 'Document' },
     {
@@ -47,7 +47,11 @@ function figmaCopy(withDefinition = false, shader: Paint = SHADER): string {
       parentIndex: { guid: guid(1, 0), position: '!' },
       fillPaints: [shader]
     },
-    ...(withDefinition ? shaderDefinitionRecords(guid(0, 0), guid(3, 0), guid(4)) : [])
+    ...(withDefinition
+      ? shaderDefinitionRecords(guid(0, 0), guid(3, 0), guid(4)).map((record) =>
+          record.type === 'CODE_COMPONENT' ? { ...record, key } : record
+        )
+      : [])
   ] as NodeChange[]
   return encodeFigmaClipboard(records, [], 1)
 }
@@ -139,4 +143,26 @@ test("copying a text whose range has a shader paint brings the shader's definiti
   })
   const { nodes } = await copied(graph, text)
   expect(writtenShaderDefinitions(nodes)).toHaveLength(1)
+})
+
+test("copying a text whose decoration has a shader paint brings the shader's definition", async () => {
+  const { graph, plate } = await pasted(figmaCopy(true))
+  const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+    text: 'Hi there',
+    textDecoration: 'UNDERLINE',
+    textDecorationFills: [plate.fills[0]]
+  })
+  const { nodes } = await copied(graph, text)
+  expect(writtenShaderDefinitions(nodes)).toHaveLength(1)
+})
+
+test('a shader paint naming a definition by a GUID two pasted files share copies both', async () => {
+  const byGuid: Paint = { ...SHADER, customEffectId: { guid: guid(4) } }
+  const { graph, plate } = await pasted(figmaCopy(true, byGuid))
+  await pasted(figmaCopy(true, byGuid, 'other'), graph)
+  expect(definitionsIn(graph)).toHaveLength(2)
+  const { nodes } = await copied(graph, plate)
+  expect(writtenShaderDefinitions(nodes).map((definition) => definition.key)).toContain(
+    SHADER_ASSET.key
+  )
 })
