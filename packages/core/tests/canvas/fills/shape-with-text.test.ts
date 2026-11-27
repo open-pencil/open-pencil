@@ -62,7 +62,7 @@ function drawnShape(kind: SceneNode['shapeWithTextType'], strokes: Stroke[]) {
     )
     image.delete()
     // A stroke centred on the outline grows the image by half its weight on every side.
-    const offset = strokes.length > 0 ? STROKE.weight / 2 : 0
+    const offset = (strokes[0]?.weight ?? 0) / 2
     return (x: number, y: number) => pixels[((y + offset) * width + x + offset) * 4 + 3]
   } finally {
     surface.dispose()
@@ -85,6 +85,12 @@ describe('shapes with text', () => {
     const alpha = drawnShape('ENG_DATABASE', [STROKE])
     expect(alpha(96, 48)).toBe(255)
     expect(alpha(0, 80)).toBe(255)
+  })
+
+  test('with a zero-weight stroke, leave the cut band empty, since that stroke draws nothing', () => {
+    const alpha = drawnShape('ENG_DATABASE', [{ ...STROKE, weight: 0 }])
+    expect(alpha(96, 48)).toBe(0)
+    expect(alpha(0, 80)).toBe(0)
   })
 
   test('without inner lines, keep their whole fill', () => {
