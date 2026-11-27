@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { rangeFillsDriver } from '#tests/helpers/canvas/range-fills/driver'
 import { textDecorationDriver } from '#tests/helpers/canvas/text-decoration/driver'
 import { showNumericPrefixDirection } from '#tests/helpers/canvas/text-direction/driver'
 
@@ -183,6 +184,27 @@ test('decoration pieces take the colour of the character that ends them', async 
   // character whose descender ends it, or of the line's last character, wherever fills change.
   await textDecorationDriver(() => editor.page).showColours()
   await expectCanvas('text-decoration-colours')
+})
+
+test("a range draws its own fills once, in place of the layer's", async () => {
+  // As Figma draws them: a gradient spans the layer, a range's fills stack, a solid range keeps
+  // its colour on a gradient layer, and a translucent range is painted once over two layer fills.
+  await rangeFillsDriver(() => editor.page).show()
+  // Strict colours: the default threshold takes a range's dark gradient for the layer's ink.
+  expect(await editor.canvas.screenshotCanvasRegion(440, 330)).toMatchSnapshot('range-fills.png', {
+    threshold: 0.1
+  })
+})
+
+test('a decoration takes all the paints of the range that ends it', async () => {
+  // As Figma draws them: an underline ending in a gradient range spans the layer in it, a
+  // strikethrough ending in a solid range on a gradient layer takes its colour, and stacked range
+  // fills stack under the decoration too.
+  await rangeFillsDriver(() => editor.page).showDecorations()
+  expect(await editor.canvas.screenshotCanvasRegion(440, 260)).toMatchSnapshot(
+    'range-decorations.png',
+    { threshold: 0.1 }
+  )
 })
 
 test('text case by character range', async () => {

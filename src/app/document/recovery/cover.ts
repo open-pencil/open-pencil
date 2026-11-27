@@ -1,5 +1,5 @@
 import { createPageLayouts, type Editor } from '@open-pencil/core'
-import { figThumbnailPageId } from '@open-pencil/core/io/formats/fig'
+import { documentThumbnailSubject } from '@open-pencil/core/io/formats/fig'
 
 /**
  * Draws the cover of a document's recovery copies with `draw`, again only once the cover page
@@ -8,16 +8,20 @@ import { figThumbnailPageId } from '@open-pencil/core/io/formats/fig'
  */
 export function createRecoveryCover(editor: Editor, draw: () => Uint8Array | null) {
   const coverPages = createPageLayouts(editor)
-  let last: { pageId: string; bytes: Uint8Array } | null = null
+  let last: { pageId: string; nodeIds: string; bytes: Uint8Array } | null = null
 
   return (): Uint8Array | null => {
-    const pageId = figThumbnailPageId(editor.graph.getPages())
-    if (!pageId) return null
-    if (last?.pageId === pageId && coverPages.isCurrent(pageId)) return last.bytes
+    const subject = documentThumbnailSubject(editor.graph)
+    if (!subject) return null
+    const { pageId } = subject
+    // Choosing another thumbnail changes what the cover shows without changing its page.
+    const nodeIds = subject.nodeIds?.join(',') ?? ''
+    if (last?.pageId === pageId && last.nodeIds === nodeIds && coverPages.isCurrent(pageId))
+      return last.bytes
     const bytes = draw()
     if (bytes) {
       coverPages.record(pageId)
-      last = { pageId, bytes }
+      last = { pageId, nodeIds, bytes }
     }
     return bytes
   }

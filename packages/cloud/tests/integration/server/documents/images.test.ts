@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
+import { COVER_PNG, saveDocument } from '#cloud-tests/helpers/save'
 import {
   CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
@@ -300,6 +301,52 @@ describe('Cloud document images', () => {
         )
       ).toBe('ok')
       expect((await context.download()).images.map((image) => image.name)).toEqual([photo.name])
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('keeps the cover a kept save shows, and a restored version shows it again', async () => {
+    const context = await testApp()
+    try {
+      const { database } = context.runtime
+      const saver = { api: context.api, database, objects: context.objects.store }
+      const coverOf = async (revisionId: string) =>
+        (
+          await database
+            .selectFrom('documentRevision')
+            .select('coverChecksum')
+            .where('id', '=', revisionId)
+            .executeTakeFirstOrThrow()
+        ).coverChecksum
+      const covered = await saveDocument(saver, context.documentId, null, 'covered', COVER_PNG)
+      const cover = await coverOf(covered)
+      expect(cover).not.toBeNull()
+      await saveDocument(saver, context.documentId, covered, 'plain')
+
+      await context.age(2 * DAY_MS)
+      const result = await createRevisionCompactionService(
+        database,
+        context.objects.store
+      ).compactRevisions({ batchSize: 100, graceMs: DAY_MS })
+      expect(result).toMatchObject({ imagesReleased: 0, failed: 0 })
+
+      const history = await context.api.versions.list({
+        params: { documentId: context.documentId },
+        query: {}
+      })
+      const first = history.versions.find((version) => !version.current)
+      if (!first) throw new Error('Expected the covered save in the history')
+      await context.api.versions.restore({
+        params: { documentId: context.documentId, versionId: first.id }
+      })
+      const { currentRevisionId: current } = await database
+        .selectFrom('document')
+        .select('currentRevisionId')
+        .where('id', '=', context.documentId)
+        .executeTakeFirstOrThrow()
+      if (!current) throw new Error('The restore left no revision')
+      expect(await coverOf(current)).toBe(cover)
     } finally {
       await context.runtime.close()
     }

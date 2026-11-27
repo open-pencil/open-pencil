@@ -2,6 +2,7 @@ import { CLOUD_STORAGE_PROVIDERS } from '@/app/cloud/integration/storage'
 
 import { defineStorageProvider, StorageProviderRegistry } from './registry'
 import { createS3StorageAdapter } from './s3/adapter'
+import type { StorageCoverDrawer } from './types'
 
 export const S3_STORAGE_PROVIDER = defineStorageProvider({
   id: 's3-compatible',
@@ -23,6 +24,11 @@ export const storageProviderRegistry = new StorageProviderRegistry([
   S3_STORAGE_PROVIDER,
   ...CLOUD_STORAGE_PROVIDERS
 ])
+
+/** How documents stored with this provider draw the cover it shows; undefined for none. */
+export function storageCoverDrawer(providerId: string | undefined): StorageCoverDrawer | undefined {
+  return storageProviderRegistry.list().find((provider) => provider.id === providerId)?.drawCover
+}
 
 /** Whether documents stored with this provider leave their comments to it. */
 export function storageKeepsComments(providerId: string | undefined): boolean {

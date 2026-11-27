@@ -6,7 +6,8 @@ import { createOffscreenRenderer } from '#core/canvas/renderer/offscreen'
 import { getCanvasKit } from '#core/canvaskit'
 import { withTextInkMeasurer } from '#core/text/ink'
 
-import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
+import { renderNodesToImage, type ExportFormat } from './render'
+import { renderCover, renderThumbnail } from './thumbnail'
 
 let cachedRenderer: Promise<SkiaRenderer> | null = null
 /** The headless export holding the renderer, which the next one waits for. */
@@ -91,17 +92,48 @@ export async function headlessRenderNodes(
   })
 }
 
-export async function headlessRenderThumbnail(
+/**
+ * Draws part of `pageId` headless with `draw`, once the fonts of `nodeIds`, by default everything
+ * on the page, are loaded and text ink is measured as the editor measures it.
+ */
+function headlessDrawPage(
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: readonly string[] | undefined,
+  draw: (ck: CanvasKit, renderer: SkiaRenderer) => Uint8Array | null
+): Promise<Uint8Array | null> {
+  return withHeadlessExport(async (renderer, ck) => {
+    await renderer.prepareForExport(graph, pageId, [
+      ...(nodeIds ?? graph.getNode(pageId)?.childIds ?? [])
+    ])
+    return withTextInkMeasurer(
+      (node) => renderer.measureTextInk(node),
+      () => draw(ck, renderer)
+    )
+  })
+}
+
+export function headlessRenderThumbnail(
   graph: SceneGraph,
   pageId: string,
   width: number,
-  height: number
+  height: number,
+  nodeIds?: readonly string[]
 ): Promise<Uint8Array | null> {
-  return withHeadlessExport(async (renderer, ck) => {
-    await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
-    return withTextInkMeasurer(
-      (node) => renderer.measureTextInk(node),
-      () => renderThumbnail(ck, renderer, graph, pageId, width, height)
-    )
-  })
+  return headlessDrawPage(graph, pageId, nodeIds, (ck, renderer) =>
+    renderThumbnail(ck, renderer, graph, pageId, width, height, 'contain', nodeIds)
+  )
+}
+
+/** Draws a cover of `pageId` headless, as `renderCover` frames it: `nodeIds` alone, or the top of the page. */
+export function headlessRenderCover(
+  graph: SceneGraph,
+  pageId: string,
+  width: number,
+  height: number,
+  nodeIds?: readonly string[]
+): Promise<Uint8Array | null> {
+  return headlessDrawPage(graph, pageId, nodeIds, (ck, renderer) =>
+    renderCover(ck, renderer, graph, pageId, width, height, nodeIds)
+  )
 }

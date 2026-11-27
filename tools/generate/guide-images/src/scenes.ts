@@ -37,3 +37,31 @@ export const tags = () =>
 
 export const gallery = () =>
   `<Frame name="Gallery" w={360} h={240} grid columns="1fr 1fr 1fr" rows="1fr 1fr" columnGap={12} rowGap={12} p={16} bg="#FFFFFF" rounded={${SCENE_RADIUS}}>${ALBUMS.map(album).join('')}</Frame>`
+
+const button = (variant: string, bg: string, color: string) => `
+  <Component name="Variant=${variant}" flex="row" px={28} py={10} rounded={8} bg="${bg}" items="center">
+    <Text name="Label" size={14} weight={600} color="${color}" text={property('Label', 'Save')} />
+  </Component>`
+
+/** A Button component set with two variants and a Label property, and an instance of it. */
+export const buttons = () =>
+  `<Frame name="Board" w="hug" h="hug" flex="row" gap={56} p={32} items="start" bg="#FFFFFF" rounded={${SCENE_RADIUS}}>
+  <ComponentSet name="Button" flex="col" gap={20} p={20}>${button('Primary', '#2563EB', '#FFFFFF')}${button('Secondary', '#E4E4E7', '#18181B')}</ComponentSet>
+  <Instance name="Button" of="Button" Variant="Primary" Label="Publish" />
+</Frame>`
+
+/** A Theme collection with Light and Dark modes, and a card that uses it. */
+export const themedCard = () => `
+const theme = defineVars('Theme', { Surface: '#FFFFFF', Text: '#18181B', Accent: '#2563EB', Radius: 12 }, { mode: 'Light' })
+defineMode(theme, 'Dark', { Surface: '#18181B', Text: '#FAFAFA', Accent: '#60A5FA' })
+return <Frame name="Card" w={240} h="hug" flex="col" gap={12} p={20} bg={theme.Surface} rounded={theme.Radius}>
+  <Text name="Title" size={16} weight={600} fill={theme.Text}>Weekly report</Text>
+  <Frame name="Action" flex="row" px={14} py={8} rounded={8} bg={theme.Accent}><Text size={13} weight={600} color="#FFFFFF">Open</Text></Frame>
+</Frame>`
+
+/** A switch component set that behaves as Reka UI's Switch, with a transition. */
+export const toggle =
+  () => `<Switch.Root name="Switch" modelValue="State" states="Interaction" transition={{ duration: 0.2, easing: "ease-out" }} flex="row" gap={16} p={16}>
+  <Component name="State=Off, Interaction=Default" w={44} h={24} rounded={12} bg="#D0D4DA"><Switch.Thumb x={2} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" /></Component>
+  <Component name="State=On, Interaction=Default" w={44} h={24} rounded={12} bg="#3B6CF6"><Switch.Thumb x={22} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" /></Component>
+</Switch.Root>`

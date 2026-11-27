@@ -210,9 +210,26 @@ describe('letter-spaced text export', () => {
 
   test('takes a spacing written as a token back by the token', () => {
     const spacing = 'var(--tracking-wide)'
-    expect(letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, spacing, '200px')).toEqual({
-      width: `calc(200px + ${spacing})`,
-      'margin-right': `calc(-1 * ${spacing})`
+    expect(letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, spacing, { width: '200px' })).toEqual(
+      {
+        width: `calc(200px + ${spacing})`,
+        'margin-right': `calc(-1 * ${spacing})`
+      }
+    )
+  })
+
+  test('widens the limits on the width by the spacing too', () => {
+    expect(
+      letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, '2px', {
+        width: '100px',
+        'max-width': '100px',
+        'min-width': '50px'
+      })
+    ).toEqual({
+      width: 'calc(100px + 2px)',
+      'max-width': 'calc(100px + 2px)',
+      'min-width': 'calc(50px + 2px)',
+      'margin-right': '-2px'
     })
   })
 

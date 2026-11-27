@@ -965,6 +965,7 @@
       "name": "@open-pencil/cloud-examples-tools",
       "dependencies": {
         "@open-pencil/cloud": "workspace:*",
+        "@open-pencil/core": "workspace:*",
         "@open-pencil/demo-tools": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "es-toolkit": "^1.52.0",
