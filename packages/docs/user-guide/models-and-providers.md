@@ -40,7 +40,7 @@ The chat works by calling tools, so a model has to support **tool calling**, and
 
 Reasoning models can spend their whole output budget thinking. If a model stops without doing anything, raise its **Max output tokens**, or lower its **Thinking level**.
 
-Each step of a reply sends the conversation and the tool descriptions again, so long replies use many input tokens. **Maximum steps per message**, under **Chat** in **Settings → Models**, caps that; see [While the AI Works](./ai-chat#while-the-ai-works).
+Each step of a reply sends the conversation and the tool descriptions again, so long replies use many input tokens. **Maximum steps per message**, under **Chat** in **Settings → Models**, caps that for the built-in AI, while coding agents set their own limits; see [While the AI Works](./ai-chat#while-the-ai-works).
 
 ## Keep Your Keys Safe
 

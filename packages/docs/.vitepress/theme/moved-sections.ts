@@ -43,6 +43,11 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'context-and-compaction': '/user-guide/ai-chat#long-conversations',
     'undoing-the-assistant-s-edits': '/user-guide/ai-chat#undo-what-the-ai-did'
   },
+  // Models and Providers' sections were renamed as tasks.
+  '/user-guide/models-and-providers/': {
+    'choosing-a-model': '/user-guide/models-and-providers#choose-a-model',
+    'keys-and-security': '/user-guide/models-and-providers#keep-your-keys-safe'
+  },
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
     'connect-a-server': '/cloud/connect',
