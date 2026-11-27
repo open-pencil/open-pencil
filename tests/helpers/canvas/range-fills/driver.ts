@@ -12,6 +12,9 @@ export function rangeFillsDriver(page: () => Page) {
   return {
     async show() {
       await loadSceneFonts(page(), await scenes.build('createRangeFillScene'))
+    },
+    async showDecorations() {
+      await loadSceneFonts(page(), await scenes.build('createRangeDecorationScene'))
     }
   }
 }

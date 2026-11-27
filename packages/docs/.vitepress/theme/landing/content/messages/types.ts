@@ -72,7 +72,7 @@ export interface LandingMessages {
     title: string
     download: string
     docs: string
-    /** Links to the Cloud section's waitlist. */
+    /** Links to the Cloud section. */
     cloud: string
   }
   /** A copy button's label, and what it says once it copied. */

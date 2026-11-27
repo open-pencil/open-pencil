@@ -196,6 +196,17 @@ test("a range draws its own fills once, in place of the layer's", async () => {
   })
 })
 
+test('a decoration takes all the paints of the range that ends it', async () => {
+  // As Figma draws them: an underline ending in a gradient range spans the layer in it, a
+  // strikethrough ending in a solid range on a gradient layer takes its colour, and stacked range
+  // fills stack under the decoration too.
+  await rangeFillsDriver(() => editor.page).showDecorations()
+  expect(await editor.canvas.screenshotCanvasRegion(440, 260)).toMatchSnapshot(
+    'range-decorations.png',
+    { threshold: 0.1 }
+  )
+})
+
 test('text case by character range', async () => {
   await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()

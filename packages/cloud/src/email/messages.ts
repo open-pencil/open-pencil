@@ -200,17 +200,7 @@ export const emailMessageDefaults = {
   commentSomeone: 'Someone',
   openComment: 'Open the comment',
   commentSettings: 'You get these emails as your notification settings say. Change them in {link}.',
-  commentSettingsLink: 'your account settings',
-
-  waitlistSubject: 'Confirm your place on the OpenPencil Cloud waitlist',
-  waitlistHeading: 'Confirm your email',
-  waitlistPreview: 'One click to join the OpenPencil Cloud waitlist.',
-  waitlist:
-    'Thanks for your interest in OpenPencil Cloud. Confirm this address to join the waitlist, and we’ll write once, when Cloud is ready for you.',
-  waitlistAction: 'Join the waitlist',
-  waitlistNote:
-    'Didn’t sign up? Ignore this email and the address is deleted in seven days, or {link}.',
-  waitlistLeave: 'remove it now'
+  commentSettingsLink: 'your account settings'
 }
 
 export type EmailMessageDefaults = typeof emailMessageDefaults

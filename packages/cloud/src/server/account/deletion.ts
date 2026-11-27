@@ -276,6 +276,7 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
           'termsAcceptance',
           'userPicture',
           'signIn',
+          'dailyActiveAccount',
           'mfaAssurance',
           'notificationSetting',
           'commentRead',

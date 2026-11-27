@@ -143,12 +143,5 @@
   "commentSomeone": "だれか",
   "openComment": "コメントを開く",
   "commentSettings": "これらのメールは通知設定に従って届きます。{link}で変更できます。",
-  "commentSettingsLink": "アカウント設定",
-  "waitlistSubject": "OpenPencil Cloud のウェイトリストへの登録を確認してください",
-  "waitlistHeading": "メールアドレスを確認",
-  "waitlistPreview": "ワンクリックで OpenPencil Cloud のウェイトリストに登録できます。",
-  "waitlist": "OpenPencil Cloud に興味を持っていただきありがとうございます。このアドレスを確認するとウェイトリストに登録されます。ご利用の準備が整ったときに、一度だけご連絡します。",
-  "waitlistAction": "ウェイトリストに登録",
-  "waitlistNote": "登録した覚えがない場合は、このメールを無視してください。アドレスは7日後に削除されます。{link}こともできます。",
-  "waitlistLeave": "今すぐ削除する"
+  "commentSettingsLink": "アカウント設定"
 }
