@@ -233,6 +233,24 @@ export function deckDriver(page: () => Page) {
         const store = window.openPencil?.getStore?.()
         for (const id of ids) store?.graph.deleteNode(id)
       }, ids)
+    },
+
+    /** Animates a new box out of `parentId` on a click, and returns its ID. */
+    async addExitingBox(parentId: string): Promise<string> {
+      return page().evaluate((parentId) => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const box = store.graph.createNode('RECTANGLE', parentId, {
+          name: 'Leaving',
+          x: 120,
+          y: 0,
+          width: 40,
+          height: 40
+        })
+        store.addLayerAnimations([box.id])
+        store.setLayerAnimations([box.id], (current) => ({ ...current, phase: 'OUT' }))
+        return box.id
+      }, parentId)
     }
   }
 }

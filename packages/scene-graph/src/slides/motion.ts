@@ -1,7 +1,6 @@
 import { compact } from 'es-toolkit/array'
 
 import type { SceneGraph } from '../graph'
-import { findInstanceAncestor } from '../instances/main-component'
 import type { SceneNode } from '../types'
 import { easingPreset } from '../variables/easing'
 import {
@@ -142,6 +141,6 @@ export function slideBuild(graph: SceneGraph, slideId: string): BuildStep[] {
 export function animationSlide(graph: SceneGraph, layerId: string): SceneNode | undefined {
   const node = graph.getNode(layerId)
   if (!node?.parentId || node.type === 'SLIDE') return undefined
-  if (findInstanceAncestor(graph, node.parentId)) return undefined
+  if (graph.closest(node.parentId, (item) => item.type === 'INSTANCE')) return undefined
   return graph.closest(node.parentId, (item) => item.type === 'SLIDE') ?? undefined
 }

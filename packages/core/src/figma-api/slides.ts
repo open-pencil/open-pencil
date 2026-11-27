@@ -86,7 +86,9 @@ function pluginTransition(graph: SceneGraph, slide: SceneNode): PluginSlideTrans
   if (!played) return structuredClone(UNSET_TRANSITION)
   return {
     style: played.style,
-    duration: played.duration,
+    // A variable may give a duration past Figma's longest, which the setter would refuse; a
+    // file's 0 reads as 0, as Figma reports it.
+    duration: Math.min(MAX_DURATION, played.duration),
     curve: curveOf(played.easing.easing),
     timing:
       played.delay === null ? { type: 'ON_CLICK' } : { type: 'AFTER_DELAY', delay: played.delay }

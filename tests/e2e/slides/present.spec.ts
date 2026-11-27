@@ -53,6 +53,26 @@ test('a control on a slide stays live while the deck is presented', async () => 
   expect(await where()).toEqual({ index: 0, played: 0 })
 })
 
+test('a control stays live once a layer beside it has animated away', async () => {
+  const [first] = await deck.open([2])
+  const ids = await createSwitch(editor.page, { nested: true })
+  await setSwitchBehaviour(editor.page, ids.setId)
+  await deck.placeOnSlide(ids.islandId, first, 400, 300)
+  await deck.addExitingBox(ids.islandId)
+  await deck.present(first)
+  await editor.page.keyboard.press('ArrowRight')
+  await expect.poll(where).toEqual({ index: 0, played: 1 })
+  const control = island(editor.page, ids.islandId).getByRole('switch')
+  await control.click()
+  await expect(control).toHaveAttribute('aria-checked', 'true')
+  expect(await where()).toEqual({ index: 0, played: 1 })
+  // The layer that left is drawn transparent in the live island, not shown again.
+  await expect(island(editor.page, ids.islandId).locator('[data-layer="Leaving"]')).toHaveCSS(
+    'opacity',
+    '0'
+  )
+})
+
 test("the presenter's window shows the notes and moves the deck", async () => {
   const [first] = await deck.open([2])
   await deck.setNotes(first, 'Open with the numbers')

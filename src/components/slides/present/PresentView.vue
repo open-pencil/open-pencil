@@ -26,25 +26,31 @@ const status = computed(() => store.state.presentation)
 const { width, height } = useElementSize(root)
 
 /**
- * The slide on show's layers that hold controls, run as live islands while nothing moves; a layer
- * its build has not brought on yet stays hidden. While a step or a transition moves, the canvas
+ * Layers the build keeps off the slide for now, those it has not brought on and those it took
+ * off: islands draw them transparent, as the canvas leaves them out, and stay live around them.
+ */
+const faded = computed(() => {
+  void status.value?.played
+  void status.value?.index
+  return new Set(
+    [...store.presentationScene().layers].flatMap(([id, frame]) =>
+      frame.opacity === 0 ? [id] : []
+    )
+  )
+})
+/**
+ * The slide on show's layers that hold controls, run as live islands while nothing moves, unless
+ * the build keeps the whole layer off the slide. While a step or a transition moves, the canvas
  * draws them, so they move with the rest.
  */
 const islands = computed(() => {
   const current = status.value
   const slideId = current?.slideIds[current.index]
   if (!current || current.moving || !slideId) return []
-  void current.played
-  // A layer whose build, or the build of a layer inside it, has not played yet stays on the
-  // canvas, which keeps the unplayed layers hidden; it goes live once its builds have played.
-  const held = [...store.presentationScene().layers].flatMap(([id, frame]) =>
-    frame.opacity === 0 ? [id] : []
-  )
+  const off = faded.value
   return slideIslandRoots(store.graph, slideId).flatMap((id) => {
     const node = store.graph.getNode(id)
-    if (!node || held.some((layer) => layer === id || store.graph.isDescendant(layer, id)))
-      return []
-    return [{ id, x: node.x, y: node.y }]
+    return node && !off.has(id) ? [{ id, x: node.x, y: node.y }] : []
   })
 })
 const islandIds = computed(() => new Set(islands.value.map((island) => island.id)))
@@ -152,6 +158,7 @@ function onPointerDown(event: PointerEvent) {
     <SlideIslands
       v-if="islands.length > 0"
       :islands="islands"
+      :faded="faded"
       :placement="placement"
       :revision="0"
     />

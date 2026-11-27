@@ -42,7 +42,10 @@ function slideAbove(
   saved: ReadonlyMap<string, SceneNode> | undefined
 ): string | undefined {
   let id = parentId
-  while (id) {
+  // Saved parents can be bad data: a parent cycle ends the walk.
+  const seen = new Set<string>()
+  while (id && !seen.has(id)) {
+    seen.add(id)
     const node = saved?.get(id) ?? graph.getNode(id)
     if (!node) return undefined
     if (node.type === 'SLIDE') return node.id
