@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { extractSlideSettings } from '#fig/node-change/slides'
+import { extractSlideSettings } from '#fig/node-change/slides/index'
 
 test('notes put each item of a nested list on a line of its own', () => {
   const text = (value: string) => ({ type: 'text', text: value })

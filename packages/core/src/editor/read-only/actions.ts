@@ -147,6 +147,15 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'stopPlay',
   'togglePlay',
 
+  // Presenting
+  'present',
+  'presentFrames',
+  'presentationScene',
+  'presentNext',
+  'presentPrevious',
+  'presentSlide',
+  'stopPresenting',
+
   // Copying out
   'copySelectionAsJSX',
   'copySelectionAsSVG',

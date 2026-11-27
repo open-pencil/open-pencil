@@ -1,0 +1,1 @@
+- `.fig` files whose color styles reference another style, or themselves, no longer fail to open pages or take the other style's color (#1966).

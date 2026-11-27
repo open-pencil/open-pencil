@@ -76,10 +76,10 @@ export const docsSidebar = (
   {
     text: labels.draw,
     items: [
-      { text: labels.shapes, link: `${prefix}/user-guide/drawing-shapes` },
-      { text: labels.pen, link: `${prefix}/user-guide/pen-tool` },
-      { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
-      { text: labels.text, link: `${prefix}/user-guide/text-editing` },
+      { text: labels.shapes, link: '/user-guide/drawing-shapes' },
+      { text: labels.pen, link: '/user-guide/pen-tool' },
+      { text: labels.vectorEditing, link: '/user-guide/vector-edit' },
+      { text: labels.text, link: '/user-guide/text-editing' },
       { text: labels.icons, link: '/user-guide/icons' },
       { text: labels.photos, link: '/user-guide/photos' }
     ]
@@ -96,7 +96,7 @@ export const docsSidebar = (
   {
     text: labels.designWithAI,
     items: [
-      { text: prog.aiChat, link: `${prefix}/user-guide/ai-chat` },
+      { text: prog.aiChat, link: '/user-guide/ai-chat' },
       { text: 'Coding Agents', link: '/user-guide/coding-agents' },
       { text: 'Models and Providers', link: '/user-guide/models-and-providers' }
     ]

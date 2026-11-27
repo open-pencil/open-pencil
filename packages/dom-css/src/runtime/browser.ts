@@ -512,6 +512,9 @@ async function copyComputedStyles(
     // The address the picture loaded from, its `srcset` choice and the page's base applied.
     if (domElement instanceof view.HTMLImageElement && domElement.currentSrc)
       images.push([designElement, domElement.currentSrc])
+    // A video shows its poster until it plays, resolved against the page's base as `src` is.
+    if (domElement instanceof view.HTMLVideoElement && domElement.poster)
+      images.push([designElement, domElement.poster])
     if (backgroundImageURLs(designElement).length > 0) backgrounds.push(designElement)
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
