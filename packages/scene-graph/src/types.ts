@@ -780,11 +780,6 @@ export interface SceneNode {
   effectStyleId: string | null
   gridStyleId: string | null
   sharedStyleType: SharedStyleType | null
-  /**
-   * A shared style deleted as Figma deletes one: gone from every list of styles, while the layers
-   * that use it keep it and the file keeps it.
-   */
-  sharedStyleDeleted: boolean
   opacity: number
 
   cornerRadius: number

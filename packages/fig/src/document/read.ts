@@ -29,6 +29,7 @@ import { isComponentSetRecord } from '../node-change/convert'
 import {
   assetIdsByKey,
   createTextStyleLookup,
+  referencedStyle,
   type TextStyleLookup
 } from '../node-change/style/lookup'
 import { applyFillStyleRef, applyStyleRefsToFields } from '../node-change/style/refs'
@@ -47,7 +48,7 @@ import {
   linkedPropertyCopies
 } from './property-inheritance'
 import { savedSlotContent } from './slot-content'
-import { vectorStyleTable } from './style-dependencies'
+import { STYLE_REFERENCE_FIELDS, vectorStyleTable } from './style-dependencies'
 import { createDocumentVariables, type DocumentVariables } from './variables'
 
 /** Indexed source document. Resources remain separate from scene occurrences. */
@@ -146,7 +147,26 @@ function resolveStyleFields(
   applyStyleRefsToFields(styles, node, assets)
   paintTextRangesFromFillStyles(styles, node, assets)
   for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
+  for (const record of [
+    node,
+    ...(node.textData?.styleOverrideTable ?? []),
+    ...vectorStyleTable(node)
+  ])
+    detachDeletedStyles(styles, record, assets)
   for (const override of symbolOverridesOf(node)) resolveStyleFields(styles, override, assets)
+}
+
+/**
+ * A layer whose style Figma deleted shows detached, as Figma shows it: it keeps the values the
+ * style gave it, without the reference. The archive keeps the reference for a layer left as is.
+ */
+function detachDeletedStyles(
+  styles: Parameters<typeof applyStyleRefsToFields>[0],
+  record: NodeChange,
+  assets: ReadonlyMap<string, string>
+): void {
+  for (const field of STYLE_REFERENCE_FIELDS)
+    if (referencedStyle(styles, record[field], assets)?.isSoftDeleted) record[field] = undefined
 }
 
 function paintTextRangesFromFillStyles(

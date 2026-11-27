@@ -95,8 +95,7 @@ function createStyle<T extends FigmaStyleType>(owner: StyleOwner, type: T): Styl
 function localStyles<T extends FigmaStyleType>(owner: StyleOwner, type: T): StyleClasses[T][] {
   const styles: StyleClasses[T][] = []
   for (const node of graphOf(owner).getAllNodes()) {
-    // A deleted style keeps its layers but leaves the local styles, as in Figma.
-    if (node.sharedStyleType === STYLE_TYPES[type] && node.source.id && !node.sharedStyleDeleted)
+    if (node.sharedStyleType === STYLE_TYPES[type] && node.source.id)
       styles.push(handle(owner, type, node.source.id))
   }
   return styles
