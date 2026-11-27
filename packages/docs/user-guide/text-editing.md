@@ -1,104 +1,88 @@
 ---
+pageClass: guide
 title: Text Editing
-description: Creating and editing text with rich formatting, fonts, and inline editing in OpenPencil.
+description: Add text, style all of it or a few words, make lists, size the text box, and choose fonts.
 ---
 
 # Text Editing
 
-Create text nodes and edit them directly on the canvas with full rich text support.
-## Creating Text
+Text is typed and styled right on the canvas. The Typography section of the Design panel holds its settings.
 
-Press <kbd>T</kbd> to activate the text tool, then click on the canvas. An empty text node appears with a blinking cursor — start typing immediately.
+## Add Text
 
-## Inline Editing
+Press <Keys mac="T" other="T" />, then:
 
-Double-click any existing text node to enter inline editing mode. A blue outline appears around the text to indicate edit mode. Click outside the text node to commit and exit editing.
+- Click and type. The text box grows as you type.
+- Or drag a box first. The text wraps inside its width.
 
-Text is rendered directly on the canvas — there's no separate text input overlay.
+To finish, press <Keys mac="Esc" other="Esc" /> or click outside the text.
 
-## Cursor Navigation
+## Change Text
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Move left/right | <kbd>←</kbd> / <kbd>→</kbd> | <kbd>←</kbd> / <kbd>→</kbd> |
-| Move up/down | <kbd>↑</kbd> / <kbd>↓</kbd> | <kbd>↑</kbd> / <kbd>↓</kbd> |
-| Move by word | <kbd>⌥</kbd><kbd>←</kbd> / <kbd>⌥</kbd><kbd>→</kbd> | <kbd>Ctrl</kbd> + <kbd>←</kbd> / <kbd>Ctrl</kbd> + <kbd>→</kbd> |
-| Move to line start/end | <kbd>⌘</kbd><kbd>←</kbd> / <kbd>⌘</kbd><kbd>→</kbd> | <kbd>Home</kbd> / <kbd>End</kbd> |
+Double-click a text to edit it, or select it and press <Keys mac="Enter" other="Enter" />. All of its text is selected, so you can type over it.
 
-Hold <kbd>Shift</kbd> with any movement key to extend the selection.
+While editing:
 
-## Text Selection
+- Click to put the cursor somewhere, or drag to select.
+- Double-click selects a word, and a triple-click all the text.
+- The usual text keys work, such as <Keys mac="⌥ ←" other="Ctrl ←" /> to move by a word and <Keys mac="⇧" other="Shift" /> with an arrow to select.
 
-- **Click** inside a text node to position the cursor
-- **Click + drag** to select a range of text
-- **Double-click** a word to select it
-- **Triple-click** to select all text in the node
+## Style Text
 
-## Rich Text Formatting
+Select a text layer to style all of it, or select some characters while editing to style only those.
 
-Apply formatting to selected text, or toggle the style for the entire node when nothing is selected.
+<GuideLegend>
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Bold | <kbd>⌘</kbd><kbd>B</kbd> | <kbd>Ctrl</kbd> + <kbd>B</kbd> |
-| Italic | <kbd>⌘</kbd><kbd>I</kbd> | <kbd>Ctrl</kbd> + <kbd>I</kbd> |
-| Underline | <kbd>⌘</kbd><kbd>U</kbd> | <kbd>Ctrl</kbd> + <kbd>U</kbd> |
+<GuideImage name="text-editing/typography" alt="The Typography section of the Design panel with five numbered parts: font, weight and size, spacing, alignment, and formatting" />
 
-Strikethrough is available via the **S** toggle button in the Typography section of the properties panel (no keyboard shortcut — <kbd>⌘</kbd><kbd>S</kbd> is used for Save).
+1. **Font**. The gear next to it opens the font settings.
+2. **Font weight** and **Font size**.
+3. **Line height** and **Letter spacing**.
+4. **Text alignment**, across and up and down.
+5. **Bold**, **Italic**, **Underline**, and **Strikethrough**. Bold, italic, and underline also have shortcuts: <Keys mac="⌘ B" other="Ctrl B" />, <Keys mac="⌘ I" other="Ctrl I" />, and <Keys mac="⌘ U" other="Ctrl U" />.
 
-Formatting is applied per character. When you type between a bold and regular segment, the new text inherits the style of the preceding segment.
+</GuideLegend>
 
-The **B / I / U / S** toggle buttons in the Typography section of the properties panel also apply formatting.
+Below these, **Text case** shows text in capitals or lowercase without retyping it. Typing next to styled characters takes their style.
 
-## Editing Operations
+## Make a List
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Delete word before cursor | <kbd>⌥</kbd><kbd>⌫</kbd> | <kbd>Ctrl</kbd> + <kbd>Backspace</kbd> |
-| Delete to line start | <kbd>⌘</kbd><kbd>⌫</kbd> | — |
-| Cut | <kbd>⌘</kbd><kbd>X</kbd> | <kbd>Ctrl</kbd> + <kbd>X</kbd> |
-| Copy | <kbd>⌘</kbd><kbd>C</kbd> | <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Paste | <kbd>⌘</kbd><kbd>V</kbd> | <kbd>Ctrl</kbd> + <kbd>V</kbd> |
+Under **Lists and paragraphs**, choose a bulleted or numbered list for the selected lines. The fields below set the space between list items, the space between paragraphs, and the indent of a paragraph's first line. **Hanging lists** puts bullets and numbers outside the text's edge, so the lines of text stay aligned.
 
-## Font Picker
+## Size the Text Box
 
-Open the font picker in the Typography section of the properties panel to change the font family. The picker features:
+The buttons under **Resizing** in the Layout section choose how the box follows its text:
 
-- **Search filter** — type to narrow the font list
-- **Font preview** — each font name is rendered in its own typeface
-- **Virtual scroll** — handles large font lists efficiently
-- **Scroll-to-current** — the current font is highlighted when the picker opens
+- **Auto width**: the box grows sideways, and the text stays on one line unless you press <Keys mac="Enter" other="Enter" />.
+- **Auto height**: the width stays and the text wraps, while the box grows down.
+- **Fixed size**: the box keeps its size. Set **Truncation** to **Ending ellipsis** to end the text with "…" where it no longer fits, or after a number of lines.
+
+## Choose a Font
+
+Click the font name in Typography, then type to search. Each font in the list shows in its own typeface, with where it comes from.
+
+Which fonts you can choose depends on where you run OpenPencil:
+
+- **Desktop app**: the fonts on your computer, and fonts from Google Fonts, Fontsource, Bunny Fonts, and Fontshare. Downloaded fonts are kept for next time.
+- **Browser**: Fontsource, Bunny Fonts, and Fontshare. Chrome and Edge also show the fonts on your computer once you allow it.
+
+Choose sources in **Settings → Fonts**, which the gear next to the font name opens. Inter is always there.
+
+## Fine-Tune a Variable Font
+
+A variable font, such as Inter, can be drawn at any weight, width, or other setting it supports. Typography lists these settings with their values: type or drag a value to change one. Choosing a weight or another font puts them back.
+
+**Optical size** reads **Auto** while it follows the font size. Set a value, or choose **Fixed** from its menu, to keep it the same at any size.
+
+## When a Font Is Missing
+
+When a file uses a font OpenPencil can't load, a note shows above the canvas. Open it to see which fonts are missing and what shows instead.
+
+- **Select layers** selects the text that uses them.
+- **Retry fonts** tries again, for example after you allow access to your computer's fonts or turn on another source.
+
+A missing style, such as Bold, can be drawn from another style of the same font. A missing font shows as Inter.
 
 ## Text on a Path
 
-Imported Figma text-on-path layers retain their curved glyph layout. You can edit their text and typography, resize and select them, and save or export the result while preserving the path layout. This is support for existing imported path-text layers, not a separate drawing tool for attaching arbitrary text to a new path.
-
-## Font Weight
-
-Change the font weight in the Typography section of the properties panel. Available weights depend on the selected font family (e.g., Regular, Medium, Bold, Black).
-
-## Variable Fonts
-
-When the text's font is variable, such as Inter, the Typography section lists its axes (weight, optical size, width, and any others the font has) with the value each is drawn at. Type or drag a value to set it; choosing a weight, slant, or family puts the axes back at that style's own. Optical size reads **Auto** while it follows the font size; set a value, or choose **Fixed** from its menu, to hold it, and **Auto** to follow the size again.
-
-## Font Sources
-
-- **Default font** — Inter is loaded automatically
-- **Desktop app** — system fonts plus enabled Google Fonts, Fontsource, Bunny Fonts, and Fontshare catalogs
-- **Browser** — system fonts are available in Chrome and Edge with local-font permission. Enabled Fontsource, Bunny Fonts, and Fontshare providers can load online fonts, subject to network access and browser CORS rules; Google Fonts is disabled in the OpenPencil browser app
-- **Downloaded fonts** — the desktop app caches downloaded faces for reuse on the same machine
-
-Allow system font access and choose online providers in **Settings › Fonts**, which the gear next to the font family opens; in the desktop app it also manages downloaded fonts and fallback packs.
-
-## Missing Fonts and Substitutions
-
-When a requested family or style cannot be loaded, OpenPencil displays a warning above the editor instead of silently treating fallback rendering as faithful typography.
-
-Expand the warning to see every affected face and its active substitute. Use **Select layers** to locate all affected text nodes or **Retry fonts** after changing network access, local-font permission, or provider settings. A style may be synthesized from another loaded face in the same family; a missing family falls back to Inter when available.
-
-## Tips
-
-- The font list is preloaded at startup so the picker opens without delay.
-- IME input (Chinese, Japanese, Korean) is fully supported.
-- Rich text formatting is preserved when opening and saving .fig files.
-- See [Components](./components) for how text overrides work in component instances.
+Text that follows a curve in a Figma file keeps its shape here. You can edit its text and style, but not yet put new text on a path.

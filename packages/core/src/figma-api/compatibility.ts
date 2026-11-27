@@ -458,7 +458,10 @@ type TextStyleKeys =
   | 'listSpacing'
   | 'hangingList'
 type TextStyleFieldsMatch = Expect<
-  Extends<Pick<FigmaTextStyle, TextStyleKeys>, Pick<TextStyle, TextStyleKeys>>
+  Extends<
+    Pick<FigmaTextStyle, TextStyleKeys | 'setBoundVariable'>,
+    Pick<TextStyle, TextStyleKeys | 'setBoundVariable'>
+  >
 >
 const _textStyleFieldsMatch: TextStyleFieldsMatch = true
 

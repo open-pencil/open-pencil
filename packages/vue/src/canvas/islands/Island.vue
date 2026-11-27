@@ -22,12 +22,17 @@ import { islandTransitions, useIslandMotion } from './transition'
  * root, with each control running as its Reka UI component. The design's variants draw the
  * controls' states; the document never changes.
  */
-const { rootId, revision, tokens } = defineProps<{
+const { rootId, revision, tokens, faded } = defineProps<{
   rootId: string
   /** Changing it starts every control again as designed. */
   revision: number
   /** The document's variables as custom properties, shared by every island of the canvas. */
   tokens: CSSStyleSheet
+  /**
+   * Layers kept where they are but not shown, as a presentation keeps a layer whose build has
+   * not brought it on, or has taken it off, without moving what is around it.
+   */
+  faded?: ReadonlySet<string>
 }>()
 const editor = useEditor()
 
@@ -52,7 +57,9 @@ watch(
 const projection = computed(() => {
   void editor.state.sceneVersion
   const graph = resolvePlayState(editor.graph, rootId, instanceStates(controls.value, state.value))
+  // The island is laid where the layer is, so the layer is not placed in its parent again.
   const [root] = sceneNodeToDesignDocument(graph, rootId, {
+    placeRoots: false,
     vectorElement,
     canvasMetrics: { autoLineHeight }
   }).children
@@ -70,7 +77,8 @@ function Layers() {
           controls: controls.value,
           roles: roles.value,
           state: state.value,
-          transitions: transitions.value
+          transitions: transitions.value,
+          hidden: faded
         },
         root,
         ''

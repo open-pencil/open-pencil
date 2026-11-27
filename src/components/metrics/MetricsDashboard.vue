@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { countBy, maxBy, meanBy, sumBy } from 'es-toolkit'
+import { maxBy, meanBy, sumBy } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { BarList } from 'vccs'
 import { computed } from 'vue'
 
 import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
 
-import { utcDayOfTimestamp } from '@/app/metrics/days'
 import {
+  formatBytes,
   formatCount,
   formatCountry,
   formatDay,
@@ -34,20 +34,22 @@ import PlatformsChart from './PlatformsChart.vue'
 import RetentionChart from './RetentionChart.vue'
 import type {
   DailyActiveDay,
+  DailyCloud,
+  DailyContributors,
   DailyInstalls,
   DailyPulls,
   DailyTraffic,
   DailyVersions,
   DailyVisits
 } from './types'
-import WaitlistList from './WaitlistList.vue'
 
 const metricsDashboard = tv(metricsDashboardTheme)
 
 /**
  * Day-to-day numbers in one place: anonymous daily pings and Cloudflare visits for reach,
- * PostHog for what the installs that share stats do, and GitHub and the Cloud waitlist for
- * growth. The range scopes everything below it; `snapshot` already holds only those days.
+ * PostHog for what the installs that share stats do, GitHub and Cloud for growth, and the
+ * repository's activity. The range scopes everything below it; `snapshot` already holds only
+ * those days.
  */
 const {
   host,
@@ -90,77 +92,83 @@ const usage = computed(() => snapshot.usage)
 
 // Today is still being counted, so headline numbers and tile trends use full days only.
 const isFull = (row: { day: string }) => row.day !== snapshot.today
-const totals = computed(() =>
-  snapshot.dailyActive.map((day) => ({ day: day.day, installs: day.desktop + day.web }))
-)
-const fullDays = computed(() => totals.value.filter(isFull))
-const peak = computed(() => maxBy(fullDays.value, (day) => day.installs))
-// Once versions that count their days report, the headline is the returning installs: a restored
-// copy of a saved state can't raise it past what earlier steps supplied.
-const stepPings = (day: DailyInstalls) => day.new + day.returning + day.replayed
-const hasSteps = computed(() => snapshot.installs.some((day) => stepPings(day) > 0))
-// Every full day from the first with step pings, quiet ones included.
-const steppedDays = computed(() => {
-  const first = snapshot.installs.findIndex((day) => stepPings(day) > 0)
+const checked = (day: DailyInstalls) => day.new + day.returning + day.replayed
+// Every full day from the first with pings that carry a step, quiet ones included.
+const checkedDays = computed(() => {
+  const first = snapshot.installs.findIndex((day) => checked(day) > 0)
   return first === -1 ? [] : snapshot.installs.slice(first).filter(isFull)
 })
-const returning = computed(() => {
-  const days = steppedDays.value
-  if (!days.length) return undefined
-  const peakDay = maxBy(days, (day) => day.returning)
+const fullDays = computed(() => snapshot.installs.filter(isFull))
+// The headline is the installs the steps can vouch for: a restored copy of a saved state can't
+// raise it past what earlier steps supplied, and versions without steps can't be told from one.
+const active = computed(() => {
+  const days = checkedDays.value
+  if (days.length) {
+    const installs = (day: DailyInstalls) => day.new + day.returning
+    const peakDay = maxBy(days, installs)
+    return {
+      value: Math.round(meanBy(days, installs)),
+      label: 'Daily active installs, average',
+      detail: `${formatCount(Math.round(meanBy(days, (day) => day.returning)))} returning · ${formatCount(
+        Math.round(meanBy(days, (day) => day.new))
+      )} new a day${peakDay ? ` · peak ${formatCount(installs(peakDay))} on ${formatDay(peakDay.day)}` : ''}`,
+      trend: days.map(installs)
+    }
+  }
+  const all = fullDays.value
   return {
-    value: Math.round(meanBy(days, (day) => day.returning)),
-    label: 'Returning installs, average',
-    detail: `${formatCount(Math.round(meanBy(days, (day) => day.new)))} new a day${
-      peakDay ? ` · peak ${formatCount(peakDay.returning)} on ${formatDay(peakDay.day)}` : ''
-    }`,
-    trend: days.map((day) => day.returning)
+    value: all.length ? Math.round(meanBy(all, (day) => day.unchecked)) : 0,
+    label: 'Daily pings, average',
+    detail: 'no version in this range counts its days',
+    trend: all.length ? all.map((day) => day.unchecked) : undefined
   }
 })
-const active = computed(
-  () =>
-    returning.value ??
-    (fullDays.value.length
-      ? {
-          value: Math.round(meanBy(fullDays.value, (day) => day.installs)),
-          label: 'Daily active installs, average',
-          detail: peak.value
-            ? `peak ${formatCount(peak.value.installs)} on ${formatDay(peak.value.day)}`
-            : undefined,
-          trend: fullDays.value.map((day) => day.installs)
-        }
-      : {
-          value: totals.value.at(-1)?.installs ?? 0,
-          label: 'Daily active installs',
-          detail: 'so far today',
-          trend: undefined
-        })
-)
 type Growth = MetricsSnapshot['github']['stars']['daily']
 // Growth needs two recorded days; until then the tile says so rather than showing a zero.
 const added = (daily: Growth) => (daily.length ? sumBy(daily, (day) => day.added) : undefined)
 const growthDetail = (daily: Growth) => (daily.length ? phrase.value : 'no daily history yet')
 const fullTrend = (daily: Growth) => daily.filter(isFull).map((day) => day.added)
-const signupTrend = computed(() => {
-  const perDay = countBy(snapshot.waitlist.recent, (signup) =>
-    utcDayOfTimestamp(signup.signedUpAt).toString()
-  )
-  return fullDays.value.map((day) => perDay[day.day] ?? 0)
-})
+const cloud = computed(() => snapshot.cloud)
+const signUps = computed(() =>
+  cloud.value?.days.length ? sumBy(cloud.value.days, (day) => day.signUps) : undefined
+)
 
+// What the steps can't vouch for recedes: replayed pings and pings from versions without steps.
+const UNCHECKED_COLOR = 'color-mix(in oklab, var(--color-muted) 40%, transparent)'
 const STEP_SERIES: DailySeries<Exclude<keyof DailyInstalls, 'day'>>[] = [
   { key: 'returning', name: 'Returning', color: 'var(--color-chart-1)' },
   { key: 'new', name: 'New', color: 'var(--color-chart-3)' },
-  { key: 'replayed', name: 'Replayed', color: 'var(--color-muted)' }
+  { key: 'replayed', name: 'Replayed', color: 'var(--color-muted)' },
+  { key: 'unchecked', name: 'Unchecked', color: UNCHECKED_COLOR }
 ]
 const INSTALL_SERIES: DailySeries<keyof DailyActiveDay & string>[] = [
   { key: 'desktop', name: 'Desktop', color: 'var(--color-chart-1)' },
   { key: 'web', name: 'Web', color: 'var(--color-chart-2)' }
 ]
-// The web app keeps the web installs' color; the site takes the next one.
+// The web app keeps the web installs' color at either address; the site takes the next one.
 const VISIT_SERIES: DailySeries<keyof DailyVisits & string>[] = [
   { key: 'site', name: 'openpencil.dev', color: 'var(--color-chart-3)' },
+  { key: 'cloud', name: 'cloud.openpencil.dev', color: 'var(--color-chart-1)' },
   { key: 'app', name: 'app.openpencil.dev', color: 'var(--color-chart-2)' }
+]
+const CLOUD_ACCOUNT_SERIES: DailySeries<'activeAccounts' | 'signUps'>[] = [
+  { key: 'activeAccounts', name: 'Active accounts', color: 'var(--color-chart-1)' },
+  { key: 'signUps', name: 'Sign-ups', color: 'var(--color-chart-3)' }
+]
+const CLOUD_DOCUMENT_SERIES: DailySeries<keyof DailyCloud & ('documentsCreated' | 'revisions')>[] =
+  [
+    { key: 'revisions', name: 'Saves', color: 'var(--color-chart-1)' },
+    { key: 'documentsCreated', name: 'Documents created', color: 'var(--color-chart-3)' }
+  ]
+const CONTRIBUTOR_SERIES: DailySeries<'community' | 'team'>[] = [
+  { key: 'community', name: 'Community', color: 'var(--color-chart-1)' },
+  { key: 'team', name: 'Team', color: 'var(--color-chart-3)' }
+]
+const NEW_CONTRIBUTOR_SERIES: DailySeries<
+  keyof DailyContributors & ('newCommunity' | 'newTeam')
+>[] = [
+  { key: 'newCommunity', name: 'Community', color: 'var(--color-chart-1)' },
+  { key: 'newTeam', name: 'Team', color: 'var(--color-chart-3)' }
 ]
 const TRAFFIC_SERIES: DailySeries<keyof DailyTraffic & string>[] = [
   { key: 'views', name: 'Views', color: 'var(--color-chart-1)' },
@@ -192,35 +200,37 @@ function openNow(days: { openTeam: number; openCommunity: number }[]) {
     : undefined
 }
 
+/** How many have contributed by the last finished day, and how many of them are the community. */
+const contributorsNow = computed(() => {
+  const last = activity.value.contributors.at(-1)
+  return last
+    ? `${formatCount(last.team + last.community)} in all · ${formatCount(last.community)} from the community`
+    : undefined
+})
+
 // Older versions recede: the question is how much of the day is already on the latest.
 const versionSeries = computed<DailySeries<keyof DailyVersions & string>[]>(() => [
   { key: 'latest', name: snapshot.versions.latest ?? 'Latest', color: 'var(--color-chart-1)' },
-  { key: 'other', name: 'Other versions', color: 'var(--color-muted)' }
+  { key: 'other', name: 'Other versions', color: 'var(--color-muted)' },
+  { key: 'unchecked', name: 'Without steps', color: UNCHECKED_COLOR }
 ])
 const latestShare = computed(() => {
+  // Every ping counts toward the whole, unchecked ones too: they are installs not yet updated.
   const day = snapshot.versions.daily.findLast(isFull)
-  return day && day.latest + day.other ? day.latest / (day.latest + day.other) : undefined
+  const all = day ? day.latest + day.other + day.unchecked : 0
+  return day && all ? day.latest / all : undefined
 })
 
 // Pings and visits count different things, so this is a rough share, over full days only.
 const fullDaySet = computed(() => new Set(fullDays.value.map((day) => day.day)))
-// Pings from versions before the steps are in the daily active installs only.
-const olderPings = computed(() => {
-  const days = fullDaySet.value
-  const all = sumBy(
-    snapshot.dailyActive.filter((day) => days.has(day.day)),
-    (day) => day.desktop + day.web
-  )
-  const stepped = sumBy(
-    snapshot.installs.filter((day) => days.has(day.day)),
-    stepPings
-  )
-  return all ? (all - stepped) / all : undefined
+const uncheckedShare = computed(() => {
+  const all = sumBy(fullDays.value, (day) => checked(day) + day.unchecked)
+  return all ? sumBy(fullDays.value, (day) => day.unchecked) / all : undefined
 })
 const reachedEditor = computed(() => {
   const visits = sumBy(
     snapshot.visits.filter((day) => fullDaySet.value.has(day.day)),
-    (day) => day.app
+    (day) => day.app + day.cloud
   )
   const web = sumBy(
     snapshot.dailyActive.filter((day) => fullDaySet.value.has(day.day)),
@@ -238,7 +248,7 @@ const sharingNote = computed(() => {
     usage.value.daily.filter((day) => fullDaySet.value.has(day.day)),
     (day) => day.installs
   )
-  const pinged = sumBy(fullDays.value, (day) => day.installs)
+  const pinged = sumBy(fullDays.value, (day) => day.new + day.returning)
   const share = pinged ? `, about ${formatPercent(shared / pinged)} of daily active installs` : ''
   return `${formatCount(usage.value.installs)} installs sharing stats${share}`
 })
@@ -293,11 +303,15 @@ const sharingNote = computed(() => {
             :trend="fullTrend(snapshot.github.stars.daily)"
           />
           <MetricsTile
-            label="Cloud waitlist"
-            :value="snapshot.waitlist.total"
-            :change="snapshot.waitlist.added"
-            :detail="`${phrase} · ${formatCount(snapshot.waitlist.confirmed)} confirmed`"
-            :trend="signupTrend"
+            label="Cloud accounts"
+            :value="cloud?.totals?.accounts ?? null"
+            :change="signUps"
+            :detail="
+              cloud
+                ? `${phrase} · as of ${cloud.totals ? formatDay(cloud.totals.day) : 'the first snapshot'}`
+                : 'not recorded yet'
+            "
+            :trend="cloud?.days.map((day) => day.signUps)"
           />
         </div>
 
@@ -305,34 +319,28 @@ const sharingNote = computed(() => {
           <h2 id="metrics-reach" :class="ui.sectionHeading()">Reach</h2>
           <MetricsCard
             heading="Daily active installs"
-            note="Anonymous pings, one per install per UTC day. Days can't be added up: a returning install counts on each day."
+            note="Anonymous pings, one per install per UTC day. Each install moves through its days with a ping one step at a time: 1, 2, 3–4, 5–8, and so on. A step can't hold more installs than reached the step before, so pings beyond that replay a saved state. Versions before 0.17.0 send no step, so nothing can tell their installs from replays: they are unchecked. Days can't be added up: a returning install counts on each day."
           >
-            <DailyChart
-              label="Daily active installs, desktop and web"
-              :days="snapshot.dailyActive"
-              :series="INSTALL_SERIES"
-              :today="snapshot.today"
-              :releases="snapshot.releases"
-              stacked
-            />
-          </MetricsCard>
-          <MetricsCard
-            heading="Returning installs"
-            note="Each install moves through its days with a ping one step at a time: 1, 2, 3–4, 5–8, and so on. A step can't hold more installs than reached the step before, so pings beyond that replay a saved state and are set aside. New installs have nothing before them to check."
-          >
-            <template v-if="olderPings" #aside>
-              {{ formatShare(olderPings) }} of pings from versions without steps
+            <template v-if="uncheckedShare" #aside>
+              {{ formatShare(uncheckedShare) }} of pings unchecked
             </template>
             <DailyChart
-              v-if="hasSteps"
-              label="Returning, new, and replayed installs"
+              label="Returning, new, replayed, and unchecked installs"
               :days="snapshot.installs"
               :series="STEP_SERIES"
               :today="snapshot.today"
               :releases="snapshot.releases"
               stacked
             />
-            <p v-else :class="ui.sectionLabel()">No version in this range counts its days yet</p>
+            <h4 :class="ui.sectionLabel()">Checked installs by app</h4>
+            <DailyChart
+              label="Returning and new installs, desktop and web"
+              :days="snapshot.dailyActive"
+              :series="INSTALL_SERIES"
+              :today="snapshot.today"
+              :height="160"
+              stacked
+            />
           </MetricsCard>
           <MetricsCard
             heading="Visits"
@@ -350,12 +358,15 @@ const sharingNote = computed(() => {
             />
           </MetricsCard>
           <div :class="ui.row()">
-            <MetricsCard heading="Platforms" note="Daily pings added up across the range">
+            <MetricsCard
+              heading="Platforms"
+              note="Daily pings from versions that send a step, replayed ones included, added up across the range"
+            >
               <PlatformsChart :platforms="snapshot.platforms" />
             </MetricsCard>
             <MetricsCard
               heading="Networks"
-              note="Daily pings added up by the network Cloudflare reports"
+              note="Every daily ping, checked or not, added up by the network Cloudflare reports"
             >
               <NetworksTable
                 v-if="snapshot.networks.top.length"
@@ -367,10 +378,10 @@ const sharingNote = computed(() => {
           </div>
           <MetricsCard
             heading="Versions"
-            note="Daily pings by version. Versions before 0.16.0 send no pings, so older installs show up from the next release on."
+            note="Daily pings by version. Versions before 0.16.0 send no pings, and versions before 0.17.0 send no step, so their pings are counted apart."
           >
             <template v-if="latestShare !== undefined && snapshot.versions.latest" #aside>
-              {{ formatShare(latestShare) }} on {{ snapshot.versions.latest }}
+              {{ formatShare(latestShare) }} of pings on {{ snapshot.versions.latest }}
             </template>
             <DailyChart
               label="Daily pings on the latest version and on others"
@@ -465,7 +476,11 @@ const sharingNote = computed(() => {
           <div :class="ui.row()">
             <MetricsCard
               heading="GitHub"
-              note="Repository views per day, and the sites that sent visitors over the last 14 days"
+              :note="
+                snapshot.github.referrers.day
+                  ? `Repository views per day, and the sites that sent visitors in the 14 days to ${formatDay(snapshot.github.referrers.day)}`
+                  : 'Repository views per day'
+              "
             >
               <DailyChart
                 label="Repository views and unique visitors"
@@ -476,24 +491,73 @@ const sharingNote = computed(() => {
               />
               <BarList
                 class="text-xs"
-                :data="snapshot.github.referrers"
+                :data="snapshot.github.referrers.top"
                 :value-formatter="formatCount"
                 :row-height="28"
                 :is-animation-active="false"
               />
             </MetricsCard>
-            <MetricsCard heading="Cloud waitlist" note="Sign-ups in the range by email domain">
-              <template #aside>
-                {{ formatCount(snapshot.waitlist.confirmed) }} of
-                {{ formatCount(snapshot.waitlist.total) }} confirmed
+            <MetricsCard
+              heading="Cloud"
+              note="Counts from OpenPencil Cloud per finished day. Active accounts signed in or saved a revision; editing in a shared room alone is not counted."
+            >
+              <template v-if="cloud?.totals" #aside>
+                {{ formatCount(cloud.totals.documents) }} documents ·
+                {{ formatBytes(cloud.totals.storageBytes) }}
               </template>
-              <WaitlistList :signups="snapshot.waitlist.recent" />
+              <template v-if="cloud">
+                <DailyChart
+                  label="Cloud's active accounts and sign-ups per day"
+                  :days="cloud.days"
+                  :series="CLOUD_ACCOUNT_SERIES"
+                  :today="snapshot.today"
+                  :height="160"
+                />
+                <h4 :class="ui.sectionLabel()">Documents</h4>
+                <DailyChart
+                  label="Cloud saves and documents created per day"
+                  :days="cloud.days"
+                  :series="CLOUD_DOCUMENT_SERIES"
+                  :today="snapshot.today"
+                  :height="160"
+                />
+              </template>
+              <AppPlaceholder
+                v-else
+                size="compact"
+                :fill="false"
+                label="Not recorded yet"
+                description="The nightly snapshot at 00:05 UTC reads Cloud's counts, its past days included."
+              >
+                <template #icon><icon-lucide-cloud class="size-4" /></template>
+              </AppPlaceholder>
             </MetricsCard>
           </div>
         </section>
 
         <section :class="ui.section()" aria-labelledby="metrics-development">
           <h2 id="metrics-development" :class="ui.sectionHeading()">Development</h2>
+          <MetricsCard
+            v-if="activity.contributors.length"
+            heading="Contributors"
+            note="People with a merged pull request by the end of each day, and those whose first one merged that day. Bots aside; team: the repository's members and collaborators."
+          >
+            <template v-if="contributorsNow" #aside>{{ contributorsNow }}</template>
+            <DailyLevelChart
+              label="Contributors by the community and the team"
+              :days="activity.contributors"
+              :series="CONTRIBUTOR_SERIES"
+            />
+            <h4 :class="ui.sectionLabel()">First merged per day</h4>
+            <DailyChart
+              label="People whose first pull request merged that day"
+              :days="activity.contributors"
+              :series="NEW_CONTRIBUTOR_SERIES"
+              :today="snapshot.today"
+              :height="160"
+              stacked
+            />
+          </MetricsCard>
           <div v-if="activity.issues.length" :class="ui.row()">
             <MetricsCard
               heading="Issues"

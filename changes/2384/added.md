@@ -1,0 +1,1 @@
+- Scripts bind a text style's font, size, spacing, and paragraph fields to variables with `TextStyle.setBoundVariable` and read them from `boundVariables`, as in Figma; texts using the style follow the variables in their own modes (#2384).

@@ -4,7 +4,14 @@ import { createYjsGraphSync, registerYjsObservers, type CollabEditor } from '#co
 import * as Y from 'yjs'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { createSlide, createSlideGrid, createSlideRow } from '@open-pencil/scene-graph/slides'
+import {
+  createSlide,
+  createSlideGrid,
+  createSlideRow,
+  defaultLayerAnimation,
+  type SlideSettings
+} from '@open-pencil/scene-graph/slides'
+import { easingPreset } from '@open-pencil/scene-graph/variables'
 
 /** An editor with nothing to redraw and no edits of its own, as a server reading a room has. */
 function headlessEditor(graph: SceneGraph): CollabEditor {
@@ -47,7 +54,7 @@ function readRoom(room: Y.Doc): SceneGraph {
 }
 
 describe('room document to graph', () => {
-  test('carries slides with their notes and transitions', () => {
+  test('carries slides with their notes and transitions, and their layers with animations', () => {
     const source = new SceneGraph()
     const row = createSlideRow(source, createSlideGrid(source, source.getPages()[0].id).id)
     const slide = createSlide(source, row.id)
@@ -57,11 +64,12 @@ describe('room document to graph', () => {
       transition: {
         style: 'DISSOLVE',
         duration: 0.5,
-        curve: 'QUICK',
+        easing: easingPreset('SPRING_PRESET_ONE'),
         timing: { type: 'AFTER_DELAY', delay: 2 }
       }
-    } as const
+    } satisfies SlideSettings
     source.updateNode(slide.id, { slide: settings })
+    const title = source.createNode('TEXT', slide.id, { animation: defaultLayerAnimation(0) })
     const room = new Y.Doc()
     graphSync(room, headlessEditor(source)).syncAllNodesToYjs()
 
@@ -71,6 +79,7 @@ describe('room document to graph', () => {
       parentId: row.id,
       slide: settings
     })
+    expect(graph.getNode(title.id)?.animation).toEqual(defaultLayerAnimation(0))
   })
 
   test('reads a room saved as a Yjs update into a graph without an editor', () => {

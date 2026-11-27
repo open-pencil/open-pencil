@@ -4,7 +4,7 @@ import {
   createSlideGrid,
   createSlideRow,
   slideGrid,
-  slideNumbers,
+  renumberSlides,
   slideSettings,
   type SlidePlacement
 } from '@open-pencil/scene-graph/slides'
@@ -12,6 +12,7 @@ import {
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import type { EditorContext } from '#core/editor/types'
 
+import { createSlideAnimateActions } from './animate'
 import { createSlideSizeActions } from './size'
 
 /** A section of the deck and its slides, in order. */
@@ -62,10 +63,7 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
   function renumber(gridId: string | undefined = grid()?.id): void {
     const pageId = gridId ? ctx.graph.getNode(gridId)?.parentId : undefined
     if (!gridId || !pageId) return
-    for (const [id, number] of slideNumbers(ctx.graph, pageId)) {
-      const name = number === null ? '-' : String(number)
-      if (ctx.graph.getNode(id)?.name !== name) ctx.graph.updateNode(id, { name })
-    }
+    renumberSlides(ctx.graph, pageId)
     ctx.runLayoutForNode(gridId)
     ctx.requestRender()
   }
@@ -394,20 +392,27 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     })
   })
   // A deck opens on its first slide, as Figma's does; a page without slides shows whole.
+  // A page read from a file may get its layers only when shown, so it is looked at again then.
+  let awaitingLayers = false
   const openOnFirstSlide = () => {
     ctx.state.focusedSlideId = slideOrder().at(0) ?? null
-    if (ctx.state.focusedSlideId === null) return
+    awaitingLayers = ctx.state.focusedSlideId === null
+    if (awaitingLayers) return
     const { width, height } = ctx.getViewportSize()
     // A canvas not yet measured is fitted by its host once it has a size.
     if (width > 0 && height > 0) zoomToFit()
   }
   ctx.onEditorEvent('graph:replaced', openOnFirstSlide)
   ctx.onEditorEvent('page:changed', openOnFirstSlide)
+  ctx.onEditorEvent('page:shown', () => {
+    if (awaitingLayers) openOnFirstSlide()
+  })
   // A new editor's canvas has no size of its own yet, so its host fits the slide once shown.
   ctx.state.focusedSlideId = slideOrder().at(0) ?? null
 
   return {
     ...createSlideSizeActions(ctx, zoomToFit),
+    ...createSlideAnimateActions(ctx),
     addSlide,
     duplicateSlides,
     deleteSlides,

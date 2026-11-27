@@ -4,9 +4,17 @@ import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import { type CalendarDate, maxDate, minDate, parseDate } from '@internationalized/date'
 import { compact } from 'es-toolkit'
 
+import { type CloudUsage, CLOUD_USAGE_MAX_DAYS, fetchCloudUsage } from './cloud'
 import { cloudflareClient } from './cloudflare'
 import { githubClient } from './github'
-import { lastDay, lastItemUpdate, replaceDays, saveRepoItems, type SnapshotStore } from './store'
+import {
+  lastCloudDay,
+  lastItemUpdate,
+  lastVisitDay,
+  replaceDays,
+  saveRepoItems,
+  type SnapshotStore
+} from './store'
 
 /**
  * How far back the visit history is filled: Cloudflare's Free plan keeps 31 days and answers at
@@ -21,7 +29,7 @@ const SETTLING_DAYS = 3
  */
 const MAX_ITEM_PAGES = 20
 
-export type SnapshotSource = 'github' | 'traffic' | 'site' | 'activity'
+export type SnapshotSource = 'github' | 'traffic' | 'site' | 'activity' | 'cloud'
 
 interface Run {
   store: SnapshotStore
@@ -86,7 +94,7 @@ async function recordSite({ store, env, services, yesterday }: Run) {
   const hosts = env.SITE_HOSTS.split(',').map((host) => host.trim())
   const [website] = hosts
   const oldest = yesterday.subtract({ days: BACKFILL_DAYS - 1 })
-  const recorded = await lastDay(store.db, 'siteVisits')
+  const recorded = await lastVisitDay(store.db, hosts)
   const next = recorded ? parseDate(recorded).add({ days: 1 }) : oldest
   const settling = yesterday.subtract({ days: SETTLING_DAYS - 1 })
   // Start at the first missing day or the first still settling, whichever is earlier, but never
@@ -135,11 +143,44 @@ async function recordActivity({ store, env, services }: Run) {
   }
 }
 
+/**
+ * Cloud's counts for every day not recorded yet, and its totals as of yesterday. The first run
+ * fills in as far back as one request reaches, from the first day anything happened; Cloud
+ * derives past days from its own records, so only the totals start with the first snapshot.
+ */
+async function recordCloud({ store, env, yesterday }: Run) {
+  const recorded = await lastCloudDay(store.db)
+  const oldest = yesterday.subtract({ days: CLOUD_USAGE_MAX_DAYS - 1 })
+  // After a long gap, the days before what one request reaches are skipped rather than asked for.
+  const next = recorded ? parseDate(recorded).add({ days: 1 }) : oldest
+  const start = maxDate(minDate(next, yesterday) ?? yesterday, oldest) ?? oldest
+  const usage = await fetchCloudUsage(env.CLOUD, env.CLOUD_SERVICE_TOKEN, start, yesterday)
+  const active = (day: CloudUsage['days'][number]) =>
+    day.signUps + day.activeAccounts + day.documentsCreated + day.revisions > 0
+  // Before anything was recorded, the quiet days before Cloud's first are left out; yesterday
+  // always stays, for its totals.
+  const first = recorded ? 0 : usage.days.findIndex(active)
+  const days = first === -1 ? usage.days.slice(-1) : usage.days.slice(first)
+  const last = yesterday.toString()
+  const untotalled = { accounts: null, documents: null, workspaces: null, storageBytes: null }
+  const rows = days.map((day) => {
+    const totals = day.day === last ? usage.totals : untotalled
+    return { ...day, ...totals }
+  })
+  await replaceDays(
+    store,
+    'cloudUsage',
+    rows.map((row) => parseDate(row.day)),
+    rows
+  )
+}
+
 const SOURCES: [SnapshotSource, (run: Run) => Promise<void>][] = [
   ['github', recordGithub],
   ['traffic', recordTraffic],
   ['site', recordSite],
-  ['activity', recordActivity]
+  ['activity', recordActivity],
+  ['cloud', recordCloud]
 ]
 
 /**

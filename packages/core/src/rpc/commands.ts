@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import {
   analyzeClustersCommand,
@@ -22,6 +22,8 @@ import { tokensCommand, variablesCommand } from './variables-command'
 export type AutomationDocumentSummary = {
   id: string
   name: string
+  /** What the document is: a design, a FigJam board, or a slides deck. */
+  kind: DocumentKind
   path?: string
   active: boolean
   current_page_id: string

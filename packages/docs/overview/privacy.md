@@ -98,10 +98,6 @@ Reports go to `feedback.openpencil.dev`, which passes them to PostHog's error tr
 - In the desktop app, starting OpenPencil with `OPENPENCIL_TELEMETRY=0` or `DO_NOT_TRACK=1` in its environment turns off both.
 - Only official releases send anything. Development servers, self-built apps, and forks send nothing, because the switch that enables sending is set only when we build a release.
 
-## Cloud waitlist
-
-If you join the OpenPencil Cloud waitlist on this site, we store your email address and the optional note you add. We send one email to confirm the address and write again only when Cloud is ready for you. Addresses that are not confirmed are deleted after seven days, and every email has a link that removes yours.
-
 ## Other network requests
 
 OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on startup unless you turn that off in **Settings → General**. **Check for Updates** in the menu still checks. Everything else below connects only when you use that feature, and only to the service named.

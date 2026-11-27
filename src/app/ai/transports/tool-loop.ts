@@ -138,7 +138,9 @@ export function createToolLoopTransport({
     include: { requestMessages: recorder !== undefined },
     prepareCall: (options) => {
       const enabledNames = new Set(
-        enabledAIToolDefinitions(aiToolOverrides.value).map((tool) => tool.name)
+        enabledAIToolDefinitions(aiToolOverrides.value, store.state.documentKind).map(
+          (tool) => tool.name
+        )
       )
       if (offeredSkills.length > 0) for (const name of SKILL_TOOL_NAMES) enabledNames.add(name)
       preview.clear()

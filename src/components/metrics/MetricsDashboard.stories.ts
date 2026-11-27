@@ -5,58 +5,72 @@ import { computed, ref } from 'vue'
 
 import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
 
-import { utcDayOfTimestamp } from '@/app/metrics/days'
 import { presetRange } from '@/app/metrics/range'
 import type { MetricsRange } from '@/app/metrics/range'
 
 import MetricsDashboard from './MetricsDashboard.vue'
 
-// The week after v0.16.0 shipped, as the feedback Worker answers for it. Pings, versions, visits,
-// website pages and countries, GitHub traffic and referrers, usage, retention, and waitlist
-// sign-ups are real; daily star and download growth before the snapshot job are illustrative.
+// The week after v0.16.0 shipped, as the feedback Worker answers for it. Daily pings, visits,
+// website pages and countries, GitHub traffic and referrers, usage, and retention are real; step
+// counts, contributors, Cloud, and daily star and download growth are illustrative.
 const TODAY = '2026-10-19'
 const EARLIEST = '2026-09-22'
 
-const dailyActive = [
-  { day: '2026-10-13', desktop: 19, web: 0 },
-  { day: '2026-10-14', desktop: 193, web: 183 },
-  { day: '2026-10-15', desktop: 432, web: 481 },
-  { day: '2026-10-16', desktop: 443, web: 397 },
-  { day: '2026-10-17', desktop: 390, web: 249 },
-  { day: '2026-10-18', desktop: 401, web: 298 },
-  { day: '2026-10-19', desktop: 330, web: 257 }
-]
+// Every ping the week had, from 0.16.0, which sends no step.
+const pinged = [19, 376, 913, 840, 639, 699, 587]
 // Illustrative: a release that counts its days ships on Oct 16, so upgrading installs start over as
 // new, and a saved state restored over and over replays its second day.
-const installs = [
-  { day: '2026-10-13', new: 0, returning: 0, replayed: 0 },
-  { day: '2026-10-14', new: 0, returning: 0, replayed: 0 },
-  { day: '2026-10-15', new: 0, returning: 0, replayed: 0 },
-  { day: '2026-10-16', new: 212, returning: 0, replayed: 0 },
-  { day: '2026-10-17', new: 141, returning: 118, replayed: 240 },
-  { day: '2026-10-18', new: 96, returning: 187, replayed: 310 },
-  { day: '2026-10-19', new: 74, returning: 203, replayed: 250 }
+const stepped = [
+  { new: 0, returning: 0, replayed: 0 },
+  { new: 0, returning: 0, replayed: 0 },
+  { new: 0, returning: 0, replayed: 0 },
+  { new: 212, returning: 0, replayed: 0 },
+  { new: 141, returning: 118, replayed: 240 },
+  { new: 96, returning: 187, replayed: 310 },
+  { new: 74, returning: 203, replayed: 250 }
 ]
+const DAYS = [
+  '2026-10-13',
+  '2026-10-14',
+  '2026-10-15',
+  '2026-10-16',
+  '2026-10-17',
+  '2026-10-18',
+  '2026-10-19'
+]
+const installs = DAYS.map((day, index) => {
+  const steps = stepped[index] ?? { new: 0, returning: 0, replayed: 0 }
+  const all = pinged[index] ?? 0
+  return {
+    day,
+    ...steps,
+    unchecked: Math.max(0, all - steps.new - steps.returning - steps.replayed)
+  }
+})
+// The checked installs split about three to two between desktop and web.
+const dailyActive = installs.map((day) => {
+  const checked = day.new + day.returning
+  const desktop = Math.round(checked * 0.6)
+  return { day: day.day, desktop, web: checked - desktop }
+})
 const visits = [
-  { day: '2026-10-13', site: 2342, app: 1107 },
-  { day: '2026-10-14', site: 3884, app: 729 },
-  { day: '2026-10-15', site: 4810, app: 970 },
-  { day: '2026-10-16', site: 3356, app: 1030 },
-  { day: '2026-10-17', site: 2283, app: 1093 },
-  { day: '2026-10-18', site: 2829, app: 1282 },
-  { day: '2026-10-19', site: 1765, app: 830 }
+  { day: '2026-10-13', site: 2342, app: 1107, cloud: 0 },
+  { day: '2026-10-14', site: 3884, app: 729, cloud: 0 },
+  { day: '2026-10-15', site: 4810, app: 970, cloud: 0 },
+  { day: '2026-10-16', site: 3356, app: 1030, cloud: 0 },
+  { day: '2026-10-17', site: 2283, app: 1093, cloud: 0 },
+  { day: '2026-10-18', site: 2829, app: 1282, cloud: 0 },
+  { day: '2026-10-19', site: 1765, app: 830, cloud: 0 }
 ]
-const versions = [
-  { day: '2026-10-13', latest: 0, other: 19 },
-  { day: '2026-10-14', latest: 354, other: 22 },
-  { day: '2026-10-15', latest: 905, other: 8 },
-  { day: '2026-10-16', latest: 838, other: 2 },
-  { day: '2026-10-17', latest: 637, other: 2 },
-  { day: '2026-10-18', latest: 697, other: 2 },
-  { day: '2026-10-19', latest: 586, other: 1 }
-]
+// Checked pings on the release that counts its days, and everything before it.
+const versions = installs.map((day) => ({
+  day: day.day,
+  latest: day.new + day.returning + day.replayed,
+  other: 0,
+  unchecked: day.unchecked
+}))
 const growth = (added: number[]) =>
-  added.map((value, index) => ({ day: dailyActive[index]?.day ?? TODAY, added: value }))
+  added.map((value, index) => ({ day: DAYS[index] ?? TODAY, added: value }))
 const traffic = [
   { day: '2026-10-13', views: 420, uniqueViews: 230, clones: 2900 },
   { day: '2026-10-14', views: 980, uniqueViews: 610, clones: 7400 },
@@ -189,20 +203,22 @@ const pulls = [
     mergedCommunity: 1
   }
 ]
-const signups = [
-  { domain: 'crugroup.com', signedUpAt: '2026-10-14T16:12:31Z', confirmed: true },
-  { domain: 'gmail.com', signedUpAt: '2026-10-14T22:11:38Z', confirmed: true },
-  { domain: 'cpiprint.com', signedUpAt: '2026-10-15T03:06:45Z', confirmed: true },
-  { domain: 'allganize.io', signedUpAt: '2026-10-15T08:50:54Z', confirmed: true },
-  { domain: 'protonmail.com', signedUpAt: '2026-10-15T19:13:20Z', confirmed: false },
-  { domain: 'gmail.com', signedUpAt: '2026-10-16T15:56:03Z', confirmed: true },
-  { domain: 'creatonium.agency', signedUpAt: '2026-10-17T08:35:45Z', confirmed: true },
-  { domain: 'veltrum.cl', signedUpAt: '2026-10-18T15:39:22Z', confirmed: false },
-  { domain: 'gmail.com', signedUpAt: '2026-10-18T20:33:57Z', confirmed: true },
-  { domain: 'szscc.cn', signedUpAt: '2026-10-19T04:07:57Z', confirmed: true },
-  { domain: 'gmail.com', signedUpAt: '2026-10-19T07:46:12Z', confirmed: false },
-  { domain: 'exient.com', signedUpAt: '2026-10-19T11:02:58Z', confirmed: true }
-]
+// Illustrative: a steady trickle of first merges onto a team of a dozen.
+const contributors = DAYS.slice(0, -1).map((day, index) => ({
+  day,
+  team: 12,
+  community: 81 + index * 2 + (index > 2 ? 1 : 0),
+  newTeam: 0,
+  newCommunity: [0, 2, 2, 3, 2, 2][index] ?? 0
+}))
+// Illustrative: Cloud's first public week.
+const cloudDays = DAYS.slice(0, -1).map((day, index) => ({
+  day,
+  signUps: [14, 22, 19, 11, 9, 16][index] ?? 0,
+  activeAccounts: [31, 48, 57, 52, 44, 61][index] ?? 0,
+  documentsCreated: [20, 35, 28, 19, 15, 30][index] ?? 0,
+  revisions: [88, 140, 162, 131, 97, 175][index] ?? 0
+}))
 const usageDaily = [
   { day: '2026-10-13', installs: 2 },
   { day: '2026-10-14', installs: 30 },
@@ -228,14 +244,17 @@ const isInRange = (day: string, range: MetricsRange) =>
 
 /**
  * What the feedback Worker answers for a range; `withUsage` false is PostHog not answering,
- * `withActivity` false is the issue mirror before its first sync.
+ * `withActivity` false is the issue mirror before its first sync, and `withCloud` false is
+ * before the first snapshot of Cloud's counts.
  */
-function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): MetricsSnapshot {
+function scope(
+  range: MetricsRange,
+  withUsage: boolean,
+  withActivity: boolean,
+  withCloud: boolean
+): MetricsSnapshot {
   const inRange = <T extends { day: string }>(rows: T[]) =>
     rows.filter((row) => isInRange(row.day, range))
-  const recent = signups.filter((signup) =>
-    isInRange(utcDayOfTimestamp(signup.signedUpAt).toString(), range)
-  )
   return {
     asOf: '2026-10-19T11:36:00Z',
     today: TODAY,
@@ -294,18 +313,32 @@ function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): 
         updateChecks: inRange(growth([0, 1110, 931, 1100, 980, 1050, 0]))
       },
       traffic: inRange(traffic),
-      referrers: [
-        { name: 'Google', value: 1722 },
-        { name: 'github.com', value: 847 },
-        { name: 'openpencil.dev', value: 467 },
-        { name: 'Bing', value: 124 },
-        { name: 'youtube.com', value: 80 }
-      ],
+      referrers: {
+        day: '2026-10-18',
+        top: [
+          { name: 'Google', value: 1722 },
+          { name: 'github.com', value: 847 },
+          { name: 'openpencil.dev', value: 467 },
+          { name: 'Bing', value: 124 },
+          { name: 'youtube.com', value: 80 }
+        ]
+      },
       activity: withActivity
-        ? { issues: inRange(issues), pulls: inRange(pulls) }
-        : { issues: [], pulls: [] }
+        ? { issues: inRange(issues), pulls: inRange(pulls), contributors: inRange(contributors) }
+        : { issues: [], pulls: [], contributors: [] }
     },
-    waitlist: { total: 22, confirmed: 16, added: recent.length, recent: recent.toReversed() },
+    cloud: withCloud
+      ? {
+          days: inRange(cloudDays),
+          totals: {
+            day: '2026-10-18',
+            accounts: 214,
+            documents: 380,
+            workspaces: 231,
+            storageBytes: 1_843_000_000
+          }
+        }
+      : null,
     usage: withUsage
       ? {
           installs: sumBy(inRange(usageDaily), (day) => day.installs),
@@ -342,12 +375,12 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const story = (frame: string, withUsage = true, withActivity = true): Story => ({
+const story = (frame: string, withUsage = true, withActivity = true, withCloud = true): Story => ({
   render: () => ({
     components: { MetricsDashboard },
     setup: () => {
       const range = ref(presetRange('7d', TODAY, EARLIEST))
-      const snapshot = computed(() => scope(range.value, withUsage, withActivity))
+      const snapshot = computed(() => scope(range.value, withUsage, withActivity, withCloud))
       return { range, snapshot }
     },
     template: `<div class="${frame}"><MetricsDashboard host="feedback.openpencil.dev" :snapshot="snapshot" v-model:range="range" /></div>`
@@ -361,6 +394,9 @@ export const WithoutUsage = story('h-887.5', false)
 
 /** Before the first nightly sync, issues and pull requests give way to a notice. */
 export const BeforeIssueSync = story('h-850', true, false)
+
+/** Before the first snapshot of Cloud's counts, its card gives way to a notice. */
+export const BeforeCloudSnapshot = story('h-987.5', true, true, false)
 
 /** The dashboard in a phone-width window. */
 export const Narrow = story('h-1612.5 w-97.5')

@@ -87,7 +87,7 @@ test('an archive reader rejects a cyclic parent chain as a document read whole d
   ]
   const bytes = await figArchiveOf(records)
 
-  expect(() => createDocumentReader(records)).toThrow('Cyclic component-property ancestry')
+  expect(() => createDocumentReader(records)).toThrow('Cyclic source hierarchy')
   const { reader } = createArchiveDocumentReader(bytes)
-  expect(() => reader.sourceRecords).toThrow('Cyclic component-property ancestry')
+  expect(() => reader.sourceRecords).toThrow('Cyclic source hierarchy')
 })
