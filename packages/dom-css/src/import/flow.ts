@@ -435,7 +435,7 @@ function placesOutOfFlow(style: DesignStyleDeclaration): boolean {
 }
 
 /** Whether a box is out of the flow, placed by its own position rather than in the lines. */
-function isOutOfFlow(node: DesignNode): boolean {
+export function isOutOfFlow(node: DesignNode): boolean {
   return node.type === 'element' && placesOutOfFlow(mergedStyle(node))
 }
 
