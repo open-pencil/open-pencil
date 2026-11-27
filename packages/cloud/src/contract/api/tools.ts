@@ -7,7 +7,8 @@ import { documentParamsSchema } from './params'
 import { at } from './route'
 
 const route = oc
-  .errors(DOCUMENT_ERRORS)
+  // A tool for some kinds of document only, such as the slide tools, refuses a document of another.
+  .errors({ ...DOCUMENT_ERRORS, wrong_document_kind: {} })
   .input(v.object({ params: documentParamsSchema, body: cloudDocumentToolCallSchema }))
   .output(agentToolOutcomeSchema)
 

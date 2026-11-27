@@ -317,7 +317,10 @@ answers a request without a valid token with a challenge naming its own protecte
 metadata, and turns each tool call into a request to the document API with the caller's token, so
 every scope, workspace, and rate limit applies there unchanged. Its document tools are plain API
 calls. Its design tools are Core's, listed from `server/mcp/design-tools.json`, which the
-package's build writes from Core's tools before bundling, since the server holds no Core.
+package's build writes from Core's tools before bundling, since the server holds no Core. The
+list keeps each tool's document kinds: unlike the local server, which lists the slide tools only
+while a deck is open, a stateless endpoint cannot tell clients their list changed, so it lists every
+tool and answers `422 wrong_document_kind` before any editor sees a call on another kind.
 
 The server has no editor to run them in, so `POST /api/documents/:id/tools/{read,write}` hands each
 call to the document's relay (`callDocumentTool`). A signed-in editor tab offers to run tools on the

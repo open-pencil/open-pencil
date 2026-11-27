@@ -1,3 +1,4 @@
+import { documentKindSchema } from '#cloud/contract'
 import * as v from 'valibot'
 
 import catalog from './design-tools.json'
@@ -9,6 +10,8 @@ const designToolSchema = v.object({
   mutates: v.boolean(),
   /** Whether it changes nothing at all, not even what the editor shows. */
   readOnly: v.boolean(),
+  /** The kinds of document it works on, such as decks for the slide tools, or null for every kind. */
+  documentKinds: v.nullable(v.array(documentKindSchema)),
   /** Its input as MCP clients read it, a JSON Schema object; the editor that runs it checks calls. */
   inputSchema: v.looseObject({ properties: v.optional(v.record(v.string(), v.unknown()), {}) })
 })

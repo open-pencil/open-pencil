@@ -42,6 +42,7 @@ export function cloudMCPCatalog() {
         description: def.description,
         mutates: toolChangesDocument(def),
         readOnly: def.execution.mutation === 'none',
+        documentKinds: def.documentKinds,
         inputSchema: toolInputSchema(
           v.strictObject(remoteEntries(def.name, toolInputFor(def, 'mcp').entries))
         )['~standard'].jsonSchema.input({ target: INPUT_SCHEMA_TARGET })

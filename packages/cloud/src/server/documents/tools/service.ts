@@ -8,7 +8,11 @@ import {
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { canEditDocument } from '#cloud/server/documents/access'
-import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
+import {
+  DocumentForbiddenError,
+  DocumentKindMismatchError,
+  DocumentNotFoundError
+} from '#cloud/server/documents/errors'
 import type { DocumentService } from '#cloud/server/documents/service'
 import { designTool, takesPath } from '#cloud/server/mcp/catalog'
 import { omit } from 'es-toolkit/object'
@@ -41,7 +45,8 @@ async function appName(database: Kysely<CloudDatabase>, clientId: string): Promi
  * Design tools apps and scripts run on documents. The server holds no editor: a call goes to an
  * editor tab of the same person that has the document open, which runs it as their own edit, so
  * it reaches only what they may change. A tool that changes the document needs edit access and
- * `documents:write`; one that only reads needs neither.
+ * `documents:write`; one that only reads needs neither. A tool for some kinds of document only,
+ * such as the slide tools for decks, is refused on another kind before any editor sees it.
  */
 export function createDocumentToolService(options: {
   database: Kysely<CloudDatabase>
@@ -75,6 +80,14 @@ export function createDocumentToolService(options: {
       }
       const access = await options.documents.access(actor.userId, documentId)
       if (effect === 'write' && !canEditDocument(access)) throw new DocumentForbiddenError()
+      if (tool.documentKinds) {
+        const { kind } = await options.database
+          .selectFrom('document')
+          .select('kind')
+          .where('id', '=', documentId)
+          .executeTakeFirstOrThrow()
+        if (!tool.documentKinds.includes(kind)) throw new DocumentKindMismatchError()
+      }
       if (!options.callTool) return { ok: false, failure: 'editor_not_open' }
       // Local MCP writes a `path` to disk itself; here it would only change what the tool answers.
       const args = takesPath(tool) ? call.args : omit(call.args, ['path'])

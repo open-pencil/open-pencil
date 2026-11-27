@@ -76,7 +76,10 @@ const DOCUMENT_TOOLS: DocumentTool[] = [
       workspace_id: workspaceIdSchema,
       name: v.pipe(v.string(), v.minLength(1), v.description('The document name.')),
       kind: v.optional(
-        v.pipe(documentKindSchema, v.description('A design (the default) or a board.'))
+        v.pipe(
+          documentKindSchema,
+          v.description('A design (the default), a board, or a slide deck.')
+        )
       )
     }),
     async run(caller, args) {

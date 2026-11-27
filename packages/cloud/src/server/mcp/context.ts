@@ -26,6 +26,9 @@ function refusal(error: MCPAPIError): string {
   if (error.code === 'insufficient_scope') {
     return 'This connection may only read documents. To change them, connect the app again and choose Read and write.'
   }
+  if (error.code === 'wrong_document_kind') {
+    return 'This tool works on other kinds of document: list_documents gives each document its kind.'
+  }
   if (error.status === 403) return 'You may not do this with this document.'
   if (error.status === 404) {
     return 'Not found: it does not exist, is in Trash, or is outside the workspace this connection reaches.'
