@@ -19,6 +19,18 @@ export interface KitBehaviour {
   states?: string
 }
 
+/**
+ * The id that marks an element as a page of its own: the import names a layer after its
+ * element's id, and the runner moves each such layer onto a page of that name.
+ */
+export const PAGE_PREFIX = 'page:'
+
+/** The size of each cell of a set laid out in rows, in pixels. */
+export interface KitCell {
+  width: number
+  height: number
+}
+
 /** The props a kit component takes to be drawn as one variant of a set. */
 export type VariantProps = Record<string, string | boolean>
 
@@ -33,8 +45,13 @@ export interface SetProps {
  * nothing but the kit: props for the attributes the HTML import reads.
  */
 export interface KitMarks {
-  /** Props for the element that holds a component set's variants, named `name`. */
-  set: (name: string) => SetProps
+  /** Props for an element that becomes a page of the document of its own, named `name`. */
+  page: (name: string) => { id: string }
+  /**
+   * Props for the element that holds a component set's variants, named `name`: in rows of
+   * `columns` cells of one `cell` size when given, so labels beside them line up, else wrapping.
+   */
+  set: (name: string, options?: { columns?: number; cell?: KitCell }) => SetProps
   /**
    * Props that make a component a variant with these properties, in `state` when it is one of
    * them, behaving as the control its Radix root is when `behaviour` binds it.
@@ -57,7 +74,19 @@ export interface KitSources {
   aliases: Record<string, string>
   /** What installed them, such as `shadcn@4.23.1`, which the document records. */
   installer: string
+  /** What the kit's documentation says about each of its components, by module name. */
+  docs: Record<string, KitDoc>
 }
+
+/** A component's documentation: its title, what it is in a sentence, and where to read more. */
+export interface KitDoc {
+  title: string
+  description: string
+  links: Record<string, string>
+}
+
+/** What the page is told about the kit beside its modules: what installed it, and its docs. */
+export type KitAbout = Pick<KitSources, 'installer' | 'docs'>
 
 /** The kit's modules as the page receives them: each module's exports, by module name. */
 export type KitModules = Readonly<Record<string, Readonly<Record<string, unknown>>>>
@@ -66,7 +95,7 @@ export type KitModules = Readonly<Record<string, Readonly<Record<string, unknown
 export interface KitDefinition {
   /** The document's name. */
   name: string
-  /** The module whose default export draws the page: `(marks, modules) => element`. */
+  /** The module whose default export draws the page: `(marks, modules, about) => element`. */
   page: string
   /** The ways the page is styled, each a mode of the kit's variables, as its themes switch. */
   modes: readonly ReadHTMLMode[]
@@ -80,15 +109,24 @@ export function createKitMarks(attributes: {
   behaviour: string
 }): KitMarks {
   return {
-    set: (name) => ({
+    page: (name) => ({ id: `${PAGE_PREFIX}${name}` }),
+    set: (name, { columns, cell } = {}): SetProps => ({
       [attributes.set]: name,
-      style: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start',
-        gap: '16px',
-        padding: '16px'
-      }
+      style:
+        columns && cell
+          ? {
+              display: 'grid',
+              gridTemplateColumns: `repeat(${columns}, ${cell.width}px)`,
+              gridAutoRows: `${cell.height}px`,
+              alignItems: 'center'
+            }
+          : {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
+              gap: '16px',
+              padding: '16px'
+            }
     }),
     variant(properties, { state, behaviour } = {}) {
       const name = Object.entries(properties)

@@ -51,6 +51,23 @@ describe('the shadcn/ui kit', () => {
     expect(readBehaviour(set('Button'))).toBeNull()
   })
 
+  test('puts each component on a page of its own, after a cover', () => {
+    const pages = graph.getPages().map(({ name }) => name)
+    expect(pages.slice(0, 4)).toEqual(['Cover', 'Button', 'Badge', 'Input'])
+    expect(pages).toHaveLength(17)
+    const switchPage = graph.getPages().find(({ name }) => name === 'Switch')
+    const texts = switchPage
+      ? graph
+          .flattenTree(switchPage.id)
+          .flatMap(({ node }) => (node.type === 'TEXT' ? [node.text] : []))
+      : []
+    // The page says what its documentation says, and shows shadcn's own examples.
+    expect(texts).toContain(
+      'A control that allows the user to toggle between checked and not checked.'
+    )
+    expect(texts).toContain('Airplane Mode')
+  })
+
   test('imports the light and dark themes as modes', () => {
     const [collection] = graph.variableCollections.values()
     expect(collection.modes.map(({ name }) => name)).toEqual(['Light', 'Dark'])

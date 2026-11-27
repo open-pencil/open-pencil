@@ -4,16 +4,30 @@ import { fileURLToPath } from 'node:url'
 
 import { $ } from 'bun'
 import * as v from 'valibot'
+import { parse as parseYAML } from 'yaml'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/workspace'
 
-import type { KitSources } from '../kit'
-import { SHADCN_CLI, SHADCN_COMPONENTS } from './components'
+import type { KitDoc, KitSources } from '../kit'
+import { SHADCN_CLI, SHADCN_COMPONENTS, SHADCN_DOCS } from './components'
 
 /** What the cached project was installed with, which must match for it to be used again. */
 const stampSchema = v.object({ installer: v.string(), components: v.array(v.string()) })
 
+/** The front matter of a component's documentation page. */
+const frontMatterSchema = v.object({
+  title: v.string(),
+  description: v.string(),
+  links: v.optional(v.record(v.string(), v.string()), {})
+})
+
+const docsSchema = v.record(v.string(), frontMatterSchema)
+
 const STAMP = 'stamp.json'
+const DOCS = 'docs.json'
+
+/** The module of a component's examples, as the registry names it. */
+export const exampleModule = (name: string) => `${name}-example`
 
 async function installed(cache: string): Promise<boolean> {
   const stamp = Bun.file(join(cache, STAMP))
@@ -26,9 +40,20 @@ async function installed(cache: string): Promise<boolean> {
   )
 }
 
+/** A component's documentation page's front matter, as the docs site serves it in Markdown. */
+async function fetchDoc(name: string): Promise<KitDoc> {
+  const response = await fetch(`${SHADCN_DOCS}/${name}.md`)
+  if (!response.ok) throw new Error(`No documentation for ${name}: ${response.status}`)
+  const matter = /^---\n([\s\S]*?)\n---/.exec(await response.text())?.[1]
+  const parsed = v.safeParse(frontMatterSchema, matter ? parseYAML(matter) : undefined)
+  if (!parsed.success) throw new Error(`The documentation of ${name} has no title or description`)
+  return parsed.output
+}
+
 /**
  * Sets up a project as a shadcn/ui user does, with its CLI: Radix primitives, the nova style,
- * the neutral theme, and lucide icons, then the kit's components from the registry as it is.
+ * the neutral theme, and lucide icons, then the kit's components and their examples from the
+ * registry as it is, and their documentation's titles and descriptions.
  */
 async function install(cache: string): Promise<void> {
   await mkdir(dirname(cache), { recursive: true })
@@ -38,7 +63,12 @@ async function install(cache: string): Promise<void> {
       .cwd(parent)
       .quiet()
     const app = join(parent, 'app')
-    await $`bunx ${SHADCN_CLI} add ${SHADCN_COMPONENTS} -y --overwrite`.cwd(app).quiet()
+    const items = [...SHADCN_COMPONENTS, ...SHADCN_COMPONENTS.map(exampleModule)]
+    await $`bunx ${SHADCN_CLI} add ${items} -y --overwrite`.cwd(app).quiet()
+    const docs = Object.fromEntries(
+      await Promise.all(SHADCN_COMPONENTS.map(async (name) => [name, await fetchDoc(name)]))
+    )
+    await Bun.write(join(app, DOCS), JSON.stringify(docs, null, 2))
     await Bun.write(
       join(app, STAMP),
       JSON.stringify({ installer: SHADCN_CLI, components: SHADCN_COMPONENTS })
@@ -59,13 +89,21 @@ export async function shadcnSources(): Promise<KitSources> {
   const cache = join(root, '.cache/kits/shadcn')
   if (!(await installed(cache))) await install(cache)
   const src = join(cache, 'src')
+  const docs = v.parse(
+    v.pipe(v.string(), v.parseJson(), docsSchema),
+    await Bun.file(join(cache, DOCS)).text()
+  )
   return {
     root: cache,
     stylesheet: join(src, 'index.css'),
     modules: Object.fromEntries(
-      SHADCN_COMPONENTS.map((name) => [name, join(src, 'components/ui', `${name}.tsx`)])
+      SHADCN_COMPONENTS.flatMap((name) => [
+        [name, join(src, 'components/ui', `${name}.tsx`)],
+        [exampleModule(name), join(src, 'components', `${exampleModule(name)}.tsx`)]
+      ])
     ),
     aliases: { '@': src },
-    installer: SHADCN_CLI
+    installer: SHADCN_CLI,
+    docs
   }
 }

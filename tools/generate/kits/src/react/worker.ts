@@ -11,7 +11,13 @@ import { createServer } from 'vite'
 
 import { COMPONENT_ATTRIBUTES } from '@open-pencil/dom-css/scene-graph'
 
-import { createKitMarks, type KitMarks, type KitModules, type KitSources } from '../kit'
+import {
+  createKitMarks,
+  type KitAbout,
+  type KitMarks,
+  type KitModules,
+  type KitSources
+} from '../kit'
 import { installBrowserGlobals, mountedMarkup } from './mount'
 import { markedRadixPlugin } from './radix'
 
@@ -27,7 +33,9 @@ export interface RenderRequest {
 /** What the worker posts back: the page's markup, or why it could not render it. */
 export type RenderReply = { html: string } | { error: string }
 
-type KitPage = { default: (marks: KitMarks, modules: KitModules) => ReactElement }
+type KitPage = {
+  default: (marks: KitMarks, modules: KitModules, about: KitAbout) => ReactElement
+}
 
 function isKitPage(module: Record<string, unknown>): module is KitPage {
   return typeof module.default === 'function'
@@ -71,7 +79,9 @@ async function render({ page, sources }: RenderRequest): Promise<string> {
     }
     const drawn = await server.ssrLoadModule(page)
     if (!isKitPage(drawn)) throw new Error(`${page} draws no page`)
-    return await mountedMarkup(drawn.default(createKitMarks(COMPONENT_ATTRIBUTES), modules))
+    const about: KitAbout = { installer: sources.installer, docs: sources.docs }
+    const marks = createKitMarks(COMPONENT_ATTRIBUTES)
+    return await mountedMarkup(drawn.default(marks, modules, about))
   } finally {
     await server.close()
   }

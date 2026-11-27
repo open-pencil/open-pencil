@@ -8,7 +8,7 @@ import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { KitDefinition, KitSources } from './kit'
+import { PAGE_PREFIX, type KitDefinition, type KitSources } from './kit'
 import type { RenderReply, RenderRequest } from './react/worker'
 
 export type { KitDefinition } from './kit'
@@ -58,11 +58,29 @@ export async function buildKitGraph(kit: KitDefinition): Promise<SceneGraph> {
     cssText,
     // The stylesheet's URLs, such as its fonts', are relative to it.
     baseURL: pathToFileURL(`${dirname(sources.stylesheet)}/`).href,
-    pageName: `Components (${sources.installer})`,
     components: true,
     variables: { collection: kit.name, modes: kit.modes }
   })
+  splitPages(graph)
   return graph
+}
+
+/**
+ * Moves each layer the page marked as a page of its own onto a page of that name, in the order
+ * the page drew them, and removes the page they were imported on once nothing else is left.
+ */
+function splitPages(graph: SceneGraph): void {
+  const [imported] = graph.getPages()
+  const marked = graph
+    .flattenTree(imported.id)
+    .map(({ node }) => node)
+    .filter((node) => node.name.startsWith(PAGE_PREFIX))
+  for (const node of marked) {
+    const page = graph.addPage(node.name.slice(PAGE_PREFIX.length))
+    graph.reparentNode(node.id, page.id)
+    graph.updateNode(node.id, { x: 0, y: 0, name: page.name })
+  }
+  if (marked.length > 0) graph.deleteNode(imported.id)
 }
 
 /** The kit as a `.fig` file, as the gallery publishes it. */
