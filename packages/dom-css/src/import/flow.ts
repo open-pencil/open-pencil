@@ -429,7 +429,7 @@ export function applyFlowSizing(
 }
 
 /** Whether a box is out of the flow, placed by its own position rather than in the lines. */
-function isOutOfFlow(node: DesignNode): boolean {
+export function isOutOfFlow(node: DesignNode): boolean {
   if (node.type !== 'element') return false
   const position = pickStyle(mergedStyle(node), 'position')?.trim()
   return position === 'absolute' || position === 'fixed'
