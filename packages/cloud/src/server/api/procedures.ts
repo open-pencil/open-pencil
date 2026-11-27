@@ -4,6 +4,7 @@ import {
 } from '#cloud/server/comments/procedures'
 import { createCommunityProcedures } from '#cloud/server/community/procedures'
 import { createDocumentProcedures } from '#cloud/server/documents/procedures'
+import { createDocumentToolProcedures } from '#cloud/server/documents/tools/procedures'
 import { createDocumentVersionProcedures } from '#cloud/server/documents/versions/procedures'
 import {
   createPublicSharingProcedures,
@@ -20,6 +21,7 @@ import type { CloudAPIServices } from './router'
 export function createCloudAPIProcedures(services: CloudAPIServices) {
   return {
     documents: createDocumentProcedures(services.documents),
+    documentTools: createDocumentToolProcedures(services.documentTools),
     versions: createDocumentVersionProcedures(services.versions),
     comments: createCommentProcedures(services.comments),
     sharing: createSharingProcedures(services.sharing, services.collaboration),

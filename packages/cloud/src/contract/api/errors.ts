@@ -20,6 +20,7 @@ export const CLOUD_API_ERROR_STATUS = {
   already_member: 409,
   slug_conflict: 409,
   invalid_upload: 422,
+  wrong_document_kind: 422,
   invalid_enrollment_transition: 409,
   account_approved: 409,
   document_not_restorable: 409,

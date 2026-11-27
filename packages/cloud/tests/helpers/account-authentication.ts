@@ -3,7 +3,9 @@ import {
   createCloudApp,
   createBetterAuthAdapter,
   parseCloudServerConfig,
-  type AuthenticationEmailService
+  type AuthenticationEmailService,
+  type CloudAuthRuntimeOptions,
+  type CloudServices
 } from '#cloud/server'
 import { testClient } from 'hono/testing'
 
@@ -100,6 +102,10 @@ export async function createAccountAuthenticationFixture(
     onPasswordChanged?: () => void
     /** Account emails the test reads; the rest go nowhere. */
     email?: Partial<AuthenticationEmailService>
+    /** How the server fetches apps' client metadata documents (CIMD). */
+    fetchClientMetadata?: CloudAuthRuntimeOptions['fetchClientMetadata']
+    /** Runtime services the test stands in for, such as a relay running design tools. */
+    services?: Pick<CloudServices, 'callDocumentTool'>
   } = {}
 ) {
   const config = options.config ?? accountAuthenticationConfig
@@ -113,13 +119,15 @@ export async function createAccountAuthenticationFixture(
         options.onPasswordChanged?.()
       },
       ...options.email
-    }
+    },
+    fetchClientMetadata: options.fetchClientMetadata
   })
   const app = createCloudApp({
     config,
     database: runtime.database,
     auth,
-    objects: accountAuthenticationObjects()
+    objects: accountAuthenticationObjects(),
+    ...options.services
   })
   return { ...runtime, app, client: testClient(app) }
 }

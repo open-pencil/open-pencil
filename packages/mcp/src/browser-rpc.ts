@@ -3,6 +3,13 @@ import { randomUUID } from 'node:crypto'
 import * as v from 'valibot'
 import type { WebSocket } from 'ws'
 
+import {
+  automationRegisterSchema,
+  automationRequestSchema,
+  automationResponseSchema,
+  type AutomationRequest,
+  type AutomationResponse
+} from '@open-pencil/collab/automation'
 import { errorMessage, toError } from '@open-pencil/std/errors'
 
 import type { MCPAccess } from '#mcp/auth'
@@ -43,25 +50,13 @@ const browserEnvelopeSchema = v.pipe(
   )
 )
 
-const handshakeMessageSchema = v.looseObject({ token: v.optional(v.nullable(v.string())) })
-
-const requestMessageSchema = v.looseObject({
-  type: v.literal('request'),
-  id: v.pipe(v.string(), v.nonEmpty())
+/** A stdio bridge client's `auth`, which takes the same token as the app's `register`. */
+const handshakeMessageSchema = v.object({
+  ...automationRegisterSchema.entries,
+  type: v.picklist(['auth', 'register'])
 })
 
-const responseMessageSchema = v.looseObject({
-  type: v.literal('response'),
-  id: v.pipe(v.string(), v.nonEmpty()),
-  ok: v.optional(v.boolean()),
-  error: v.optional(v.string())
-})
-
-type BrowserMessage =
-  | v.InferOutput<typeof requestMessageSchema>
-  | v.InferOutput<typeof responseMessageSchema>
-
-function stripEnvelope(msg: BrowserMessage): Record<string, unknown> {
+function stripEnvelope(msg: AutomationRequest | AutomationResponse): Record<string, unknown> {
   const { type: _type, id: _id, ...body } = msg
   return body
 }
@@ -247,10 +242,7 @@ export function createBrowserRPCBridge({
    */
   const sendRPC = scopeRPC(sendUnscopedRPC, scope)
 
-  async function handleClientRequest(
-    ws: WebSocket,
-    msg: v.InferOutput<typeof requestMessageSchema>
-  ) {
+  async function handleClientRequest(ws: WebSocket, msg: AutomationRequest) {
     try {
       const result = await sendRPC(stripEnvelope(msg))
       // A call the scope refuses comes back as a result that says so, and keeps saying so here.
@@ -291,7 +283,7 @@ export function createBrowserRPCBridge({
     broadcastRegisterPrompt()
   }
 
-  function handleBrowserResponse(msg: v.InferOutput<typeof responseMessageSchema>, ws: WebSocket) {
+  function handleBrowserResponse(msg: AutomationResponse, ws: WebSocket) {
     if (!browserRegistered || browserWs !== ws) return
     const req = pending.get(msg.id)
     if (!req) return
@@ -347,12 +339,12 @@ export function createBrowserRPCBridge({
       ws.close()
       return
     }
-    const request = v.safeParse(requestMessageSchema, msg)
+    const request = v.safeParse(automationRequestSchema, msg)
     if (request.success) {
       void handleClientRequest(ws, request.output)
       return
     }
-    const response = v.safeParse(responseMessageSchema, msg)
+    const response = v.safeParse(automationResponseSchema, msg)
     if (response.success) handleBrowserResponse(response.output, ws)
   }
 

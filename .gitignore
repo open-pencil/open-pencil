@@ -93,6 +93,8 @@ packages/feedback/.dev.vars
 
 # OpenPencil Cloud local and build outputs
 packages/cloud/deploy/generated/
+# Written by its build from Core's tools (tools/generate/mcp-catalog).
+packages/cloud/src/server/mcp/design-tools.json
 packages/cloud/dist-standalone/
 dist-cloud/
 dist-metrics/
