@@ -16,6 +16,7 @@ import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { renderLeafWithEffects } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
+import { applyLayerMotion, heldBackByMotion } from './layer-motion'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import { withNoiseEffects } from './noise/render'
@@ -345,16 +346,8 @@ function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays)
   return (
     overlays.nodeEditState?.nodeId !== node.id &&
     !overlays.playIslands?.has(node.id) &&
-    overlays.layerMotion?.get(node.id)?.opacity !== 0
+    !heldBackByMotion(node, overlays)
   )
-}
-
-/** Moves the canvas to where a presentation draws an animating layer; gives its opacity. */
-function applyLayerMotion(canvas: Canvas, node: SceneNode, overlays: RenderOverlays): number {
-  const motion = overlays.layerMotion?.get(node.id)
-  if (!motion) return node.opacity
-  canvas.translate(motion.x, motion.y)
-  return node.opacity * motion.opacity
 }
 
 /**
