@@ -2,10 +2,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 
 import {
   EMAIL_LOCALES,
-  EMAIL_SAMPLE_URL,
   EMAIL_SAMPLES,
   renderTransactionalEmail,
-  renderWaitlistConfirmation,
   type EmailLocale,
   type TransactionalEmailKind
 } from '@open-pencil/cloud/email'
@@ -24,13 +22,8 @@ export default meta
 type Story = StoryObj<Meta<Args>>
 
 /** The sample email of one kind, rendered as Cloud sends it in the chosen language. */
-/** The sample of `kind`; `waitlist` picks the invitation letter to someone from the waitlist. */
-function sample(kind: TransactionalEmailKind, waitlist = false): Story {
-  const content = EMAIL_SAMPLES.find(
-    (email) =>
-      email.kind === kind &&
-      ('waitlist' in email.payload && email.payload.waitlist === true) === waitlist
-  )
+function sample(kind: TransactionalEmailKind): Story {
+  const content = EMAIL_SAMPLES.find((email) => email.kind === kind)
   if (!content) throw new Error(`No sample email of kind ${kind}`)
   return {
     render: (args: Args) => ({
@@ -56,17 +49,3 @@ export const NewSignIn = sample('new-sign-in')
 export const TwoStepChanged = sample('two-step-changed')
 export const DocumentReport = sample('document-report')
 export const StorageLimitReached = sample('storage-limit-reached')
-
-export const WaitlistConfirmation: Story = {
-  render: (args: Args) => ({
-    components: { EmailPreview },
-    setup: () => ({
-      render: () =>
-        renderWaitlistConfirmation(
-          { confirmURL: EMAIL_SAMPLE_URL, leaveURL: 'https://openpencil.dev/waitlist/leave' },
-          args.locale
-        )
-    }),
-    template: '<EmailPreview :render="render" />'
-  })
-}

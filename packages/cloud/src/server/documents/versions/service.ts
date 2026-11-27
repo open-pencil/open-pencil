@@ -22,6 +22,7 @@ import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { recordSave } from '#cloud/server/usage/activity'
 import type { Kysely, Transaction } from 'kysely'
 
 import { announceVersions, keepRevision } from './checkpoint'
@@ -393,6 +394,7 @@ export function createDocumentVersionService(
           parentRevisionId: locked.currentRevisionId,
           userId
         })
+        await recordSave(transaction, userId)
         await transaction
           .updateTable('document')
           .set({
@@ -474,6 +476,7 @@ export function createDocumentVersionService(
           parentRevisionId: null,
           userId
         })
+        await recordSave(transaction, userId)
         await transaction
           .updateTable('document')
           .set({ currentRevisionId: revisionId, version: 1 })

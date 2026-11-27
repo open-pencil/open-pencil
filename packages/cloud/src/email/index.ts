@@ -9,7 +9,7 @@ export {
   type EmailMessages
 } from './i18n'
 export { emailMessageDefaults } from './messages'
-export { renderTransactionalEmail, renderWaitlistConfirmation } from './render'
+export { renderTransactionalEmail } from './render'
 export { EMAIL_SAMPLE_URL, EMAIL_SAMPLES } from './samples'
 export { transactionalEmailContentSchema } from './schema'
 export type {

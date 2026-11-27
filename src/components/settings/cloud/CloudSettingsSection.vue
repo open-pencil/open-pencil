@@ -24,7 +24,6 @@ import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.
 import { useHeldContent } from '@/components/ui/overlay/held'
 
 import CloudSettingsPanel from './CloudSettingsPanel.vue'
-import CloudWaitlist from './CloudWaitlist.vue'
 import type { CloudServerEntry } from './types'
 
 /** The Cloud section of Settings: the saved servers with their live sessions, and their actions. */
@@ -121,7 +120,6 @@ async function remove() {
       @remove="askToRemove"
     >
       <template #campaign><CampaignNoteHost placement="settings-cloud" /></template>
-      <template #hosted><CloudWaitlist /></template>
     </CloudSettingsPanel>
     <AppConfirmationDialog
       :open="removing !== null"

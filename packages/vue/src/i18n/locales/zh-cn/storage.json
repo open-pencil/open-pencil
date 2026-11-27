@@ -15,19 +15,5 @@
   "bucket": "存储桶",
   "region": "区域",
   "accessKeyID": "访问密钥 ID",
-  "secretAccessKey": "机密访问密钥",
-  "cloudTitle": "OpenPencil Cloud",
-  "cloudDescription": "为你托管的团队工作区：实时同步、分享链接、团队库和托管 AI，无需配置存储桶。加入等候名单，开放时我们会发邮件通知你。",
-  "waitlistEmail": "电子邮件地址",
-  "waitlistPlaceholder": "you@example.com",
-  "waitlistJoin": "加入等候名单",
-  "waitlistConfirmHuman": "请确认你是真人",
-  "waitlistInvalid": "请输入有效的电子邮件地址。",
-  "waitlistJoined": "请查收邮件",
-  "waitlistJoinedDetail": "打开我们发送的链接以确认你的地址。我们只会就 OpenPencil Cloud 给你发邮件。",
-  "waitlistRefused": "无法确认你不是机器人。请重试。",
-  "waitlistLimited": "尝试次数过多。请一分钟后重试。",
-  "waitlistFailed": "无法连接等候名单。请检查网络连接后重试。",
-  "waitlistUnavailable": "无法在这里加入。请前往 openpencil.dev 加入。",
-  "waitlistOpenWebsite": "前往 openpencil.dev 加入"
+  "secretAccessKey": "机密访问密钥"
 }

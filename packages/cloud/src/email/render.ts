@@ -31,7 +31,6 @@ import PasswordChanged from './templates/PasswordChanged.vue'
 import PasswordReset from './templates/PasswordReset.vue'
 import StorageLimitReached from './templates/StorageLimitReached.vue'
 import TwoStepChanged from './templates/TwoStepChanged.vue'
-import WaitlistConfirmation from './templates/WaitlistConfirmation.vue'
 import WorkspaceInvitation from './templates/WorkspaceInvitation.vue'
 
 /** One kind of email: the component that draws it from its payload, and its subject line. */
@@ -169,13 +168,4 @@ export async function renderTransactionalEmail(
   locale: EmailLocale
 ): Promise<RenderedTransactionalEmail> {
   return renderKind(content.kind, content.payload, emailLocalization(locale))
-}
-
-/** The waitlist's confirmation email, which the feedback service sends rather than Cloud. */
-export async function renderWaitlistConfirmation(
-  links: { confirmURL: string; leaveURL: string },
-  locale: EmailLocale
-): Promise<RenderedTransactionalEmail> {
-  const localization = emailLocalization(locale)
-  return renderComponent(WaitlistConfirmation, links, localization.t.waitlistSubject, localization)
 }
