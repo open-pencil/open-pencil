@@ -188,4 +188,36 @@ describe('eval CLI', () => {
     expect(Math.min(width, height)).toBeGreaterThan(1)
     expect(width / height).toBeCloseTo(300 / 200, 2)
   })
+
+  test('saving a script’s edits leaves the layers it did not touch where they were', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-eval-untouched-'))
+    const geometry = `
+      const layers = figma.currentPage.findAll(() => true)
+      return layers.map((n) => [n.id, n.x, n.y, n.width, n.height].map((v) => typeof v === 'number' ? Math.round(v * 100) / 100 : v))
+    `
+    const Geometry = v.array(v.array(v.union([v.string(), v.number()])))
+    const read = async (file: string) => {
+      const result = await cli(['eval', file, '--json', '--code', geometry])
+      const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), Geometry), result.stdout)
+      if (!parsed.success) throw new Error(result.stderr)
+      return new Map(parsed.output.map(([id, ...rest]) => [String(id), rest.join(',')]))
+    }
+    const before = await read(join(FIXTURES, 'gold-preview.fig'))
+    const edits = {
+      tagged: `figma.root.setPluginData('note', 'kept')`,
+      // A frame holding the instance whose text is overridden.
+      faded: `figma.currentPage.findOne((n) => n.type === 'TEXT' && n.characters === 'Category').parent.parent.opacity = 0.5`
+    }
+    for (const [name, script] of Object.entries(edits)) {
+      const out = join(dir, `${name}.fig`)
+      const written = await cli(
+        ['eval', join(FIXTURES, 'gold-preview.fig'), '--stdin', '-o', out, '-q'],
+        script
+      )
+      expect(written.exitCode).toBe(0)
+      const after = await read(out)
+      const moved = [...before].filter(([id, box]) => after.get(id) !== box).map(([id]) => id)
+      expect({ name, moved }).toEqual({ name, moved: [] })
+    }
+  })
 })

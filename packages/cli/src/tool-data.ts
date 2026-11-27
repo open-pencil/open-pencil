@@ -52,6 +52,9 @@ export async function openHeadlessFigma(
   pageArgs: PageCLIArgs = {}
 ): Promise<{ graph: SceneGraph; figma: FigmaAPI }> {
   const requested = requestedPage(pageArgs)
+  // Pages lay out as they load: with the measurer in place, text in fonts not loaded yet is
+  // remembered, and `measureDocumentText` lays it out again in them.
+  await measureTextHeadlessly()
   const graph = await loadDocument(file)
   const pageId = requested ? requirePage(graph, requested).id : undefined
   if (pageId) populateDocumentPage(graph, pageId)

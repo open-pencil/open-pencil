@@ -249,4 +249,26 @@ describe('geometry writes after edits', () => {
     expect(graphOf(api).getNode(row.id)?.width).toBe(100)
     expect(row.width).toBe(40)
   })
+
+  test('renaming, locking, or tagging a layer leaves the layers around it where they are', () => {
+    const api = createAPI()
+    const row = hugRow(api)
+    const child = api.createRectangle()
+    child.resize(40, 20)
+    row.appendChild(child)
+    expect(child.x).toBe(0)
+    // A position as a file saved it, which this engine lays out differently, set as a page load does.
+    const graph = graphOf(api)
+    graph.withLayoutMutations(() =>
+      graph.applyDerivedLayoutDuring(() => graph.updateNode(child.id, { x: 5 }))
+    )
+
+    row.name = 'Row'
+    row.locked = true
+    row.setPluginData('note', 'kept')
+    expect(child.x).toBe(5)
+
+    row.itemSpacing = 4
+    expect(child.x).toBe(0)
+  })
 })

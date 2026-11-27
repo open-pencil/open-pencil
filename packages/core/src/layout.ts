@@ -1,5 +1,6 @@
 import { once } from 'es-toolkit'
 
+import { generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text/direction'
 import { computeLayout as computeBoxes, type LayoutNode } from '@open-pencil/taffy'
 
@@ -88,6 +89,37 @@ function resolveComputedLayoutDirection(
 
 export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
   computeSubtreeLayouts(graph, scopeId ?? graph.rootId, new Set())
+}
+
+/** Lays out `id` and the layers inside it, then each auto layout around it, which its size moves. */
+export function computeLayoutsAround(graph: SceneGraph, id: string): void {
+  const node = graph.getNode(id)
+  if (!node) return
+  computeAllLayouts(graph, id)
+  let parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  while (parent) {
+    if (parent.layoutMode !== 'NONE') computeLayout(graph, parent.id)
+    parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
+  }
+}
+
+/**
+ * Lays text out again once its fonts are prepared, since text whose fonts were not keeps the size
+ * it had. Layout measures text only in auto layout, so text that sizes itself is measured here,
+ * unless it keeps the glyphs its file saved, whose size is the file's; then the frames around it
+ * and the sticky note, shape, or connector it names are laid out.
+ */
+export function layOutPreparedText(
+  graph: SceneGraph,
+  id: string,
+  layOutAround: (id: string) => void = (nodeId) => computeLayoutsAround(graph, nodeId)
+): void {
+  const node = graph.getNode(id)
+  if (!node) return
+  if (!node.derivedTextGlyphs?.length) sizeAutoResizingText(graph, id)
+  layOutAround(id)
+  const owner = generatedFrameOwner(graph, node)
+  if (owner) layOutAround(owner.id)
 }
 
 export function computeSubtreeLayouts(

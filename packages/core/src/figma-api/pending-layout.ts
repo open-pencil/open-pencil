@@ -82,7 +82,7 @@ function layoutChain(graph: SceneGraph, id: string): string[] {
  */
 function editsReach(graph: SceneGraph, impact: SceneMutationImpact, node: SceneNode): boolean {
   const above = new Set(layoutChain(graph, node.id))
-  const edited = [...impact.changedNodeIds, ...impact.currentParentIds, ...impact.previousParentIds]
+  const edited = [...impact.layoutNodeIds, ...impact.currentParentIds, ...impact.previousParentIds]
   return edited.some((id) => layoutChain(graph, id).some((current) => above.has(current)))
 }
 
