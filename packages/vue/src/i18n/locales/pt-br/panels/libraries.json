@@ -59,5 +59,8 @@
   "storageLibraries": "Armazenamento",
   "storageNotConfigured": "O armazenamento não está configurado",
   "storageLibrariesUnavailable": "Este provedor de armazenamento não oferece suporte a bibliotecas",
-  "preferLibrary": "Preferir esta biblioteca"
+  "preferLibrary": "Preferir esta biblioteca",
+  "librarySyncing": "Sincronizando…",
+  "librarySyncFailed": "Falha na sincronização",
+  "retryLibrarySync": "Tentar sincronizar novamente"
 }

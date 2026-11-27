@@ -11,6 +11,8 @@ import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
+import { LibraryContentFailedError, LibraryContentSyncingError } from '@/app/libraries/errors'
+import { kickLibrarySync, librarySyncResolution, resumeLibrarySync } from '@/app/libraries/sync'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import {
   AppDialogFooter,
@@ -18,6 +20,7 @@ import {
   AppDialogRoot,
   useDialogUI
 } from '@/components/ui/dialog'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
@@ -34,8 +37,12 @@ const query = ref('')
 const publishing = ref(false)
 const loading = ref(false)
 const error = ref('')
+/** The baseline revision's mirror state: syncing while it pulls, failed once it parks. */
+const baselineState = ref<'syncing' | 'failed' | null>(null)
 const changes = ref<LibraryAssetChange[]>([])
 const selectedKeys = ref(new Set<string>())
+/** Serializes overlapping discoveries: only the latest `loadChanges` result may land. */
+let discoverySequence = 0
 const changeLabels = computed(() => ({
   added: libraryMessages.value.libraryChangeAdded,
   modified: libraryMessages.value.libraryChangeModified,
@@ -56,33 +63,91 @@ const selectionState = computed<boolean | 'indeterminate'>(() => {
   return selectedVisible === visibleKeys.length ? true : 'indeterminate'
 })
 
+async function loadChanges() {
+  // Discoveries overlap — the resolution watch, a retry, and a reopen can all be in
+  // flight — and resolve out of order, so only the latest call writes its result: an
+  // older answer landing last would reselect deselected assets and revert the baseline.
+  const discovery = ++discoverySequence
+  error.value = ''
+  loading.value = true
+  // A new discovery drops the previous selection: its answer repopulates the list, and a
+  // baseline miss leaves nothing selected behind the syncing or failed row.
+  changes.value = []
+  selectedKeys.value = new Set()
+  try {
+    const discovered = await service.discoverPublicationChanges(editor)
+    if (discovery !== discoverySequence) return
+    changes.value = discovered.changes
+    selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
+    baselineState.value = null
+  } catch (cause) {
+    if (discovery !== discoverySequence) return
+    // A baseline revision still pulling shows the syncing row, not an error: the engine
+    // lands it and the resolution watch retries the discovery. A baseline the engine has
+    // parked shows the failed row with a retry instead of the syncing row.
+    if (cause instanceof LibraryContentSyncingError) {
+      baselineState.value = 'syncing'
+    } else if (cause instanceof LibraryContentFailedError) {
+      baselineState.value = 'failed'
+    } else {
+      baselineState.value = null
+      error.value =
+        cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
+    }
+  } finally {
+    if (discovery === discoverySequence) loading.value = false
+  }
+}
+
 watch(publishLibraryDialogOpen, async (open) => {
   if (!open) return
+  // A discovery still in flight from the previous opening must not land in this one.
+  discoverySequence += 1
+  // Selective publishing diffs against the publication's baseline revision; ask the engine
+  // to mirror it while the change list computes.
+  void kickLibrarySync({ includePublication: true, probe: false })
   error.value = ''
+  baselineState.value = null
   query.value = ''
-  loading.value = true
   const existing = publication.value
   libraryId.value = existing?.libraryId ?? libraryId.value
   libraryName.value = existing?.name ?? editor.graph.getNode(editor.graph.rootId)?.name ?? ''
+  if (existing) {
+    await loadChanges()
+    return
+  }
+  loading.value = true
   try {
-    if (existing) {
-      const discovered = await service.discoverPublicationChanges(editor)
-      changes.value = discovered.changes
-    } else {
-      ensureLibraryAssetKeys(editor.graph)
-      changes.value = publishableLibraryAssets(editor.graph).map((asset) => ({
-        kind: 'added' as const,
-        asset: { ...asset, contentHash: '' }
-      }))
-    }
+    ensureLibraryAssetKeys(editor.graph)
+    changes.value = publishableLibraryAssets(editor.graph).map((asset) => ({
+      kind: 'added' as const,
+      asset: { ...asset, contentHash: '' }
+    }))
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
-  } catch (cause) {
-    error.value =
-      cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
   } finally {
     loading.value = false
   }
 })
+
+// A baseline revision that lands while the dialog waits retries the discovery. The watch
+// fires in the failed state too: a retry clears the marks, and an engine retry landing
+// resolves the baseline on its own.
+watch(librarySyncResolution, () => {
+  if (
+    (baselineState.value === 'syncing' || baselineState.value === 'failed') &&
+    publishLibraryDialogOpen.value
+  ) {
+    void loadChanges()
+  }
+})
+
+/**
+ * A failed baseline retry clears its mark and resumes the engine — permanent failures park
+ * the pump, which a bare kick would not wake — then the discovery reloads.
+ */
+function retrySync() {
+  void resumeLibrarySync().then(() => void loadChanges())
+}
 
 function toggleAll(value: boolean) {
   const visibleKeys = visibleChanges.value.map((change) => change.asset.key)
@@ -104,7 +169,8 @@ function toggleAsset(key: string, value: boolean) {
 async function publish() {
   const id = libraryId.value.trim()
   const name = libraryName.value.trim()
-  if (!id || !name || selectedKeys.value.size === 0 || publishing.value) return
+  if (!id || !name || selectedKeys.value.size === 0 || publishing.value || baselineState.value)
+    return
   publishing.value = true
   error.value = ''
   try {
@@ -177,6 +243,21 @@ async function publish() {
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ libraryMessages.loading }}
         </div>
+        <div
+          v-else-if="baselineState === 'syncing'"
+          class="px-3 py-6 text-center text-xs text-muted"
+        >
+          {{ libraryMessages.librarySyncing }}
+        </div>
+        <div v-else-if="baselineState === 'failed'" class="px-3 py-6">
+          <AppAlert tone="error" :heading="libraryMessages.librarySyncFailed">
+            <template #actions>
+              <AppButton variant="outline" size="xs" @click="retrySync">
+                {{ libraryMessages.retryLibrarySync }}
+              </AppButton>
+            </template>
+          </AppAlert>
+        </div>
         <AppPlaceholder
           v-else-if="changes.length === 0"
           :label="libraryMessages.noLibraryAssetChanges"
@@ -234,6 +315,7 @@ async function publish() {
         :disabled="
           publishing ||
           loading ||
+          !!baselineState ||
           selectedKeys.size === 0 ||
           !libraryId.trim() ||
           !libraryName.trim()

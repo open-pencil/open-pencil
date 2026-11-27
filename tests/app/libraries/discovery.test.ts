@@ -1,14 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  createLibraryRevision,
-  materializeLibraryAsset,
-  MemoryLibraryCatalog
-} from '@open-pencil/core/library'
+import { createLibraryRevision, materializeLibraryAsset } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session'
-import { LibraryService } from '@/app/libraries/service'
+
+import { newLocalCatalog, serviceOn } from '#tests/helpers/libraries/local-service'
 
 function source(width: number) {
   const graph = new SceneGraph()
@@ -28,7 +25,7 @@ describe('library update discovery', () => {
       graph: source(80),
       publishedAt: '2026-01-01T00:00:00Z'
     })
-    const catalog = new MemoryLibraryCatalog()
+    const catalog = newLocalCatalog()
     await catalog.publishRevision({
       libraryId: 'library',
       name: 'Library',
@@ -48,7 +45,7 @@ describe('library update discovery', () => {
       publishedAt: '2026-01-02T00:00:00Z'
     })
     const editor = createEditorStore(consumer)
-    const service = new LibraryService(catalog)
+    const service = serviceOn(catalog)
     await service.listLibraries()
     const before = [...consumer.getAllNodes()].map((node) => node.id)
 

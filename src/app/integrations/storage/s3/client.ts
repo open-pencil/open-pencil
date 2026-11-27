@@ -20,6 +20,7 @@ export type ListedObject = {
   key: string
   lastModified: string | null
   size: number | null
+  etag: string | null
 }
 
 export class S3HttpError extends Error {
@@ -279,7 +280,8 @@ export async function listObjects(
         all.push({
           key: object.Key,
           lastModified: object.LastModified?.toISOString() ?? null,
-          size: object.Size ?? null
+          size: object.Size ?? null,
+          etag: object.ETag ?? null
         })
       }
       if (++pages === LIST_PAGE_LIMIT && page.IsTruncated) {

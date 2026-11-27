@@ -59,5 +59,8 @@
   "storageLibraries": "存储",
   "storageNotConfigured": "存储未配置",
   "storageLibrariesUnavailable": "该存储提供商不支持库",
-  "preferLibrary": "优先使用此库"
+  "preferLibrary": "优先使用此库",
+  "librarySyncing": "正在同步…",
+  "librarySyncFailed": "同步失败",
+  "retryLibrarySync": "重试同步"
 }

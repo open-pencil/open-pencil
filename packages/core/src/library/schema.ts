@@ -86,6 +86,8 @@ export const librarySummarySchema = v.object({
   libraryId: v.string(),
   name: v.string(),
   latestRevisionId: v.string(),
+  // Optional so manifests written before summaries carried the chain link keep decoding.
+  previousRevisionId: v.optional(v.nullable(v.string())),
   publishedAt: v.string(),
   assetCount: v.pipe(v.number(), v.safeInteger(), v.minValue(0))
 }) satisfies v.GenericSchema<unknown, LibrarySummary>

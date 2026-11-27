@@ -21,6 +21,7 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { recordToolCompleted, type AIDiagnosticContext } from '@/app/diagnostics/events/ai'
 import type { EditorStore } from '@/app/editor/active-store'
 import { useLibraryService } from '@/app/libraries'
+import { registerNeedsProvider } from '@/app/libraries/sync'
 
 import { aiToolDefinitions } from './catalog'
 import { runEditorTool } from './runner'
@@ -52,8 +53,8 @@ export function createAITools(
   encodeModelImage?: AIAdapterOptions['encodeModelImage']
 ) {
   const libraryService = useLibraryService()
-  libraryService.bindEditor(store)
-  registerComponentCatalog(store.graph, libraryService)
+  registerNeedsProvider(store)
+  registerComponentCatalog(store.graph, libraryService.forEditor(store))
 
   return toolsToAI(
     aiToolDefinitions,

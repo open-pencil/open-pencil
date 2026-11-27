@@ -39,6 +39,11 @@ export const activeTabId = shallowRef('')
 
 export const activeTab = computed(() => tabsRef.value.find((t) => t.id === activeTabId.value))
 
+/** Every open document tab's store, reactive; consumers needing all stores (not just the active one) watch this. */
+export const documentTabStores = computed(() =>
+  tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
+)
+
 /** Whether the tab in front holds a document: Home and a New file tab have none to save. */
 export function showsDocument(): boolean {
   return activeTab.value?.kind === 'document'

@@ -1,13 +1,10 @@
-import * as v from 'valibot'
+import { limitAsync } from 'es-toolkit'
 
 import {
   COMPONENT_LIBRARY_SCHEMA_VERSION,
   createLibraryRevision,
-  deserializeLibraryRevision,
   encodeStoredLibraryRevision,
   MAX_LIBRARY_REVISION_BYTES,
-  storedLibraryLatestManifestSchema,
-  storedLibraryRevisionSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
 import type {
@@ -19,49 +16,29 @@ import type {
 } from '@open-pencil/core/library'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
+import {
+  latestKey,
+  LIBRARY_PREFIX,
+  parseLibraryKey,
+  revisionKey
+} from '@/app/integrations/storage/library-keys'
+import { LibraryContentInvalidError, LibraryRevisionMissingError } from '@/app/libraries/errors'
 
-const PREFIX = 'open-pencil/libraries'
-const textDecoder = new TextDecoder()
+import { decodeLatestManifest, decodeStoredRevision } from './decode'
+
+/** Manifests are small objects, so their reads are latency-bound and run wide. */
+export const MANIFEST_FETCH_CONCURRENCY = 16
+
 const textEncoder = new TextEncoder()
 
-function latestKey(libraryId: string): string {
-  return `${PREFIX}/${libraryId}/manifest.json`
-}
-
-function revisionKey(libraryId: string, revisionId: string): string {
-  return `${PREFIX}/${libraryId}/revisions/${revisionId}.json`
+/** A summary read and the etag of the manifest object it came from. */
+export interface LibrarySummaryValue {
+  summary: LibrarySummary | null
+  etag: string | null
 }
 
 function encodeRevision(revision: ComponentLibraryRevision): Uint8Array {
   return textEncoder.encode(JSON.stringify(encodeStoredLibraryRevision(revision)))
-}
-
-const revisionSchema = v.pipe(v.string(), v.parseJson(), storedLibraryRevisionSchema)
-
-const latestManifestSchema = v.pipe(v.string(), v.parseJson(), storedLibraryLatestManifestSchema)
-
-function decodeRevision(bytes: Uint8Array): ComponentLibraryRevision {
-  const parsed = v.safeParse(revisionSchema, textDecoder.decode(bytes))
-  if (!parsed.success)
-    throw new Error(`Invalid component library revision: ${v.summarize(parsed.issues)}`)
-  return deserializeLibraryRevision(parsed.output)
-}
-
-/** A manifest an earlier version wrote, whose revisions this one cannot read. */
-const earlierManifestSchema = v.pipe(
-  v.string(),
-  v.parseJson(),
-  v.object({ schemaVersion: v.pipe(v.number(), v.maxValue(COMPONENT_LIBRARY_SCHEMA_VERSION - 1)) })
-)
-
-/** The library a manifest points at, or `null` for one an earlier version published. */
-function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest | null {
-  const text = textDecoder.decode(bytes)
-  const parsed = v.safeParse(latestManifestSchema, text)
-  if (parsed.success) return parsed.output
-  // Such a library is left out until it is published again, which replaces it.
-  if (v.safeParse(earlierManifestSchema, text).success) return null
-  throw new Error('Invalid component library manifest')
 }
 
 export class StorageLibraryCatalog implements LibraryCatalog {
@@ -72,30 +49,61 @@ export class StorageLibraryCatalog implements LibraryCatalog {
   }
 
   async listLibraries(): Promise<LibrarySummary[]> {
-    const objects = await this.#objects.listObjects(`${PREFIX}/`)
-    const keys = objects.map((object) => object.key).filter((key) => key.endsWith('/manifest.json'))
-    const summaries: LibrarySummary[] = []
-    for (const key of keys) {
-      const bytes = await this.#objects.getObject(key)
-      const latest = bytes ? decodeLatest(bytes) : null
-      if (latest) summaries.push(latest.summary)
-    }
+    const listed = await this.#objects.listObjects(`${LIBRARY_PREFIX}/`)
+    const libraryIds = listed.flatMap(({ key }) => {
+      const parsed = parseLibraryKey(key)
+      return parsed?.kind === 'latest' ? [parsed.libraryId] : []
+    })
+    const read = limitAsync(
+      (libraryId: string) => this.getSummary(libraryId),
+      MANIFEST_FETCH_CONCURRENCY
+    )
+    const summaries = (await Promise.all(libraryIds.map((libraryId) => read(libraryId)))).filter(
+      (summary): summary is LibrarySummary => summary !== null
+    )
     return summaries.sort((left, right) => left.name.localeCompare(right.name))
+  }
+
+  /**
+   * The library's summary from its manifest, or `null` when there is none this version can
+   * use: no manifest, one an earlier schema wrote, an unreadable one, or one naming another
+   * library than the key it sits under. Such a library is left out until it is published
+   * again, which replaces it.
+   */
+  async getSummary(libraryId: string): Promise<LibrarySummary | null> {
+    return (await this.getSummaryValue(libraryId)).summary
+  }
+
+  /**
+   * `getSummary` together with the etag of the manifest object it was read from, so a
+   * caller mirroring the manifest can record the version of the content it actually
+   * cached — a listing fetched moments earlier may name an older etag. The etag is `null`
+   * when the store surfaces none.
+   */
+  async getSummaryValue(libraryId: string): Promise<LibrarySummaryValue> {
+    try {
+      const { summary, etag } = await this.#latestValue(libraryId)
+      return { summary: summary?.libraryId === libraryId ? summary : null, etag }
+    } catch (error) {
+      if (error instanceof LibraryContentInvalidError) return { summary: null, etag: null }
+      throw error
+    }
   }
 
   async getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision> {
     const resolvedRevisionId = revisionId ?? (await this.#latest(libraryId))?.latestRevisionId
-    if (!resolvedRevisionId) throw new Error(`Library not found: ${libraryId}`)
+    if (!resolvedRevisionId) throw new LibraryRevisionMissingError(libraryId)
     const bytes = await this.#objects.getObject(revisionKey(libraryId, resolvedRevisionId))
-    if (!bytes) throw new Error(`Library revision not found: ${libraryId}/${resolvedRevisionId}`)
-    if (bytes.byteLength > MAX_LIBRARY_REVISION_BYTES)
-      throw new Error('Component library revision exceeds size limit')
-    const revision = decodeRevision(bytes)
+    if (!bytes) throw new LibraryRevisionMissingError(libraryId, resolvedRevisionId)
+    if (bytes.byteLength > MAX_LIBRARY_REVISION_BYTES) {
+      throw new LibraryContentInvalidError('Component library revision exceeds size limit')
+    }
+    const revision = decodeStoredRevision(bytes)
     if (
       revision.manifest.libraryId !== libraryId ||
       revision.manifest.revisionId !== resolvedRevisionId
     ) {
-      throw new Error('Library revision identity mismatch')
+      throw new LibraryContentInvalidError('Library revision identity mismatch')
     }
     await validateLibraryRevision(revision)
     return revision
@@ -106,7 +114,20 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     const latestValue = this.#objects.getObjectValue
       ? await this.#objects.getObjectValue(manifestKey)
       : { bytes: await this.#objects.getObject(manifestKey), etag: null }
-    const latest = latestValue.bytes ? (decodeLatest(latestValue.bytes)?.summary ?? null) : null
+    // Only a manifest that decodes and names this library is a usable baseline: an unreadable
+    // or foreign one leaves the library republishable, which replaces it. The etag conditional
+    // write below stays the real optimistic lock either way.
+    let latest: LibrarySummary | null = null
+    if (latestValue.bytes) {
+      try {
+        const decoded = decodeLatestManifest(latestValue.bytes)
+        if (decoded && decoded.summary.libraryId === input.libraryId) {
+          latest = decoded.summary
+        }
+      } catch (error) {
+        if (!(error instanceof LibraryContentInvalidError)) throw error
+      }
+    }
     if ((input.previousRevisionId ?? null) !== (latest?.latestRevisionId ?? null)) {
       throw new Error('Library revision conflict: latest revision has changed')
     }
@@ -126,6 +147,7 @@ export class StorageLibraryCatalog implements LibraryCatalog {
       libraryId: manifest.libraryId,
       name: manifest.name,
       latestRevisionId: manifest.revisionId,
+      previousRevisionId: manifest.previousRevisionId,
       publishedAt: manifest.publishedAt,
       assetCount: manifest.assets.length
     }
@@ -144,7 +166,16 @@ export class StorageLibraryCatalog implements LibraryCatalog {
   }
 
   async #latest(libraryId: string): Promise<LibrarySummary | null> {
-    const bytes = await this.#objects.getObject(latestKey(libraryId))
-    return bytes ? (decodeLatest(bytes)?.summary ?? null) : null
+    return (await this.#latestValue(libraryId)).summary
+  }
+
+  async #latestValue(libraryId: string): Promise<LibrarySummaryValue> {
+    const value = this.#objects.getObjectValue
+      ? await this.#objects.getObjectValue(latestKey(libraryId))
+      : { bytes: await this.#objects.getObject(latestKey(libraryId)), etag: null }
+    return {
+      summary: value.bytes ? (decodeLatestManifest(value.bytes)?.summary ?? null) : null,
+      etag: value.bytes ? value.etag : null
+    }
   }
 }

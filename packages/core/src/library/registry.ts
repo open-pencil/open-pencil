@@ -24,6 +24,7 @@ export class MemoryLibraryCatalog implements LibraryCatalog {
               libraryId,
               name: revision.manifest.name,
               latestRevisionId: revisionId,
+              previousRevisionId: revision.manifest.previousRevisionId,
               publishedAt: revision.manifest.publishedAt,
               assetCount: revision.manifest.assets.length
             }

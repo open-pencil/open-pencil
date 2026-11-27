@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
+import { createS3StorageAdapter } from '@/app/integrations/storage/s3/adapter'
 import {
   S3HttpError,
   getObject,
@@ -59,17 +60,38 @@ describe('S3 client', () => {
     respond = (request) =>
       new URL(request.url).searchParams.get('continuation-token') === 'a&b'
         ? xml(
-            `<ListBucketResult><Contents><Key>second.fig</Key><Size>2</Size></Contents><IsTruncated>false</IsTruncated></ListBucketResult>`
+            `<ListBucketResult><Contents><Key>second.fig</Key><ETag>"etag-2"</ETag><Size>2</Size></Contents><IsTruncated>false</IsTruncated></ListBucketResult>`
           )
         : xml(
-            `<ListBucketResult><Contents><Key>first.fig</Key><LastModified>2026-01-02T03:04:05.000Z</LastModified><Size>1</Size></Contents><IsTruncated>true</IsTruncated><NextContinuationToken>a&amp;b</NextContinuationToken></ListBucketResult>`
+            `<ListBucketResult><Contents><Key>first.fig</Key><ETag>"etag-1"</ETag><LastModified>2026-01-02T03:04:05.000Z</LastModified><Size>1</Size></Contents><IsTruncated>true</IsTruncated><NextContinuationToken>a&amp;b</NextContinuationToken></ListBucketResult>`
           )
 
     expect(await listObjects(config, 'open_pencil_storage/')).toEqual([
-      { key: 'first.fig', lastModified: '2026-01-02T03:04:05.000Z', size: 1 },
-      { key: 'second.fig', lastModified: null, size: 2 }
+      { key: 'first.fig', lastModified: '2026-01-02T03:04:05.000Z', size: 1, etag: '"etag-1"' },
+      { key: 'second.fig', lastModified: null, size: 2, etag: '"etag-2"' }
     ])
     expect(new URL(requests[0]?.url ?? '').searchParams.get('prefix')).toBe('open_pencil_storage/')
+  })
+
+  test('libraryObjects surfaces listing etags through the adapter', async () => {
+    const runtime = {
+      preferences: {
+        endpoint: config.endpoint,
+        bucket: config.bucket,
+        region: config.region ?? 'auto'
+      },
+      resolveCredential: async () => 'resolved',
+      profileId: 'default'
+    }
+    const adapter = createS3StorageAdapter(runtime)
+    respond = () =>
+      xml(
+        `<ListBucketResult><Contents><Key>open-pencil/libraries/lib/manifest.json</Key><ETag>"m-1"</ETag><Size>9</Size></Contents><IsTruncated>false</IsTruncated></ListBucketResult>`
+      )
+
+    expect(await adapter.libraryObjects?.listObjects('open-pencil/libraries/')).toEqual([
+      { key: 'open-pencil/libraries/lib/manifest.json', size: 9, etag: '"m-1"' }
+    ])
   })
 
   test('treats missing objects as absent', async () => {

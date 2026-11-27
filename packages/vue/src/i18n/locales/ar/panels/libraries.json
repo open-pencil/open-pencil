@@ -59,5 +59,8 @@
   "storageLibraries": "التخزين",
   "storageNotConfigured": "لم يُهيّأ التخزين",
   "storageLibrariesUnavailable": "لا يدعم مزوّد التخزين هذا المكتبات",
-  "preferLibrary": "تفضيل هذه المكتبة"
+  "preferLibrary": "تفضيل هذه المكتبة",
+  "librarySyncing": "جارٍ المزامنة…",
+  "librarySyncFailed": "فشلت المزامنة",
+  "retryLibrarySync": "إعادة محاولة المزامنة"
 }

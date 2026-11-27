@@ -1,0 +1,2 @@
+- `summarizeLibraryUpdate` now takes the two manifests it compares (`current`, `latest`) instead of the broader input it had before; the service computes shared assets itself.
+- `ComponentCatalog.insertComponent` resolves with `{ id, componentId, revisionId }` — callers get the revision the instance materialized from.

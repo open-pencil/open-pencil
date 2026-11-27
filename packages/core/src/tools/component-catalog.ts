@@ -33,7 +33,9 @@ export interface ComponentCatalog {
     libraryId?: string
     enabledOnly?: boolean
   }): Promise<ComponentCatalogLibraryAsset[]>
-  insertComponent(input: ComponentCatalogInsertInput): Promise<{ id: string; componentId: string }>
+  insertComponent(
+    input: ComponentCatalogInsertInput
+  ): Promise<{ id: string; componentId: string; revisionId: string }>
 }
 
 const catalogs = new WeakMap<object, ComponentCatalog>()

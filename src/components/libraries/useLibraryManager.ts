@@ -1,3 +1,4 @@
+import { watchDebounced } from '@vueuse/core'
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
 import { maxOf } from '@open-pencil/std/arrays'
@@ -5,17 +6,20 @@ import { errorMessage } from '@open-pencil/std/errors'
 
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
-import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
+import { storagePreferencesComplete } from '@/app/integrations/storage'
 import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
+import { readLibraryPriority, type LibraryService } from '@/app/libraries'
 import {
-  readLibraryCatalogSource,
-  readLibraryPriority,
-  StorageLibraryCatalog,
-  type LibraryService
-} from '@/app/libraries'
+  libraryResolutionKey,
+  librarySyncResolution,
+  resumeLibrarySync
+} from '@/app/libraries/sync'
 import type { LibraryAssetUpdateGroup } from '@/app/libraries/updates/groups'
 import { scopeLibraryUpdateGroups } from '@/app/libraries/updates/groups'
 import { toast } from '@/app/shell/ui'
+
+/** Resolution rows flip in bursts during a pull; one refresh per settle. */
+const RESOLUTION_REFRESH_DEBOUNCE_MS = 300
 
 export function useLibraryManager(
   open: Ref<boolean>,
@@ -84,9 +88,7 @@ export function useLibraryManager(
       else {
         const providerId = activeStorageProviderID.value
         if (!storagePreferencesComplete(providerId)) throw new Error('Storage is not configured')
-        const objects = createActiveStorageAdapter(providerId).libraryObjects
-        if (!objects) throw new Error('Storage libraries are unavailable')
-        service.useStorageCatalog(new StorageLibraryCatalog(objects))
+        await service.useStorageCatalog()
       }
       await refresh()
     })
@@ -150,6 +152,16 @@ export function useLibraryManager(
     { immediate: true }
   )
 
+  // A pull landing or failing changes what the updates tab lists while the manager is
+  // open; `refresh()`'s request guard keeps a stale read from covering a newer one.
+  watchDebounced(
+    librarySyncResolution,
+    () => {
+      if (open.value) void refresh()
+    },
+    { debounce: RESOLUTION_REFRESH_DEBOUNCE_MS }
+  )
+
   // A collaborator's change to the document's libraries shows while the manager is open.
   onScopeDispose(
     editor.onEditorEvent('document:libraries-changed', () => {
@@ -157,8 +169,26 @@ export function useLibraryManager(
     })
   )
 
-  const source = readLibraryCatalogSource()
-  if (source === 'storage' && !open.value) void setSource('storage')
+  /**
+   * The manager's browse rows: each summary with the document's binding resolved — enabled
+   * state, the revision the row tracks (the binding's pin when enabled, else the summary's
+   * latest), and the sync engine's state for that revision, `null` once mirrored.
+   */
+  const rows = computed(() =>
+    service.summaries.value.map((library) => {
+      const binding = editor.graph.enabledLibraries.get(library.libraryId)
+      const enabled = binding?.enabled ?? false
+      const revisionId = enabled && binding ? binding.revisionId : library.latestRevisionId
+      const resolution =
+        librarySyncResolution.value.get(libraryResolutionKey(library.libraryId, revisionId)) ?? null
+      return { library, enabled, revisionId, resolution }
+    })
+  )
+
+  /** Retries every failed row: clears the marks and re-arms the parked engine. */
+  function retryLibrarySync(): void {
+    void resumeLibrarySync()
+  }
 
   return {
     section,
@@ -172,6 +202,8 @@ export function useLibraryManager(
     toggleLibrary,
     preferLibrary,
     updateAsset,
-    updateAll
+    updateAll,
+    rows,
+    retryLibrarySync
   }
 }

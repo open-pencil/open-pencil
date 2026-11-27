@@ -2,14 +2,15 @@ import { describe, expect, test } from 'bun:test'
 
 import { until } from '@vueuse/core'
 
-import { materializeLibraryAsset, MemoryLibraryCatalog } from '@open-pencil/core/library'
+import { materializeLibraryAsset } from '@open-pencil/core/library'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { createDeferred } from '@open-pencil/std/async'
 
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
-import { LibraryService } from '@/app/libraries/service'
+
+import { newLocalCatalog, serviceOn } from '#tests/helpers/libraries/local-service'
 
 function source(width: number, label: string) {
   const graph = new SceneGraph()
@@ -49,7 +50,7 @@ async function updatable(
   revise: (library: SceneGraph, button: SceneNode) => void = widen,
   library = source(80, 'Old')
 ) {
-  const catalog = new MemoryLibraryCatalog()
+  const catalog = newLocalCatalog()
   const first = await catalog.publishRevision({
     libraryId: 'library',
     name: 'Library',
@@ -74,7 +75,7 @@ async function updatable(
   graph.updateNode(label.id, { text: 'Hello' })
   recordInstanceOverride(graph, label.id, ['text'])
   const editor = createEditorStore(graph)
-  const service = new LibraryService(catalog)
+  const service = serviceOn(catalog)
   await service.listLibraries()
   await service.refresh(editor)
   return {
@@ -215,7 +216,7 @@ describe('library service updates', () => {
       name: 'Badge',
       componentKey: 'badge'
     })
-    const catalog = new MemoryLibraryCatalog()
+    const catalog = newLocalCatalog()
     const first = await catalog.publishRevision({
       libraryId: 'library',
       name: 'Library',
@@ -236,7 +237,7 @@ describe('library service updates', () => {
       graph.createInstance(componentId, graph.getPages()[0].id)
     }
     const editor = createEditorStore(graph)
-    const service = new LibraryService(catalog)
+    const service = serviceOn(catalog)
     await service.listLibraries()
     await service.refresh(editor)
 
@@ -253,7 +254,7 @@ describe('library service updates', () => {
     const a = library.createNode('COMPONENT', page, { name: 'A', componentKey: 'a' })
     const b = library.createNode('COMPONENT', page, { name: 'B', componentKey: 'b' })
     const nested = library.createInstance(b.id, a.id)
-    const catalog = new MemoryLibraryCatalog()
+    const catalog = newLocalCatalog()
     const first = await catalog.publishRevision({
       libraryId: 'library',
       name: 'Library',
@@ -274,7 +275,7 @@ describe('library service updates', () => {
       graph.createInstance(componentId, graph.getPages()[0].id)
     }
     const editor = createEditorStore(graph)
-    const service = new LibraryService(catalog)
+    const service = serviceOn(catalog)
     await service.listLibraries()
     await service.refresh(editor)
     const state = () => ({
@@ -323,7 +324,7 @@ test('a read of the libraries that finishes after a newer one leaves the newer o
     if (++reads === 1) await held.promise
     return listLibraries()
   }
-  const service = new LibraryService(catalog)
+  const service = serviceOn(catalog)
   const other = createEditorStore(new SceneGraph())
 
   const stale = service.refresh(editor)

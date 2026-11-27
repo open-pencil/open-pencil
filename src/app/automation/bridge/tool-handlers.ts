@@ -15,6 +15,7 @@ import {
 import { limitToSelection } from '@/app/automation/bridge/selection-scope'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { useLibraryService } from '@/app/libraries'
+import { registerNeedsProvider } from '@/app/libraries/sync'
 
 type FigmaFactory = (
   store: AutomationTarget['store'],
@@ -75,8 +76,8 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     if (!def) throw new Error(`Unknown tool: ${toolName}`)
     const store = target.store
     const libraryService = useLibraryService()
-    libraryService.bindEditor(store)
-    registerComponentCatalog(store.graph, libraryService)
+    registerNeedsProvider(store)
+    registerComponentCatalog(store.graph, libraryService.forEditor(store))
     const figma = makeFigma(store, target.pageId, signal)
     const result = await runEditorTool({
       store,

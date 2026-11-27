@@ -1,6 +1,6 @@
 import {
   libraryIdentityForComponent,
-  type ComponentLibraryRevision,
+  type ComponentLibraryManifest,
   type LibrarySummary
 } from '@open-pencil/core/library'
 
@@ -15,21 +15,15 @@ export interface LibraryAssetUpdateGroup {
   allPagesCount: number
 }
 
-/** Reads a library revision, or the latest one when `revisionId` is left out. */
-export type LibraryRevisionReader = (
+/**
+ * Reads a revision's manifest, or the latest one's when `revisionId` is left out. `null` means
+ * the revision is unavailable right now — still syncing or parked failed — so its library
+ * contributes no update groups this pass.
+ */
+export type LibraryManifestReader = (
   libraryId: string,
   revisionId?: string
-) => Promise<ComponentLibraryRevision>
-
-function pageIdForNode(editor: EditorStore, nodeId: string): string | null {
-  let node = editor.graph.getNode(nodeId)
-  while (node?.parentId) {
-    const parent = editor.graph.getNode(node.parentId)
-    if (parent?.type === 'CANVAS') return parent.id
-    node = parent
-  }
-  return null
-}
+) => Promise<ComponentLibraryManifest | null>
 
 export function scopeLibraryUpdateGroups(
   editor: EditorStore,
@@ -39,7 +33,7 @@ export function scopeLibraryUpdateGroups(
   if (allPages) return groups
   return groups.flatMap((group) => {
     const instanceIds = group.instanceIds.filter(
-      (instanceId) => pageIdForNode(editor, instanceId) === editor.state.currentPageId
+      (instanceId) => editor.graph.pageOf(instanceId) === editor.state.currentPageId
     )
     return instanceIds.length > 0
       ? [{ ...group, instanceIds, currentPageCount: instanceIds.length }]
@@ -54,13 +48,16 @@ export function scopeLibraryUpdateGroups(
 export async function collectLibraryUpdateGroups(
   editor: EditorStore,
   summaries: readonly LibrarySummary[],
-  getRevision: LibraryRevisionReader
+  getManifest: LibraryManifestReader
 ): Promise<LibraryAssetUpdateGroup[]> {
   const groups: LibraryAssetUpdateGroup[] = []
   for (const summary of summaries) {
-    const latest = await getRevision(summary.libraryId, summary.latestRevisionId)
-    const assets = new Map(latest.manifest.assets.map((asset) => [asset.key, asset]))
-    const previousAssetsByRevision = new Map<string, Map<string, string>>()
+    const latest = await getManifest(summary.libraryId, summary.latestRevisionId)
+    if (!latest) continue
+    const assets = new Map(latest.assets.map((asset) => [asset.key, asset]))
+    // `null` caches a revision whose manifest could not be read, so instances sharing it cost
+    // one read per pass; `has` tells "not read yet" from "read, unavailable".
+    const previousAssetsByRevision = new Map<string, Map<string, string> | null>()
     const instancesByAsset = new Map<string, string[]>()
     for (const node of editor.graph.getAllNodes()) {
       if (node.type !== 'INSTANCE' || !node.componentId) continue
@@ -70,14 +67,15 @@ export async function collectLibraryUpdateGroups(
       const { assetKey } = identity
       const latestAsset = assets.get(assetKey)
       if (!latestAsset) continue
-      let previousAssets = previousAssetsByRevision.get(identity.revisionId)
-      if (!previousAssets) {
-        const previous = await getRevision(summary.libraryId, identity.revisionId)
-        previousAssets = new Map(
-          previous.manifest.assets.map((asset) => [asset.key, asset.contentHash])
+      if (!previousAssetsByRevision.has(identity.revisionId)) {
+        const previous = await getManifest(summary.libraryId, identity.revisionId)
+        previousAssetsByRevision.set(
+          identity.revisionId,
+          previous ? new Map(previous.assets.map((asset) => [asset.key, asset.contentHash])) : null
         )
-        previousAssetsByRevision.set(identity.revisionId, previousAssets)
       }
+      const previousAssets = previousAssetsByRevision.get(identity.revisionId)
+      if (!previousAssets) continue
       if (previousAssets.get(assetKey) === latestAsset.contentHash) continue
       const ids = instancesByAsset.get(assetKey) ?? []
       ids.push(node.id)
