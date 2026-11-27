@@ -1,0 +1,1 @@
+- The HTML import engine downloads a smaller WebAssembly module: 6.0 MB instead of 7.4 MB, 2.3 MB gzipped (#2402).
