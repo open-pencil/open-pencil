@@ -92,9 +92,7 @@ describe('wheel steps', () => {
   })
 
   test('zooms a Ctrl+wheel pinch by 2^(-deltaY / 50) on every platform', () => {
-    expect(zoomScale(createWheelSteps('mac')(event(10, { ctrlKey: true })))).toBeCloseTo(
-      2 ** (-10 / 50)
-    )
+    expect(zoomScale(createWheelSteps('mac')(event(50, { ctrlKey: true })))).toBeCloseTo(0.5)
     expect(zoomScale(createWheelSteps('windows')(event(-4.5, { ctrlKey: true })))).toBeCloseTo(
       2 ** (4.5 / 50)
     )
@@ -103,13 +101,14 @@ describe('wheel steps', () => {
   test('zooms a Meta+wheel turn more gently and limits one event to 10x', () => {
     const step = createWheelSteps('mac')
     expect(zoomScale(step(event(10, { metaKey: true })))).toBeCloseTo(Math.exp(-0.05))
-    expect(zoomScale(step(event(1000, { metaKey: true })))).toBeCloseTo(0.1)
+    expect(zoomScale(step(event(1000, { ctrlKey: true })))).toBeCloseTo(0.1)
   })
 
   test('scales each zoom by the zoom speed and still limits one event to 10x', () => {
     let speed = 0.25
     const step = createWheelSteps('other', () => speed)
-    expect(zoomScale(step(event(20, { ctrlKey: true })))).toBeCloseTo(2 ** (-0.25 * 0.4))
+    // A pinch with deltaY 20.5 zooms by 2^(-20.5 / 50) at full speed.
+    expect(zoomScale(step(event(20.5, { ctrlKey: true })))).toBeCloseTo(2 ** (-0.25 * 0.41))
     expect(zoomScale(step(event(10, { metaKey: true })))).toBeCloseTo(Math.exp(-0.0125))
     speed = 2
     expect(zoomScale(step(event(-1000, { metaKey: true })))).toBeCloseTo(10)
@@ -139,34 +138,40 @@ describe('wheel steps', () => {
     expect(zoomScale(step(notch(0, { ctrlKey: true })))).toBeCloseTo(Math.exp(-0.04))
   })
 
-  test('zooms a Ctrl+wheel notch outside Windows like a mouse wheel zoom', () => {
+  test('uses the WebKitGTK tick rather than the pixel delta for Ctrl+wheel zoom', () => {
+    const step = createWheelSteps('webkitgtk')
+    const down = event(72.0999984741211, { ctrlKey: true, wheelDeltaY: -84 })
+    const up = { ...down, deltaY: -down.deltaY, wheelDeltaY: 84, timeStamp: 20 }
+    expect(zoomScale(step(down))).toBeCloseTo(0.9724, 4)
+    expect(zoomScale(step(up))).toBeCloseTo(1.0284, 4)
+    // A notch re-dispatched by a canvas overlay carries ticks derived from its pixel delta.
+    expect(zoomScale(step({ ...up, wheelDeltaY: 72, timeStamp: 100 }))).toBeCloseTo(1.0243, 4)
+  })
+
+  test('keeps plain WebKitGTK wheel panning unchanged', () => {
+    expect(panY(createWheelSteps('webkitgtk')(event(40, { wheelDeltaY: -120 })))).toBe(80)
+  })
+
+  test('zooms by wheelDelta notches for whole-pixel Ctrl+wheel events on Linux', () => {
     const step = createWheelSteps('other')
-    // WebKitGTK reports a notch as 72.1 px; Chromium and Firefox on Linux as 120 px or 3 lines.
-    const webkitGtk = event(72.0999984741211, { ctrlKey: true, wheelDeltaY: -84 })
-    expect(zoomScale(step(webkitGtk))).toBeCloseTo(Math.exp(-0.04))
-    expect(zoomScale(step(event(-120, { ctrlKey: true, timeStamp: 100 })))).toBeCloseTo(
-      Math.exp(0.04)
-    )
-    expect(zoomScale(step(event(3, { ctrlKey: true, deltaMode: 1, timeStamp: 200 })))).toBeCloseTo(
+    // One notch in Chromium (120 px) and Firefox (138 px); a fast spin merged into one event.
+    expect(zoomScale(step(event(120, { ctrlKey: true, wheelDeltaY: -120 })))).toBeCloseTo(
       Math.exp(-0.04)
     )
+    const firefox = event(-138, { ctrlKey: true, wheelDeltaY: 120, timeStamp: 100 })
+    expect(zoomScale(step(firefox))).toBeCloseTo(Math.exp(0.04))
+    const spin = event(600, { ctrlKey: true, wheelDeltaY: -600, timeStamp: 200 })
+    expect(zoomScale(step(spin))).toBeCloseTo(Math.exp(-0.2))
+    const lines = event(3, { ctrlKey: true, deltaMode: 1, timeStamp: 300 })
+    expect(zoomScale(step(lines))).toBeCloseTo(Math.exp(-0.04))
   })
 
-  test('speeds up Ctrl+wheel notches outside Windows when they come within 50 ms', () => {
-    const step = createWheelSteps('other')
-    expect(zoomScale(step(event(120, { ctrlKey: true })))).toBeCloseTo(Math.exp(-0.04))
-    expect(zoomScale(step(event(120, { ctrlKey: true, timeStamp: 20 })))).toBeCloseTo(
-      Math.exp(-0.1)
-    )
-  })
-
-  test('keeps the fastest trackpad pinch on the pinch curve', () => {
-    // The largest per-event deltaY in a fast Chromium trackpad pinch at 120 Hz.
-    const fastest = 24.818147659301758
-    for (const platform of ['mac', 'windows', 'other'] as const) {
+  test('keeps pinches merged on a busy page on the pinch curve', () => {
+    // A Chromium pinch is fractional and always reports wheelDelta 120, even merged to 142 px.
+    for (const platform of ['mac', 'other'] as const) {
       const step = createWheelSteps(platform)
-      expect(zoomScale(step(event(fastest, { ctrlKey: true })))).toBeCloseTo(2 ** (-fastest / 50))
-      expect(zoomScale(step(event(-fastest, { ctrlKey: true })))).toBeCloseTo(2 ** (fastest / 50))
+      const merged = event(142.0066375732422, { ctrlKey: true, wheelDeltaY: -120 })
+      expect(zoomScale(step(merged))).toBeCloseTo(2 ** (-142.0066375732422 / 50))
     }
   })
 
@@ -183,13 +188,8 @@ describe('wheel steps', () => {
   })
 
   test('zooms a WebKit pinch as far as the same pinch zooms in Chromium', () => {
-    // Chromium reports a pinch that doubles the finger spread as Ctrl+wheel events whose deltaY
-    // add up to -100 ln 2.
-    const step = createWheelSteps('mac')
-    let chromium = 1
-    for (let index = 0; index < 10; index++) {
-      chromium *= zoomScale(step(event(-10 * Math.LN2, { ctrlKey: true, timeStamp: index * 8 })))
-    }
+    // Chromium reports a pinch that doubles the finger spread as Ctrl+wheel with -100 ln 2.
+    const chromium = zoomScale(createWheelSteps('mac')(event(-100 * Math.LN2, { ctrlKey: true })))
     expect(chromium).toBeCloseTo(2.61, 2)
     expect(2 ** PINCH_SCALE_EXPONENT).toBeCloseTo(chromium)
   })

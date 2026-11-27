@@ -22,7 +22,7 @@ const WHEEL_ZOOM_PER_DELTA = 0.005
 const MAX_ZOOM_STEP = Math.log(10)
 
 /*
- * Windows reports each mouse wheel notch as wheelDelta 120. Figma moves 8 units per notch and
+ * One wheel tick is 120 legacy wheelDelta units. Figma moves 8 units per notch and
  * multiplies the step by 2.5 for each notch that follows within 50 ms in the same direction, up
  * to 120 units, or 40 while zooming, so a slow turn moves 16 px and a fast spin speeds up.
  */
@@ -33,13 +33,6 @@ const NOTCH_ACCELERATION = 2.5
 const NOTCH_ACCELERATION_WINDOW_MS = 50
 const MAX_NOTCH_PAN = 120
 const MAX_NOTCH_ZOOM = 40
-
-/*
- * Outside Windows a Ctrl+wheel notch arrives as one large pixel delta: 72 in WebKitGTK, 120 in
- * Chromium and Firefox on Linux. The fastest Chromium trackpad pinch stays near 25 per event, so
- * a Ctrl+wheel delta of at least 50, or one in lines or pages, is a notch and not a pinch.
- */
-const MIN_CTRL_WHEEL_NOTCH = 50
 
 /**
  * Chromium encodes a pinch as Ctrl+wheel with deltaY = -100 ln(scale), while WebKit reports the
@@ -60,19 +53,28 @@ type WheelAccum = {
 type WheelPanInput = Pick<WheelEvent, 'deltaX' | 'deltaY' | 'deltaMode' | 'shiftKey'>
 type WheelModifierInput = Pick<WheelEvent, 'ctrlKey' | 'metaKey'>
 
-/** The wheel event fields navigation reads; `wheelDeltaX/Y` are Chromium's legacy notch fields. */
+/** The wheel event fields navigation reads, including the engines' legacy notch fields. */
 export type WheelInput = WheelPanInput &
   WheelModifierInput &
   Pick<WheelEvent, 'timeStamp'> & { wheelDeltaX?: number; wheelDeltaY?: number }
 
 export type WheelPanDelta = { dx: number; dy: number }
-export type WheelPlatform = 'mac' | 'windows' | 'other'
+export type WheelPlatform = 'mac' | 'windows' | 'webkitgtk' | 'other'
 export type WheelStep = { kind: 'pan'; dx: number; dy: number } | { kind: 'zoom'; scale: number }
 
 export function currentWheelPlatform(): WheelPlatform {
   if (typeof navigator === 'undefined') return 'other'
   if (/Mac|iPhone|iPad|iPod/.test(navigator.platform)) return 'mac'
-  return /Win/.test(navigator.platform) ? 'windows' : 'other'
+  if (/Win/.test(navigator.platform)) return 'windows'
+  const { platform, userAgent } = navigator
+  if (
+    /Linux/.test(platform) &&
+    /AppleWebKit\//.test(userAgent) &&
+    !/Chrom(?:e|ium)\//.test(userAgent)
+  ) {
+    return 'webkitgtk'
+  }
+  return 'other'
 }
 
 function normalizedWheelDelta(event: WheelPanInput): WheelPanDelta {
@@ -117,23 +119,26 @@ function windowsNotches(event: WheelInput): WheelPanDelta | null {
   return { dx: notches.dx / WHEEL_NOTCH, dy: notches.dy / WHEEL_NOTCH }
 }
 
-function wholeNotches(delta: number): number {
-  if (delta === 0) return 0
-  return Math.sign(delta) * Math.max(1, Math.round(Math.abs(delta) / WHEEL_NOTCH))
+/** WebKitGTK exposes wheel ticks separately from pixel distance, including fractional ticks. */
+function webkitGtkNotches(event: WheelInput): WheelPanDelta | null {
+  const x = event.wheelDeltaX ?? 0
+  const y = event.wheelDeltaY ?? 0
+  if (!x && !y) return null
+  return { dx: -x / WHEEL_NOTCH, dy: -y / WHEEL_NOTCH }
 }
 
-/** Whole wheel notches, when this Ctrl+wheel event is a mouse wheel notch rather than a pinch. */
+/**
+ * Chromium and Firefox on Linux report a Ctrl+wheel notch as whole pixels or lines and count it
+ * in wheelDelta, 120 per notch. A Chromium pinch is never a whole number of pixels, even when a
+ * busy page merges its updates into one large event.
+ */
 function ctrlWheelNotches(event: WheelInput): WheelPanDelta | null {
-  const delta = normalizedWheelDelta(event)
-  const pixels = event.deltaMode !== WHEEL_DELTA_LINE && event.deltaMode !== WHEEL_DELTA_PAGE
-  if (
-    pixels &&
-    Math.abs(delta.dx) < MIN_CTRL_WHEEL_NOTCH &&
-    Math.abs(delta.dy) < MIN_CTRL_WHEEL_NOTCH
-  ) {
-    return null
-  }
-  return { dx: wholeNotches(delta.dx), dy: wholeNotches(delta.dy) }
+  const lines = event.deltaMode === WHEEL_DELTA_LINE || event.deltaMode === WHEEL_DELTA_PAGE
+  if (!lines && (!Number.isInteger(event.deltaX) || !Number.isInteger(event.deltaY))) return null
+  const x = event.wheelDeltaX ?? 0
+  const y = event.wheelDeltaY ?? 0
+  if (x || y) return { dx: -x / WHEEL_NOTCH, dy: -y / WHEEL_NOTCH }
+  return { dx: Math.sign(event.deltaX), dy: Math.sign(event.deltaY) }
 }
 
 function zoomStep(delta: number, perDelta: number): WheelStep {
@@ -172,8 +177,10 @@ export function createWheelSteps(
 
   return function wheelStep(event: WheelInput): WheelStep {
     const zoom = isWheelZoom(event)
-    const windowsNotch = platform === 'windows' ? windowsNotches(event) : null
-    const notches = windowsNotch ?? (event.ctrlKey ? ctrlWheelNotches(event) : null)
+    let notches: WheelPanDelta | null = null
+    if (platform === 'windows') notches = windowsNotches(event)
+    else if (platform === 'webkitgtk' && zoom) notches = webkitGtkNotches(event)
+    else if (platform === 'other' && event.ctrlKey) notches = ctrlWheelNotches(event)
     const delta = notches ? notchStep(event, notches, zoom) : normalizedWheelDelta(event)
 
     if (zoom) {
