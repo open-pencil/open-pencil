@@ -480,3 +480,56 @@ test("a loaded text binding its own size takes its style's size and keeps its bi
   expect(label?.fontSize).toBe(20)
   expect(label?.boundVariables.fontSize).toBe(guidToString(caption))
 })
+
+// Figma writes a style's face, by style or by weight, as FONT_STYLE, telling them apart by type.
+test("a text style's face and paragraph bindings load as Figma saves them", () => {
+  const weight = guid(20)
+  const spacing = guid(21)
+  const faceName = guid(22)
+  const entry = (variableField: string, resolvedDataType: string, variable: GUID) => ({
+    variableField,
+    variableData: { dataType: 'ALIAS', resolvedDataType, value: { alias: { guid: variable } } }
+  })
+  const variable = (id: GUID, type: 'FLOAT' | 'STRING') => ({
+    guid: id,
+    type: 'VARIABLE',
+    variableResolvedType: type,
+    variableSetID: { guid: collection },
+    variableDataValues: {
+      entries: [
+        type === 'FLOAT'
+          ? floatIn(compact, 4)
+          : { modeID: compact, variableData: { dataType: 'STRING', value: { textValue: 'Bold' } } }
+      ]
+    }
+  })
+  const style = (id: GUID, name: string, entries: ReturnType<typeof entry>[]) => ({
+    guid: id,
+    type: 'TEXT',
+    name,
+    styleType: 'TEXT',
+    parentIndex: { guid: page, position: '#' },
+    parameterConsumptionMap: { entries }
+  })
+  const { graph } = materializeDocument([
+    ...records(),
+    variable(weight, 'FLOAT'),
+    variable(spacing, 'FLOAT'),
+    variable(faceName, 'STRING'),
+    style(guid(23), 'By style', [
+      entry('FONT_STYLE', 'STRING', faceName),
+      entry('PARAGRAPH_SPACING', 'FLOAT', spacing),
+      entry('PARAGRAPH_INDENT', 'FLOAT', spacing)
+    ]),
+    style(guid(24), 'By weight', [entry('FONT_STYLE', 'FLOAT', weight)])
+  ] as NodeChange[])
+
+  expect(graph.getNode(guidToString(guid(23)))?.boundVariables).toEqual({
+    fontStyle: guidToString(faceName),
+    paragraphSpacing: guidToString(spacing),
+    paragraphIndent: guidToString(spacing)
+  })
+  expect(graph.getNode(guidToString(guid(24)))?.boundVariables).toEqual({
+    fontWeight: guidToString(weight)
+  })
+})
