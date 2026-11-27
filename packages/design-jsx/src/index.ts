@@ -42,6 +42,7 @@ export {
   bindPart,
   createScope,
   finishBehaviour,
+  REKA_ELEMENTS,
   rekaRole,
   type RekaRole,
   type RekaScope

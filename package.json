@@ -57,6 +57,7 @@
     "tools/generate/emoji-metrics",
     "tools/generate/fig-schema",
     "tools/generate/guide-images",
+    "tools/generate/kits",
     "tools/generate/landing-posters",
     "tools/generate/mermaid-sources",
     "tools/generate/tauri-menu",

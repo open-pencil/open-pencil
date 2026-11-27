@@ -14,6 +14,7 @@
     "packages/demos/.webreel/",
     "packages/scene-graph/tests/connectors/*.json",
     "packages/mermaid/src/upstream/",
+    "tools/generate/kits/upstream/",
     "tools/release/release-packages/src/notices/rust.hbs"
   ],
   "trailingComma": "none",
