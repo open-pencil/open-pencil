@@ -21,6 +21,7 @@ import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import {
   forgetSessionDocument,
   listAutomationDocuments,
+  prepareAutomationTarget,
   rememberSessionDocument,
   resolveAutomationTarget,
   responseWithTarget,
@@ -66,10 +67,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     args: UnknownRecord,
     signal?: AbortSignal
   ): Promise<unknown> {
-    if (!(await target.store.preparePageNodes(target.pageId))) {
-      throw new Error(`Page "${target.pageId}" was closed before it finished loading`)
-    }
-    signal?.throwIfAborted()
+    await prepareAutomationTarget(target, signal)
     const handler = commandHandlers[command]
     const result = handler
       ? await handler(target, args, signal)

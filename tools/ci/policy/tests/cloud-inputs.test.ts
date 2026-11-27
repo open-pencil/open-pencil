@@ -11,6 +11,7 @@ test('Cloud inputs follow its workspace dependencies and shared test setup', asy
   expect(inputs).toContain('packages/scene-graph/')
   expect(inputs).toContain('bun.lock')
   expect(inputs).toContain('tests/helpers/mcp/discovery-isolation.ts')
-  expect(inputs).not.toContain('packages/core/')
+  // Its build generates the MCP tools it lists from Core's, through a development dependency.
+  expect(inputs).toContain('packages/core/')
   expect(inputs).not.toContain('src/')
 })

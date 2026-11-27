@@ -59,6 +59,10 @@ export function createDocumentRequests(
     async getDocument(documentId: string): Promise<DocumentDownload> {
       return (await contract.download({ params: { documentId } })).document
     },
+    /** What a document is, without its file; one nobody has saved yet has no revision. */
+    async getDocumentSummary(documentId: string): Promise<DocumentSummary> {
+      return (await contract.summary({ params: { documentId } })).document
+    },
     async getDocumentAccess(documentId: string): Promise<DocumentAccess> {
       return (await contract.access({ params: { documentId } })).access
     },

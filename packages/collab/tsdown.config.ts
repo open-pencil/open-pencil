@@ -5,7 +5,8 @@ import { libraryConfig } from '@open-pencil/package-artifacts-tools/tsdown'
 export default defineConfig(
   libraryConfig({
     entry: {
-      index: './src/index.ts'
+      index: './src/index.ts',
+      automation: './src/automation/index.ts'
     }
   })
 )
