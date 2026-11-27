@@ -57,7 +57,9 @@ watch(
 const projection = computed(() => {
   void editor.state.sceneVersion
   const graph = resolvePlayState(editor.graph, rootId, instanceStates(controls.value, state.value))
+  // The island is laid where the layer is, so the layer is not placed in its parent again.
   const [root] = sceneNodeToDesignDocument(graph, rootId, {
+    placeRoots: false,
     vectorElement,
     canvasMetrics: { autoLineHeight }
   }).children
