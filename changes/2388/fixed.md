@@ -1,1 +1,1 @@
-- A `.fig` file lists every local style it keeps, used by a layer or not, and leaves out the styles Figma deleted, in the style pickers and the plugin API's local styles (#2388).
+- A `.fig` file lists every local style it keeps, used by a layer or not, and leaves out the styles Figma deleted; a layer still on a deleted style opens detached with its values, as Figma shows it (#2388).
