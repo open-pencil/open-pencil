@@ -72,12 +72,11 @@ export function renderElement(
       ...element.inlineStyle,
       // A layer keeps its element through a state change, so its new look eases in.
       ...layerTransition(context.transitions, path),
-      ...override.style,
-      ...(element.sourceSceneNodeId && context.hidden?.has(element.sourceSceneNodeId)
-        ? { visibility: 'hidden' }
-        : {})
+      ...override.style
     }).filter(([key]) => !omitted.has(key))
   )
+  if (element.sourceSceneNodeId && context.hidden?.has(element.sourceSceneNodeId))
+    style.visibility = 'hidden'
   const content =
     override.children ?? (() => element.children.map((child) => renderNode(context, child, path)))
   // A shader fill plays behind the content, whatever draws the content, from the canvas's own
