@@ -19,6 +19,8 @@ import { createSlotProperty, slotOwner } from '@open-pencil/scene-graph/slots'
 import { componentFromNode } from '#core/figma-api/components'
 import { combineComponentsAsVariants } from '#core/figma-api/variants'
 
+import { createMarkedInstances } from './instances'
+
 interface Marked {
   node: SceneNode
   name: string
@@ -196,4 +198,5 @@ export function createMarkedComponents(
   for (const { node, name } of marked(graph, sources, COMPONENT_ATTRIBUTES.slot)) {
     bindSlot(graph, node, name)
   }
+  createMarkedInstances(graph, sources)
 }
