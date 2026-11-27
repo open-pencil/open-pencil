@@ -1,5 +1,6 @@
 import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
+import { defaultNodeName } from '@open-pencil/scene-graph/node-defaults'
 
 import { prepareSlotEdits } from './components/slots'
 import { restoreSubtree, snapshotSubtree } from './history/subtree'
@@ -8,7 +9,7 @@ import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { createFramePresetActions } from './shapes/frame-presets'
 import { createPenActions, type UpdateNodeWithUndo } from './shapes/pen/draw'
 import { createPencilActions } from './shapes/pencil'
-import { defaultNodeName, nextNumberedName } from './structure/rename'
+import { nextNumberedName } from './structure/rename'
 import type { EditorContext } from './types'
 export type { PenDragOptions } from './shapes/pen/draw'
 

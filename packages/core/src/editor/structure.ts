@@ -4,7 +4,9 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
 import { generatedFrameKind } from '@open-pencil/scene-graph/generated'
 import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
+import { defaultNodeName } from '@open-pencil/scene-graph/node-defaults'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { renameChanges } from '@open-pencil/scene-graph/text'
 
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
@@ -24,11 +26,7 @@ import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
 import { canUngroupNode, ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
 import { outlineStrokeSelected as outlineStrokeSelectedImpl } from './structure/outline-stroke'
-import {
-  defaultNodeName,
-  previewRenamedNodes,
-  type RenameSelectionOptions
-} from './structure/rename'
+import { previewRenamedNodes, type RenameSelectionOptions } from './structure/rename'
 import { createStructureReorderActions } from './structure/reorder'
 import { scaleLayers } from './structure/scale'
 import { createStructureStateActions } from './structure/state'
@@ -187,18 +185,22 @@ export function createStructureActions(ctx: EditorContext) {
   function renameSelected(options: RenameSelectionOptions) {
     const nodes = selectedNodes()
     if (nodes.length === 0) return
-    const before = new Map(nodes.map((node) => [node.id, node.name]))
     const preview = previewRenamedNodes(nodes, options)
     if (preview.error) return
-    const applyNames = (names: ReadonlyMap<string, string>) => {
-      for (const [id, nextName] of names) ctx.graph.updateNode(id, { name: nextName })
+    const renamed = nodes.filter((node) => preview.names.has(node.id))
+    const before = renamed.map((node) => [node.id, pick(node, ['name', 'autoRename'])] as const)
+    const after = renamed.map(
+      (node) => [node.id, renameChanges(node, preview.names.get(node.id) ?? node.name)] as const
+    )
+    const apply = (changes: ReadonlyArray<readonly [string, Partial<SceneNode>]>) => {
+      for (const [id, fields] of changes) ctx.graph.updateNode(id, fields)
     }
 
-    applyNames(preview.names)
+    apply(after)
     ctx.undo.push({
       label: 'Rename selection',
-      forward: () => applyNames(preview.names),
-      inverse: () => applyNames(before)
+      forward: () => apply(after),
+      inverse: () => apply(before)
     })
   }
 
@@ -208,9 +210,10 @@ export function createStructureActions(ctx: EditorContext) {
     const previous = { name: node.name, autoRename: node.autoRename }
     const next = name.trim() || defaultNodeName(node.type)
     if (next === previous.name) return
-    // A layer named by its text, as a sticky note is, keeps the name it is given, as in FigJam.
-    const namedByText = generatedFrameKind(node)?.namedByText ?? false
-    const renamed = { name: next, autoRename: namedByText ? false : node.autoRename }
+    // A layer named by its text, as a text layer or a sticky note is, keeps the name it is given.
+    const renamed = generatedFrameKind(node)?.namedByText
+      ? { name: next, autoRename: false }
+      : renameChanges(node, next)
     ctx.graph.updateNode(id, renamed)
     ctx.undo.push({
       label: 'Rename',

@@ -118,15 +118,15 @@ describe('manual component property authoring', () => {
     editor.setInstanceComponentProperty(instance.id, id, 'Custom')
     editor.bindComponentProperty(second.id, 'TEXT', id)
     await Promise.resolve()
-    expect(editor.graph.getChildren(instance.id).find((node) => node.name === 'Second')?.text).toBe(
-      'Custom'
-    )
+    expect(
+      editor.graph.getChildren(instance.id).find((node) => node.componentId === second.id)?.text
+    ).toBe('Custom')
     editor.undo.undo()
     await Promise.resolve()
     expect(second.componentPropertyReferences).toEqual([])
-    expect(editor.graph.getChildren(instance.id).find((node) => node.name === 'Second')?.text).toBe(
-      'Second'
-    )
+    expect(
+      editor.graph.getChildren(instance.id).find((node) => node.componentId === second.id)?.text
+    ).toBe('Second')
     expect(instance.componentPropertyAssignments[id]).toBe('Custom')
   })
 

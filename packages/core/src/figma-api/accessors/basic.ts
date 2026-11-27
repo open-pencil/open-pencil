@@ -17,6 +17,7 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { renameChanges } from '@open-pencil/scene-graph/text'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
@@ -126,7 +127,9 @@ export function installBasicNodeProxyAccessors(
         return raw(this, internals).name
       },
       set(this: ProxyThis, value: unknown) {
-        updateNode(this, internals, { name: parseFigma(v.string(), value, 'set_name', 'name') })
+        const name = parseFigma(v.string(), value, 'set_name', 'name')
+        // Naming a text layer stops its name following its text, as Figma's setter does.
+        updateNode(this, internals, renameChanges(raw(this, internals), name))
         // A variant's name holds its values, which the set's value lists follow.
         syncVariantName(graphOf(this), raw(this, internals))
       }

@@ -15,7 +15,7 @@ import { cloneNodeProps, type NodeCloneMode } from './copy'
 import { bindNodeEvents } from './events'
 import { TRANSFORM_FIELDS } from './fields/geometry'
 import { LAYOUT_AFFECTING_KEYS } from './fields/layout'
-import { withGeneratedFrameSize } from './generated'
+import { isGeneratedFrame, withGeneratedFrameSize } from './generated'
 import * as HitTest from './hit-test'
 import { generateId } from './ids'
 import * as Instances from './instances'
@@ -27,6 +27,7 @@ import type { Color, Rect, Vector } from './primitives'
 import { SharedStyleIndex } from './shared-style-index'
 import { markSourceFieldsEdited } from './source-metadata'
 import { strokeLineChanges } from './strokes'
+import { newTextNameChanges, textNameChanges } from './text/name'
 import { textCacheInvalidationChanges } from './text/picture'
 import { remapCopiedReferences } from './transfer/copied'
 import type {
@@ -479,7 +480,11 @@ export class SceneGraph {
 
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
     const node = createDefaultNode(() => this.generateEntityId(), type, overrides)
-    Object.assign(node, strokeLineChanges(node, overrides))
+    Object.assign(
+      node,
+      strokeLineChanges(node, overrides),
+      this.textName(newTextNameChanges(node, overrides), parentId)
+    )
     const parent = this.nodes.get(parentId)
     this.willChangeNode(parent)
     parent?.childIds.push(node.id)
@@ -635,13 +640,29 @@ export class SceneGraph {
   }
 
   /**
-   * `changes` with what they also set: a size from outside layout on a generated frame, and
-   * strokes and the layer's line fields kept in agreement (`strokeLineChanges`).
+   * `changes` with what they also set: a size from outside layout on a generated frame, strokes
+   * and the layer's line fields kept in agreement (`strokeLineChanges`), and the name of a text
+   * layer that follows its text (`textName`).
    */
   private impliedChanges(node: SceneNode, changes: Partial<SceneNode>): Partial<SceneNode> {
     const sized = this.isApplyingLayout ? changes : withGeneratedFrameSize(node, changes)
-    const lines = strokeLineChanges(node, sized)
-    return isEmptyObject(lines) ? sized : { ...sized, ...lines }
+    const implied = {
+      ...strokeLineChanges(node, sized),
+      ...this.textName(textNameChanges(node, sized), node.parentId)
+    }
+    return isEmptyObject(implied) ? sized : { ...sized, ...implied }
+  }
+
+  /**
+   * What a write sets on a text layer's name (`textNameChanges`, `newTextNameChanges`), except while a
+   * document loads with names of its own; in an instance, whose layers take their component's
+   * names, as Figma's do, even with their text overridden; and in a generated frame, such as a
+   * sticky note's body, which keeps its template's name while the frame is named by it.
+   */
+  private textName(named: Partial<SceneNode>, parentId: string | null): Partial<SceneNode> {
+    if (this.isApplyingImportedState || isEmptyObject(named)) return {}
+    const copied = (n: SceneNode) => n.type === 'INSTANCE' || isGeneratedFrame(n)
+    return parentId && this.closest(parentId, copied) ? {} : named
   }
 
   /** Replay captured properties without dropping explicit undefined values or absent keys. */
