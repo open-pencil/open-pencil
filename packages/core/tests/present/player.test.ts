@@ -136,6 +136,35 @@ describe('presenting a deck', () => {
   })
 })
 
+describe('timed moves', () => {
+  test('the last slide has no deadline, so nothing keeps waking the player', () => {
+    const { graph, pageId, fourth } = deck()
+    transition(graph, fourth.id, {
+      ...defaultSlideTransition(),
+      timing: { type: 'AFTER_DELAY', delay: 1 }
+    })
+    const player = createSlidePlayer(graph, presentedSlides(graph, pageId), fourth.id)
+    player.start(0)
+    expect(player.dueAt()).toBeNull()
+  })
+
+  test('a slide left by its timer keeps the steps it had not played hidden as it goes', () => {
+    const { graph, pageId, first, title } = deck()
+    graph.updateNode(title.id, { animation: defaultLayerAnimation(0) })
+    transition(graph, first.id, {
+      ...defaultSlideTransition(),
+      style: 'PUSH_FROM_RIGHT',
+      duration: 1,
+      timing: { type: 'AFTER_DELAY', delay: 1 }
+    })
+    const player = createSlidePlayer(graph, presentedSlides(graph, pageId))
+    player.start(0)
+    player.tick(1)
+    expect(player.moving(1.5)).toBe(true)
+    expect(opacity(player, 1.5, title.id)).toBe(0)
+  })
+})
+
 describe("presenting a design's frames", () => {
   test('the chosen top-level frames, or all of them, present top to bottom then left to right', () => {
     const graph = createDocumentGraph('design', 'light')

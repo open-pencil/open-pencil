@@ -34,6 +34,8 @@ interface RunningTransition {
   from: string
   to: string
   transition: ResolvedSlideTransition
+  /** How many steps of the slide left had played: an After delay leaves before they all have. */
+  fromPlayed: number
   start: number
   seconds: number
 }
@@ -138,6 +140,7 @@ export function createSlidePlayer(graph: SceneGraph, slides: readonly string[], 
 
   function enter(target: number, now: number, transition: ResolvedSlideTransition | null): void {
     const from = slides[index]
+    const fromPlayed = played
     index = target
     steps = timedSteps(slides[index])
     played = 0
@@ -145,7 +148,7 @@ export function createSlidePlayer(graph: SceneGraph, slides: readonly string[], 
     const to = slides[index]
     const seconds = transition ? easingSeconds(transition.easing, transition.duration) : 0
     if (transition && transition.style !== 'NONE' && seconds > 0 && from !== to) {
-      running = { from, to, transition, start: now, seconds }
+      running = { from, to, transition, fromPlayed, start: now, seconds }
       return
     }
     running = null
@@ -225,7 +228,8 @@ export function createSlidePlayer(graph: SceneGraph, slides: readonly string[], 
      * appearing whether its steps played or not, as in Figma; null when nothing is timed.
      */
     dueAt(): number | null {
-      if (running) return null
+      // The last slide has nowhere to move on to.
+      if (running || index + 1 >= slides.length) return null
       const current = graph.getNode(slides[index])
       const delay = current ? resolveSlideTransition(graph, current)?.delay : null
       return delay === null || delay === undefined ? null : shownAt + delay
@@ -254,8 +258,9 @@ export function createSlidePlayer(graph: SceneGraph, slides: readonly string[], 
         const position = easingPosition(transition.easing, now - running.start, transition.duration)
         const frames = transitionFrames(transition.style, position)
         // The slide left keeps its build played; the one coming has none of it yet.
-        for (const step of stepsOf(running.from))
-          for (const layer of step.layers) layers.set(layer.id, layerAtRest(layer.animation, true))
+        for (const [stepIndex, step] of stepsOf(running.from).entries())
+          for (const layer of step.layers)
+            layers.set(layer.id, layerAtRest(layer.animation, stepIndex < running.fromPlayed))
         for (const step of stepsOf(running.to))
           for (const layer of step.layers) layers.set(layer.id, layerAtRest(layer.animation, false))
         const from = { id: running.from, frame: frames.from }

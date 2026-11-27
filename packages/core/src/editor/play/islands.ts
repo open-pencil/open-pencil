@@ -27,10 +27,11 @@ export function slideIslandRoots(graph: SceneGraph, slideId: string): string[] {
     .map((node) => node.id)
 }
 
-/** A deck's slides, in its grid's rows. */
+/** A deck's shown slides, in its grid's shown rows. */
 function deckSlides(graph: SceneGraph, gridId: string): SceneNode[] {
   return graph
     .getChildren(gridId)
+    .filter((row) => row.visible)
     .flatMap((row) => graph.getChildren(row.id))
     .filter((slide) => slide.type === 'SLIDE' && slide.visible)
 }
@@ -44,7 +45,9 @@ function deckSlides(graph: SceneGraph, gridId: string): SceneNode[] {
 export function playIslandRoots(graph: SceneGraph, pageId: string): string[] {
   return graph.getChildren(pageId).flatMap((node) => {
     if (DECK_TYPES.has(node.type))
-      return deckSlides(graph, node.id).flatMap((slide) => slideIslandRoots(graph, slide.id))
+      return node.visible
+        ? deckSlides(graph, node.id).flatMap((slide) => slideIslandRoots(graph, slide.id))
+        : []
     return runsAsIsland(graph, node) ? [node.id] : []
   })
 }

@@ -37,18 +37,32 @@ export function createPresentActions(ctx: EditorContext) {
   let cancelFrame: (() => void) | null = null
   let timer: ReturnType<typeof setTimeout> | null = null
 
-  function report(): void {
-    if (!player || !ctx.state.presentation) return
+  /** Tells the status where the player is at `now`, when that changed. */
+  function report(now: number): void {
+    const status = ctx.state.presentation
+    if (!player || !status) return
+    const moving = player.moving(now)
+    if (
+      status.index === player.index &&
+      status.played === player.played &&
+      status.steps === player.steps &&
+      status.moving === moving
+    )
+      return
     ctx.state.presentation = {
-      ...ctx.state.presentation,
+      ...status,
       index: player.index,
       played: player.played,
       steps: player.steps,
-      moving: player.moving(seconds())
+      moving
     }
   }
 
-  /** Draws frames while something moves, and waits for the next timed move. */
+  /**
+   * Draws frames while something moves, and waits for the next timed move. Each pass reads the
+   * clock once: the player first ends what ran its course and moves on if a timed move is due, so
+   * what is still moving and what comes next are decided at the same moment.
+   */
   function schedule(): void {
     cancelFrame?.()
     cancelFrame = null
@@ -56,20 +70,13 @@ export function createPresentActions(ctx: EditorContext) {
     timer = null
     const current = player
     if (!current) return
+    const now = seconds()
+    current.tick(now)
+    report(now)
     ctx.requestRepaint()
-    if (current.moving(seconds())) {
+    if (current.moving(now)) {
       cancelFrame = nextFrame(() => {
         cancelFrame = null
-        current.tick(seconds())
-        // Reported each frame only when it changes: the end of a move, or a timed move on.
-        const status = ctx.state.presentation
-        if (
-          status &&
-          (status.moving !== current.moving(seconds()) ||
-            status.index !== current.index ||
-            status.played !== current.played)
-        )
-          report()
         schedule()
       })
       return
@@ -79,10 +86,9 @@ export function createPresentActions(ctx: EditorContext) {
     timer = setTimeout(
       () => {
         timer = null
-        if (current.tick(seconds())) report()
         schedule()
       },
-      Math.max(0, (due - seconds()) * 1000)
+      Math.max(0, (due - now) * 1000)
     )
   }
 
@@ -138,10 +144,7 @@ export function createPresentActions(ctx: EditorContext) {
   function move(step: (player: SlidePlayer, now: number) => boolean): boolean {
     if (!player) return false
     const moved = step(player, seconds())
-    if (moved) {
-      report()
-      schedule()
-    }
+    if (moved) schedule()
     return moved
   }
 

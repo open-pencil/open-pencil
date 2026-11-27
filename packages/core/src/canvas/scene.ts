@@ -16,7 +16,7 @@ import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { renderLeafWithEffects } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
-import { applyLayerMotion, heldBackByMotion } from './layer-motion'
+import { applyLayerMotion, heldBackByMotion, layerMotionOffset } from './layer-motion'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import { withNoiseEffects } from './noise/render'
@@ -169,11 +169,12 @@ function renderMaskNodeContent(
   canvas.save()
   canvas.translate(node.x, node.y)
   // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
+  const opacity = applyLayerMotion(canvas, node, overlays) // as a presentation moves and fades it
   const blur = visibleLayerBlur(node)
-  const layered = node.opacity < 1 || blur !== undefined
+  const layered = opacity < 1 || blur !== undefined
   if (layered) {
     const world = () => worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview)
-    r.opacityPaint.setAlphaf(node.opacity)
+    r.opacityPaint.setAlphaf(opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     const content = blurredContent(graph, node, overlays)
     r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays, content) : null)
@@ -368,11 +369,10 @@ export function renderNode(
   const found = graph.getNode(nodeId)
   if (!found || !drawsNode(graph, found, overlays)) return
   const node = stickyPlaceholderNode(graph, found, r.stickyPlaceholder) ?? found
-
   r.drawCounts.nodes++
-
-  const absX = parentAbsX + node.x
-  const absY = parentAbsY + node.y
+  const moved = layerMotionOffset(node, overlays) // culled and placed where a presentation draws it
+  const absX = parentAbsX + node.x + moved.x
+  const absY = parentAbsY + node.y + moved.y
 
   if (isCulled(r, graph, node, absX, absY, frame, overlays.rotationPreview)) {
     r.drawCounts.culled++

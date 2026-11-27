@@ -348,6 +348,8 @@ export function createEditor(options?: EditorOptions) {
     stopFontLoadEvents()
     stopUnblockEvents()
     unsubscribeFromGraph()
+    // A presentation's frames and timer would otherwise go on asking to draw.
+    presenting.stopPresenting()
   }
 
   /** Releases what a document opened from a `.fig` holds: the editor's own, or one it replaced. */

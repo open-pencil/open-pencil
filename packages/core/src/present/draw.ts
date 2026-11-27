@@ -1,5 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { documentSurfaceFor, presentDocumentSurface } from '#core/canvas/renderer/document-surface'
 import { withWorldViewport } from '#core/canvas/renderer/picture'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
@@ -37,7 +38,11 @@ export function drawPresentation(r: SkiaRenderer, graph: SceneGraph, scene: Play
   r.syncFontGeneration()
   r.flushDecodedPreviews(graph)
   graph.clearAbsPosCache()
-  const canvas = r.surface.getCanvas()
+  // Slides blend in the document's colour space, as the editor's canvas draws them, then show on
+  // the screen's.
+  const screen = r.surface.getCanvas()
+  const documentSurface = documentSurfaceFor(r)
+  const canvas = documentSurface?.getCanvas() ?? screen
   canvas.clear(r.ck.BLACK)
   const overlays = { playing: true, layerMotion: scene.layers, playIslands: scene.islands }
   for (const { id, frame } of scene.slides) {
@@ -80,5 +85,6 @@ export function drawPresentation(r: SkiaRenderer, graph: SceneGraph, scene: Play
     if (frame.opacity < 1) canvas.restore()
     canvas.restore()
   }
+  if (documentSurface) presentDocumentSurface(screen, documentSurface)
   r.surface.flush()
 }

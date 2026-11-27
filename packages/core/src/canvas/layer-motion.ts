@@ -1,5 +1,6 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { RenderOverlays } from '#core/canvas/renderer/types'
 
@@ -18,4 +19,10 @@ export function applyLayerMotion(
   if (!motion) return node.opacity
   canvas.translate(motion.x, motion.y)
   return node.opacity * motion.opacity
+}
+
+/** How far a presentation moves an animating layer from where it is. */
+export function layerMotionOffset(node: SceneNode, overlays: RenderOverlays): Vector {
+  const motion = overlays.layerMotion?.get(node.id)
+  return motion ? { x: motion.x, y: motion.y } : { x: 0, y: 0 }
 }
