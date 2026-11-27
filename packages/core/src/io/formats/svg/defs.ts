@@ -1,6 +1,6 @@
 import type { ColorProfile, Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { colorToProfileCSS, colorToSRGBHex } from '@open-pencil/scene-graph/color'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import { computeBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
   invertGradientTransform,
@@ -15,6 +15,7 @@ import {
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import type { SVGBooleanOutlines } from './boolean/outline'
 import type { ExportEffectWarning } from './effects'
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
@@ -34,6 +35,8 @@ export interface SVGExportContext {
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
+  /** Combined shapes of boolean operations. Without them, saved fill geometry stands in. */
+  booleanOutlines?: SVGBooleanOutlines
   /**
    * When layers are written with their names as ids: how many have taken each name, and every id
    * given out so far, defs included, so no two elements share one.
@@ -46,6 +49,16 @@ export function nextDefId(ctx: SVGExportContext, prefix: string): string {
   while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
   ctx.layerIds?.taken.add(id)
   return id
+}
+
+/** The `x`, `y`, `width`, and `height` of a filter or mask region around `bounds`. */
+export function defRegion(bounds: VisualBounds): Record<'x' | 'y' | 'width' | 'height', number> {
+  return {
+    x: round(bounds.minX),
+    y: round(bounds.minY),
+    width: round(Math.max(0, bounds.maxX - bounds.minX)),
+    height: round(Math.max(0, bounds.maxY - bounds.minY))
+  }
 }
 
 /** The profile an export's colors are stored in, and the one it writes them in. */
@@ -97,10 +110,17 @@ export function solidFillOpacity(
   return alpha < 1 ? alpha : undefined
 }
 
+/**
+ * Where a gradient is laid out: on the bounding box of what it paints, as a shape's is, or on the
+ * layer's box, as a text range's is, whose own box would be only its characters'.
+ */
+export type GradientBox = 'painted' | 'layer'
+
 function createGradientDef(
   fill: Fill,
   node: SceneNode,
-  ctx: SVGExportContext
+  ctx: SVGExportContext,
+  box: GradientBox
 ): { id: string; node: SVGNode } | null {
   const stops = fill.gradientStops
   const t = fill.gradientTransform
@@ -117,11 +137,15 @@ function createGradientDef(
 
   const id = nextDefId(ctx, 'grad')
 
-  // Gradient space in bounding-box units, mapped onto the layer as the canvas draws it.
+  // Gradient space in bounding-box units, mapped onto the layer as the canvas draws it: in the
+  // layer's own units for its box, scaled by its size.
   const toLayer = invertGradientTransform(t)
-  const transform = isIdentityGradientTransform(toLayer)
-    ? undefined
-    : `matrix(${[toLayer.m00, toLayer.m10, toLayer.m01, toLayer.m11, toLayer.m02, toLayer.m12].map((v) => round(v, 6)).join(' ')})`
+  const [sx, sy] = box === 'layer' ? [node.width, node.height] : [1, 1]
+  const gradientUnits = box === 'layer' ? 'userSpaceOnUse' : 'objectBoundingBox'
+  const transform =
+    box === 'painted' && isIdentityGradientTransform(toLayer)
+      ? undefined
+      : `matrix(${[toLayer.m00 * sx, toLayer.m10 * sy, toLayer.m01 * sx, toLayer.m11 * sy, toLayer.m02 * sx, toLayer.m12 * sy].map((v) => round(v, 6)).join(' ')})`
 
   if (fill.type === 'GRADIENT_LINEAR') {
     return {
@@ -134,7 +158,7 @@ function createGradientDef(
           y1: 0.5,
           x2: 1,
           y2: 0.5,
-          gradientUnits: 'objectBoundingBox',
+          gradientUnits,
           gradientTransform: transform
         },
         ...stopNodes
@@ -153,7 +177,7 @@ function createGradientDef(
           cx: 0.5,
           cy: 0.5,
           r: 0.5,
-          gradientUnits: 'objectBoundingBox',
+          gradientUnits,
           gradientTransform: transform
         },
         ...stopNodes
@@ -250,7 +274,12 @@ function createImagePattern(
   }
 }
 
-export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext): string | null {
+export function resolveFill(
+  fill: Fill,
+  node: SceneNode,
+  ctx: SVGExportContext,
+  box: GradientBox = 'painted'
+): string | null {
   if (!fill.visible) return null
 
   if (fill.type === 'SOLID') {
@@ -258,7 +287,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   }
 
   if (fill.type.startsWith('GRADIENT')) {
-    const grad = createGradientDef(fill, node, ctx)
+    const grad = createGradientDef(fill, node, ctx, box)
     if (grad) {
       ctx.defs.push(grad.node)
       return `url(#${grad.id})`

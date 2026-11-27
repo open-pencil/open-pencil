@@ -1,12 +1,8 @@
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, Fill, SceneNode } from '@open-pencil/scene-graph'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import {
-  formatColor,
-  type SVGColorProfiles,
-  type SVGExportContext
-} from '#core/io/formats/svg/defs'
+import { formatColor, resolveFill, type SVGExportContext } from '#core/io/formats/svg/defs'
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
 import {
@@ -18,12 +14,51 @@ import {
 } from '#core/io/formats/svg/text/lines'
 import { shownText } from '#core/text/case'
 
+type SVGAttrs = Record<string, string | number | undefined>
+
+/**
+ * A range's own fills, which replace the layer's: the first it shows, as the layer's own fill is
+ * written, a gradient or an image on the layer's box as the canvas draws it, and none at all when
+ * they are empty or hidden.
+ */
+function rangeFillAttrs(
+  fills: readonly Fill[],
+  node: SceneNode,
+  ctx: SVGExportContext,
+  parentFillOpacity: number | undefined
+): SVGAttrs {
+  const fill = fills.find((f) => f.visible)
+  if (!fill) return { fill: 'none' }
+  // `fill-opacity` inherits, so an opaque run has to cover a translucent parent.
+  const cover = parentFillOpacity !== undefined ? 1 : undefined
+  if (fill.type !== 'SOLID') {
+    // A paint with nothing to draw, such as an image the file does not hold, draws nothing, as on
+    // the canvas, rather than letting the layer's fill through.
+    const paint = resolveFill(fill, node, ctx, 'layer')
+    if (!paint) return { fill: 'none' }
+    const opacity = round(fill.opacity)
+    return { fill: paint, 'fill-opacity': opacity < 1 ? opacity : cover }
+  }
+  // Paragraphs and saved glyphs draw a run at color.a * opacity. Shapes paint opacity alone.
+  const alpha = round(fill.color.a * fill.opacity)
+  if (ctx.colors.to === 'display-p3') {
+    return {
+      fill: formatColor({ ...fill.color, a: 1 }, alpha, ctx.colors),
+      'fill-opacity': alpha < 1 ? undefined : cover
+    }
+  }
+  return {
+    fill: formatColor(fill.color, 1, ctx.colors),
+    'fill-opacity': alpha < 1 ? alpha : cover
+  }
+}
+
 function styleOverrideToTspanAttrs(
   style: CharacterStyleOverride,
-  colors: SVGColorProfiles,
+  ctx: SVGExportContext,
   parentFillOpacity: number | undefined,
-  node: Pick<SceneNode, 'fontSize' | 'letterSpacing'>
-): Record<string, string | number | undefined> {
+  node: SceneNode
+): SVGAttrs {
   const attrs: Record<string, string | number | undefined> = {}
   if (style.fontFamily) attrs['font-family'] = style.fontFamily
   if (style.fontSize) attrs['font-size'] = style.fontSize
@@ -43,21 +78,7 @@ function styleOverrideToTspanAttrs(
   }
   if (style.textDecoration === 'UNDERLINE') attrs['text-decoration'] = 'underline'
   if (style.textDecoration === 'STRIKETHROUGH') attrs['text-decoration'] = 'line-through'
-  if (style.fills) {
-    const visibleFill = style.fills.find((f) => f.visible && f.type === 'SOLID')
-    if (visibleFill) {
-      // Paragraphs and saved glyphs draw a run at color.a * opacity. Shapes paint opacity alone.
-      const alpha = round(visibleFill.color.a * visibleFill.opacity)
-      if (colors.to === 'display-p3') {
-        attrs.fill = formatColor({ ...visibleFill.color, a: 1 }, alpha, colors)
-      } else {
-        attrs.fill = formatColor(visibleFill.color, 1, colors)
-        if (alpha < 1) attrs['fill-opacity'] = alpha
-      }
-      // `fill-opacity` inherits, so an opaque run has to cover a translucent parent.
-      if (alpha >= 1 && parentFillOpacity !== undefined) attrs['fill-opacity'] = 1
-    }
-  }
+  if (style.fills) Object.assign(attrs, rangeFillAttrs(style.fills, node, ctx, parentFillOpacity))
   return attrs
 }
 
@@ -66,26 +87,39 @@ function spanFontAttrs(fallback: SVGFallbackFace | undefined): Record<string, st
   return fallback ? { 'font-family': fallback.family } : {}
 }
 
-function isLogicalTextEnd(node: SceneNode, direction: 'LTR' | 'RTL'): boolean {
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'RIGHT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'LEFT')
-  )
+/**
+ * The side of the box a line of unmeasured text stands against: alignment names a side whatever
+ * the direction, as Figma aligns, and justified text, a single line here, starts where it reads
+ * from.
+ */
+function textSide(node: SceneNode, direction: 'LTR' | 'RTL'): 'left' | 'center' | 'right' {
+  switch (node.textAlignHorizontal) {
+    case 'CENTER':
+      return 'center'
+    case 'RIGHT':
+      return 'right'
+    case 'JUSTIFIED':
+      return direction === 'RTL' ? 'right' : 'left'
+    default:
+      return 'left'
+  }
 }
 
+/** The anchor that puts the text against its side: an anchor's start is where the text reads from. */
 function textAnchorForNode(
   node: SceneNode,
   direction: 'LTR' | 'RTL'
 ): 'middle' | 'end' | undefined {
-  if (node.textAlignHorizontal === 'CENTER') return 'middle'
-  if (isLogicalTextEnd(node, direction)) return 'end'
-  return undefined
+  const side = textSide(node, direction)
+  if (side === 'center') return 'middle'
+  const startSide = direction === 'RTL' ? 'right' : 'left'
+  return side === startSide ? undefined : 'end'
 }
 
 function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
-  if (node.textAlignHorizontal === 'CENTER') return round(node.width / 2)
-  if (isLogicalTextEnd(node, direction)) return round(node.width)
-  return 0
+  const side = textSide(node, direction)
+  if (side === 'center') return round(node.width / 2)
+  return side === 'right' ? round(node.width) : 0
 }
 
 /** Text with no measured layout: explicit newlines on their own baselines, otherwise one line. */
@@ -124,7 +158,7 @@ export function renderTextNode(
   ctx: SVGExportContext,
   fillOpacity?: number
 ): SVGNode {
-  const { colors, textLayout } = ctx
+  const { textLayout } = ctx
   const direction = resolveNodeTextDirection(node)
   const lines = textLayout ? textLayout(node) : null
   const laidOut = lines && lines.length > 0 ? lines : null
@@ -148,7 +182,7 @@ export function renderTextNode(
     'letter-spacing': letterSpacing ? round(letterSpacing) : undefined
   }
   const spanAttrs = (style: CharacterStyleOverride, fallback?: SVGFallbackFace) => ({
-    ...styleOverrideToTspanAttrs(style, colors, fillOpacity, node),
+    ...styleOverrideToTspanAttrs(style, ctx, fillOpacity, node),
     ...spanFontAttrs(fallback)
   })
 

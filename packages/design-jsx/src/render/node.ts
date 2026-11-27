@@ -172,15 +172,15 @@ function placeArtwork<Artwork>(
   if (modes) overrides.variableModes = modes
   const variableId = isVariable(props.color) ? requireVariableId(graph, props.color) : undefined
   const resolved = variableId && resolveForLayer(graph, variableId, parentId, modes)
-  if (isVariable(props.color) && typeof resolved !== 'object')
+  const resolvedColor = typeof resolved === 'object' && 'r' in resolved ? resolved : undefined
+  if (isVariable(props.color) && !resolvedColor)
     throw new Error(`Cannot resolve color variable ${props.color.name} for color`)
-  const color =
-    typeof resolved === 'object'
-      ? resolved
-      : parseColor(
-          typeof props.color === 'string' ? props.color : '#000000',
-          graph.documentColorSpace
-        )
+  const color = resolvedColor
+    ? resolvedColor
+    : parseColor(
+        typeof props.color === 'string' ? props.color : '#000000',
+        graph.documentColorSpace
+      )
   const node = services.createArtwork(graph, artwork, { parentId, size, color, overrides })
   if (variableId) bindSolidPaints(graph, node, variableId)
   return node

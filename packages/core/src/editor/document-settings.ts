@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import { SceneGraph, type DocumentKind, type EnabledLibraryBinding } from '@open-pencil/scene-graph'
+import { createSlide, createSlideGrid, createSlideRow } from '@open-pencil/scene-graph/slides'
 
 import { BOARD_PAGE_BACKGROUND, type InterfaceTheme } from '#core/constants'
 import { offeredTool } from '#core/editor/views'
@@ -10,13 +11,18 @@ import type { EditorContext } from './types'
 
 /**
  * An empty document of this kind: a design starts on Figma's page for the interface theme it is
- * made in, a board on FigJam's light page.
+ * made in, a board on FigJam's light page, and a deck on a design's page with one slide.
  */
 export function createDocumentGraph(kind: DocumentKind, theme: InterfaceTheme): SceneGraph {
   const graph = new SceneGraph()
   graph.documentKind = kind
   const [page] = graph.getPages()
-  if (kind === 'design') {
+  if (kind === 'slides') {
+    const row = createSlideRow(graph, createSlideGrid(graph, page.id).id)
+    // Slides are named by their numbers, as the deck renumbers them after every change.
+    graph.updateNode(createSlide(graph, row.id).id, { name: '1' })
+  }
+  if (kind !== 'board') {
     setDefaultPageBackground(graph, page, theme)
   } else {
     setPageBackgrounds(graph, page, [

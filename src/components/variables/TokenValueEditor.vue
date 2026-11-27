@@ -5,7 +5,7 @@ import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import { tokenNumberToCSS, variableUnit } from '@open-pencil/dom-css/export'
 import type { Variable, VariableLiteral, VariableValue } from '@open-pencil/scene-graph'
 import { colorToHex8 } from '@open-pencil/scene-graph/color'
-import { formulaSymbol } from '@open-pencil/scene-graph/variables'
+import { easingText, formulaSymbol, isEasing } from '@open-pencil/scene-graph/variables'
 import { errorMessage } from '@open-pencil/std/errors'
 import { useMessages } from '@open-pencil/vue/i18n'
 
@@ -101,6 +101,7 @@ function resultText(resolved: VariableLiteral | undefined) {
   if (typeof resolved === 'number') return tokenNumberToCSS(resolved, variableUnit(variable))
   if (typeof resolved === 'boolean') return String(resolved)
   if (typeof resolved === 'string') return JSON.stringify(resolved)
+  if (isEasing(resolved)) return easingText(resolved)
   if (typeof resolved === 'object') return colorToHex8(resolved)
   return '—'
 }

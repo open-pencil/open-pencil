@@ -6,6 +6,7 @@ import {
   createVerifiedCredentialAccount,
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
+import { contractClient, outcome } from '#cloud-tests/helpers/contract'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import { cloudAccountStatusResponseSchema } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
@@ -114,8 +115,8 @@ describe('two-step confirmation', () => {
       expect(await accountState(fixture, account.confirmed)).toBe('active')
 
       // Held, it reaches nothing but proving it.
-      const workspaces = await fixture.client.api.workspaces.$get(undefined, held)
-      expect(workspaces.status).toBe(401)
+      const heldAPI = contractClient(fixture.app, held.headers)
+      expect(await outcome(heldAPI.workspaces.list())).toMatchObject({ status: 401 })
       const mfa = await fixture.client.api.account.mfa.$get(undefined, held)
       expect(mfa.status).toBe(200)
 
@@ -126,7 +127,7 @@ describe('two-step confirmation', () => {
       expect(proved.status).toBe(200)
       // Proving it lets the same session use the server.
       expect(await accountState(fixture, held)).toBe('active')
-      expect((await fixture.client.api.workspaces.$get(undefined, held)).status).toBe(200)
+      expect(await outcome(heldAPI.workspaces.list())).toBe('ok')
     } finally {
       await fixture.close()
     }

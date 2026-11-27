@@ -29,6 +29,7 @@ import { styleRunPieces } from '@open-pencil/scene-graph/text'
 
 import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG, type ExportEffectWarning } from '#core/io/formats/svg'
+import type { SVGBooleanOutlines } from '#core/io/formats/svg/boolean/outline'
 
 import { droppedEffectWarnings } from './effects'
 import { DEFAULT_FONT_FAMILY } from './paint'
@@ -173,7 +174,7 @@ class PageWriter {
   constructor(
     private readonly graph: SceneGraph,
     private readonly pageId: string,
-    private readonly onWarning?: (warning: ExportEffectWarning) => void
+    private readonly options: DrawIOExportOptions
   ) {}
 
   private idOf(nodeId: string): string {
@@ -280,7 +281,7 @@ class PageWriter {
 
   private layer(node: SceneNode, parent: string) {
     for (const warning of droppedEffectWarnings(this.graph, this.pageId, node)) {
-      this.onWarning?.(warning)
+      this.options.onWarning?.(warning)
     }
     const placement = this.place(node, parent)
     const { geometry } = placement
@@ -413,7 +414,8 @@ class PageWriter {
 
   /** A layer draw.io has no cell for, drawn as the SVG image it exports as, where it covers. */
   private picture(node: SceneNode, parent: string) {
-    const svg = renderNodesToSVG(this.graph, this.pageId, [node.id], { onWarning: this.onWarning })
+    const { onWarning, booleanOutlines } = this.options
+    const svg = renderNodesToSVG(this.graph, this.pageId, [node.id], { onWarning, booleanOutlines })
     if (!svg) return
     const data = fromUint8Array(new TextEncoder().encode(svg))
     this.push(node, parent, {
@@ -519,11 +521,11 @@ class PageWriter {
 function pageOf(
   graph: SceneGraph,
   pageId: string,
-  nodeIds?: readonly string[],
-  onWarning?: (warning: ExportEffectWarning) => void
+  nodeIds: readonly string[] | undefined,
+  options: DrawIOExportOptions
 ): DrawIOPage {
   const page = graph.getNode(pageId)
-  const writer = new PageWriter(graph, pageId, onWarning)
+  const writer = new PageWriter(graph, pageId, options)
   writer.write(nodeIds ?? page?.childIds ?? [])
   return {
     id: pageId,
@@ -546,6 +548,8 @@ export interface DrawIOExportOptions {
    * cannot draw of one drawn as an SVG image.
    */
   onWarning?: (warning: ExportEffectWarning) => void
+  /** Boolean operations drawn as SVG images as the canvas combines them, else from saved geometry. */
+  booleanOutlines?: SVGBooleanOutlines
 }
 
 /**
@@ -557,11 +561,11 @@ export interface DrawIOExportOptions {
 export function sceneGraphToDrawIO(
   graph: SceneGraph,
   target: DrawIOExportTarget,
-  { onWarning }: DrawIOExportOptions = {}
+  options: DrawIOExportOptions = {}
 ): DrawIOFile {
   const pages =
     'pageIds' in target
-      ? target.pageIds.map((pageId) => pageOf(graph, pageId, undefined, onWarning))
-      : [pageOf(graph, target.pageId, target.nodeIds, onWarning)]
+      ? target.pageIds.map((pageId) => pageOf(graph, pageId, undefined, options))
+      : [pageOf(graph, target.pageId, target.nodeIds, options)]
   return { pages, unreadable: [] }
 }

@@ -12,6 +12,8 @@
   "createInstance": "インスタンスを作成",
   "detachInstance": "インスタンスの切り離し",
   "detachIcon": "アイコンを切り離す",
+  "setAsThumbnail": "サムネイルに設定",
+  "restoreDefaultThumbnail": "デフォルトのサムネイルに戻す",
   "goToMainComponent": "メインコンポーネントに移動",
   "addAutoLayout": "オートレイアウトを追加",
   "bringToFront": "最前面へ移動",

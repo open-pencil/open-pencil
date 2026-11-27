@@ -106,6 +106,15 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     trusted_origins: v.optional(v.array(urlSchema), []),
     // The server's editor works with files on this device without signing in to the server.
     local_editor: v.optional(v.boolean(), true),
+    // Other sites may show documents shared by link and community documents in a frame. Only the
+    // listed origins may, or any site when none are listed.
+    embedding: v.optional(
+      v.strictObject({
+        enabled: v.boolean(),
+        allowed_origins: v.optional(v.array(urlSchema), [])
+      }),
+      { enabled: false, allowed_origins: [] }
+    ),
     listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema })),
     // How a self-hosted server names itself on its public pages.
     branding: v.optional(
@@ -310,6 +319,12 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       tour: v.optional(v.pipe(v.string(), v.uuid()))
     })
   ),
+  /**
+   * Optional: lets people connect apps such as ChatGPT, Claude, or Grok to their account through
+   * OAuth. Apps register themselves (RFC 7591), so anyone may register one; each grant still takes
+   * the person's approval and reaches one workspace. Leave it out, or off, to accept no apps.
+   */
+  oauth: v.optional(v.strictObject({ enabled: v.boolean() })),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(
     v.strictObject({

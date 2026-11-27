@@ -146,6 +146,10 @@ export function createDocumentSourceActions({
     setSourceIdentity,
     setSavedVersion,
     setLastWriteTime,
+    buildCover: (draw) => {
+      const renderer = getRenderer()
+      return renderer ? draw(editor.graph, renderer, state.currentPageId) : null
+    },
     startWatchingFile: () => {
       void startWatchingFile()
     },

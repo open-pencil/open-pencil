@@ -109,11 +109,14 @@ export function addCollection(graph: SceneGraph, collection: VariableCollection)
   graph.variableCollections.set(collection.id, collection)
 }
 
-function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
+/** The value a new variable of this type starts with, unless it is given one. */
+export function defaultVariableValue(type: VariableType, value?: VariableValue): VariableValue {
   if (value !== undefined) return value
   if (type === 'COLOR') return { ...BLACK }
-  if (type === 'FLOAT') return 0
+  if (type === 'FLOAT' || type === 'TIMING') return 0
   if (type === 'BOOLEAN') return false
+  // Figma starts an easing as IN_CUBIC with no numbers, which it shows as Ease in.
+  if (type === 'EASING') return { easing: 'IN_CUBIC' }
   return ''
 }
 
@@ -426,7 +429,9 @@ function markBoundVariablesOverrideOnInstance(
 }
 
 export * from './bindings'
+export * from './style-bindings'
 export * from './corners'
+export * from './easing'
 export * from './formula'
 export * from './formula/schema'
 export * from './lookup'

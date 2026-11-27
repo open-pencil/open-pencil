@@ -33,7 +33,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { fillsOwnSizingAxis } from './fill-sizing'
-import { exportedNode } from './resolved-bindings'
+import { asResolved, exportedNode } from './resolved-bindings'
 import { claimedVariableModes } from './variable-modes'
 
 function unscaledRootSize(instance: SceneNode, target: SceneNode): Vector {
@@ -95,7 +95,7 @@ function layoutModeClaim(
 }
 
 /** Layout distances are placed-space lengths; claims are written in the owner's pre-scale space. */
-function layoutDistanceClaim(
+function componentLengthClaim(
   raw: string,
   value: unknown,
   instance: SceneNode
@@ -138,15 +138,19 @@ export type NodeFieldsWriter = (node: SceneNode) => KiwiNodeChange
 
 /** A layer's record in its component's coordinates, which instance claims are written in. */
 function unscaledNodeFields(
+  context: SceneNodeToKiwiContext,
   writeNodeFields: NodeFieldsWriter,
   instance: SceneNode,
   target: SceneNode
 ): KiwiNodeChange {
   const scale = instance.componentScale
   if (!Number.isFinite(scale) || scale <= 0) throw new Error('Invalid instance uniform scale')
-  const unscaled =
-    scale === 1 ? target : { ...target, ...scaleNodeChanges(target, 1 / scale, false) }
-  return writeNodeFields(unscaled)
+  if (scale === 1) {
+    return writeNodeFields(target)
+  }
+  return writeNodeFields(
+    asResolved(context, { ...target, ...scaleNodeChanges(target, 1 / scale, false) })
+  )
 }
 
 /** One raw field of a claim, serialized by the kind of its scene field. */
@@ -163,7 +167,9 @@ function rawClaim(
       return claimed === undefined ? undefined : { [raw]: claimed }
     }
     case 'scalar':
-      return { [raw]: target[field] }
+      return definition.length
+        ? componentLengthClaim(raw, target[field], instance)
+        : { [raw]: target[field] }
     case 'visible':
       return { visible: target.visible }
     case 'text': {
@@ -184,7 +190,7 @@ function rawClaim(
     case 'size':
       return { size: unscaledRootSize(instance, target) }
     case 'layout-distance':
-      return layoutDistanceClaim(raw, target[field], instance)
+      return componentLengthClaim(raw, target[field], instance)
     case 'layout-mode':
       return layoutModeClaim(raw, target[field], context.graph, target)
     case 'variable-modes': {
@@ -237,7 +243,12 @@ function overrideClaim(
   const nodeFields = () => {
     let record = claimed.records.get(target.id)
     if (!record) {
-      record = unscaledNodeFields(claimed.writeNodeFields, claimed.instance, target)
+      record = unscaledNodeFields(
+        claimed.context,
+        claimed.writeNodeFields,
+        claimed.instance,
+        target
+      )
       claimed.records.set(target.id, record)
     }
     return record

@@ -4,13 +4,13 @@ import { filename } from 'pathe/utils'
 import { DOCUMENT_EXTENSIONS } from '@open-pencil/core/io'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
-/** Whether a file is a Figma archive: a design's `.fig` or a FigJam board's `.jam`. */
+/** Whether a file is a Figma archive: a design's `.fig`, a FigJam board's `.jam`, or a Slides `.deck`. */
 export function isFigArchiveName(name: string): boolean {
   const lower = name.toLowerCase()
-  return lower.endsWith('.fig') || lower.endsWith('.jam')
+  return Object.values(DOCUMENT_EXTENSIONS).some((extension) => lower.endsWith(`.${extension}`))
 }
 
-/** The file name a document of this kind saves under: `.fig` for a design, `.jam` for a board. */
+/** The file name a document of this kind saves under: `.fig` for a design, `.jam` for a board, `.deck` for slides. */
 export function documentFileName(name: string, kind: DocumentKind): string {
   return `${name}.${DOCUMENT_EXTENSIONS[kind]}`
 }

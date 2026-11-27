@@ -1,0 +1,1 @@
+- Right-click a frame, section, component, or slide and choose Set as thumbnail to make it the file's thumbnail, as in Figma; Restore default thumbnail goes back to the cover page (#2366).

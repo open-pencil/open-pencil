@@ -3,41 +3,6 @@ import * as v from 'valibot'
 const positiveIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(1))
 const nonNegativeIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 
-export const staticEntitlementsSchema = v.object({
-  documents: v.optional(
-    v.object({
-      maximumFileBytes: v.optional(positiveIntegerSchema),
-      revisionHistory: v.optional(v.boolean())
-    }),
-    {}
-  ),
-  storage: v.optional(v.object({ maximumBytes: v.optional(positiveIntegerSchema) }), {}),
-  sharing: v.optional(
-    v.object({
-      links: v.optional(v.boolean()),
-      guestView: v.optional(v.boolean()),
-      guestEdit: v.optional(v.boolean()),
-      guestPresence: v.optional(v.boolean())
-    }),
-    {}
-  ),
-  collaboration: v.optional(
-    v.object({
-      enabled: v.optional(v.boolean()),
-      maximumParticipants: v.optional(positiveIntegerSchema)
-    }),
-    {}
-  ),
-  services: v.optional(
-    v.object({
-      enabled: v.optional(v.boolean()),
-      monthlyCreditAllowance: v.optional(nonNegativeIntegerSchema)
-    }),
-    {}
-  )
-})
-export type StaticEntitlements = v.InferOutput<typeof staticEntitlementsSchema>
-
 export const staticEntitlementsTOMLSchema = v.strictObject({
   documents: v.optional(
     v.strictObject({

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
-import { useClipboard } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -21,11 +20,10 @@ import { usePortal } from '@/app/cloud-portal/context'
 import { useDateFormat } from '@/app/i18n/date'
 import CommunityLayout from '@/components/cloud-portal/community/CommunityLayout.vue'
 import PortalLoadAlert from '@/components/cloud-portal/layout/PortalLoadAlert.vue'
-import CloudVersionListItem from '@/components/cloud/versions/CloudVersionListItem.vue'
-import { cloudVersions } from '@/components/cloud/versions/ui'
 import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import documentEntryTheme from '@/theme/home/document-entry'
@@ -45,10 +43,8 @@ const communityMessages = useMessages('cloud/portal/community')
 const cloud = useMessages('cloud/editor')
 const files = useMessages('files')
 const dates = useDateFormat()
-const versions = cloudVersions()
 const { state, reload } = useCommunityDocuments(portal.discovery)
 const origin = globalThis.location.origin
-const { copy, copied } = useClipboard({ legacy: true })
 
 const documents = computed(() => (state.value.status === 'ready' ? state.value.documents : []))
 const document = computed(
@@ -58,18 +54,16 @@ const frame = computed(() => documentEntry({ view: 'grid', kind: document.value?
 const more = computed(() =>
   documents.value.filter((entry) => entry.id !== document.value?.id).slice(0, MORE_FILES)
 )
+const kindLabel = computed(
+  () =>
+    ({
+      design: files.value.createDesign,
+      board: files.value.createBoard,
+      slides: files.value.createSlides
+    })[document.value?.kind ?? 'design']
+)
 const pageURL = computed(() =>
   document.value ? new URL(cloudCommunityPagePath(document.value.id), origin).href : ''
-)
-
-/** The named version to open, or null for the file as it is now. */
-const versionId = ref<string | null>(null)
-// Another file's page starts from its current state.
-watch(
-  () => route.params.documentId,
-  () => {
-    versionId.value = null
-  }
 )
 
 function openPage(entry: CommunityDocument) {
@@ -82,17 +76,13 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
 <template>
   <CommunityLayout>
     <PortalLoadAlert v-if="state.status === 'failed'" :error="state.error" @retry="reload" />
-    <div
-      v-else-if="state.status === 'loading'"
-      class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]"
-      aria-hidden="true"
-    >
-      <AppSkeleton class="aspect-video w-full rounded-lg" />
+    <div v-else-if="state.status === 'loading'" class="flex flex-col gap-6" aria-hidden="true">
       <div class="flex flex-col gap-3">
-        <AppSkeleton class="w-40" />
-        <AppSkeleton class="h-8 w-full" />
-        <AppSkeleton class="h-8 w-full" />
+        <AppSkeleton class="w-32" />
+        <AppSkeleton class="h-8 w-72 max-w-full" />
+        <AppSkeleton class="w-full max-w-xl" />
       </div>
+      <AppSkeleton class="aspect-video w-full rounded-xl" />
     </div>
     <AppPlaceholder
       v-else-if="!document"
@@ -107,82 +97,105 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
       </template>
     </AppPlaceholder>
     <template v-else>
-      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div :class="frame.preview({ class: 'group-hover:border-border' })">
-          <img :src="document.thumbnailPath" alt="" :class="frame.image({ class: 'scale-100' })" />
+      <header class="flex items-start justify-between gap-6">
+        <div class="min-w-0">
+          <p class="flex items-center gap-1.5 text-xs text-muted">
+            <component
+              :is="DOCUMENT_KIND_ICONS[document.kind]"
+              :class="frame.kind()"
+              aria-hidden="true"
+            />
+            {{ kindLabel }}
+          </p>
+          <h1 class="mt-2 text-2xl font-semibold tracking-tight text-balance">
+            {{ document.name }}
+          </h1>
+          <p class="mt-1 text-xs text-muted">
+            {{
+              communityMessages.communityUpdated({ date: dates.format(document.updatedAt, 'date') })
+            }}
+          </p>
         </div>
-        <div class="flex flex-col gap-4">
-          <div class="min-w-0">
-            <h1 class="flex items-center gap-1.5 text-base font-semibold">
-              <component
-                :is="DOCUMENT_KIND_ICONS[document.kind]"
-                :class="frame.kind()"
-                aria-hidden="true"
-              />
-              <span class="truncate">{{ document.name }}</span>
-            </h1>
-            <p class="mt-0.5 text-xs text-muted">
-              {{ document.kind === 'board' ? files.createBoard : files.createDesign }} ·
-              {{ dates.format(document.updatedAt, 'date') }}
+        <AppButton
+          color="neutral"
+          variant="solid"
+          size="lg"
+          class="mt-6 shrink-0"
+          @click="openCommunityInBrowser({ documentId: document.id, versionId: null })"
+        >
+          {{ communityMessages.communityOpenInBrowser }}
+        </AppButton>
+      </header>
+
+      <div
+        class="mt-6 flex aspect-[2/1] items-center justify-center overflow-hidden rounded-lg border border-border bg-panel-field"
+      >
+        <img :src="document.thumbnailPath" :alt="document.name" class="size-full object-contain" />
+      </div>
+
+      <div class="@container/details mt-10 border-t border-border pt-8">
+        <div class="grid gap-10 @3xl/details:grid-cols-[minmax(0,1fr)_16rem]">
+          <div class="flex min-w-0 flex-col gap-8">
+            <p v-if="document.description" class="max-w-2xl text-sm/relaxed text-pretty">
+              {{ document.description }}
             </p>
+            <section v-if="document.versions.length > 0">
+              <h2 class="mb-2 text-sm font-semibold">{{ cloud.versionHistory }}</h2>
+              <ul class="divide-y divide-border border-y border-border">
+                <li
+                  v-for="version in document.versions"
+                  :key="version.id"
+                  class="flex items-center gap-4 py-3"
+                >
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm">
+                      <span class="font-medium">{{ version.name }}</span>
+                      <span class="ms-2 text-muted">
+                        {{ dates.format(version.createdAt, 'date') }}
+                      </span>
+                    </p>
+                    <p v-if="version.description" class="mt-0.5 text-xs text-muted">
+                      {{ version.description }}
+                    </p>
+                  </div>
+                  <AppButton
+                    size="md"
+                    class="gap-1.5 font-normal"
+                    :aria-label="communityMessages.communityOpenVersion({ name: version.name })"
+                    @click="
+                      openCommunityInBrowser({ documentId: document.id, versionId: version.id })
+                    "
+                  >
+                    <template #leading><icon-lucide-external-link /></template>
+                    {{ communityMessages.communityOpen }}
+                  </AppButton>
+                </li>
+              </ul>
+            </section>
           </div>
-          <div class="flex flex-col gap-2">
+          <aside class="flex flex-col gap-1">
             <AppButton
-              color="primary"
-              variant="solid"
-              @click="openCommunityInBrowser({ documentId: document.id, versionId })"
+              size="lg"
+              class="justify-start gap-2 font-normal max-sm:hidden"
+              @click="openCommunityInDesktop({ documentId: document.id, versionId: null })"
             >
-              {{ communityMessages.communityOpenInBrowser }}
-            </AppButton>
-            <AppButton
-              variant="outline"
-              class="max-sm:hidden"
-              @click="openCommunityInDesktop({ documentId: document.id, versionId })"
-            >
+              <template #leading><icon-lucide-monitor /></template>
               {{ communityMessages.communityOpenInDesktop }}
             </AppButton>
-            <AppButton variant="outline" @click="copy(pageURL)">
-              <template #leading>
-                <icon-lucide-check v-if="copied" class="size-3.5" />
-                <icon-lucide-link v-else class="size-3.5" />
-              </template>
-              {{ copied ? cloud.shareLinkCopied : cloud.shareCopyLink }}
-            </AppButton>
-            <p class="text-xs text-muted">{{ communityMessages.communityOpenNote }}</p>
-          </div>
-          <div
-            v-if="document.versions.length > 0"
-            class="overflow-hidden rounded-lg border border-border bg-panel"
-          >
-            <ul :class="versions.list()" :aria-label="cloud.versionHistory">
-              <CloudVersionListItem
-                v-if="!document.versions[0]?.current"
-                :label="cloud.currentVersion"
-                current
-                :selected="versionId === null"
-                @select="versionId = null"
-              />
-              <CloudVersionListItem
-                v-for="(version, index) in document.versions"
-                :key="version.id"
-                :label="
-                  index === 0
-                    ? communityMessages.communityLatestVersion({ name: version.name })
-                    : version.name
-                "
-                :description="version.description"
-                :at="version.createdAt"
-                named
-                :selected="versionId === version.id || (versionId === null && version.current)"
-                :last="index === document.versions.length - 1"
-                @select="versionId = version.id"
-              />
-            </ul>
-          </div>
+            <AppCopyButton
+              :value="pageURL"
+              :label="cloud.shareCopyLink"
+              :copied-label="cloud.shareLinkCopied"
+              size="lg"
+              class="justify-start gap-2 font-normal"
+            >
+              <template #icon><icon-lucide-link /></template>
+            </AppCopyButton>
+          </aside>
         </div>
       </div>
 
-      <section v-if="more.length > 0" class="mt-10">
+      <section v-if="more.length > 0" class="mt-12">
         <h2 class="mb-3 text-base font-semibold">{{ communityMessages.communityMore }}</h2>
         <div
           class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"

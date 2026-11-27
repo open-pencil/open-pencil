@@ -5,6 +5,7 @@ import { createAPI } from '#core-tests/helpers/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 import { graphOf } from '#core/figma-api/graph'
@@ -379,4 +380,29 @@ test('a style made by a script is saved with the file and the layers that use it
   ])
   const card = [...reopened.getAllNodes()].find((node) => node.name === 'Card')
   expect(card?.fillStyleId).toBe(found?.id)
+})
+
+test('a text style made after the style index was built reaches the texts using it', () => {
+  const figma = createAPI()
+  const graph = graphOf(figma)
+  const collection = graph.createCollection('Type scale')
+  const roomy = graph.createMode(collection.id, 'Roomy') ?? ''
+  const size = graph.createVariable('Body size', 'FLOAT', collection.id, 14)
+  size.valuesByMode[roomy] = 20
+  const first = figma.createText()
+  first.textStyleId = figma.createTextStyle().id
+  reconcileVariableBindings(graph)
+
+  const style = figma.createTextStyle()
+  const styleNode = graph.getSharedStyleNode(style.id, 'TEXT')
+  if (!styleNode) {
+    throw new Error('Expected the style index to hold the new style')
+  }
+  graph.bindVariable(styleNode.id, 'fontSize', size.id)
+  const later = figma.createText()
+  later.textStyleId = style.id
+  graph.updateNode(later.id, { variableModes: { [collection.id]: roomy } })
+  reconcileVariableBindings(graph, { subtrees: [later.id] })
+
+  expect(later.fontSize).toBe(20)
 })

@@ -20,6 +20,7 @@ import {
   resolveFill,
   solidFillOpacity,
   svgStrokeAttrs,
+  type GradientBox,
   type SVGExportContext
 } from './defs'
 import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
@@ -52,6 +53,8 @@ import {
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
+import { booleanOutlines, type SVGBooleanOutlines } from './boolean/outline'
+import { renderMaskedChildren } from './masks'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -193,6 +196,13 @@ function nodeShapeElements(
     case 'SHAPE_WITH_TEXT':
       return shapeWithTextElements(node, common, strokeAttrs, ctx)
 
+    case 'BOOLEAN_OPERATION': {
+      const outlines = booleanOutlines(node, ctx)
+      return outlines
+        ? outlineElements(node, outlines, common, ctx, undefined)
+        : [boxOutlineElement(node, common)]
+    }
+
     default:
       return [boxOutlineElement(node, common)]
   }
@@ -290,7 +300,7 @@ function buildShapeChildren(
   visibleStrokes: Stroke[],
   ctx: SVGExportContext
 ): SVGNode[] {
-  const aligned = hasPathLevelFills(node) ? null : alignedStroke(node, visibleStrokes[0])
+  const aligned = hasPathLevelFills(node) ? null : alignedStroke(node, visibleStrokes[0], ctx)
   if (!aligned) {
     return fillAndStrokeElements(
       node,
@@ -358,11 +368,12 @@ const CURRENT_COLOR = 'currentColor'
 function exportedFill(
   fill: Fill | undefined,
   node: SceneNode,
-  ctx: SVGExportContext
+  ctx: SVGExportContext,
+  box?: GradientBox
 ): { color: string | null; opacity: number | undefined } {
   if (!fill) return { color: null, opacity: undefined }
   return {
-    color: resolveFill(fill, node, ctx),
+    color: resolveFill(fill, node, ctx, box),
     opacity: solidFillOpacity(fill, ctx.colors)
   }
 }
@@ -401,10 +412,12 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
+    // A text's gradient spans its layer, as the canvas draws it, not just its characters' box.
     const fill = exportedFill(
       node.fills.find((f) => f.visible),
       node,
-      ctx
+      ctx,
+      'layer'
     )
     const text = renderTextNode(node, fill.color, ctx, fill.opacity)
     return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
@@ -436,12 +449,9 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     ctx
   )
 
-  const childNodes = ctx.graph.getChildren(node.id)
-  const childContent: SVGNode[] = []
-  for (const child of childNodes) {
-    const rendered = renderNode(child, ctx)
-    if (rendered) childContent.push(rendered)
-  }
+  // A boolean operation draws its combined shape, not its operands.
+  const childNodes = booleanOutlines(node, ctx) ? [] : ctx.graph.getChildren(node.id)
+  const childContent = renderMaskedChildren(childNodes, ctx, renderNode)
 
   if (clipId && childContent.length > 0) {
     children.push(svgElement('g', { 'clip-path': `url(#${clipId})` }, childContent))
@@ -480,6 +490,8 @@ export interface SVGExportOptions {
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
    */
   textLayout?: SVGTextLayout
+  /** Combined shapes of boolean operations. Without them, saved fill geometry stands in. */
+  booleanOutlines?: SVGBooleanOutlines
   /** Each layer's name as its element's `id`, as Figma's "Include id attribute" writes it. */
   layerIds?: boolean
   /** Size the drawing to the layers' boxes rather than to everything they draw. */
@@ -509,6 +521,7 @@ export function renderNodesToSVG(
     },
     onWarning: options.onWarning,
     textLayout: options.textLayout,
+    booleanOutlines: options.booleanOutlines,
     layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
 
@@ -561,16 +574,13 @@ export function renderNodeSVGElement(
   graph: SceneGraph,
   node: SceneNode,
   {
-    idPrefix,
     colorSpace = graph.documentColorSpace,
-    tint
+    ...services
   }: Pick<SVGExportOptions, 'colorSpace'> &
-    Partial<Pick<SVGExportContext, 'tint'>> & {
-      idPrefix: string
-    }
+    Pick<SVGExportContext, 'idPrefix' | 'tint' | 'booleanOutlines'>
 ): SVGNode | null {
   const colors = { from: graph.documentColorSpace, to: colorSpace }
-  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, idPrefix, tint }
+  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, ...services }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
   // A straight line has no height or width, but its stroke still needs a viewport to draw in.

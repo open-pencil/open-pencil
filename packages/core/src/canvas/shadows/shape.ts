@@ -56,7 +56,8 @@ const OUTLINE_SHAPE_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['t
   'COMPONENT',
   'COMPONENT_SET',
   'INSTANCE',
-  'SECTION'
+  'SECTION',
+  'SLIDE'
 ])
 
 /**

@@ -1,112 +1,134 @@
 ---
+pageClass: guide
 title: Variables
-description: Design variables, collections, modes, and fill bindings in OpenPencil.
+description: Keep colors, sizes, and other values in one place, switch them with modes, and take them to code as CSS or design tokens.
 ---
 
 # Variables
 
-Variables store reusable design tokens — colors, spacing values, and other properties — that can be bound to nodes. Change a variable's value and every node using it updates.
+A variable is a named value, such as a brand color or a corner radius, that layers use instead of a number of their own. Change the variable, and every layer that uses it changes. Modes give the same variables other values, such as a dark theme.
 
-## Opening the Variables Dialog
+## Open Variables
 
-Open it from **View → Variables…**, by searching "Variables" in the command palette, or, with no nodes selected, from the Variables section of the Design tab. **Expand** in the dialog's corner gives it most of the window.
+Choose **View → Variables…**, or click an empty part of the canvas and open **Variables** in the Design panel.
 
-The dialog lists the active collection's variables on the left, edits the selected variable or the collection on the right, and shows the stylesheet they produce below. In a narrow window or on a phone it shows one mode at a time, and a variable, the collection settings, or the stylesheet opens over the list with a back button.
+<GuideImage name="variables/dialog" alt="The Variables window with the Theme collection, four variables in Light and Dark, the collection settings, and the stylesheet" />
 
-## Collections
+1. **Collections** group variables, such as colors or spacing.
+2. Each **variable** has a value in each mode, in columns.
+3. **Settings** for the selected variable, or for the collection when none is selected.
+4. The **stylesheet** shows the collection as CSS.
 
-Variables are organized into collections. In a wide dialog they are listed in a sidebar with how many variables each holds; narrower, they are tabs, or a menu on a phone.
+**Expand** in the window's corner gives it most of the screen. In a narrow window or on a phone, it shows one mode at a time.
 
-- **Switch collection** — click it in the sidebar or its tab
-- **Create collection** — click **+** next to Collections, or the folder button in the toolbar
-- **Rename or delete** — with no variable selected, the right side edits the collection: change its name, or delete it from the **⋯** menu next to the name
-- **Switch attribute** — the attribute that turns manually switched modes on, `data-theme` by default for a collection named Theme; type another name, such as `data-color-scheme`, to match an existing codebase
+## Create a Variable
 
-## Modes
+1. Click **Create variable** and choose a type: color, number, text, true/false, easing, or timing.
+2. Type a name. Slashes put it in a group: `Brand/Primary` appears as **Primary** under **Brand**.
+3. Set its value in each mode.
 
-Each collection can have multiple modes (e.g., Light and Dark). Modes appear as value columns in the list, and a variable has a value for each mode. Manage them in the collection settings:
+On the right, you can also set:
 
-- **Add mode** — click **+** next to Modes
-- **Rename** — edit the mode's name
-- **Duplicate, set as default, delete** — use the **⋯** menu next to the mode
+- **CSS name**, which the stylesheet uses. Left empty, it comes from the name, such as `--color-brand-primary`.
+- **Unit** for numbers: `px`, `rem`, `%`, `ms`, `s`, `deg`, or none.
+- **Scopes**, the settings that offer the variable.
+- **Description**, and **Hide from publishing** to keep it out of [libraries](./component-libraries).
 
-The default mode is **Always on** and goes in `:root`. Every other mode has **Applies when**, which says when the mode takes over in the exported stylesheet; the CSS it writes is shown underneath:
+To make a variable follow another one, click the variable button next to its value and pick it. **Detach variable** turns it back into a plain value.
+
+## Use a Variable
+
+<GuideLegend>
+
+<GuideImage name="variables/apply" alt="The Fill row of a selected layer with its Apply variable button open, listing the Theme colors" />
+
+1. Select a layer.
+2. Click **Apply variable** next to a setting, such as a fill color, a corner radius, or a gap.
+3. Pick a variable.
+
+</GuideLegend>
+
+The setting then shows the variable's name. To use a plain value again, click **Apply variable** and choose **Detach variable**.
+
+## Use Modes
+
+A collection can have several modes, such as **Light** and **Dark**. Every variable in it has a value in each one.
+
+- To add a mode, click **+** beside **Modes** in the collection's settings.
+- To rename one, edit its name. The **⋯** menu next to it duplicates it, makes it the default, or deletes it.
+
+<GuideLegend>
+
+<GuideImage name="variables/mode" alt="The Theme setting in Appearance open, with Auto, Light, and Dark" />
+
+To show a frame in another mode, select it and choose the mode in **Appearance**. Layers inside it follow, unless they have a mode of their own. **Auto** takes the mode from the layer around it.
+
+</GuideLegend>
+
+In code, **Applies when** says when a mode takes over. The CSS it writes shows underneath:
 
 | Applies when | CSS |
 | --- | --- |
-| **Switched manually** | the collection's switch attribute set to the mode, such as `[data-theme="dark"]` for a Theme collection's Dark mode |
-| **System is in dark mode** / **System is in light mode** | `@media (prefers-color-scheme: dark)` / `light` |
+| **Switched manually** | an attribute on an element, such as `[data-theme="dark"]` |
+| **System is in dark mode** | `@media (prefers-color-scheme: dark)` |
+| **System is in light mode** | `@media (prefers-color-scheme: light)` |
 | **High contrast is on** | `@media (prefers-contrast: more)` |
 | **Reduced motion is on** | `@media (prefers-reduced-motion: reduce)` |
-| **Screen is narrower than** / **Screen is wider than** a width | `@media (max-width: 640px)` / `min-width` |
-| **Container is narrower than** / **Container is wider than** a width | `@container (max-width: 640px)` / `min-width` |
+| **Screen is narrower than** a width | `@media (max-width: 640px)` |
+| **Screen is wider than** a width | `@media (min-width: 640px)` |
+| **Container is narrower than** a width | `@container (max-width: 640px)` |
+| **Container is wider than** a width | `@container (min-width: 640px)` |
 | **Custom CSS** | any selector, or a `@media`, `@supports`, or `@container` query |
 
-On the canvas, a layer shows a mode when you set the layer to it, whatever the condition. In exported code, a manually switched mode is turned on by adding its attribute to an element, so layers set to it export with that attribute. Layers set to a mode with any other condition, custom selectors included, export with literal values instead of tokens, because the stylesheet, not the layer, decides when that mode applies.
+The default mode is always on and goes in `:root`. A collection's **Switch attribute**, `data-theme` by default, is the attribute that turns its manual modes on. Change it to match your code, such as `data-color-scheme`.
 
-## Managing Variables
+Layers set to a manual mode export with its attribute. Layers set to a mode with any other condition export with plain values, since the stylesheet decides when that mode applies.
 
-### Formula values
+## Organize Variables
 
-A number variable's value field takes a number, another variable, or a formula. Start typing a variable's name and pick it from the list, or choose **Use a variable**: it appears as a pill, and the field shows what the formula gives, such as `= 16px`. Pills are stored by ID, so renaming a variable keeps the formula working. True/false, text and color variables keep their switch, text field or color picker; choose **Use a formula** beside one to write a formula instead.
+- **Collections:** click **+** beside **Collections** to add one. With no variable selected, the right side renames the collection, and its **⋯** menu deletes it.
+- **Find:** type in the search field to filter by name, CSS name, description, or value. Click a group to show just that group, or use the filter button for some types only.
+- **Select:** click a row, or use the arrow keys. <Keys mac="⇧" other="Shift" />-click selects a range, and <Keys mac="⌘" other="Ctrl" />-click adds one.
+- **Edit in place:** double-click a name, number, or text in the list.
+- **Move and delete:** right-click to rename, duplicate, move to a group, or delete. Drag rows to reorder them.
+- **Undo:** <Keys mac="⌘ Z" other="Ctrl Z" /> works here as it does on the canvas.
 
-- Numbers use `+`, `-`, `*`, `/` and parentheses: `space/base * 4`.
-- True/false values use `and`, `or` and `not`, and compare numbers with `==`, `!=`, `<`, `<=`, `>` and `>=`: `viewport > 1024 and not loading`. `==` and `!=` also compare text.
-- Text is written in double quotes, and `+` joins it with other text, a number or a true/false value: `"Hello, " + name`. `text(count)` writes a number as Figma does, with two decimals unless it is whole: `3`, `1.50`.
-- `if(condition, then, otherwise)` picks between two numbers, texts, true/false values or colors: `if(compact, 8, 16)`, `if(dark, gray/900, #FFFFFF)`. Colors are written as `#RRGGBB`, or `#RRGGBBAA` with opacity.
-- `truthy(value)` is false for `0`, empty text, and the words `false`, `no` and `off`, and true for anything else, as Figma reads them.
-- Unknown variables, circular references, mixed types and division by zero are reported when you leave the field, and the saved value stays as it was.
+## Write a Formula
 
-The result follows each layer's variable modes and updates bound layers when a variable it uses changes. Formulas use stored units, so lengths are in pixels. The list shows each formula's result; hover the formula icon to read the formula.
+A number's value can be a formula over other variables, such as `space/base * 4`. Start typing a variable's name and pick it, or choose **Use a variable**. The field shows the result, such as `= 16px`. For other types, choose **Use a formula** beside the value.
 
-In the stylesheet, a number formula is written as `calc()` over the variables it uses, such as `calc(var(--spacing-md) * 2 - var(--spacing-base))`, and is declared again in each mode that changes one of them. Formulas that use `if()`, text or true/false values have no CSS form and are left out of the stylesheet. A **CSS expression** replaces the value in CSS alone. Design token files hold each formula's result, with the formula under `$extensions`. Formulas survive copy and paste, sharing, undo and `.fig` saves, and Figma color and opacity expressions keep their variable references.
+- Numbers use `+`, `-`, `*`, `/` and parentheses.
+- True/false values use `and`, `or`, and `not`, and compare with `==`, `!=`, `<`, `<=`, `>`, and `>=`: `viewport > 1024 and not loading`.
+- Text goes in double quotes, and `+` joins it: `"Hello, " + name`. `text(count)` writes a number as Figma does.
+- `if(condition, then, otherwise)` picks between two values: `if(dark, gray/900, #FFFFFF)`.
+- `truthy(value)` is false for `0`, empty text, `false`, `no`, and `off`.
 
-Variables are grouped by the folders in their names (`Brand/Primary` appears as *Primary* under *Brand*), with their CSS name and one value per mode.
+Mistakes, such as an unknown name or a loop, show when you leave the field, and the old value stays. Renaming a variable keeps the formulas that use it working.
 
-- **Create variable** — click **Create variable** (or **+**) and pick a type; the new variable opens for editing
-- **Select** — click a row, or move with the arrow keys and press Enter. Shift-click selects a range, and Cmd-click (Ctrl-click on Windows and Linux) adds or removes one
-- **Filter** — type in the search bar to filter by name, CSS name, description, or value, such as `--color-brand`, a hex color, or the variable an alias points at, forgiving typos as the command palette does; click a group in the sidebar to show only that group and the groups inside it, or use the filter button to show only some types
-- **Rename or edit in place** — double-click a name, or a number or text value, in the list
-- **Right-click** — rename, duplicate, move to a group (or a new one), or delete the selected variables; Delete or Backspace deletes them too
-- **Reorder** — drag a row; the order is kept in the file
-- **Several selected** — the right side moves them into a group, duplicates them, or deletes them
-- **Undo and redo** — Cmd+Z and Cmd+Shift+Z or Cmd+Y (Ctrl on Windows and Linux) work in the dialog as on the canvas, one step per change. Enter commits a field and returns to the list; while a field has text you have not committed, Cmd+Z undoes the typing
+In the stylesheet, a number formula becomes `calc()`. Formulas with `if()`, text, or true/false values can't be written as CSS and are left out.
 
-Selecting a variable edits:
+A number can also have a **CSS expression** that replaces it in code only, such as `clamp(1rem, 4vw, var(--spacing-md))`. Add it from the value's **⋯** menu.
 
-- **Name** and **CSS name** — leave the CSS name empty to derive it from the name and scopes, such as `--color-brand-primary`. Type the name without its `--`; a name CSS cannot use is flagged and not saved
-- **Unit** — for numbers, `px`, `rem`, `%`, `ms`, `s`, `deg`, or none; values are entered in that unit
-- **Value** (or **Values**, one per mode) — a color opens the color picker. The variable button next to a value points it at another variable of the same type, an alias that follows that variable; **Detach variable** turns it back into the value it showed
-- **CSS expression** — for numbers, choose **Add CSS expression** in a value's **⋯** menu to write CSS such as `clamp(1rem, 4vw, var(--spacing-md))` instead of the value, while the canvas keeps drawing the value. Token names complete as `var(--name)` and show as pills, the variable button inserts one, and an unclosed function, an unknown token or a value the token's unit does not take is reported when you leave the field. The expression stays when the value changes between a number, a variable and a formula; remove it from the same menu
-- **Scopes** — which properties the variable is offered for
-- **Description**
-- **Hide from publishing** — files that use this one as a library do not see the variable
+## Easing and Timing Variables
 
-## Stylesheet
+Easing and timing variables hold motion: how long a change takes and how it speeds up and slows down. [Component transitions](./components#make-a-component-work-like-a-control) can follow them, so a **Reduced motion** mode can shorten every transition at once.
 
-The bottom of the dialog shows the active collection as CSS custom properties. The copy button copies the whole document's variables as CSS or as a Tailwind v4 theme, so aliases to other collections resolve.
+- **Timing** is a duration, typed in milliseconds, such as `250ms`, or seconds, such as `0.25s`.
+- **Easing** is a curve or a spring. Click it to open the editor:
+  - **Curve:** pick an ease or **Custom bezier**, then drag the two handles or type the numbers. **Flip curve** plays it backwards.
+  - **Spring:** pick Gentle, Quick, Bouncy, Slow, or **Custom spring**. Drag the first overshoot under **Time**, or set stiffness, damping, and mass under **Physics**.
 
-## Importing and Exporting Design Tokens
+In CSS, a timing is written in milliseconds and a curve as a timing function, such as `cubic-bezier(0.45, 1.45, 0.8, 1)`. Springs have no CSS form there and are left out.
 
-Variables and styles move between OpenPencil, Figma, and code as [W3C design tokens](https://www.designtokens.org/):
+## Copy Variables as Code
 
-- **Export:** in the stylesheet's copy menu, choose **Export as design tokens**. The zip holds one file per collection mode, which Figma imports as a mode; text and effect styles as typography and shadow tokens; and a resolver that combines them for tools such as Style Dictionary
-- **Import:** click **Import design tokens** in the toolbar and pick token files or a zip. Files from Figma, a resolver with the files it names, and Tokens Studio themes all work
-- **Choose where it goes:** before anything changes, the dialog shows each collection and mode it found and where it goes: a new collection or mode, an existing one, or nowhere. Variables and styles with the same name are updated and the rest is added; nothing is deleted. It counts what will be added, updated, and skipped, and lists why each skipped token was left out
-- The import is one step: **Undo** takes it all back
+The copy button above the stylesheet copies every collection as CSS, or as a Tailwind v4 theme.
 
-## Binding Variables to Fills
+## Import and Export Design Tokens
 
-In the Fill section of the properties panel, use the variable picker to bind a color variable to a node's fill.
+Variables and styles move between OpenPencil, Figma, and code as [design tokens](https://www.designtokens.org/).
 
-- **Bind** — select a color variable from the picker. The fill shows a purple badge with the variable name.
-- **Detach** — click the detach button on the badge to remove the binding. The fill reverts to the resolved color value.
+- **Export:** in the stylesheet's copy menu, choose **Export as design tokens**. You get a zip with a file for each mode, which Figma imports as a mode, and the text and effect styles.
+- **Import:** click **Import design tokens** at the top of the window and choose token files or a zip. Files from Figma and Tokens Studio work.
 
-When the variable's value changes (or when switching modes), all bound fills update automatically.
-
-## Tips
-
-- Use collections to group related tokens (e.g., "Primitives" for raw colors, "Semantic" for role-based aliases, "Spacing" for layout values).
-- Modes are useful for theme switching — define Light and Dark mode values in the same collection.
-- Variables support aliases — a "Semantic" collection can reference values from a "Primitives" collection.
-- See [Drawing Shapes](./drawing-shapes) for how fills and the color picker work.
+Before importing, the window shows where each collection and mode goes: a new one, an existing one, or nowhere. Variables with the same name are updated, the rest are added, and nothing is deleted. **Undo** takes the whole import back.

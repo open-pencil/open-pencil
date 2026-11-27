@@ -6,8 +6,7 @@ import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
 import type { DocumentPermission } from '@open-pencil/cloud/contract'
-
-import { connectCollabRoom } from '@/app/collab/room/connection'
+import { connectCollabRoom } from '@open-pencil/collab'
 
 import {
   cleanups,

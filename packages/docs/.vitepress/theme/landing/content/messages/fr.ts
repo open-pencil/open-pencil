@@ -242,6 +242,7 @@ export const fr: LandingMessages = {
     lede: 'L’espace de design de votre équipe, hébergé pour vous. Tout le monde modifie les mêmes fichiers en direct, les partage par un lien et designe avec l’IA payée par les crédits du forfait, sans rien installer ni administrer. Commencez gratuitement avec 300 Mo et exportez vos fichiers en .fig quand vous voulez.',
     signUp: 'Essayer OpenPencil Cloud',
     plans: 'Voir les forfaits',
+    community: 'Parcourir les fichiers de la communauté',
     features: [
       {
         title: 'Synchronisation en temps réel',
@@ -356,16 +357,16 @@ export const fr: LandingMessages = {
         action: 'Instructions de compilation'
       }
     },
-    beta: {
-      badge: 'Bêta',
+    nightly: {
+      badge: 'Nightly',
       title: 'Essayez la suite',
-      lede: 'Les bêtas apportent les fonctions de la prochaine version en avance, avant qu’elles n’arrivent à tous.',
+      lede: 'Les nightlies sont compilées chaque nuit à partir du code le plus récent : les nouveautés arrivent dès qu’elles sont prêtes.',
       caveats: [
-        'Une app en version stable ne passe pas à une bêta ; installez la bêta pour l’essayer.',
-        'Sous Linux, supprimez une bêta installée avec .deb ou .rpm avant d’installer la version finale.',
-        'Les bêtas de la CLI et du SDK sont sur npm sous l’étiquette next.'
+        'Une nightly ne passe pas les tests d’une version et peut casser ; sauvegardez votre travail.',
+        'Vous avez déjà l’app ? Choisissez Nightly dans Paramètres → Mises à jour → Canal de mise à jour au lieu de la télécharger.',
+        'Une nightly se met à jour vers la compilation de la nuit suivante. Pour revenir, choisissez Stable au même endroit.'
       ],
-      notes: 'Nouveautés'
+      onGitHub: 'Dernière nightly sur GitHub'
     }
   }
 }

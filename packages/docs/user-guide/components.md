@@ -1,172 +1,137 @@
 ---
+pageClass: guide
 title: Components
-description: Creating reusable components, instances, component sets, overrides, and live sync in OpenPencil.
+description: Make reusable components, place instances, add variants and properties, and turn components into working controls.
 ---
 
 # Components
 
-Components are reusable design elements. Edit the main component and all its instances update automatically.
+A component is a piece of design you use again and again, such as a button or a card. Its copies are called instances. Change the component, and every instance changes with it.
 
-## Browse Components
+<GuideLegend>
 
-Open the **Assets** tab in the left panel to browse local components and enabled libraries. Use grid or list view, search by component name, and select a component to see its details. You can insert an asset by clicking it, pressing <kbd>Enter</kbd>, or dragging it onto the canvas.
+<GuideImage name="components/overview" alt="A Button component with two variants in a dashed box, and a Publish instance beside it" />
 
-Local assets are grouped by source page. Published library assets remain available when their revision has been downloaded, including when the remote provider is temporarily offline.
+1. A **component set** holds the variants of one component. It has a dashed purple border.
+2. Each **variant** is a component of its own. Its name, such as **Variant=Primary**, shows above it.
+3. An **instance** is a copy you place in your design. It keeps its own text, here **Publish**.
 
-## Creating a Component
+</GuideLegend>
 
-Select a frame or group and press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd>). The selection becomes a reusable component.
+## Create a Component
 
-Any other layer, or several layers, is wrapped in a new white component at their bounding box, in the topmost layer's place in the layer list; a single wrapped layer gives the component its name.
+1. Select a frame, or the layers you want to reuse.
+2. Press <Keys mac="⌥ ⌘ K" other="Ctrl Alt K" />.
 
-Components display a purple label with a diamond icon above them.
+A frame or group becomes the component. Other layers are wrapped in a new component around them. Components show their name in purple above them on the canvas.
 
-## Component Sets and Variants
+## Place an Instance
 
-Select two or more components and press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd>) to combine them into a component set — a container with a dashed purple border and 20 px padding around its children, as in Figma. Sets made by scripts with `figma.combineAsVariants()` wrap their components exactly, as Figma's plugin API does.
+Open **Assets** at the top of the left panel. It lists the components in your file, by page, and in the libraries you turned on.
 
-Each component in a set can define values across multiple variant dimensions, such as `Size=Small`, `State=Hover`, and `Theme=Dark`. OpenPencil supports sparse combinations, so a set does not need every possible combination. The top-left variant is the default and is used as the fallback when an update no longer contains an exact combination.
+<GuideLegend>
 
-Select a component and press **Add variant** in the panel header to turn it into a component set, as Figma does: the component becomes `Property 1=Default` and a copy named `Property 1=Variant2` appears below it. On a set, **Add variant** copies its last variant with the next value. The set's variant properties are rows of its **Properties** list; click one to rename it or to add, rename, drag to reorder, or remove its values. Removing a value variants still use moves them to another value first, and variants that share every value are named in a notice that selects them.
+<GuideImage name="components/assets" alt="The Assets panel with Button and Switch components" />
 
-## Component Properties
+- Click a component to place it, or drag it onto the canvas.
+- Type in the search field to find one by name.
+- The buttons beside the search switch between a grid and a list, and open [libraries](./component-libraries).
 
-Components and component sets support reusable text, boolean visibility, instance-swap, and slot properties. Select an instance to edit its values without detaching it. Properties and their values are preserved when saving and reopening `.fig` files.
+</GuideLegend>
 
-To link a layer of a main component to a property, use the link button where its field lives: **Typography** for text content, **Appearance** for visibility, and the instance header for the swapped component. Create a property from the layer's current value or pick an existing one; the field then shows the property instead of its value. Typing into linked text sets the property — its default in the main component, the instance's value in an instance.
+You can also right-click a component on the canvas and choose **Create instance**, or press <Keys mac="⌘ D" other="Ctrl D" /> on it.
 
-Select the main component to see its **Properties**. Click a property to rename it, change its default, see and unlink the layers it drives, or delete it, and drag properties to reorder them. **+** adds a text, boolean, or instance-swap property.
+## Change All Instances
 
-To show a nested instance's properties on instances of the component, choose **+ → Nested instances** and tick it, as Figma's **Expose properties from nested instances** does. Instances of the component then list its properties under its name. Only an instance whose component has properties can be exposed.
+Edit the component: its size, colors, text, layout, or the layers inside it. Every instance follows, except where you changed that instance yourself.
 
-## Slots
+To find the component an instance comes from, right-click the instance and choose **Go to main component**. OpenPencil opens its page and selects it.
 
-A slot is a frame of a main component whose content each instance can change. Select a frame inside a main component and choose **Create slot** from the context menu or the Slots section, or select other layers to wrap them in a new slot frame. Slot settings set a description, the components it prefers, and how many items it holds; an instance outside those limits shows a warning. In an instance, add, reorder, and remove a slot's items, or reset it to the component's content.
+## Change One Instance
 
-## Behaviours and Preview
+Select an instance and change it like any other layer: edit its text, swap a color, or hide a layer inside it. These changes stay when the component changes, and everything else keeps following the component.
 
-A behaviour makes a main component or component set work like a real control, after [Reka UI](https://reka-ui.com)'s primitives: Button, Text field, Textarea, Number field, Toggle, Switch, Checkbox, Radio, Radio group, Toggle group, Slider, Progress, Tabs, Tab, Collapsible, or Accordion. Select the component and use **+** in the **Behaviour** section to choose one.
+Some things always come from the component: where each layer sits inside the instance, its rotation, and its constraints.
 
-The section lists what the control needs:
+To cut an instance loose from its component, press <Keys mac="⌥ ⌘ B" other="Ctrl Alt B" />. It becomes a plain frame that looks the same.
 
-- **Values** — the property that holds each value: a variant or boolean property for On, Checked, Pressed, Open, Filled, Disabled, or, for fields, switches, checkboxes, and radios, Invalid (with the variant values that mean on and off), a text property for a field's text, or a slider's own minimum, maximum, step, and default.
-- **Parts** — the slot that draws each part, such as a switch's thumb, a slider's track, range, and thumb, or a tab list. A group's items slot holds instances of its radios, toggles, or collapsibles, and a tab list may hold instances of a Tab component, which then shows its selected look on the chosen tab and cannot be chosen while drawn disabled.
-- **States** — a variant property whose values draw default, hover, pressed, focus, disabled, and, for fields, switches, checkboxes, and radios, invalid. Values named like those states are matched automatically; Invalid or Error is the invalid state. An invalid control keeps its invalid look in focus and under the pointer, and a disabled one shows disabled.
+## Make Variants
 
-Rows the control requires come first; the rest are under **More options**. When a component has nothing to bind yet, a row offers to create it: a text layer and text property, Off and On variants, or a slot, and **States** offers **Add state variants**, which adds a Default, Hover, Pressed, Focus, and Disabled variant of the component, and an Invalid one for a form control. A lone main component that gets variants this way becomes a component set, and a slot added to a set appears in every variant. Until the control works, a line under its name says what is still needed; clicking it goes there.
+Variants are versions of one component, such as a primary and a secondary button, or a switch that's on and off.
 
-Press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Enter</kbd>), choose **View → Preview**, or use ▶ next to Share to preview the canvas. Each top-level layer holding controls runs as live Reka UI components over the canvas, drawn by the component's variants: switches flip, sliders drag, tabs and accordions open, and text fields are real inputs with the browser's caret, selection, and paste. Preview never changes the document or its history. **Reset** puts every control back as designed, and <kbd>Esc</kbd> or the pill's close button returns to editing. In split view, each canvas previews on its own.
+1. Select a component.
+2. Click **Add variant** at the top of the Design panel. The component becomes a set, with a copy below it.
+3. Change the copy, and give it a name in **Variants**.
 
-Behaviours are saved in `.fig` files and published with library components.
+To combine components you already have, select them and press <Keys mac="⇧ ⌘ K" other="Ctrl Shift K" />.
 
-## Component Libraries
+A variant can have several properties, such as **Size=Small, State=Hover**. The set doesn't need every combination. When an instance asks for one the set doesn't have, it uses the top-left variant.
 
-A component library publishes reusable components, shared styles, and variable collections as an immutable revision. Each published asset has stable library, asset, and revision identity, so different instances can remain on different revisions until you explicitly update them.
+## Choose a Variant in an Instance
 
-### Publish a Library
+<GuideLegend>
 
-1. Create the components, component sets, styles, and variables you want to share.
-2. Open **Assets**, then select **Manage libraries**.
-3. Select **Publish library**.
-4. Enter a stable library ID and display name. The library ID is locked after the first publication.
-5. Optionally search the change list and enter a revision description.
-6. Select the added, modified, renamed, or removed assets to include.
-7. Confirm the destination and select **Publish library**.
+<GuideImage name="components/instance" alt="Component properties for an instance: Label set to Publish and Variant set to Primary" />
 
-A library publishes every style and variable collection the document defines, and each component carries the styles and variables it uses, including the variables those alias. A changed variable value is a change to its collection, not to the components that use it. Each published component and set includes a thumbnail.
+Select an instance. **Component properties** at the top of the Design panel lists what you can set: pick a variant, type a label, or turn a layer on and off.
 
-On later publications, unchecked changes remain pending. Unchanged assets keep their previous published definitions, and removed definitions remain available while documents still reference their historical revision.
+</GuideLegend>
 
-### Enable and Insert Library Assets
+## Add Properties
 
-Open **Assets → Manage libraries** to enable a published library. Its components appear in the Assets panel alongside local components. Insert one by clicking it, using the keyboard, or dragging it onto the canvas.
+Properties are the settings an instance offers. A component set's variant properties are there already.
 
-Inserting a component also brings the styles and variables it uses. They arrive as the library's read-only styles and collections, later inserts reuse them, and updating the library refreshes their values.
+1. Select the component.
+2. Click **+** beside **Properties** and choose a kind:
+   - **Text** sets a label's words.
+   - **Boolean** shows or hides a layer, such as an icon.
+   - **Instance swap** replaces a nested instance, such as the icon itself.
+   - **Variant** adds another set of variants.
+3. Link a layer to it. Select the layer in the component and click **Apply variable/property** next to its setting: in **Typography** for text, in **Appearance** for showing and hiding, or at the top of the panel for a nested instance.
 
-Published definitions are read-only in consuming documents. Edit the source document and publish another revision to change a definition. Instances linked to those definitions remain editable through their component properties and overrides.
+<GuideLegend>
 
-### Review and Accept Updates
+<GuideImage name="components/property" alt="The Label property open, with its name, default value, and the layer it drives" />
 
-Open **Manage libraries → Updates** to discover newer revisions. Discovery does not modify the document. You can review the current and updated instance side by side, navigate between affected instances, and then update:
+Click a property to rename it, change its default, see the layers it drives, or delete it. Drag properties to reorder them.
 
-- The selected instance
-- All instances of one asset
-- Instances on the current page
-- Instances across all pages
+</GuideLegend>
 
-Updating every instance of an asset redraws the document's copy of that component in place, so its instances keep their overrides — on layers the library renamed too, since each layer is matched to the library layer it copies — and lose only those on layers the library removed. Updating some instances of an asset moves just those to a copy of the newer definition, as does updating a component the library turned into another kind of layer, such as a set of variants; OpenPencil then preserves compatible text, visibility, and instance-swap assignments. If an exact variant no longer exists, the review identifies the top-left fallback before you accept it. Applying an update creates an undo entry.
+To show a nested instance's own properties on your component's instances, choose **+ → Nested instances** and tick it.
 
-### Local, Storage, and Offline Use
+## Add Slots
 
-Libraries can use the local browser catalog or a configured storage provider. Remote publication uses immutable revision objects and a conditional latest pointer, preventing two publishers from silently overwriting each other.
+A slot is a frame in a component whose content each instance fills in, such as the body of a card or the items of a list.
 
-Downloaded revisions are cached locally. A document can continue rendering and inserting downloaded definitions while offline. Integrity failures are reported instead of being hidden by cached data.
+1. Select a frame inside the component, or the layers to wrap in one.
+2. Click **Create slot** in the Design panel, or choose **Object → Create slot**.
 
-### Saving Consumer Documents
+Slot settings take a description, the components it prefers, and how many items it holds; an instance outside those limits shows a warning. In an instance, add, reorder, and remove a slot's items, or reset it to the component's content.
 
-Enabled-library bindings and materialized definitions are saved with `.fig` documents. Reopening a consumer file preserves its linked instances and revision identities, even when its remote library is unavailable.
+## Make a Component Work Like a Control
 
-## Creating Instances
+A behaviour turns a component into a working button, switch, slider, tab, or text field when you preview your design. The controls come from [Reka UI](https://reka-ui.com).
 
-Right-click a component and select **Create instance** from the context menu. The instance appears 40 px to the right of the source component, visually identical.
+1. Select the component or component set.
+2. Click **+** beside **Behaviour** and choose a control.
+3. Fill in the rows it shows.
 
-Instance creation is available only through the context menu — there's no toolbar button.
+<GuideLegend>
 
-## Detaching an Instance
+<GuideImage name="components/behaviour" alt="The Behaviour section for a Switch, marked Ready, with Checked, On, Off, Thumb, States, and Transition" />
 
-Select an instance and press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>B</kbd>) to detach it. The instance becomes a regular frame with no link to the original component. All overrides are baked in.
+- The first rows say which property holds the value, such as **Checked** for a switch, and which slot draws each part, such as its **Thumb**.
+- **States** is the variant property for how the control looks at rest, under the pointer, pressed, focused, disabled, and invalid. **Add state variants** makes them for you.
+- **Transition** eases the control between states. Its duration and easing can follow [timing and easing variables](./variables#easing-and-timing-variables).
 
-## Go to Main Component
+</GuideLegend>
 
-Right-click an instance and select **Go to main component**. The editor navigates to and selects the main component, switching pages if needed.
+**Ready** shows once the control works. Until then, a line under its name says what's missing: click it to go there.
 
-## Live Sync
+To try your controls, press <Keys mac="⌥ ⌘ ↩" other="Ctrl Alt Enter" /> or click ▶ next to **Share**. Switches flip, sliders drag, tabs open, and text fields take typing. Preview doesn't change your file. **Reset** puts every control back, and <Keys mac="Esc" other="Esc" /> returns to editing.
 
-When you edit a component, all its instances update automatically, as in Figma: every property an instance does not override follows the component. That covers size, fills, strokes and their weight, alignment, caps, joins, and dashes, effects, opacity, blend mode, corner radii and smoothing, layout settings and grids, clipping, shared styles, and text, from its font and size to letter spacing, line height, case, decoration, alignment, and styled ranges.
+Behaviours are saved in `.fig` files, and exported Vue, React, and Storybook components keep them, with each transition written as CSS.
 
-A layer inside an instance also takes its position, rotation, flips, constraints, and mask from the component. Move or rotate a layer in the component and it moves in every instance. When an instance has a different size than its component, the layer is placed by its constraints, so a layer pinned to the right keeps its distance from the right edge. Inside auto layout, the layout places it.
+## Share Components Between Files
 
-Sync triggers automatically after node updates, moves, and resizes within a component.
-
-## Overrides
-
-Instances can override specific properties without breaking the sync link. When a property is overridden on an instance, that property is skipped during sync — other properties continue to update from the main component.
-
-### Overridable Properties
-
-A layer inside an instance can override its name, text, styled ranges, and font, every visual and text property listed above, its size, and whether it is visible or locked. Its position, rotation, flips, constraints, and mask cannot be overridden: they always come from the component. Scripts that set its position, rotation, constraints, or mask get Figma's error. Slot content is the instance's own and stays editable.
-
-Overrides in a `.fig` file come back as overrides when you open it, and are saved the way Figma writes them.
-
-### New Children
-
-When you add a child to a component, all existing instances gain a cloned copy automatically. Child order in instances always matches the component.
-
-## Hit Testing
-
-Components and instances are opaque containers — clicking on a child selects the component itself, not the child. **Double-click** to enter the component and select children inside it.
-
-## Visual Treatment
-
-| Element | Appearance |
-|---------|------------|
-| Component label | Purple with diamond icon, always visible |
-| Instance label | Purple with diamond icon, always visible |
-| Component set border | Dashed purple outline |
-
-## Keyboard Shortcuts
-
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Create component | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd> |
-| Create component set | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd> |
-| Detach instance | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>B</kbd> |
-| Preview | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Enter</kbd> |
-
-## Tips
-
-- Editing text inside an instance creates an override — the text won't be overwritten when the component changes.
-- Use component sets to organize multidimensional variants such as size, state, and theme.
-- Publish reusable assets from their source document; published definitions are intentionally read-only in consumer documents.
-- Review updates before accepting them when a revision removes an exact variant combination.
-- See [Context Menu](./context-menu) for all component-related actions.
+To use the same components in several files, publish them as a [component library](./component-libraries).

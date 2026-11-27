@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import type { SceneGraph, VariableType } from '@open-pencil/scene-graph'
+import { VARIABLE_TYPES, type SceneGraph, type VariableType } from '@open-pencil/scene-graph'
 
 import { graphOf } from '#core/figma-api/graph'
 import type { DesignTokenFile } from '#core/io/formats/design-tokens'
@@ -68,12 +68,7 @@ export const designToTokens = defineTool({
     collection: v.optional(
       v.pipe(v.string(), v.description('Filter by collection name (substring, case-insensitive)'))
     ),
-    type: v.optional(
-      v.pipe(
-        v.picklist(['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']),
-        v.description('Filter by variable type')
-      )
-    )
+    type: v.optional(v.pipe(v.picklist(VARIABLE_TYPES), v.description('Filter by variable type')))
   }),
   execute: async (figma, args) => {
     if (args.format === 'dtcg') {

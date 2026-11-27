@@ -1,0 +1,1 @@
+- Auto layout rows aligned by baseline place text by its first baseline, as Figma does, instead of by its bottom edge; frames holding text align by that text and wrapped lines each by their own baseline (#2364).

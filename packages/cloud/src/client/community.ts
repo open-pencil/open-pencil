@@ -1,40 +1,26 @@
-import {
-  communityDocumentsSchema,
-  communityDownloadSchema,
-  type CommunityDocuments,
-  type CommunityDownload
-} from '#cloud/contract'
-import type { PublicCloudAPI } from '#cloud/server/api'
-import type { hc } from 'hono/client'
+import type { CommunityDocuments, CommunityDownload } from '#cloud/contract'
 
-import { parseResponse, type CloudClientDiagnostic } from './response'
+import type { CloudContractClient } from './contract'
 
 /** The server’s community gallery, which anyone may open without signing in. */
-export function createCommunityRequests(
-  publicClient: ReturnType<typeof hc<PublicCloudAPI>>,
-  onDiagnostic?: CloudClientDiagnostic
-) {
+export function createCommunityRequests(contract: CloudContractClient['community']) {
   return {
     /** The gallery's documents, most recently changed first. */
     async listCommunityDocuments(): Promise<CommunityDocuments> {
-      return parseResponse(publicClient.community.$get(), communityDocumentsSchema, onDiagnostic)
+      return (await contract.list()).body
     },
     /**
      * A document of the server's community gallery as it is now, or one of its named versions,
      * which anyone may open without signing in.
      */
-    async getCommunityDocument(
+    getCommunityDocument(
       documentId: string,
       versionId: string | null = null
     ): Promise<CommunityDownload> {
-      return parseResponse(
-        publicClient.community[':documentId'].document.$get({
-          param: { documentId },
-          query: versionId ? { version: versionId } : {}
-        }),
-        communityDownloadSchema,
-        onDiagnostic
-      )
+      return contract.document({
+        params: { documentId },
+        query: versionId ? { version: versionId } : {}
+      })
     }
   }
 }

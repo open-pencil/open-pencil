@@ -16,6 +16,8 @@
   "createInstance": "Criar instância",
   "detachInstance": "Desanexar instância",
   "detachIcon": "Desanexar ícone",
+  "setAsThumbnail": "Definir como miniatura",
+  "restoreDefaultThumbnail": "Restaurar miniatura padrão",
   "goToMainComponent": "Ir para o componente principal",
   "addAutoLayout": "Adicionar auto layout",
   "useAsMask": "Usar como máscara",

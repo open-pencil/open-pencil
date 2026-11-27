@@ -60,7 +60,7 @@ Promień można ustawić wspólnie lub osobno dla każdego narożnika prostokąt
 
 ## Ramki i sekcje
 
-**Ramka** jest kontenerem. Przeciągnij kształt do ramki, aby zmienić jego obiekt nadrzędny. Ramka może przycinać zawartość, ale ustawienie to jest domyślnie wyłączone. Ramki obsługują także [automatyczny układ](./auto-layout).
+**Ramka** jest kontenerem. Przeciągnij kształt do ramki, aby zmienić jego obiekt nadrzędny. Ramka może przycinać zawartość, ale ustawienie to jest domyślnie wyłączone. Ramki obsługują także [automatyczny układ](/user-guide/auto-layout).
 
 Po wybraniu narzędzia Ramka panel Projekt pokazuje grupy gotowych rozmiarów dla telefonów, tabletów, komputerów, prezentacji, zegarków, papieru i mediów społecznościowych. Wybrany rozmiar tworzy nazwaną ramkę pośrodku widoku.
 

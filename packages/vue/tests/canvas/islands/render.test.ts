@@ -11,7 +11,8 @@ const context: IslandRenderContext = {
   rootId: '',
   controls: new Map(),
   roles: new Map(),
-  state: createIslandState(new Map())
+  state: createIslandState(new Map()),
+  transitions: new Map()
 }
 
 const element = (tagName: string, attrs: Record<string, string>): DesignElement => ({
@@ -31,6 +32,18 @@ describe('preview island elements', () => {
       target: '_blank',
       rel: 'noopener noreferrer'
     })
+  })
+
+  test('a layer plays the transition of the control it is in, the nearest one', () => {
+    const transitions = new Map([
+      ['Switch', { 'transition-duration': '250ms' }],
+      ['Switch/Inner', { 'transition-duration': '100ms' }]
+    ])
+    const style = (path: string) =>
+      renderElement({ ...context, transitions }, element('div', {}), path).props?.style
+    expect(style('Switch/Knob')).toMatchObject({ 'transition-duration': '250ms' })
+    expect(style('Switch/Inner/Dot')).toMatchObject({ 'transition-duration': '100ms' })
+    expect(style('Other')).not.toHaveProperty('transition-duration')
   })
 
   test('other elements get no link attributes', () => {

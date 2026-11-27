@@ -12,27 +12,31 @@ OpenPencil to lokalny edytor graficzny open source, zgodny z Figmą i przygotowa
 W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Command</kbd> i odpowiada <kbd>Ctrl</kbd> w Windows i Linuksie; <kbd>⌥</kbd> oznacza <kbd>Option</kbd> i odpowiada <kbd>Alt</kbd>; <kbd>⇧</kbd> oznacza <kbd>Shift</kbd>.
 :::
 
-## Nawigacja i zaznaczanie
+## Pierwsze kroki
 
-- [Nawigacja po obszarze roboczym](./canvas-navigation) — przesuwanie widoku, powiększenie i narzędzie Rączka;
-- [Zaznaczanie i przekształcanie](./selection-and-manipulation) — wybieranie, przesuwanie, zmiana rozmiaru, obracanie i porządkowanie obiektów.
+- [Nawigacja po obszarze roboczym](/user-guide/canvas-navigation) — przesuwanie widoku, powiększenie i narzędzie Rączka
+- [Zaznaczanie i przekształcanie](/user-guide/selection-and-manipulation) — wybieranie, przesuwanie, zmiana rozmiaru, obracanie i porządkowanie obiektów
+- [Warstwy i strony](/user-guide/layers-and-pages) — drzewo warstw, strony i panel właściwości
+- [Otwieranie i zapisywanie](/user-guide/files) — dokumenty i strony internetowe
 
-## Tworzenie obiektów
+## Rysowanie
 
-- [Kształty](./drawing-shapes) — prostokąty, elipsy, linie, ramki, sekcje, wielokąty i gwiazdy;
-- [Tekst](./text-editing) — tworzenie i edytowanie tekstu z formatowaniem;
-- [Narzędzie Pióro](./pen-tool) — tworzenie ścieżek wektorowych z krzywymi Béziera;
-- [Edycja wektorów](./vector-edit) — zmiana punktów, uchwytów i segmentów.
+- [Kształty](./drawing-shapes) — prostokąty, elipsy, linie, ramki, sekcje, wielokąty i gwiazdy
+- [Narzędzie Pióro](./pen-tool) — tworzenie ścieżek wektorowych z krzywymi Béziera
+- [Edycja wektorów](./vector-edit) — zmiana punktów, uchwytów i segmentów
+- [Tekst](./text-editing) — tworzenie i edytowanie tekstu z formatowaniem
 
-## Struktura dokumentu i pliki
+## Budowanie systemu projektowego
 
-- [Warstwy i strony](./layers-and-pages) — drzewo warstw, strony i panel właściwości;
-- [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje;
-- [Eksport](./exporting) — eksport obrazów i praca z plikami `.fig`.
+- [Automatyczny układ](/user-guide/auto-layout) — rozmieszczanie obiektów za pomocą Flexbox i CSS Grid
+- [Komponenty](/user-guide/components) — komponenty, egzemplarze i nadpisania przeznaczone do ponownego użycia
+- [Zmienne](/user-guide/variables) — zmienne projektu, kolekcje, tryby i powiązania z zalewami
 
-## Funkcje zaawansowane
+## Sprawdzanie i udostępnianie
 
-- [Automatyczny układ](./auto-layout) — rozmieszczanie obiektów za pomocą Flexbox i CSS Grid;
-- [Komponenty](./components) — komponenty, egzemplarze i nadpisania przeznaczone do ponownego użycia;
-- [Zmienne](./variables) — zmienne projektu, kolekcje, tryby i powiązania z zalewami;
-- [Checking Designs](/user-guide/checking-designs) — panel Sprawdź, znaczniki problemów na obszarze roboczym i reguły lintu.
+- [Sprawdzanie projektów](/user-guide/checking-designs) — panel Sprawdź, znaczniki problemów na obszarze roboczym i reguły lintu
+- [Eksport](/user-guide/exporting) — eksport obrazów
+
+## Referencja
+
+- [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje
