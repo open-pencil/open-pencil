@@ -465,10 +465,10 @@ function interpretRoot(
   ): void => {
     applyPropertyClaims(claimContext, occurrence, rank, claims)
     applyInstanceLayoutScale(occurrence, source)
-    const preConstraint = applyPlacedConstraints(occurrence, base, source)
+    const placements = applyPlacedConstraints(occurrence, base, source)
     modeScopes.applySavedSize(occurrence, source, modes)
     if (derived) {
-      applyDerivedBounds(claimContext, occurrence, source, preConstraint)
+      applyDerivedBounds(claimContext, occurrence, source, placements)
     }
   }
 
