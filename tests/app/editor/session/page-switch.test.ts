@@ -1,8 +1,11 @@
 import 'fake-indexeddb/auto'
-import { afterEach, expect, test } from 'bun:test'
+import { afterEach, expect, spyOn, test } from 'bun:test'
+
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createEditorStore } from '@/app/editor/session/create'
 import { toast } from '@/app/shell/ui'
+import { showImportedGraph } from '@/app/tabs/open/show'
 
 afterEach(() => {
   toast.toasts.value = []
@@ -41,4 +44,40 @@ test('a page that cannot be shown stays in and fails its preparation as a render
   expect(failures).toEqual(['render-failed'])
   expect(store.state.preparation).toBeNull()
   expect(toast.toasts.value.map((entry) => entry.variant)).toEqual(['error'])
+})
+
+test.each([
+  ['keeps a display failure', false],
+  ['accepts an AbortError reported by the interrupted work', true]
+] as const)('a page switch taking over an open %s', async (_label, aborted) => {
+  const store = createEditorStore()
+  const graph = new SceneGraph()
+  const page = graph.addPage('Next')
+  const fitting = Promise.withResolvers<undefined>()
+  const started = Promise.withResolvers<undefined>()
+  const fit = spyOn(store, 'fitCurrentPageToViewport').mockImplementationOnce(() => {
+    started.resolve(undefined)
+    return fitting.promise
+  })
+  const load = store.preparationController.begin({ kind: 'document-open' })
+  store.onPreparationEvent('preparation:updated', (preparation) => {
+    if (preparation.kind === 'page-switch' && preparation.phase === 'preparing-render') {
+      store.preparationController.acknowledgePresentation(store.state)
+    }
+  })
+  const showing = showImportedGraph(store, graph, undefined, load).catch((error: unknown) => error)
+
+  try {
+    await started.promise
+    const failure = aborted
+      ? new DOMException('Aborted', 'AbortError')
+      : new Error('Could not fit the viewport')
+    fitting.reject(failure)
+    const next = store.switchPage(page.id)
+    expect(await showing).toBe(aborted ? undefined : failure)
+    await next
+  } finally {
+    fit.mockRestore()
+    store.dispose()
+  }
 })
