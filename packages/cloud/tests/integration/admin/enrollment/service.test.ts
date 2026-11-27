@@ -4,7 +4,6 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import {
   createEnrollmentService,
   createTransactionalEmailService,
-  decryptTransactionalEmailPayload,
   PostgresRateLimitStore
 } from '#cloud/server'
 
@@ -123,77 +122,23 @@ describe('Cloud enrollment integration', () => {
     }
   })
 
-  test('invites everyone waiting with the letter, once, only where invitations are offered', async () => {
+  test('refuses to decide a request another administrator decided meanwhile', async () => {
     const runtime = await createCloudTestDatabase()
     try {
-      const email = createTransactionalEmailService(runtime.database, {
-        encryptionSecret: 'enrollment-test-secret-at-least-32-characters',
-        from: 'cloud@example.com'
+      const service = createEnrollmentService(runtime.database, {
+        publicURL: 'https://cloud.example.com',
+        adminRecipients: []
       })
-      const options = { publicURL: 'https://cloud.example.com', adminRecipients: [], email }
-      const selfHosted = createEnrollmentService(runtime.database, options)
-      const official = createEnrollmentService(runtime.database, { ...options, invitations: true })
-      await official.request({ email: 'ada@example.com', name: 'Ada' })
-      // Grace joined openpencil.dev's waitlist; an administrator recorded her here.
-      await official.request({ email: 'grace@example.com', source: 'waitlist' })
-      // Ada asked here already: the waitlist doesn't take her request, or the letter for asking.
-      expect(await official.request({ email: 'ada@example.com', source: 'waitlist' })).toBe(
-        'unchanged'
-      )
-      await official.request({ email: 'linus@example.com', name: 'Linus' })
-      const [declined] = (await official.list({ search: 'linus' })).enrollments
-      if (!declined) throw new Error('Expected the request to decline')
-      await official.review('admin-user', declined.id, 'rejected', {})
+      await service.request({ email: 'linus@example.com', name: 'Linus' })
+      const [request] = (await service.list({ search: 'linus' })).enrollments
+      if (!request) throw new Error('Expected the request')
+      await service.review('admin-user', request.id, 'rejected', {})
 
-      const withoutEmail = createEnrollmentService(runtime.database, {
-        ...options,
-        email: undefined,
-        invitations: true
-      })
-      for (const service of [selfHosted, withoutEmail]) {
-        await expect(service.invitePending('admin-user')).rejects.toMatchObject({
-          code: 'invitations_unavailable'
-        })
-      }
-      // Another administrator declined it after this reviewer saw it waiting.
+      // This reviewer still saw it waiting.
       await expect(
-        official.review('admin-user', declined.id, 'approved', {
-          invite: true,
-          expectedStatus: 'pending'
-        })
+        service.review('admin-user', request.id, 'approved', { expectedStatus: 'pending' })
       ).rejects.toMatchObject({ code: 'invalid_enrollment_transition' })
-      expect(await official.invitePending('admin-user')).toEqual({ invited: 2 })
-      expect(await official.invitePending('admin-user')).toEqual({ invited: 0 })
-
-      expect(await official.isApproved('ada@example.com')).toBe(true)
-      expect(await official.isApproved('grace@example.com')).toBe(true)
-      expect(await official.statusForEmail('linus@example.com')).toBe('rejected')
-      const letters = await runtime.database
-        .selectFrom('transactionalEmail')
-        .select(['id', 'kind', 'recipientEmailNormalized', 'payloadEncrypted'])
-        .where('kind', 'in', ['enrollment-invited', 'enrollment-approved'])
-        .orderBy('recipientEmailNormalized')
-        .execute()
-      expect(letters.map((letter) => [letter.kind, letter.recipientEmailNormalized])).toEqual([
-        ['enrollment-invited', 'ada@example.com'],
-        ['enrollment-invited', 'grace@example.com']
-      ])
-      // Ada asked here and gets the letter that says so; Grace's thanks her for the waitlist.
-      const payloads = await Promise.all(
-        letters.map(async (letter) => {
-          const content = await decryptTransactionalEmailPayload(
-            'enrollment-test-secret-at-least-32-characters',
-            letter.id,
-            'enrollment-invited',
-            letter.payloadEncrypted ?? ''
-          )
-          return content.payload
-        })
-      )
-      expect(payloads.map((payload) => 'waitlist' in payload && payload.waitlist)).toEqual([
-        false,
-        true
-      ])
+      expect(await service.statusForEmail('linus@example.com')).toBe('rejected')
     } finally {
       await runtime.close()
     }

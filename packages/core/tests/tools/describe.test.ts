@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
 
-import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { ColorProfile, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 const NAVY: Color = { r: 2 / 255, g: 26 / 255, b: 59 / 255, a: 1 }
@@ -88,9 +88,15 @@ function describeTextOnBackground(
   fontSize: number,
   fontWeight = 400,
   textOpacity = 1,
-  options: { opacity?: number; boundColor?: string; styleRuns?: SceneNode['styleRuns'] } = {}
+  options: {
+    opacity?: number
+    boundColor?: string
+    styleRuns?: SceneNode['styleRuns']
+    profile?: ColorProfile
+  } = {}
 ): DescribedIssue[] {
   const { figma, graph } = setupToolTest()
+  graph.documentColorSpace = options.profile ?? 'srgb'
   const frame = figma.createFrame()
   frame.name = 'Button'
   frame.resize(200, 60)
@@ -147,6 +153,15 @@ describe('describe text contrast', () => {
     expect(
       describeTextOnBackground('#000000', '#FFFFFF', 14, 400, 1, { opacity: 0.4 })[0]?.message
     ).toContain('contrast 2.84:1 is below WCAG AA 4.5:1')
+  })
+
+  test("measures a Display P3 document's colors in sRGB, as the contrast lint rule does", () => {
+    // Read as sRGB, this red on white passes at about 4.56:1; as the P3 red it is, it fails.
+    expect(describeTextOnBackground('#ED0000', '#FFFFFF', 14)).toEqual([])
+    expect(
+      describeTextOnBackground('#ED0000', '#FFFFFF', 14, 400, 1, { profile: 'display-p3' })[0]
+        ?.message
+    ).toMatch(/contrast 4\.\d+:1 is below WCAG AA 4\.5:1/)
   })
 
   test('skips text whose fill color is bound to a variable', () => {

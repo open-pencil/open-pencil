@@ -11,7 +11,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
@@ -54,7 +54,7 @@ const emit = defineEmits<{
 
 const ui = homeLocationMenu()
 const menuUI = menu()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const current = computed(() => {
   if (active.kind === 'recent') return t.value.homeRecent
   if (active.kind === 'shared') return t.value.homeSharedWithYou

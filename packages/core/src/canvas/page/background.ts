@@ -44,7 +44,8 @@ export function paintPageBackground(
   origin: Vector,
   scale: number
 ): void {
-  canvas.clear(r.ck.Color4f(r.pageColor.r, r.pageColor.g, r.pageColor.b, 1))
+  const background = r.renderColor(r.pageColor)
+  canvas.clear(r.ck.Color4f(background.r, background.g, background.b, 1))
   if (r.pageDotGrid === null) return
   const zoom = scale / r.dpr
   const pitch = dotGridSpacing(r.pageDotGrid, zoom) * scale

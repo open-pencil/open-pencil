@@ -20,7 +20,7 @@ Przy podanej nazwie obiektu aplikacja zaznacza wszystkie warstwy o dokładnie te
 Wersja internetowa przyjmuje taki sam odnośnik z własnego paska adresu:
 
 ```
-https://app.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
+https://cloud.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
 ```
 
 Tutaj `file` to bezwzględny adres `https:` kończący się na `.pen` lub `.fig` — wersja internetowa nie ma systemu plików, więc ścieżka względna, adres `http:` lub inne rozszerzenie są odrzucane z ostrzeżeniem w konsoli i niczym więcej. Rozszerzenie jest odczytywane ze ścieżki adresu, więc zapytanie w adresie pliku niczego nie zmienia. Fragment jest odcinany przed pobraniem: nigdy nie trafia na serwer, więc `…/hikyo.pen#a` i `…/hikyo.pen#b` otwierają jedną kartę, nie dwie. `node` działa dokładnie jak wyżej: to samo zaznaczanie po dokładnej nazwie i przybliżenie, to samo powiadomienie, gdy żadna warstwa nie ma takiej nazwy. Obie wartości są kodowane jako URL, dosłowny `+` trzeba wysłać jako `%2B`, a powtórzony klucz przyjmuje ostatnią wartość, tak jak na komputerze. Odnośnik jest obsługiwany na każdej trasie, więc `/share/<room>?file=…` i `/demo?file=…` działają jak `/?file=…`.

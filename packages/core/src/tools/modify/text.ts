@@ -188,7 +188,9 @@ export const setFontRange = defineTool({
         node.setRangeFontName(start, end, rangeFont(node, args))
       }
       if (args.color) {
-        node.setRangeFills(start, end, [{ type: 'SOLID', color: parseColor(args.color) }])
+        node.setRangeFills(start, end, [
+          { type: 'SOLID', color: parseColor(args.color, graphOf(figma).documentColorSpace) }
+        ])
       }
     } catch (error) {
       return toolFailure(error)

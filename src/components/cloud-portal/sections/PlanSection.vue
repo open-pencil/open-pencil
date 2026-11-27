@@ -2,7 +2,7 @@
 import { onActivated, onBeforeUnmount, onDeactivated, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortalPlan } from '@/app/cloud-portal/plan'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -17,7 +17,7 @@ import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
  * opens billing again at once. Leaving the page drops a handoff still waiting for its token.
  */
 const { entitlements, plan, sells, opening, openBilling, cancelBilling } = usePortalPlan()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const route = useRoute()
 const router = useRouter()
 

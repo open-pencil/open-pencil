@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ProfileSignInStatus } from '@/app/ai/models/settings/profile-editor/sign-in'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -22,7 +22,8 @@ const {
   disabled?: boolean
 }>()
 const emit = defineEmits<{ signIn: []; reopen: []; cancel: []; signOut: [] }>()
-const { ai, common } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
 
 const failure = computed(() => {
   if (status === 'cancelled') return ai.value.aiSetupSignInCancelled

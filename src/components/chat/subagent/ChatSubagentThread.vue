@@ -3,7 +3,7 @@ import type { UIMessage } from 'ai'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { SubagentTranscript } from '@/app/ai/chat/subagents'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
@@ -15,7 +15,7 @@ import { chatSubagentTheme } from '@/components/chat/ui'
  */
 const { transcript } = defineProps<{ transcript: SubagentTranscript }>()
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatSubagentTheme()
 
 const message = computed<UIMessage>(() => ({

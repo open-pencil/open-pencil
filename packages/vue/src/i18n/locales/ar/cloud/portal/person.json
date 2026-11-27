@@ -1,0 +1,42 @@
+{
+  "backToPeople": "كل الأشخاص",
+  "personAccount": "الحساب",
+  "emailVerified": "تم التحقق",
+  "emailNotVerified": "لم يتم التحقق",
+  "joinedRow": "تاريخ الانضمام",
+  "lastActiveRow": "آخر نشاط",
+  "signInMethods": "طرق تسجيل الدخول",
+  "twoStepRow": "تسجيل الدخول بخطوتين",
+  "twoStepNone": "غير مُعدّ",
+  "passkeyCount": {
+    "zero": "لا توجد مفاتيح مرور",
+    "one": "مفتاح مرور واحد",
+    "two": "مفتاحا مرور",
+    "few": "{count} مفاتيح مرور",
+    "many": "{count} مفتاح مرور",
+    "other": "{count} مفتاح مرور"
+  },
+  "personWorkspaces": "مساحات العمل",
+  "personWorkspacesEmpty": "ليس في أي مساحة عمل.",
+  "workspaceMembers": {
+    "zero": "لا يوجد أعضاء",
+    "one": "عضو واحد",
+    "two": "عضوان",
+    "few": "{count} أعضاء",
+    "many": "{count} عضوًا",
+    "other": "{count} عضو"
+  },
+  "workspaceRoleAdmin": "مسؤول",
+  "workspaceRoleEditor": "محرّر",
+  "workspaceRoleViewer": "مُشاهد",
+  "personSessions": "الجلسات",
+  "noSessions": "غير مسجّل الدخول في أي مكان.",
+  "personNotFound": "لا يوجد حساب كهذا",
+  "personNotFoundDescription": "ربما تمت إزالته. عد إلى قائمة الأشخاص.",
+  "removeSignInMethod": "إزالة",
+  "removeSignInMethodHeading": "إزالة {provider} من طرق تسجيل دخول {name}؟",
+  "removeSignInMethodDescription": "لن يتمكن من تسجيل الدخول بها مجددًا ما لم يُضفها من جديد، وسيصله بريد إلكتروني بذلك. تبقى الأجهزة المسجّل دخولها حاليًا متصلة حتى تسجّل خروجه من كل مكان.",
+  "deletePersonAccount": "حذف الحساب",
+  "deletePersonAccountHeading": "حذف حساب {name}؟",
+  "deletePersonAccountDescription": "لم تتم الموافقة على طلب انضمامه مطلقًا، لذا يُحذف حسابه وطرق تسجيل الدخول إليه وطلبه. يحتفظ سجل النشاط باسمه وبريده الإلكتروني. ويمكنه التسجيل مجددًا."
+}

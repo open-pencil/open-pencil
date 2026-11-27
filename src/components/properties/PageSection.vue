@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useVariableModes } from '@open-pencil/vue/controls/variable-modes'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
@@ -18,7 +18,7 @@ import VariableModeRows from './variable-modes/VariableModeRows.vue'
 const editor = useEditorStore()
 const pageColor = computed(() => editor.state.pageColor)
 const pageFill = computed(() => solidFill(pageColor.value))
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const variableModes = useVariableModes()
 
 function updatePageAlpha(alpha: number) {

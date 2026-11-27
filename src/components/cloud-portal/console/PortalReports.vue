@@ -4,7 +4,7 @@ import { compact } from 'es-toolkit'
 import { computed, h, ref } from 'vue'
 
 import type { CloudAdminReportFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   usePortalList,
@@ -34,7 +34,7 @@ const emit = defineEmits<{
   act: [action: PortalContentAction, report: PortalReportRow, reason?: string]
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const reasons = computed(() => ({
   'spam-phishing': messages.value.reportReasonSpam,
   illegal: messages.value.reportReasonIllegal,

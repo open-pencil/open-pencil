@@ -21,7 +21,7 @@ const download = (url: string) => ({ url, method: 'GET' as const, headers: {}, e
  */
 function fakeCloud() {
   const documents: DocumentSummary[] = []
-  const stored = new Map<string, { url: string; checksum: string }>()
+  const stored = new Map<string, { url: string; checksum: string; cover: string | null }>()
   const objects = new Map<string, Uint8Array>()
   const versions = new Map<string, DocumentVersion[]>()
   const pending = new Map<string, string>()
@@ -41,6 +41,7 @@ function fakeCloud() {
         id: crypto.randomUUID(),
         workspaceId,
         name: input.name,
+        description: null,
         kind: input.kind ?? 'design',
         currentRevisionId: null,
         version: 0,
@@ -49,6 +50,10 @@ function fakeCloud() {
       }
       documents.push(document)
       return { ...document }
+    },
+    async updateDocument(documentId, input) {
+      calls.push('describe')
+      summary(documentId).description = input.description
     },
     async getDocument(documentId) {
       const document = summary(documentId)
@@ -61,7 +66,8 @@ function fakeCloud() {
         checksum: file.checksum,
         contentType: 'application/octet-stream',
         download: download(file.url),
-        images: []
+        images: [],
+        cover: file.cover
       }
     },
     async listDocumentVersions(documentId) {
@@ -111,7 +117,11 @@ function fakeCloud() {
       const document = summary(documentId)
       document.currentRevisionId = crypto.randomUUID()
       document.version++
-      stored.set(documentId, { url: `https://store.example/${uploadId}`, checksum: input.checksum })
+      stored.set(documentId, {
+        url: `https://store.example/${uploadId}`,
+        checksum: input.checksum,
+        cover: input.cover ?? null
+      })
       return { ...document }
     }
   }
@@ -126,8 +136,20 @@ function fakeCloud() {
   const publish = (
     name: string,
     bytes: Uint8Array,
-    release?: { name: string; description: string }
-  ) => publishExample({ cloud, workspaceId: WORKSPACE, name, bytes, release, objectFetch })
+    release?: { name: string; description: string },
+    description = 'An example.',
+    cover: Uint8Array | null = null
+  ) =>
+    publishExample({
+      cloud,
+      workspaceId: WORKSPACE,
+      name,
+      description,
+      bytes,
+      cover,
+      release,
+      objectFetch
+    })
   return { cloud, documents, calls, publish }
 }
 
@@ -135,9 +157,9 @@ describe('publishing a gallery example', () => {
   test('creates the document on its first run and saves the file', async () => {
     const server = fakeCloud()
     const outcome = await server.publish('Welcome tour', file('first'))
-    expect(outcome).toMatchObject({ created: true, uploaded: true, version: null })
+    expect(outcome).toMatchObject({ created: true, uploaded: true, described: true, version: null })
     expect(server.documents.map((document) => document.name)).toEqual(['Welcome tour'])
-    expect(server.calls).toEqual(['create', 'upload'])
+    expect(server.calls).toEqual(['create', 'upload', 'describe'])
   })
 
   test('saves nothing when the file is unchanged, and a new revision when it changed', async () => {
@@ -147,7 +169,32 @@ describe('publishing a gallery example', () => {
     await Bun.sleep(2100)
     expect(await server.publish('Tour', file('first'))).toMatchObject({ uploaded: false })
     expect(await server.publish('Tour', file('second'))).toMatchObject({ uploaded: true })
-    expect(server.calls).toEqual(['create', 'upload', 'upload'])
+    expect(server.calls).toEqual(['create', 'upload', 'describe', 'upload'])
+  })
+
+  test('saves the file again when only its cover changed', async () => {
+    const server = fakeCloud()
+    const cover = (label: string) => strToU8(label)
+    await server.publish('Tour', file('first'), undefined, 'A tour.', cover('old'))
+    expect(
+      await server.publish('Tour', file('first'), undefined, 'A tour.', cover('old'))
+    ).toMatchObject({ uploaded: false })
+    expect(
+      await server.publish('Tour', file('first'), undefined, 'A tour.', cover('new'))
+    ).toMatchObject({ uploaded: true })
+  })
+
+  test('sets the description only when it differs from the one stored', async () => {
+    const server = fakeCloud()
+    await server.publish('Tour', file('first'), undefined, 'A tour.')
+    expect(await server.publish('Tour', file('first'), undefined, 'A tour.')).toMatchObject({
+      described: false
+    })
+    expect(
+      await server.publish('Tour', file('first'), undefined, 'A tour of the editor.')
+    ).toMatchObject({ described: true })
+    expect(server.documents[0]?.description).toBe('A tour of the editor.')
+    expect(server.calls.filter((call) => call === 'describe')).toHaveLength(2)
   })
 
   test('names a release once, however often it runs', async () => {

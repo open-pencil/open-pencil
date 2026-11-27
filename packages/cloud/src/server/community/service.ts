@@ -43,11 +43,13 @@ export function createCommunityService(
       .select([
         'document.id',
         'document.name',
+        'document.description',
         'document.kind',
         'document.updatedAt',
         'document.currentRevisionId as revisionId',
         'storageObject.objectKey',
-        'storageObject.byteSize'
+        'storageObject.byteSize',
+        'documentRevision.coverChecksum'
       ])
       .where('document.workspaceId', '=', workspaceId ?? '')
       .where('document.deletedAt', 'is', null)
@@ -90,6 +92,7 @@ export function createCommunityService(
       return rows.map((row) => ({
         id: row.id,
         name: row.name,
+        description: row.description,
         kind: row.kind,
         updatedAt: new Date(row.updatedAt).toISOString(),
         revisionId: row.revisionId,
@@ -113,12 +116,60 @@ export function createCommunityService(
     },
 
     /**
-     * The thumbnail a gallery document's stored file carries, read from storage in ranges, for
-     * the revision it is now; null when that revision is not current any more or has none.
+     * A stored part of a gallery document, as it is now or in one of its named versions: its
+     * file, or one of its images, by checksum. Null for a checksum that revision does not hold,
+     * so nothing else in storage can be read through the gallery.
+     */
+    async object(documentId: string, checksum: string, versionId?: string) {
+      const row = await find(documentId)
+      const revisionId = versionId
+        ? (await versions.downloadNamedShared(documentId, versionId)).document.revisionId
+        : row.revisionId
+      const file = await database
+        .selectFrom('documentRevision')
+        .innerJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
+        .select('storageObject.objectKey')
+        .where('documentRevision.id', '=', revisionId)
+        .where('documentRevision.documentId', '=', documentId)
+        .where('storageObject.checksum', '=', checksum)
+        .executeTakeFirst()
+      const image = file
+        ? null
+        : await database
+            .selectFrom('revisionImage')
+            .innerJoin('workspaceImage', (join) =>
+              join
+                .onRef('workspaceImage.workspaceId', '=', 'revisionImage.workspaceId')
+                .onRef('workspaceImage.checksum', '=', 'revisionImage.checksum')
+            )
+            .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
+            .select('storageObject.objectKey')
+            .where('revisionImage.revisionId', '=', revisionId)
+            .where('revisionImage.checksum', '=', checksum)
+            .executeTakeFirst()
+      const key = file?.objectKey ?? image?.objectKey
+      return key ? objects.read(key) : null
+    },
+
+    /**
+     * The picture a gallery document shows for the revision it is now: the cover its save drew, or
+     * else the thumbnail its stored file carries, read in ranges. Null when that revision is not
+     * current any more or has neither.
      */
     async thumbnail(documentId: string, revisionId: string): Promise<Uint8Array | null> {
       const row = await find(documentId)
       if (row.revisionId !== revisionId) return null
+      if (row.coverChecksum) {
+        const cover = await database
+          .selectFrom('workspaceImage')
+          .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
+          .select('storageObject.objectKey')
+          .where('workspaceImage.workspaceId', '=', workspaceId ?? '')
+          .where('workspaceImage.checksum', '=', row.coverChecksum)
+          .executeTakeFirst()
+        const bytes = cover ? await objects.read(cover.objectKey) : null
+        if (bytes) return bytes
+      }
       return extractFigThumbnailFromReader({
         size: Number(row.byteSize),
         read: async (start, endExclusive) => {

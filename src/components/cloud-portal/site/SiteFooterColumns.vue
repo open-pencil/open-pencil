@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { CLOUD_COMMUNITY_PATH } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { useSiteIdentity, type SiteLinkTarget } from '@/app/cloud-portal/identity'
@@ -25,32 +25,33 @@ import { siteFooter } from './ui'
  */
 const portal = usePortal()
 const site = useSiteIdentity()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const communityMessages = useMessages('cloud/portal/community')
 const ui = siteFooter()
 const year = new Date().getFullYear()
 
 const columns = computed<Array<{ title: string; links: SiteLinkTarget[] }>>(() => [
   {
-    title: messages.value.siteProduct,
+    title: communityMessages.value.siteProduct,
     links: [
       { label: messages.value.openEditor, href: '/', external: false },
       ...(portal.discovery.community
-        ? [{ label: messages.value.communityTitle, href: CLOUD_COMMUNITY_PATH }]
+        ? [{ label: communityMessages.value.communityTitle, href: CLOUD_COMMUNITY_PATH }]
         : []),
-      { label: messages.value.siteDownload, href: DESKTOP_DOWNLOAD_URL, external: true }
+      { label: communityMessages.value.siteDownload, href: DESKTOP_DOWNLOAD_URL, external: true }
     ]
   },
   {
-    title: messages.value.siteResources,
+    title: communityMessages.value.siteResources,
     links: [
-      { label: messages.value.siteDocs, href: DOCS_URL, external: true },
-      { label: messages.value.siteCloudDocs, href: CLOUD_DOCS_URL, external: true },
+      { label: communityMessages.value.siteDocs, href: DOCS_URL, external: true },
+      { label: communityMessages.value.siteCloudDocs, href: CLOUD_DOCS_URL, external: true },
       { label: 'GitHub', href: REPOSITORY_URL, external: true },
       { label: 'Discord', href: COMMUNITY_URL, external: true }
     ]
   },
   ...(site.legalLinks.value.length > 0
-    ? [{ title: messages.value.siteLegal, links: site.legalLinks.value }]
+    ? [{ title: communityMessages.value.siteLegal, links: site.legalLinks.value }]
     : [])
 ])
 </script>
@@ -60,7 +61,7 @@ const columns = computed<Array<{ title: string; links: SiteLinkTarget[] }>>(() =
     <div :class="ui.inner()">
       <div :class="ui.about()">
         <SiteBrand />
-        <p :class="ui.tagline()">{{ messages.siteTagline }}</p>
+        <p :class="ui.tagline()">{{ communityMessages.siteTagline }}</p>
       </div>
       <nav
         v-for="column in columns"
@@ -81,9 +82,9 @@ const columns = computed<Array<{ title: string; links: SiteLinkTarget[] }>>(() =
         </div>
       </nav>
       <div :class="ui.bottom()">
-        <span>{{ messages.siteCopyright({ year }) }}</span>
+        <span>{{ communityMessages.siteCopyright({ year }) }}</span>
         <span :class="ui.bottomEnd()">
-          {{ messages.siteLicense }}
+          {{ communityMessages.siteLicense }}
           <PortalLanguageSelect />
         </span>
       </div>

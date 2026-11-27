@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import {
@@ -15,7 +15,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const store = useEditorStore()
 const { selectedNode } = useSelectionState()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 const selectedPreset = computed(() => {
   const node = selectedNode.value

@@ -4,7 +4,7 @@ import IconFile from '~icons/lucide/file'
 import IconFiles from '~icons/lucide/files'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { usePageMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem
@@ -41,7 +41,7 @@ function pageItem(
  * "Go to page" step listing every page. Typing a name also finds pages not listed.
  */
 export function usePagePaletteGroup() {
-  const messages = usePageMessages()
+  const messages = useMessages('pages')
 
   return computed<CommandPaletteGroup | null>(() => {
     const tab = activeTab.value

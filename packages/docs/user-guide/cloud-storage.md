@@ -41,14 +41,14 @@ Add a rule like this one, with the origins you open OpenPencil from:
   {
     "AllowedHeaders": ["*"],
     "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-    "AllowedOrigins": ["https://app.openpencil.dev"],
+    "AllowedOrigins": ["https://cloud.openpencil.dev"],
     "ExposeHeaders": ["ETag", "Content-Range", "x-amz-request-id", "x-amz-id-2", "x-amz-version-id"],
     "MaxAgeSeconds": 3600
   }
 ]
 ```
 
-Set it in the AWS console under the bucket's **Permissions → Cross-origin resource sharing**, in the Cloudflare dashboard under the R2 bucket's **Settings → CORS policy**, or with your provider's CLI. When the rule is missing, **Test connection** says the browser could not reach the bucket from the current site.
+The web app is moving from app.openpencil.dev to cloud.openpencil.dev: a rule set up for the old address needs the new one added. Set it in the AWS console under the bucket's **Permissions → Cross-origin resource sharing**, in the Cloudflare dashboard under the R2 bucket's **Settings → CORS policy**, or with your provider's CLI. When the rule is missing, **Test connection** says the browser could not reach the bucket from the current site.
 
 ## Save a Document to Storage
 
@@ -66,7 +66,7 @@ Documents you have opened stay cached on the device for faster reopening, up to 
 
 ## Component Libraries
 
-The bucket can also hold component libraries. In **Assets → Manage libraries**, switch the source to **Storage** to publish and enable libraries there instead of on this device. Publishing uses conditional writes, so two people publishing the same library at once can't overwrite each other's revision. See [Components](./components#component-libraries) for publishing and updating libraries.
+The bucket can also hold component libraries. In **Assets → Manage libraries**, switch the source to **Storage** to publish and enable libraries there instead of on this device. Publishing uses conditional writes, so two people publishing the same library at once can't overwrite each other's revision. See [Component Libraries](./component-libraries) for publishing and updating libraries.
 
 ## What's in the Bucket
 

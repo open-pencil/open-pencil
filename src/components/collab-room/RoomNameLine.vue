@@ -2,7 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { ref, watch } from 'vue'
 
-import { useCollaborationMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -15,8 +15,8 @@ import { roomScreen } from './ui'
 const { name } = defineProps<{ name: string }>()
 const emit = defineEmits<{ rename: [name: string] }>()
 
-const messages = useCollaborationMessages()
-const common = useCommonMessages()
+const messages = useMessages('collaboration')
+const common = useMessages('common')
 const ui = roomScreen()
 const cls = usePopoverUI({ content: 'z-50 flex w-64 flex-col gap-2 p-3' })
 const open = ref(false)

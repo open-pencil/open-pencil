@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { ref } from 'vue'
 
 import type { Fill, ImageFilters } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 import fillPickerTheme from '@/theme/fill-picker'
@@ -31,7 +31,7 @@ const SNAP = 0.05
 const { fill } = defineProps<{ fill: Fill }>()
 const emit = defineEmits<{ update: [fill: Fill] }>()
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const styles = tv(fillPickerTheme)
 
 const dragging = ref(false)

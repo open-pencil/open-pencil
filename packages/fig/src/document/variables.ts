@@ -5,7 +5,9 @@ import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type {
   SceneGraph,
+  VariableFormula,
   VariableFormulaNode,
+  VariableType,
   VariableValue,
   VariableColorExpression
 } from '@open-pencil/scene-graph'
@@ -13,11 +15,13 @@ import {
   variableFormulaSchema,
   variableColorExpressionSchema,
   inferFormulaType,
+  isEasing,
   MAX_FORMULA_DEPTH
 } from '@open-pencil/scene-graph/variables'
 import { appendAll } from '@open-pencil/std/arrays'
 
 import { extractPluginData } from '../node-change/plugin-data'
+import { easingFromKiwi } from '../node-change/variable/easing'
 import { visitVariableReferences } from '../node-change/variable/expression'
 import { formulaOperatorOfFigmaFunction } from '../node-change/variable/formula'
 import { readVariableMetadata } from '../node-change/variable/metadata'
@@ -60,6 +64,7 @@ function valueOf(
   if (type === 'BOOLEAN' && value.boolValue !== undefined) return value.boolValue
   if (type === 'STRING' && value.textValue !== undefined) return value.textValue
   if (type === 'FLOAT' && value.floatValue !== undefined) return value.floatValue
+  if (type === 'EASING' && value.easingValue) return easingFromKiwi(value.easingValue)
   if (type === 'EXPRESSION') return expressionValue(entry, resolve, depth)
   throw new Error(`Unsupported variable value ${type}`)
 }
@@ -111,8 +116,9 @@ function inferredType(node: VariableFormulaNode) {
   }
 }
 
-/** An operand as a formula holds it; a color expression inside a formula is not one it can. */
+/** An operand as a formula holds it; a color expression or an easing is not one it can. */
 function formulaOperand(operand: VariableValue): VariableFormulaNode {
+  if (isEasing(operand)) throw new UnsupportedExpressionError('Formulas do not use easings')
   if (typeof operand !== 'object' || !('expression' in operand)) return operand
   if (operand.expression === 'FORMULA') return operand.value
   throw new UnsupportedExpressionError(`Unsupported nested ${operand.expression} expression`)
@@ -151,6 +157,13 @@ function modeValues(
     let value: VariableValue
     try {
       value = valueOf(entry.variableData, resolve)
+      // Formulas compute colors, numbers, text and booleans; one held by a timing or an easing is
+      // kept as the file wrote it.
+      const type = resource.variableResolvedType
+      if (isFormula(value) && (type === 'TIMING' || type === 'EASING'))
+        throw new UnsupportedExpressionError(
+          `A formula cannot give ${resource.variableResolvedType}`
+        )
     } catch (error) {
       if (!(error instanceof UnsupportedExpressionError) || !onUnsupportedExpression) throw error
       const data = structuredClone(entry.variableData)
@@ -180,16 +193,15 @@ function modeValues(
         reason: 'unsupported-variable-expression'
       })
     }
-    if (
-      typeof value === 'object' &&
-      'expression' in value &&
-      value.expression === 'FORMULA' &&
-      value.type !== resource.variableResolvedType
-    )
+    if (isFormula(value) && value.type !== resource.variableResolvedType)
       throw new Error(`Expression result type does not match ${resource.variableResolvedType}`)
     values[modeId] = value
   }
   return values
+}
+
+function isFormula(value: VariableValue): value is VariableFormula {
+  return typeof value === 'object' && 'expression' in value && value.expression === 'FORMULA'
 }
 
 type SavedMode = NonNullable<NodeChange['variableSetModes']>[number]
@@ -272,13 +284,21 @@ export function createDocumentVariables(
   }
 }
 
+/** The collection a variable record names: by its reference, or else as its parent. */
+export function variableCollectionId(
+  variable: NodeChange,
+  resolve: ReturnType<typeof createResourceResolver>
+): string | undefined {
+  if (variable.variableSetID) return resolve(variable.variableSetID)
+  const parent = variable.parentIndex?.guid
+  return parent ? guidToString(parent) : undefined
+}
+
 function variableLinks(
   variable: NodeChange,
   resolve: ReturnType<typeof createResourceResolver>
 ): VariableLinks {
-  const collection = variable.variableSetID
-    ? resolve(variable.variableSetID)
-    : variable.parentIndex?.guid && guidToString(variable.parentIndex.guid)
+  const collection = variableCollectionId(variable, resolve)
   const aliases: string[] = []
   for (const entry of variable.variableDataValues?.entries ?? []) {
     visitVariableReferences(entry.variableData, (reference) => {
@@ -313,11 +333,21 @@ function collectionsThrough(
 }
 
 /** No invented values or fallback collections: unsupported resources remain explicit. */
+export interface VariableResourceReporters {
+  /** A record the reader cannot read, such as a variable whose collection is missing. */
+  onUnsupported?: (resource: NodeChange) => void
+  onUnsupportedExpression?: ExpressionReporter
+  /**
+   * A variable of a type OpenPencil does not model, such as PAINT. It is left out of the graph
+   * and the file keeps its record; without a reporter it refuses the file like any other.
+   */
+  onUnsupportedType?: (resource: NodeChange) => void
+}
+
 export function materializeVariableResources(
   graph: SceneGraph,
   resources: readonly NodeChange[],
-  onUnsupported?: (resource: NodeChange) => void,
-  onUnsupportedExpression?: ExpressionReporter
+  { onUnsupported, onUnsupportedExpression, onUnsupportedType }: VariableResourceReporters = {}
 ): void {
   const report = (resource: NodeChange, reason: string): void => {
     if (!onUnsupported) throw new Error(`Unsupported document resource ${resource.type}: ${reason}`)
@@ -351,33 +381,55 @@ export function materializeVariableResources(
       modeAttribute: readModeAttribute(resource),
       pluginData: pluginData.length > 0 ? pluginData : undefined,
       key: typeof resource.key === 'string' ? resource.key : undefined,
-      version: typeof resource.version === 'string' ? resource.version : undefined
+      version: typeof resource.version === 'string' ? resource.version : undefined,
+      ...(resource.isSoftDeleted ? { deleted: true } : {})
     })
   }
-  addVariables(graph, resources, report, onUnsupportedExpression)
+  addVariables(graph, resources, { report, onUnsupportedExpression, onUnsupportedType })
+}
+
+const MODELED_VARIABLE_TYPES = new Set<string>([
+  'COLOR',
+  'BOOLEAN',
+  'STRING',
+  'FLOAT',
+  'EASING',
+  'TIMING'
+] satisfies VariableType[])
+
+/** Whether OpenPencil models variables of this type; one it does not, such as PAINT, is not read. */
+export function isModeledVariableType(
+  type: NodeChange['variableResolvedType']
+): type is VariableType {
+  return type !== undefined && MODELED_VARIABLE_TYPES.has(type)
 }
 
 function addVariables(
   graph: SceneGraph,
   resources: readonly NodeChange[],
-  report: (resource: NodeChange, reason: string) => void,
-  onUnsupportedExpression?: ExpressionReporter
+  {
+    report,
+    onUnsupportedExpression,
+    onUnsupportedType
+  }: {
+    report: (resource: NodeChange, reason: string) => void
+    onUnsupportedExpression?: ExpressionReporter
+    onUnsupportedType?: (resource: NodeChange) => void
+  }
 ): void {
   const resolve = createResourceResolver(resources)
   for (const resource of resources) {
     if (resource.type !== 'VARIABLE') continue
     const type = resource.variableResolvedType
-    const collectionId = resource.variableSetID
-      ? resolve(resource.variableSetID)
-      : resource.parentIndex?.guid && guidToString(resource.parentIndex.guid)
+    if (!isModeledVariableType(type)) {
+      if (onUnsupportedType) onUnsupportedType(structuredClone(resource))
+      else report(resource, `unsupported type ${String(type)}`)
+      continue
+    }
+    const collectionId = variableCollectionId(resource, resolve)
     const collection = collectionId && graph.variableCollections.get(collectionId)
-    if (
-      !resource.guid ||
-      !collection ||
-      !collectionId ||
-      (type !== 'COLOR' && type !== 'BOOLEAN' && type !== 'STRING' && type !== 'FLOAT')
-    ) {
-      report(resource, 'unresolved collection, identity or type')
+    if (!resource.guid || !collection || !collectionId) {
+      report(resource, 'unresolved collection or identity')
       continue
     }
     const valuesByMode: Record<string, VariableValue> = {}
@@ -403,7 +455,8 @@ function addVariables(
       collectionId,
       valuesByMode,
       ...metadata,
-      ...readVariableToken(resource, valuesByMode)
+      ...readVariableToken(resource, valuesByMode),
+      ...(resource.isSoftDeleted || collection.deleted ? { deleted: true } : {})
     })
   }
 }

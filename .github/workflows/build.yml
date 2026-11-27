@@ -123,7 +123,7 @@ jobs:
         if: needs.plan.outputs.kind == 'release'
         env:
           RELEASE_VERSION: ${{ needs.plan.outputs.version }}
-        run: bun .pipeline/tools/release/release-packages/src/extract-release-notes.ts "$RELEASE_VERSION" release-notes.md
+        run: bun .pipeline/tools/release/release-packages/src/release-notes/extract.ts "$RELEASE_VERSION" release-notes.md
       - name: Write the nightly's notes
         if: needs.plan.outputs.kind == 'nightly'
         env:

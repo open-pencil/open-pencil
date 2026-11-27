@@ -5,7 +5,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAccountDeletion } from '@/app/cloud-portal/deletion'
@@ -36,7 +36,7 @@ const NAME_MAX_LENGTH = 100
 const portal = usePortal()
 const route = useRoute()
 const router = useRouter()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const failures = usePortalFailureMessages()
 const dates = useDateFormat()
 

@@ -1,8 +1,7 @@
-import type { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import type { RoomStatus } from '@open-pencil/collab'
+import type { MessagesOf } from '@open-pencil/vue/i18n'
 
-import type { RoomStatus } from '@/app/collab/room/status'
-
-type CollaborationMessages = ReturnType<typeof useCollaborationMessages>['value']
+type CollaborationMessages = MessagesOf<'collaboration'>
 
 /** A room's state in words: "Live · 3 here", "Only you here — …", joining, waiting, or offline. */
 export function roomStatusText(

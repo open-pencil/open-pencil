@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useCloudMessages, useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED } from '@/app/cloud/integration'
 import { useNotificationMessages } from '@/app/i18n/notifications'
@@ -17,9 +17,10 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { ai, settings } = useI18n()
-const comments = useCommentMessages()
-const cloud = useCloudMessages()
+const ai = useMessages('ai')
+const settings = useMessages('settings')
+const comments = useMessages('comments')
+const cloud = useMessages('cloud/editor')
 const notifications = useNotificationMessages()
 const needsInput = notificationPreference('agentNeedsInput')
 const finished = notificationPreference('agentFinished')

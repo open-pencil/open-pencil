@@ -6,7 +6,7 @@ import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { PageListRoot } from '@open-pencil/vue/primitives/PageList'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
@@ -33,7 +33,8 @@ interface PageActions {
 
 const pageInput = templateRef<HTMLInputElement>('pageInput')
 const rename = useInlineRename((id, name) => pageActions.value?.rename(id, name))
-const { panels, pages: pageMessages } = useI18n()
+const panels = useMessages('panels')
+const pageMessages = useMessages('pages')
 const menuCls = useMenuUI({
   content: 'min-w-36',
   item: 'justify-start gap-2'

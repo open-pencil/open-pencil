@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { SceneGraph, type VariableType } from '@open-pencil/scene-graph'
+import { SceneGraph, type VariableFormulaType } from '@open-pencil/scene-graph'
 import {
   formatVariableFormula,
   formulaTokens,
@@ -11,7 +11,7 @@ import {
 } from '@open-pencil/scene-graph/variables'
 
 /** A variable of each type to refer to, and one of `type` whose formula is parsed. */
-function setup(type: VariableType) {
+function setup(type: VariableFormulaType) {
   const graph = new SceneGraph()
   const collection = graph.createCollection('Tokens')
   const mode = collection.defaultModeId
@@ -127,7 +127,7 @@ test('literal text and colors print as the field reads them back', () => {
 })
 
 test('the schema takes text and color formulas, and refuses operands that do not fit', () => {
-  const formula = (type: VariableType, value: unknown) =>
+  const formula = (type: VariableFormulaType, value: unknown) =>
     v.safeParse(variableFormulaSchema, { expression: 'FORMULA', type, value }).success
   const ternary = (operands: unknown[]) => ({ operator: 'if', operands })
   const red = { r: 1, g: 0, b: 0, a: 1 }

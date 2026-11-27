@@ -1,19 +1,31 @@
-import type { Effect, Fill, SceneNode, Stroke, TextLength } from '@open-pencil/scene-graph'
-import { colorToCSS, colorToHex } from '@open-pencil/scene-graph/color'
+import type {
+  ColorProfile,
+  Effect,
+  Fill,
+  SceneNode,
+  Stroke,
+  TextLength
+} from '@open-pencil/scene-graph'
+import { colorToCSS, colorToHex, colorToProfileCSS } from '@open-pencil/scene-graph/color'
 import { blurSigma } from '@open-pencil/scene-graph/geometry'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignStyleDeclaration } from '../types'
 
-/** Opaque colors as hex, which Tailwind matches to its palette; translucent ones as `rgba()`. */
-export function cssColor(color: Color): string {
+/**
+ * A document color in CSS, its components being in `profile`. An sRGB document's opaque colors
+ * are hex, which Tailwind matches to its palette, and translucent ones `rgba()`; a Display P3
+ * document's are `color(display-p3 …)`, so a browser shows them as the canvas does.
+ */
+export function cssColor(color: Color, profile: ColorProfile): string {
+  if (profile === 'display-p3') return colorToProfileCSS(color, profile, profile)
   return color.a >= 1 ? colorToHex(color) : colorToCSS(color)
 }
 
-export function fillToCSS(fill: Fill | undefined): string | undefined {
+export function fillToCSS(fill: Fill | undefined, profile: ColorProfile): string | undefined {
   if (fill?.type !== 'SOLID' || !fill.visible) return undefined
-  return cssColor({ ...fill.color, a: fill.opacity })
+  return cssColor({ ...fill.color, a: fill.opacity }, profile)
 }
 
 export type BorderSide = 'top' | 'right' | 'bottom' | 'left'
@@ -23,7 +35,8 @@ export type BorderSide = 'top' | 'right' | 'bottom' | 'left'
  * border insets the box its absolutely positioned children are placed in, where a stroke does not.
  */
 export function borderWidths(node: SceneNode): Record<BorderSide, number> {
-  if (!strokeColorToCSS(node.strokes.at(0))) return { top: 0, right: 0, bottom: 0, left: 0 }
+  // Only whether the first stroke projects matters here, not the profile its color is written in.
+  if (!strokeColorToCSS(node.strokes.at(0), 'srgb')) return { top: 0, right: 0, bottom: 0, left: 0 }
   if (!node.independentStrokeWeights) {
     const weight = node.strokes[0]?.weight ?? 0
     return { top: weight, right: weight, bottom: weight, left: weight }
@@ -36,15 +49,25 @@ export function borderWidths(node: SceneNode): Record<BorderSide, number> {
   }
 }
 
-export function strokeColorToCSS(stroke: Stroke | undefined): string | undefined {
+/**
+ * Whether preview draws a layer's stroke as box shadows, which take no room, rather than as a
+ * border: a solid stroke can be, a dashed one cannot. An image keeps a border, since it would
+ * cover an inset shadow; an image has no children, so this alone answers for a parent.
+ */
+export function strokeDrawsAsShadows(node: SceneNode): boolean {
+  return node.strokes.at(0)?.visible === true && node.dashPattern.length === 0
+}
+
+export function strokeColorToCSS(
+  stroke: Stroke | undefined,
+  profile: ColorProfile
+): string | undefined {
   if (!stroke?.visible) return undefined
-  return cssColor({ ...stroke.color, a: stroke.opacity })
+  return cssColor({ ...stroke.color, a: stroke.opacity }, profile)
 }
 
 /** A bound field's CSS: `var()` where its variable draws the value, else the literal. */
 export type EffectFieldCSS = (field: string, literal: string) => string
-
-const LITERAL: EffectFieldCSS = (_field, literal) => literal
 
 function px(value: number): string {
   return `${Number(value.toFixed(3))}px`
@@ -65,7 +88,13 @@ function blurLength(effect: Effect, index: number, css: EffectFieldCSS, sigmas: 
  * A shadow as `box-shadow` writes it, or as `text-shadow` does without its spread. CSS blurs a
  * shadow by half its blur length, so the length is twice the sigma the canvas blurs it by.
  */
-function shadowToCSS(effect: Effect, index: number, css: EffectFieldCSS, spread = true): string {
+function shadowToCSS(
+  effect: Effect,
+  index: number,
+  css: EffectFieldCSS,
+  profile: ColorProfile,
+  spread = true
+): string {
   const inset = effect.type === 'INNER_SHADOW' ? 'inset ' : ''
   const length = (property: string, value: number) =>
     css(`effects/${index}/${property}`, `${value}px`)
@@ -75,7 +104,7 @@ function shadowToCSS(effect: Effect, index: number, css: EffectFieldCSS, spread 
     blurLength(effect, index, css, 2)
   ]
   if (spread) parts.push(length('spread', effect.spread))
-  parts.push(css(`effects/${index}/color`, cssColor(effect.color)))
+  parts.push(css(`effects/${index}/color`, cssColor(effect.color, profile)))
   return parts.join(' ')
 }
 
@@ -116,13 +145,17 @@ function addBlurs(
  * Every visible shadow, in order, plus layer and background blur. `css` names the variable a
  * bound field, such as `effects/0/radius`, draws from.
  */
-export function effectsToCSS(effects: Effect[], css = LITERAL): DesignStyleDeclaration {
+export function effectsToCSS(
+  effects: Effect[],
+  css: EffectFieldCSS,
+  profile: ColorProfile
+): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   const visible = visibleEffects(effects)
   const shadows = visible.filter(([, effect]) => isShadow(effect))
   if (shadows.length > 0)
     style['box-shadow'] = shadows
-      .map(([index, effect]) => shadowToCSS(effect, index, css))
+      .map(([index, effect]) => shadowToCSS(effect, index, css, profile))
       .join(', ')
   addBlurs(style, visible, css)
   return style
@@ -132,13 +165,17 @@ export function effectsToCSS(effects: Effect[], css = LITERAL): DesignStyleDecla
  * Text's effects: each visible drop shadow as `text-shadow`, which has no spread and shadows the
  * glyphs, and its layer and background blurs. An inner shadow has no form CSS gives text.
  */
-export function textEffectsToCSS(effects: Effect[], css = LITERAL): DesignStyleDeclaration {
+export function textEffectsToCSS(
+  effects: Effect[],
+  css: EffectFieldCSS,
+  profile: ColorProfile
+): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
   const visible = visibleEffects(effects)
   const shadows = visible.filter(([, effect]) => effect.type === 'DROP_SHADOW')
   if (shadows.length > 0) {
     style['text-shadow'] = shadows
-      .map(([index, effect]) => shadowToCSS(effect, index, css, false))
+      .map(([index, effect]) => shadowToCSS(effect, index, css, profile, false))
       .join(', ')
   }
   addBlurs(style, visible, css)
@@ -166,11 +203,18 @@ export function letterSpacingToCSS(length: TextLength): string {
 export function letterSpacingRoomCSS(
   length: TextLength,
   spacing: string,
-  width: string | undefined
+  widths: Partial<Pick<DesignStyleDeclaration, 'width' | 'min-width' | 'max-width'>>
 ): DesignStyleDeclaration {
   const literal = spacing === letterSpacingToCSS(length)
+  // Its width and the limits on it each grow by the spacing, so none cuts into the room.
+  const grown = Object.fromEntries(
+    (['width', 'min-width', 'max-width'] as const).flatMap((property) => {
+      const value = widths[property]
+      return value === undefined ? [] : [[property, `calc(${value} + ${spacing})`]]
+    })
+  )
   return {
-    ...(width !== undefined && { width: `calc(${width} + ${spacing})` }),
+    ...grown,
     'margin-right': literal
       ? letterSpacingToCSS({ ...length, value: -length.value })
       : `calc(-1 * ${spacing})`
@@ -183,13 +227,22 @@ function percent(value: number): string {
 }
 
 /** The stops, each at `place(position)`, its own position unless the gradient line differs. */
-function gradientStopsCSS(fill: Fill, place: (position: number) => number = (p) => p): string {
+function gradientStopsCSS(
+  fill: Fill,
+  profile: ColorProfile,
+  place: (position: number) => number = (p) => p
+): string {
   return (fill.gradientStops ?? [])
-    .map(
-      (stop) =>
-        `${cssColor({ ...stop.color, a: stop.color.a * fill.opacity })} ${percent(place(stop.position))}`
-    )
+    .map((stop) => {
+      const color = cssColor({ ...stop.color, a: stop.color.a * fill.opacity }, profile)
+      return `${color} ${percent(place(stop.position))}`
+    })
     .join(', ')
+}
+
+/** A P3 gradient blends in its own components, as the canvas does; CSS would blend in Oklab. */
+function interpolation(profile: ColorProfile): string {
+  return profile === 'display-p3' ? ' in display-p3' : ''
 }
 
 /**
@@ -233,13 +286,18 @@ function gradientAngle(fill: Fill, width: number, height: number): number {
 }
 
 /** A gradient fill as a CSS image over a `width` by `height` box, or undefined for a diamond. */
-export function gradientToCSS(fill: Fill, width: number, height: number): string | undefined {
+export function gradientToCSS(
+  fill: Fill,
+  width: number,
+  height: number,
+  profile: ColorProfile
+): string | undefined {
   const t = fill.gradientTransform ?? { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   const center = gradientPoint(t, { x: 0.5, y: 0.5 })
   if (fill.type === 'GRADIENT_LINEAR') {
     const angle = gradientAngle(fill, width, height)
-    const stops = gradientStopsCSS(fill, cssLinePosition(fill, width, height, angle))
-    return `linear-gradient(${angle}deg, ${stops})`
+    const stops = gradientStopsCSS(fill, profile, cssLinePosition(fill, width, height, angle))
+    return `linear-gradient(${angle}deg${interpolation(profile)}, ${stops})`
   }
   if (fill.type === 'GRADIENT_RADIAL') {
     const right = gradientPoint(t, { x: 1, y: 0.5 })
@@ -247,12 +305,20 @@ export function gradientToCSS(fill: Fill, width: number, height: number): string
     const rx = Math.hypot(right.x - center.x, right.y - center.y)
     const ry = Math.hypot(bottom.x - center.x, bottom.y - center.y)
     const shape = `${percent(rx)} ${percent(ry)} at ${percent(center.x)} ${percent(center.y)}`
-    return `radial-gradient(${shape}, ${gradientStopsCSS(fill)})`
+    return `radial-gradient(${shape}${interpolation(profile)}, ${gradientStopsCSS(fill, profile)})`
   }
   if (fill.type === 'GRADIENT_ANGULAR') {
     const from = gradientAngle(fill, width, height)
     const at = `${percent(center.x)} ${percent(center.y)}`
-    return `conic-gradient(from ${from}deg at ${at}, ${gradientStopsCSS(fill)})`
+    return `conic-gradient(from ${from}deg at ${at}${interpolation(profile)}, ${gradientStopsCSS(fill, profile)})`
   }
   return undefined
+}
+
+/** Two CSS lengths added: in pixels where both are, else in `calc()`. */
+export function sumLengths(a: string, b: string): string {
+  const pixels = /^-?[\d.]+px$/
+  return pixels.test(a) && pixels.test(b)
+    ? `${Number.parseFloat(a) + Number.parseFloat(b)}px`
+    : `calc(${a} + ${b})`
 }

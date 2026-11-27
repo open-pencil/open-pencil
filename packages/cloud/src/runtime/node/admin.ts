@@ -11,19 +11,14 @@ import {
 /**
  * Approves a person and makes them a deployment administrator, for a deployment that has none
  * to do it in the console, or records a request for access, as if they had asked here, for an
- * administrator to review in the console; `request` sends no email, and `--waitlist` marks someone
- * from openpencil.dev's waitlist, whose approval with the invitation letter thanks them for joining
- * it. It needs only the database,
+ * administrator to review in the console; `request` sends no email. It needs only the database,
  * through `DATABASE_URL`, and refuses one this version's server has not migrated, rather than
  * migrating it under another version.
  */
-const args = process.argv.slice(2)
-const waitlist = args.includes('--waitlist')
-const [operation, email, ...nameWords] = args.filter((arg) => arg !== '--waitlist')
+const [operation, email, ...nameWords] = process.argv.slice(2)
 if ((operation !== 'approve' && operation !== 'grant' && operation !== 'request') || !email) {
-  throw new Error('Usage: admin <approve|grant|request> <email> [name] [--waitlist]')
+  throw new Error('Usage: admin <approve|grant|request> <email> [name]')
 }
-if (waitlist && operation !== 'request') throw new Error('--waitlist only marks a request')
 const connectionString = process.env.DATABASE_URL
 if (!connectionString) throw new Error('DATABASE_URL must name the deployment database')
 
@@ -38,16 +33,10 @@ try {
   if (operation === 'request') {
     const outcome = await createEnrollmentService(database).request({
       email,
-      name: nameWords.join(' '),
-      ...(waitlist && { source: 'waitlist' as const })
+      name: nameWords.join(' ')
     })
-    // An address already waiting or approved keeps its request, so it is not marked as waitlist.
     console.log(
-      JSON.stringify(
-        outcome === 'recorded'
-          ? { requested: email, ...(waitlist && { waitlist }) }
-          : { unchanged: email }
-      )
+      JSON.stringify(outcome === 'recorded' ? { requested: email } : { unchanged: email })
     )
   } else {
     console.log(

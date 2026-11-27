@@ -63,9 +63,9 @@ describe('admin email regeneration', () => {
       await runtime.close()
     }
   })
-  test('a regenerated invitation letter still opens Cloud, not the sign-in page', async () => {
+  test('resends a kept invitation letter from the beta as the plain approval', async () => {
     const runtime = await createCloudTestDatabase()
-    const sent: Array<{ text: string }> = []
+    const sent: Array<{ subject: string; text: string }> = []
     try {
       await runtime.database
         .insertInto('enrollment')
@@ -92,15 +92,16 @@ describe('admin email regeneration', () => {
           }
         }
       })
+      // A letter the beta sent, kept in the outbox though nothing sends that kind now.
       const original = await email.enqueue({
         idempotencyKey: 'original-invitation',
-        kind: 'enrollment-invited',
+        kind: 'enrollment-approved',
         recipientEmail: 'person@example.com',
         payload: { name: 'Person', actionURL: CLOUD_LINKS.publicURL }
       })
       await runtime.database
         .updateTable('transactionalEmail')
-        .set({ status: 'failed', payloadEncrypted: null })
+        .set({ kind: 'enrollment-invited', status: 'failed', payloadEncrypted: null })
         .where('id', '=', original)
         .execute()
       await createAdminEmailService(runtime.database, email, CLOUD_LINKS).regenerate(
@@ -109,6 +110,7 @@ describe('admin email regeneration', () => {
       )
       await email.deliverPending({ batchSize: 10, leaseDurationMs: 60_000 })
       expect(sent).toHaveLength(1)
+      expect(sent[0]?.subject).toBe('Your OpenPencil Cloud access is ready')
       expect(sent[0]?.text).toContain(CLOUD_LINKS.publicURL)
       expect(sent[0]?.text).not.toContain('/auth/sign-in')
     } finally {

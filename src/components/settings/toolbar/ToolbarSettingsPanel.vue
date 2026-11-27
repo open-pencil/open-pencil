@@ -2,7 +2,7 @@
 import { isEqual } from 'es-toolkit'
 import { computed } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { DEFAULT_TOOLBAR_DOCK, isToolbarAlign, isToolbarSide } from '@/app/editor/toolbar/dock'
 import { DEFAULT_TOOLBAR_LAYOUT } from '@/app/editor/toolbar/layout'
@@ -19,7 +19,7 @@ import { useToolbarAlignOptions, useToolbarSideOptions } from '@/components/tool
 import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
-const { settings } = useI18n()
+const settings = useMessages('settings')
 const sideOptions = useToolbarSideOptions()
 const alignOptions = useToolbarAlignOptions(() => appPreferences.value.toolbarDock.side)
 

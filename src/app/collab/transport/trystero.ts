@@ -1,8 +1,8 @@
 import { getRelaySockets, joinRoom as joinTrysteroRoom, type Room } from '@trystero-p2p/mqtt'
 
-import { COLLAB_APP_ID } from '@/constants'
+import type { CollabAction, CollabMediaTransport, JoinCollabRoom } from '@open-pencil/collab'
 
-import type { CollabAction, CollabMediaTransport, JoinCollabRoom } from './types'
+import { COLLAB_APP_ID } from '@/constants'
 
 /**
  * Trystero announces a newcomer to the room's brokers four times in its first 7.5 seconds, so

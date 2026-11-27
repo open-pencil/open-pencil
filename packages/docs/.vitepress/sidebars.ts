@@ -2,64 +2,6 @@ import type { DefaultTheme } from 'vitepress'
 
 import type { NavLabels, ProgrammableLabels, SidebarLabels } from './labels.ts'
 
-export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultTheme.SidebarItem[] => [
-  {
-    text: labels.overview,
-    items: [
-      { text: labels.gettingStarted, link: `${prefix}/getting-started` },
-      { text: labels.features, link: `${prefix}/overview/features` },
-      { text: labels.comparison, link: `${prefix}/overview/comparison` },
-      // English only until translated; locales link to the canonical page.
-      { text: labels.privacy, link: '/overview/privacy' }
-    ]
-  }
-]
-
-export const userGuideSidebar = (
-  prefix: string,
-  labels: SidebarLabels
-): DefaultTheme.SidebarItem[] => [
-  {
-    text: labels.gettingAround,
-    items: [
-      { text: labels.canvasNav, link: `${prefix}/user-guide/canvas-navigation` },
-      { text: labels.selection, link: `${prefix}/user-guide/selection-and-manipulation` },
-      { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` }
-    ]
-  },
-  {
-    text: labels.creatingContent,
-    items: [
-      { text: labels.shapes, link: `${prefix}/user-guide/drawing-shapes` },
-      { text: labels.text, link: `${prefix}/user-guide/text-editing` },
-      { text: labels.pen, link: `${prefix}/user-guide/pen-tool` },
-      { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
-      // English only until translated; locales link to the canonical page.
-      { text: labels.icons, link: '/user-guide/icons' },
-      { text: labels.photos, link: '/user-guide/photos' }
-    ]
-  },
-  {
-    text: labels.organizing,
-    items: [
-      { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
-      { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
-      // English only until translated; locales link to the canonical page.
-      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
-    ]
-  },
-  {
-    text: labels.advanced,
-    items: [
-      { text: labels.autoLayout, link: `${prefix}/user-guide/auto-layout` },
-      { text: labels.components, link: `${prefix}/user-guide/components` },
-      { text: labels.variables, link: `${prefix}/user-guide/variables` },
-      // English only until translated; locales link to the canonical page.
-      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' }
-    ]
-  }
-]
-
 /** The Developers section's own pages, by the tool they cover. */
 export const programmableSidebar = (
   prefix: string,
@@ -111,31 +53,77 @@ export const sectionMatch = (prefix: string) => ({
   developers: `^${prefix}/(developers/|development/|reference/(?!${userReferenceNames}))`
 })
 
-/** The Docs section: the overview, the user guide, and the reference for using the editor. */
+/**
+ * The Docs section, grouped by what the reader wants to do: the guide, what OpenPencil is, and
+ * the reference for using the editor. Pages without a translation link to the English page.
+ */
 export const docsSidebar = (
   prefix: string,
   referenceLabel: string,
   labels: SidebarLabels,
   prog: ProgrammableLabels
 ): DefaultTheme.SidebarItem[] => [
-  ...guideSidebar(prefix, labels),
-  ...userGuideSidebar(prefix, labels),
   {
-    text: labels.aiAndCollaboration,
+    text: labels.getStarted,
+    items: [
+      { text: labels.gettingStarted, link: '/getting-started' },
+      { text: labels.canvasNav, link: '/user-guide/canvas-navigation' },
+      { text: labels.selection, link: '/user-guide/selection-and-manipulation' },
+      { text: labels.layers, link: '/user-guide/layers-and-pages' },
+      { text: labels.files, link: '/user-guide/files' }
+    ]
+  },
+  {
+    text: labels.draw,
+    items: [
+      { text: labels.shapes, link: `${prefix}/user-guide/drawing-shapes` },
+      { text: labels.pen, link: `${prefix}/user-guide/pen-tool` },
+      { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
+      { text: labels.text, link: `${prefix}/user-guide/text-editing` },
+      { text: labels.icons, link: '/user-guide/icons' },
+      { text: labels.photos, link: '/user-guide/photos' }
+    ]
+  },
+  {
+    text: labels.designSystem,
+    items: [
+      { text: labels.autoLayout, link: '/user-guide/auto-layout' },
+      { text: labels.components, link: '/user-guide/components' },
+      { text: labels.componentLibraries, link: '/user-guide/component-libraries' },
+      { text: labels.variables, link: '/user-guide/variables' }
+    ]
+  },
+  {
+    text: labels.designWithAI,
     items: [
       { text: prog.aiChat, link: `${prefix}/user-guide/ai-chat` },
-      // English only until translated; locales link to the canonical page.
       { text: 'Coding Agents', link: '/user-guide/coding-agents' },
-      { text: 'Models and Providers', link: '/user-guide/models-and-providers' },
-      { text: prog.collaboration, link: `${prefix}/user-guide/collaboration` }
+      { text: 'Models and Providers', link: '/user-guide/models-and-providers' }
+    ]
+  },
+  {
+    text: labels.checkAndShare,
+    items: [
+      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' },
+      { text: labels.exporting, link: '/user-guide/exporting' },
+      { text: prog.collaboration, link: `${prefix}/user-guide/collaboration` },
+      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
+    ]
+  },
+  {
+    text: labels.about,
+    items: [
+      { text: labels.features, link: `${prefix}/overview/features` },
+      { text: labels.comparison, link: `${prefix}/overview/comparison` },
+      { text: labels.privacy, link: '/overview/privacy' }
     ]
   },
   {
     text: referenceLabel,
     items: [
-      // English only until translated; locales link to the canonical page.
       { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
-      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` }
+      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` },
+      { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` }
     ]
   }
 ]
@@ -204,7 +192,9 @@ export const cloudSidebar = (): DefaultTheme.SidebarItem[] => [
     text: 'Using Cloud',
     items: [
       { text: 'Overview', link: '/cloud/' },
+      { text: 'Connect a Server', link: '/cloud/connect' },
       { text: 'Your Account', link: '/cloud/account' },
+      { text: 'Connected Apps', link: '/cloud/apps' },
       { text: 'Documents', link: '/cloud/documents' },
       { text: 'Sharing and Teams', link: '/cloud/sharing' },
       { text: 'AI on Cloud', link: '/cloud/ai' },

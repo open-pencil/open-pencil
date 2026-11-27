@@ -31,11 +31,17 @@ function argumentAfter(flag: string): string | null {
  *
  * CI spreads the capture over runners: `--shard 2/4` captures only that part of the pages into
  * the cache, and `--assemble`, run once the parts are gathered in the cache, checks that every
- * still is there before copying them into the build.
+ * still is there before copying them into the build. `--fingerprint` prints the fingerprint, which
+ * CI keeps the stills under between runs, so a deploy whose stages did not change captures none.
  */
 async function main(): Promise<void> {
   const root = await resolveWorkspaceRoot(fileURLToPath(import.meta.url))
   const fingerprint = await landingPosterFingerprint(root)
+  // CI looks the stills up in its cache by this, before building or capturing anything.
+  if (process.argv.includes('--fingerprint')) {
+    console.log(fingerprint)
+    return
+  }
   const dist = join(root, DIST)
   const landing = await readFile(join(dist, 'index.html'), 'utf8').catch(() => '')
   if (!landing.includes(fingerprint)) {

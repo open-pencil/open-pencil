@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 
@@ -13,7 +13,7 @@ const emit = defineEmits<{
   commit: [value: TextLength, previous: TextLength]
   cancel: []
 }>()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const { value, suffix, length } = useTextLength(
   () => nodes,
   'letterSpacing',

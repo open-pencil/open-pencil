@@ -31,14 +31,6 @@ export const cloudOfficialListed = computed(
     (listedFrom.value !== null && isEditorVersionAtLeast(APP_VERSION, listedFrom.value))
 )
 
-/**
- * Whether this is the editor an official deployment serves on its own address: production, or
- * staging, which builds with its own address as the official one. Self-hosted servers' editors are
- * not.
- */
-export const IS_OFFICIAL_CLOUD_SITE =
-  IS_CLOUD_SITE && IS_BROWSER && window.location.origin === new URL(OFFICIAL_CLOUD_URL).origin
-
 /** Reads the preview switch from the address and asks the official server whether it is listed. */
 export async function checkCloudAvailability(address: string): Promise<void> {
   const choice = new URL(address).searchParams.get(PREVIEW_PARAM)

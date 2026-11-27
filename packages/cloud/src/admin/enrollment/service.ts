@@ -11,7 +11,7 @@ import { isUUID } from '#cloud/admin/schema'
 import { enrollmentStatusSchema } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { compact, uniq } from 'es-toolkit'
-import { NoResultError, type Kysely } from 'kysely'
+import type { Kysely } from 'kysely'
 
 import {
   enqueueEnrollmentRequested,
@@ -26,13 +26,9 @@ export type EnrollmentRequestInput = {
   email: string
   name?: string
   reason?: string
-  /** Someone an administrator recorded from openpencil.dev's waitlist, who asked nowhere here. */
-  source?: 'waitlist'
 }
 export type EnrollmentReviewInput = {
   note?: string
-  /** An approval that sends the founder's letter instead of the plain approval. */
-  invite?: boolean
   /**
    * The status the reviewer saw, checked under the row's lock: a request another administrator
    * decided meanwhile is refused rather than decided again.
@@ -119,8 +115,7 @@ export function createEnrollmentService(
   }
   const service = {
     /**
-     * Records a request, or leaves one that is waiting or approved as it is, source and all:
-     * someone who asked here keeps the letter for asking. Says which it did.
+     * Records a request, or leaves one that is waiting or approved as it is. Says which it did.
      */
     async request(input: EnrollmentRequestInput): Promise<'recorded' | 'unchanged'> {
       const emailNormalized = normalizeEnrollmentEmail(input.email)
@@ -140,8 +135,7 @@ export function createEnrollmentService(
           reviewedAt: null,
           reviewedBy: null,
           reviewNote: null,
-          requestRevision: revision,
-          source: input.source ?? null
+          requestRevision: revision
         }
         let row: EnrollmentRow
         if (existing) {
@@ -278,46 +272,10 @@ export function createEnrollmentService(
           recipientEmail: row.emailNormalized,
           name: row.name ?? 'there',
           status,
-          reviewedAt: now,
-          invite: input.invite,
-          waitlist: row.source === 'waitlist'
+          reviewedAt: now
         })
         return enrollmentRecord(row)
       })
-    },
-    /**
-     * Approves every waiting request and sends each person the founder's letter instead of the
-     * plain approval, on the official deployment. Each approval is its own review, so one that
-     * another administrator decided meanwhile is skipped rather than undoing the rest.
-     */
-    async invitePending(actorId: string): Promise<{ invited: number }> {
-      // Approving everyone without the letters going out would be a silent bulk approval.
-      if (!emailOptions.invitations || !emailOptions.email) {
-        throw new AdminDomainError(
-          'invitations_unavailable',
-          'Only the official deployment, with email configured, sends invitation letters'
-        )
-      }
-      const pending = await database
-        .selectFrom('enrollment')
-        .select('id')
-        .where('status', '=', 'pending')
-        .orderBy('requestedAt')
-        .execute()
-      let invited = 0
-      for (const { id } of pending) {
-        try {
-          await service.review(actorId, id, 'approved', {
-            invite: true,
-            expectedStatus: 'pending'
-          })
-          invited++
-        } catch (error) {
-          // Decided by someone else meanwhile, or gone with an address change: skip it.
-          if (!(error instanceof AdminDomainError) && !(error instanceof NoResultError)) throw error
-        }
-      }
-      return { invited }
     },
     async bindApprovedUser(email: string, userId: string): Promise<void> {
       await database

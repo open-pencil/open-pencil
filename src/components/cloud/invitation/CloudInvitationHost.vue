@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useNow } from '@vueuse/core'
 import { computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useLocale } from '@open-pencil/vue/i18n'
 
 import { cloudSignedIn } from '@/app/cloud/connect/flow'
 import {
@@ -23,7 +24,8 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 import CloudInvitationDialog from './CloudInvitationDialog.vue'
 
 /** The invitation an opened link names, until it is accepted or dismissed. */
-const { locale } = useI18n()
+const { locale } = useLocale()
+const router = useRouter()
 const now = useNow({ interval: 60_000 })
 const HOUR = 3_600_000
 
@@ -59,7 +61,7 @@ watch(cloudSignedIn, () => {
     :account="shownAccount"
     :offer-desktop="canOfferDesktopApp()"
     @update:open="(open) => !open && dismissCloudInvitation()"
-    @accept="acceptCloudInvitation"
+    @accept="acceptCloudInvitation(router)"
     @sign-in="signInForCloudInvitation"
     @switch-account="switchCloudInvitationAccount"
     @open-in-desktop="openCloudInvitationInDesktop"

@@ -42,7 +42,22 @@ const TAB_STORE_KEY: InjectionKey<EditorStore> = Symbol('open-pencil-tab-store')
  */
 export function provideTabEditorStore(store: EditorStore) {
   provide(TAB_STORE_KEY, store)
-  provideEditor(store)
+  provideEditorStore(store)
+}
+
+/**
+ * Hands `store` to the SDK's `useEditor`, and has swatches and pickers show its document's colors
+ * as its canvas presents them: in Display P3 where the canvas can, clipped to sRGB where it falls
+ * back, as on WebKit.
+ */
+export function provideEditorStore(store: EditorStore) {
+  // The tab's own state, which follows the active tab, in place of the SDK's per-editor default.
+  provideEditor(store, {
+    colorSpaces: {
+      stored: () => store.state.documentColorSpace,
+      shown: () => store.state.canvasPresentation ?? store.state.documentColorSpace
+    }
+  })
 }
 
 /**

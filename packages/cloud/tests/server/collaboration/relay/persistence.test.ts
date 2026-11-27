@@ -9,9 +9,10 @@ import {
   textUpdate,
   until
 } from '#cloud-tests/helpers/relay'
-import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '#cloud/contract'
 import { createCollaborationRelay, type CollaborationRelay } from '#cloud/server'
 import * as Y from 'yjs'
+
+import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
 
 const documentId = crypto.randomUUID()
 const room = { documentId, roomEpoch: 0 }

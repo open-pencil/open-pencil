@@ -5,7 +5,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 import { errorMessage } from '@open-pencil/std/errors'
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED, CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/integration'
 import { useHomeLocations } from '@/app/home/locations'
@@ -48,7 +48,12 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
-const { locale, storage, files, common, settings, credentials } = useI18n()
+const storage = useMessages('storage')
+const files = useMessages('files')
+const common = useMessages('common')
+const settings = useMessages('settings')
+const credentials = useMessages('credentials')
+const { locale } = useLocale()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 /** Which kind of file Home lists, as Figma's file filter picks; a file of unknown kind shows in all. */
 const kindFilter = useLocalStorage<DocumentKindFilter>('open-pencil:home-files-kind', 'all')

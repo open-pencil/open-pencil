@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import type { LayoutGrid, SceneNode } from '@open-pencil/scene-graph'
 import { AUTO_LAYOUT_GRID_COUNT, layoutGridCount } from '@open-pencil/scene-graph/layout'
 import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
@@ -20,7 +20,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const editor = useEditor()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 // Every selected frame's guides, as Figma edits several frames at once: the panel lists them
 // while the frames' guides match, and offers only Add, which replaces them, while they differ.

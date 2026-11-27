@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import {
-  useAIMessages,
-  useAutomationMessages,
-  useCommonMessages,
-  useSettingsMessages
-} from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useMCPServerSetup } from '@/app/ai/agents/setup/use'
 import { restartFixesMCPFailure } from '@/app/automation/mcp/failure'
@@ -33,10 +28,10 @@ import { DESKTOP_DOWNLOAD_URL, MCP_SERVER_DOCS_URL } from '@/constants'
 
 import MCPFailureAlert from './MCPFailureAlert.vue'
 
-const automation = useAutomationMessages()
-const settings = useSettingsMessages()
-const common = useCommonMessages()
-const ai = useAIMessages()
+const automation = useMessages('automation')
+const settings = useMessages('settings')
+const common = useMessages('common')
+const ai = useMessages('ai')
 const available = localMCPAvailable()
 const restarting = computed(() => mcpRuntime.status === 'starting' || mcpRuntime.checking)
 const alertRestarts = computed(() =>

@@ -43,6 +43,29 @@ describe('import CLI', () => {
     expect(second).toMatchObject({ x: 24, y: 80, width: 200, height: 60 })
   })
 
+  test('styles the page in each mode --modes names, and refuses modes that are not JSON', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
+    const htmlPath = join(dir, 'theme.html')
+    const figPath = join(dir, 'theme.fig')
+    await writeFile(
+      htmlPath,
+      '<style>:root { --ink: #112233 } .dark { --ink: #ffffff }</style><div style="width:9px;height:9px;background:var(--ink)"></div>'
+    )
+    const modes = '[{"name":"Light"},{"name":"Dark","rootAttributes":{"class":"dark"}}]'
+    const imported = await runCLI(['import', htmlPath, '--modes', modes, '-o', figPath])
+    expect(imported.exitCode).toBe(0)
+    const { graph } = await io.readDocument({
+      name: figPath,
+      data: new Uint8Array(await readFile(figPath))
+    })
+    const [collection] = graph.variableCollections.values()
+    expect(collection.modes.map((mode) => mode.name)).toEqual(['Light', 'Dark'])
+
+    const refused = await runCLI(['import', htmlPath, '--modes', 'Light, Dark=.dark'])
+    expect(refused.exitCode).not.toBe(0)
+    expect(refused.stderr).toContain('Invalid --modes')
+  })
+
   test('saves a thumbnail of the imported layers', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-'))
     const htmlPath = join(dir, 'tall.html')

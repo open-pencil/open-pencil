@@ -1,4 +1,4 @@
-import { useRafFn, watchThrottled } from '@vueuse/core'
+import { usePreferredReducedMotion, useRafFn, watchThrottled } from '@vueuse/core'
 import type { createRendererFromJSON } from 'shaders/core'
 import { onScopeDispose, watch } from 'vue'
 
@@ -85,8 +85,8 @@ function shadersOnPage(editor: Editor, pageId: string) {
  * Plays the shader paints on screen while the editor previews a page: each runs on a WebGPU
  * canvas at about its size on screen, and its frames replace the still frame wherever the canvas
  * paints that image, so the layers above, masks, and clipping draw as usual. A shader scrolled
- * out of view pauses; leaving preview shows the still frames again. Without WebGPU the still
- * frames stay.
+ * out of view pauses; leaving preview shows the still frames again. Without WebGPU, or when the
+ * system asks for reduced motion, the still frames stay.
  */
 export function useShaderPlayback(options: {
   editor: Editor
@@ -98,6 +98,9 @@ export function useShaderPlayback(options: {
 }) {
   const { editor, getRenderer, getView, getViewport, markDirty } = options
   const frames = provideShaderFrames(editor)
+  // Someone who asked their system for less motion sees each shader's still frame, as a browser
+  // without WebGPU shows it.
+  const motion = usePreferredReducedMotion()
   const players = new Map<string, Player>()
   /** Players starting at a new size beside the ones they replace, by image. */
   const replacing = new Map<string, Player>()
@@ -137,6 +140,10 @@ export function useShaderPlayback(options: {
     player.disposed = true
     players.delete(hash)
     getRenderer()?.setLiveImage(hash, null, player.nodeIds)
+    // Islands drawing its frames and the canvas show the still frame again, however playback
+    // ended: leaving preview, the shader leaving the page, or the system asking for less motion.
+    frames.publish(hash, null)
+    markDirty()
     retired.push(player)
     if (!stepping) release()
   }
@@ -268,7 +275,8 @@ export function useShaderPlayback(options: {
 
   function sync() {
     const view = getView()
-    const playing = resolveEditorProfile(view).live !== null && canDrawShaders()
+    const playing =
+      resolveEditorProfile(view).live !== null && canDrawShaders() && motion.value !== 'reduce'
     const wanted = playing ? shadersOnPage(editor, view.currentPageId) : new Map()
     for (const [hash, player] of players) {
       const shader = wanted.get(hash)
@@ -374,7 +382,8 @@ export function useShaderPlayback(options: {
     () => [
       resolveEditorProfile(getView()).live !== null,
       getView().currentPageId,
-      editor.state.sceneVersion
+      editor.state.sceneVersion,
+      motion.value
     ],
     sync,
     {

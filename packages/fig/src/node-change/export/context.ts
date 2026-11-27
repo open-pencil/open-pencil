@@ -20,7 +20,11 @@ import type {
 import { UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
 import { sharedStyleLayers } from '@open-pencil/scene-graph/shared-styles'
-import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
+import {
+  EFFECT_BINDING_PROPERTIES,
+  effectBindingField,
+  type TextStyleLookup
+} from '@open-pencil/scene-graph/variables'
 
 import { modeledEffectIndexes } from '../paint'
 import { variableAlias } from '../variable/bindings'
@@ -129,6 +133,7 @@ export interface SceneNodeToKiwiContext {
   pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
   /** Nodes with their bindings resolved, kept for the length of one export. */
   resolvedNodes?: WeakMap<SceneNode, SceneNode>
+  textStyles?: TextStyleLookup
   fractionalPosition: (index: number) => string
   mapToFigmaType: (type: SceneNode['type']) => string
   fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint

@@ -3,13 +3,13 @@ import { computed } from 'vue'
 
 import type { MaskType } from '@open-pencil/scene-graph'
 import { useMask } from '@open-pencil/vue/controls/mask'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const { active, maskType, setMaskType } = useMask()
 
 const maskTypeOptions = computed<Array<{ value: MaskType; label: string }>>(() => [

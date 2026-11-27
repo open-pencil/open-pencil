@@ -1,5 +1,5 @@
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   DocumentKind,
   SceneGraph,
   SceneGraphEvents
@@ -13,7 +13,7 @@ export interface CollabEditorEvents extends Omit<SceneGraphEvents, 'node:preview
   /** An edit or batch ended without a step, rolled back or changing nothing. */
   'edit:discarded': () => void
   'document:libraries-changed': () => void
-  'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
+  'document:color-space-changed': (colorSpace: ColorProfile) => void
   'document:kind-changed': (kind: DocumentKind) => void
 }
 

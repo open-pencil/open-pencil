@@ -2,6 +2,7 @@ import { describe, test, expect } from 'bun:test'
 
 import {
   parseColor,
+  tryParseColor,
   normalizeColor,
   colorToHex,
   colorToHex8,
@@ -228,5 +229,28 @@ describe('colorDistance', () => {
   test('red to blue is far', () => {
     const d = colorDistance({ r: 1, g: 0, b: 0, a: 1 }, { r: 0, g: 0, b: 1, a: 1 })
     expect(d).toBeGreaterThan(300)
+  })
+})
+
+describe('parsing colors into a profile', () => {
+  test('sRGB syntaxes keep their numbers in either profile', () => {
+    expect(tryParseColor('#ff0000', 'display-p3')).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(tryParseColor('rgb(51 128 204)', 'display-p3')?.r).toBeCloseTo(0.2, 5)
+  })
+
+  test('a color that names its space converts into the profile, inside its gamut', () => {
+    const p3 = tryParseColor('color(display-p3 1 0 0)', 'display-p3')
+    expect(p3?.r).toBeCloseTo(1, 9)
+    expect(p3?.g).toBeCloseTo(0, 9)
+    const srgb = tryParseColor('color(display-p3 1 0 0)')
+    for (const channel of [srgb?.r, srgb?.g, srgb?.b]) {
+      expect(channel).toBeGreaterThanOrEqual(0)
+      expect(channel).toBeLessThanOrEqual(1)
+    }
+    expect(tryParseColor('oklch(0.6 0.1 250)', 'display-p3')?.b).toBeGreaterThan(0.5)
+  })
+
+  test('a missing channel reads as zero', () => {
+    expect(tryParseColor('color(display-p3 none 0 0)', 'display-p3')?.r).toBe(0)
   })
 })

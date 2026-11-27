@@ -12,7 +12,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -45,7 +45,7 @@ const emit = defineEmits<{
   saveTrace: [id: string]
   delete: [id: string]
 }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const triggerClass = tv(iconButtonTheme)({ size: 'sm' })
 const styles = chatHistoryTheme()
 const menu = useMenuUI({ content: 'min-w-44' })

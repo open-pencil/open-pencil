@@ -6,7 +6,7 @@ import { computed, defineAsyncComponent, ref, shallowRef, watch } from 'vue'
 import type { DesignTokenBundle } from '@open-pencil/core/io/formats/design-tokens'
 import { errorMessage } from '@open-pencil/std/errors'
 import { useDocumentShortcuts } from '@open-pencil/vue/editor/keyboard'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTokenCopy } from '@/app/editor/tokens/copy'
@@ -33,7 +33,8 @@ const open = computed({
 /** Undo and redo reach the document from inside the dialog, as they do on the canvas. */
 const onKeydown = useDocumentShortcuts()
 
-const { variables, common } = useI18n()
+const variables = useMessages('variables/panel')
+const common = useMessages('common')
 /** Expanding gives a large design system most of the window; it is kept for this session. */
 const expanded = ref(false)
 const copyTokens = createTokenCopy(store)

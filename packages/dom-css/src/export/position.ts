@@ -1,7 +1,7 @@
 import type { ConstraintType, SceneNode } from '@open-pencil/scene-graph'
 
 import type { DesignStyleDeclaration } from '../types'
-import { borderWidths } from './css'
+import { borderWidths, strokeDrawsAsShadows } from './css'
 
 const AXES = {
   width: { constraint: 'horizontalConstraint', start: 'left', end: 'right', at: 'x' },
@@ -21,12 +21,14 @@ function shifted(base: string, by: number): string {
 
 /**
  * A placed layer along one axis, measured in the box CSS places it in: inside the parent's
- * border, which a stroke on the canvas does not take from its children. A parent with no size
- * on the axis leaves its box to the page, so its children keep their start and size there.
+ * border, which a stroke on the canvas does not take from its children. Preview draws a solid
+ * stroke as shadows, which leave the box whole. A parent with no size on the axis leaves its box
+ * to the page, so its children keep their start and size there.
  */
-function placedAxis(node: SceneNode, parent: SceneNode | undefined, axis: Axis) {
+function placedAxis(node: SceneNode, parent: SceneNode | undefined, axis: Axis, preview: boolean) {
   const { constraint, start, end, at } = AXES[axis]
-  const border = parent ? borderWidths(parent) : undefined
+  const bordered = parent && !(preview && strokeDrawsAsShadows(parent))
+  const border = bordered ? borderWidths(parent) : undefined
   const inset = border?.[start] ?? 0
   const room = (parent?.[axis] ?? 0) - inset - (border?.[end] ?? 0)
   const kind: ConstraintType = parent && room > 0 ? node[constraint] : 'MIN'
@@ -41,9 +43,10 @@ function placedAxis(node: SceneNode, parent: SceneNode | undefined, axis: Axis) 
 export function constraintSizes(
   node: SceneNode,
   parent: SceneNode | undefined,
-  axis: Axis
+  axis: Axis,
+  preview: boolean
 ): boolean {
-  const { kind } = placedAxis(node, parent, axis)
+  const { kind } = placedAxis(node, parent, axis, preview)
   return kind === 'STRETCH' || kind === 'SCALE'
 }
 
@@ -68,12 +71,13 @@ export function placement(
 export function addPositioning(
   style: DesignStyleDeclaration,
   node: SceneNode,
-  parent: SceneNode | undefined
+  parent: SceneNode | undefined,
+  preview: boolean
 ): void {
   const placed = placement(node, parent)
   if (placed) {
     style.position = 'absolute'
-    addConstrainedPlacement(style, node, placed.parent)
+    addConstrainedPlacement(style, node, placed.parent, preview)
   } else if (node.layoutMode === 'NONE' && node.type !== 'TEXT' && node.childIds.length > 0) {
     style.position = 'relative'
   }
@@ -89,11 +93,12 @@ export function addPositioning(
 function addConstrainedPlacement(
   style: DesignStyleDeclaration,
   node: SceneNode,
-  parent: SceneNode | undefined
+  parent: SceneNode | undefined,
+  preview: boolean
 ): void {
   for (const axis of ['width', 'height'] as const) {
     const { start, end } = AXES[axis]
-    const { kind, room, before, after } = placedAxis(node, parent, axis)
+    const { kind, room, before, after } = placedAxis(node, parent, axis, preview)
     if (kind === 'MAX') {
       style[end] = length(after)
     } else if (kind === 'CENTER') {

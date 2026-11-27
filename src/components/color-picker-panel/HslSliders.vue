@@ -1,33 +1,34 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useColorCSS } from '@open-pencil/vue/controls/color-model'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
-const { panels } = useI18n()
+const colorCSS = useColorCSS()
+const pickerMessages = useMessages('panels/pickers')
 </script>
 
 <template>
   <StandardColorSlider
-    :label="panels.saturation"
+    :label="pickerMessages.saturation"
     :model-value="ctx.rekaColor"
     channel="saturation"
     color-space="hsl"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hslSaturation)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hslSaturation)"
     data-test-id="color-slider-hsl-s"
     @update="ctx.onRekaColorUpdate"
   />
 
   <StandardColorSlider
-    :label="panels.lightness"
+    :label="pickerMessages.lightness"
     :model-value="ctx.rekaColor"
     channel="lightness"
     color-space="hsl"
     :step="0.1"
-    :thumb-fill="colorToCSS(ctx.sliderPreview.hslLightness)"
+    :thumb-fill="colorCSS(ctx.sliderPreview.hslLightness)"
     data-test-id="color-slider-hsl-l"
     @update="ctx.onRekaColorUpdate"
   />

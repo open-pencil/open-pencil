@@ -13,7 +13,6 @@ export type TransactionalEmailKind =
   | 'enrollment-approved'
   | 'enrollment-rejected'
   | 'enrollment-revoked'
-  | 'enrollment-invited'
   | 'email-verification'
   | 'password-reset'
   | 'password-changed'
@@ -49,9 +48,7 @@ const workspaceInvitationEmailPayloadSchema = v.object({
 const enrollmentEmailPayloadSchema = v.object({
   /** Null when the request named no one, so the email greets no one by name. */
   name: v.nullable(v.string()),
-  actionURL: v.string(),
-  /** An invitation letter to someone from openpencil.dev's waitlist, who asked nowhere else. */
-  waitlist: v.optional(v.literal(true))
+  actionURL: v.string()
 })
 
 const adminEnrollmentNotificationPayloadSchema = v.object({
@@ -180,7 +177,6 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('enrollment-approved', enrollmentEmailPayloadSchema),
   content('enrollment-rejected', enrollmentEmailPayloadSchema),
   content('enrollment-revoked', enrollmentEmailPayloadSchema),
-  content('enrollment-invited', enrollmentEmailPayloadSchema),
   content('email-verification', authenticationEmailPayloadSchema),
   content('password-reset', authenticationEmailPayloadSchema),
   content('password-changed', authenticationEmailPayloadSchema),

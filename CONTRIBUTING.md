@@ -15,6 +15,7 @@ Questions and ideas go to [GitHub Discussions](https://github.com/open-pencil/op
 git clone https://github.com/open-pencil/open-pencil.git
 cd open-pencil
 bun install
+bun run build:packages
 bun run dev:portless  # Web editor at https://open-pencil.localhost
 bun run dev           # Fixed http://localhost:1420 for Playwright, Tauri, and Dev Containers
 bun run tauri dev     # Desktop app (requires Rust)

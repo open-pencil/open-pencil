@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { LAYOUT_CONTAINER_TYPES } from '@open-pencil/vue/controls/selection-layout'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { LayoutControlsRoot } from '@open-pencil/vue/primitives/LayoutControls'
 
 import ClipContentControl from '@/components/properties/layout/ClipContentControl.vue'
@@ -15,7 +15,7 @@ import TextResizingControl from '@/components/properties/layout/TextResizingCont
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
-const { panels } = useI18n()
+const panels = useMessages('panels')
 </script>
 
 <template>

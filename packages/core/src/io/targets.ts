@@ -1,3 +1,6 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { slideRows } from '@open-pencil/scene-graph/slides'
+
 import { findPageId } from './subgraph'
 import type { ExportRequest } from './types'
 
@@ -47,4 +50,40 @@ export function resolveExportNodes(request: ExportRequest): ExportNodes | null {
     default:
       return null
   }
+}
+
+/** A deck's slide an export makes a page or slide of, on the design page that holds it. */
+export interface ExportSlide {
+  pageId: string
+  slide: SceneNode
+}
+
+/**
+ * The deck's slides an export draws, in the deck's order: every slide of a document or page that
+ * holds a deck, skipped ones included, or the layers selected when each is a slide. Null for any
+ * other target, which exports as layers do.
+ */
+export function resolveExportSlides(request: ExportRequest): ExportSlide[] | null {
+  const { graph, target } = request
+  const ofPage = (pageId: string) =>
+    slideRows(graph, pageId)
+      .flat()
+      .map((slide) => ({ pageId, slide }))
+  let slides: ExportSlide[]
+  if (target.scope === 'document') {
+    slides = graph.getPages().flatMap((page) => ofPage(page.id))
+  } else if (target.scope === 'page') {
+    slides = ofPage(target.pageId)
+  } else {
+    const ids = target.scope === 'node' ? [target.nodeId] : target.nodeIds
+    if (ids.length === 0 || !ids.every((id) => graph.getNode(id)?.type === 'SLIDE')) return null
+    const named = new Set(ids)
+    // The pages in the document's order, whatever order the slides were picked in.
+    const holding = new Set(ids.flatMap((id) => findPageId(graph, id) ?? []))
+    slides = graph
+      .getPages()
+      .filter((page) => holding.has(page.id))
+      .flatMap((page) => ofPage(page.id).filter(({ slide }) => named.has(slide.id)))
+  }
+  return slides.length > 0 ? slides : null
 }

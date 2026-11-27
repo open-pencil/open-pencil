@@ -4,7 +4,7 @@ import type { UIMessage } from 'ai'
 import { computed, provide, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { providerKind } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { isAttachableImageFile, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { useChatContext } from '@/app/ai/chat/compaction/limits'
@@ -68,7 +68,7 @@ const {
   clearChatFailure,
   providerID
 } = useAIChat()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const dates = useDateFormat()
 const runLocation = useChatRunLocation()
 

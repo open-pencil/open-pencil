@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import type { LayerNode } from '@open-pencil/vue/primitives/LayerTree'
 
 import { nodeIcon } from '@/components/icons'
@@ -23,7 +23,7 @@ const { renameControls, expanded } = defineProps<{
 }>()
 
 const renameInput = useTemplateRef<HTMLInputElement>('renameInput')
-const { rename } = useI18n()
+const rename = useMessages('rename')
 const ui = useLayerTreeUI()
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() => layerTree({ expanded }))

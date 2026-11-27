@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useFileDialog } from '@vueuse/core'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -38,7 +38,7 @@ const emit = defineEmits<{
   deleteAccount: []
 }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const { open: pickPicture, onChange: onPicture } = useFileDialog({
   accept: 'image/png,image/jpeg,image/webp,image/gif',
   multiple: false,

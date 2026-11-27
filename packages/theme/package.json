@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/theme",
-  "version": "0.17.0-beta.7",
+  "version": "0.17.0",
   "description": "OpenPencil's look as Tailwind CSS: the design tokens, light and dark, and tailwind-variants configs for buttons, inputs, alerts, links, settings, and Cloud's pages. No framework and no runtime dependencies; bring Tailwind CSS 4 and tailwind-variants.",
   "license": "MIT",
   "repository": {

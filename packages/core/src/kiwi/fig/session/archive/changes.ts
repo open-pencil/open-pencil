@@ -2,7 +2,7 @@ import { mapValues, omitBy } from 'es-toolkit/object'
 import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 
 import type {
-  DocumentColorSpace,
+  ColorProfile,
   DocumentKind,
   EnabledLibraryBinding,
   SceneGraph,
@@ -37,7 +37,7 @@ interface ArchiveChanges {
 
 /** The document's own settings, which its record holds rather than any layer. */
 export interface SettingsSnapshot {
-  colorSpace: DocumentColorSpace
+  colorSpace: ColorProfile
   kind: DocumentKind
   libraries: Array<[string, EnabledLibraryBinding]>
 }

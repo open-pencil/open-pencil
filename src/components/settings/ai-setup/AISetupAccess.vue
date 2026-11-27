@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { AgentDetection } from '@/app/ai/agents/setup/detection'
 import { modelProviderName } from '@/app/ai/models/provider-name'
@@ -33,7 +33,7 @@ const {
   detections?: Partial<Record<OnboardingAccess, AgentDetection>>
 }>()
 const access = defineModel<OnboardingAccess[]>({ required: true })
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const styles = tv(theme)()
 const moreOpen = ref(
   ONBOARDING_MORE_API_PROVIDERS.some((provider) => access.value.includes(provider))

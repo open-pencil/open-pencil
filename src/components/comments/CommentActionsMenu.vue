@@ -9,7 +9,7 @@ import {
 import { computed } from 'vue'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
-import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
@@ -32,8 +32,8 @@ const {
 }>()
 
 const comments = useComments()
-const messages = useCommentMessages()
-const common = useCommonMessages()
+const messages = useMessages('comments')
+const common = useMessages('common')
 const { copy } = useClipboard({ legacy: true })
 const { showActionToast } = useActionToast()
 const menuCls = useMenuUI({ item: 'justify-start gap-2' })

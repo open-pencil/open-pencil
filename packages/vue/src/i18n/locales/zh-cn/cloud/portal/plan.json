@@ -1,0 +1,16 @@
+{
+  "plan": "方案",
+  "planDescription": "您的账户包含的内容，以及您需要支付的费用。",
+  "planStorage": "存储空间",
+  "planStorageOf": "已使用 {used}，共 {total}（您拥有的所有工作区合计）",
+  "planStorageUsed": "已使用 {used}（您拥有的所有工作区合计）",
+  "planStorageFull": "您的文件为只读",
+  "planStorageFullDescription": "这些文件已用完您的方案包含的全部存储空间。请删除文件或获取更多存储空间，以恢复编辑。",
+  "planMonthlyCredits": "每月额度",
+  "planCredits": "{credits} 额度",
+  "planNoCredits": "不包含",
+  "planUnlimitedCredits": "无每月上限",
+  "planBilling": "套餐与账单",
+  "planBillingDescription": "更改套餐、购买更多额度并查看发票。",
+  "planOpenBilling": "打开账单页面"
+}

@@ -3,19 +3,21 @@ import { isEqual } from 'es-toolkit/predicate'
 import {
   figCheckpointRecords,
   type FigArchiveRecordInfo,
-  type FigRecordPatch
+  type FigRecordPatch,
+  type FigUnreadVariable
 } from '@open-pencil/fig'
 import {
   nameImagesForFigma,
   type FigNodeChangeExportRuntime,
   sceneNodeToKiwi
 } from '@open-pencil/fig/node-change'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { DECK_TYPES, isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
+import { slideRows, slideSettings } from '@open-pencil/scene-graph/slides'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 import {
   collectionsBoundIn,
@@ -34,7 +36,10 @@ import {
   type KiwiNodeChange,
   prepareFigExport
 } from '#core/io/formats/fig/export/setup'
-import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
+import {
+  appendVariableNodeChanges,
+  sequentialPositions
+} from '#core/io/formats/fig/export/variables'
 import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive/access'
 import {
   archiveBaseline,
@@ -49,21 +54,17 @@ import {
 
 import { narrowToChangedFields, type RecordWriter } from './fields'
 
-/** Slot content an instance writes as records of its own, which this path leaves alone. */
-class UnpatchableChangeError extends Error {
-  override name = 'UnpatchableChangeError'
-}
-
 /**
  * The layer whose record holds a layer: itself, or the outermost instance or generated frame it
  * sits in, since both write their contents as overrides and derived data on their own record.
+ * An instance's slot content is records of its own, below the content frame the slot frame shows.
  */
 function recordOwner(graph: SceneGraph, id: string): string | null {
   const start = graph.getNode(id)
   if (!start) return null
   let owner: SceneNode = start
   for (let node: SceneNode | undefined = start; node;) {
-    if (ownsSlotContent(graph, node)) throw new UnpatchableChangeError()
+    if (ownsSlotContent(graph, node)) return node === start ? start.id : owner.id
     if (node.type === 'INSTANCE' || isGeneratedFrame(node)) owner = node
     if (node.type === 'CANVAS') return owner.id
     node = node.parentId ? graph.getNode(node.parentId) : undefined
@@ -223,6 +224,27 @@ function savedModeId(
   return graph.variableCollections.get(collectionId)?.defaultModeId
 }
 
+/**
+ * A slide's transition names the slide after it, so deleting, skipping, adding, or moving one
+ * changes the record of the slide before. Only records whose target changed are patched.
+ */
+function addTransitionSlides(
+  graph: SceneGraph,
+  changes: ArchiveChangeSummary,
+  add: (id: string) => unknown
+): void {
+  const before = archiveBaseline(graph)?.before
+  // A slide that left its page, or was deleted after it did, shows only in what it was.
+  const deckChanged = [...changes.touched].some((id) => {
+    const node = graph.getNode(id) ?? before?.get(id)
+    return node !== undefined && DECK_TYPES.has(node.type)
+  })
+  if (!deckChanged) return
+  for (const page of graph.getPages())
+    for (const slide of slideRows(graph, page.id).flat())
+      if (slideSettings(slide)?.transition) add(slide.id)
+}
+
 /** Siblings keep the positions the archive saved; one that cannot moves, and so is written. */
 function siblingPositions(graph: SceneGraph, records: Set<string>): Map<string, string> {
   const orderKeys = new Map<string, string>()
@@ -280,6 +302,7 @@ function planRecords(
   addSetVariants(graph, changes, add)
   addModeChangeUsers(graph, add)
   addComponentInstances(graph, records, add)
+  addTransitionSlides(graph, changes, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)
   const orderKeys = siblingPositions(graph, records)
@@ -327,7 +350,11 @@ async function loadComponentUsePages(
   return loaded
 }
 
-function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[] | null {
+function writeRecords(
+  setup: FigExportSetup,
+  plan: RecordPlan,
+  archivedIds: ReadonlySet<string>
+): KiwiNodeChange[] | null {
   const { graph } = setup
   const canvasGuids = new Map(setup.canvasEntries.map((entry) => [entry.page.id, entry]))
   const slotContentRecords: KiwiNodeChange[] = []
@@ -350,6 +377,8 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
   for (const id of ordered) {
     const node = graph.getNode(id)
     if (!node) continue
+    // A content frame is a record of the internal canvas that only a whole write places.
+    if (ownsSlotContent(graph, node)) return null
     // A style is a record of the internal canvas, which a document without one gains.
     if (node.sharedStyleType !== null) {
       if (!internal) return null
@@ -387,11 +416,19 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
       sceneNodeToKiwi(node, parentGuid, index, setup.localIdCounter, graph, setup.blobs, options)
     )
   }
-  // Instance slot content is written as records of its own on the internal canvas.
-  return slotContentRecords.length > 0 ? null : written
+  // An instance names its slot content by the content frame's GUID. A frame the archive holds
+  // stays as saved, its layers records of their own; new content takes a whole write.
+  const unsaved = slotContentRecords.some(
+    (record) => !record.guid || !archivedIds.has(guidToString(record.guid))
+  )
+  return unsaved ? null : written
 }
 
-function variableRecords(setup: FigExportSetup, archiveInternalCanvas: boolean): KiwiNodeChange[] {
+function variableRecords(
+  setup: FigExportSetup,
+  archiveInternalCanvas: boolean,
+  unread: readonly FigUnreadVariable[]
+): KiwiNodeChange[] {
   const internal = setup.canvasEntries.find((entry) => entry.page.internalOnly)
   if (!internal) return []
   const records: KiwiNodeChange[] = archiveInternalCanvas ? [] : [internal.canvasNc]
@@ -400,7 +437,9 @@ function variableRecords(setup: FigExportSetup, archiveInternalCanvas: boolean):
     records,
     internal.canvasGuid,
     setup.varIdToGuid,
-    setup.modeIdToGuid
+    setup.modeIdToGuid,
+    sequentialPositions(),
+    unread
   )
   return records
 }
@@ -423,10 +462,14 @@ function baselineWriter(info: FigArchiveRecordInfo): RecordWriter {
       if (orderKey) orderKeys.set(id, orderKey)
     }
     const plan = { records: new Set(records), orderKeys, removed: [], replaceVariables: false }
-    const written = writeRecords(setup, plan)
+    const written = writeRecords(setup, plan, new Set(info.recordIds))
     if (!written) return null
     const internalPage = graph.getPages(true).find((page) => page.internalOnly)
-    return [documentRecord(setup, info), ...written, ...variableRecords(setup, !!internalPage)]
+    return [
+      documentRecord(setup, info),
+      ...written,
+      ...variableRecords(setup, !!internalPage, info.unreadVariables)
+    ]
   }
 }
 
@@ -447,9 +490,10 @@ async function buildPatch(
     recordOwners: archived.byGuid,
     archiveRecordIds: info.recordIds,
     archiveResourceIds: changes.resourceIds,
+    unreadVariables: info.unreadVariables,
     withoutComments
   })
-  const records = writeRecords(setup, plan)
+  const records = writeRecords(setup, plan, new Set(info.recordIds))
   if (!records) return null
   // The document's own fields, its plugin data among them, are written on the document record,
   // and so is leaving out comments the archive may hold.
@@ -459,7 +503,11 @@ async function buildPatch(
     const internalPage = graph.getPages(true).find((page) => page.internalOnly)
     const internal = setup.canvasEntries.find((entry) => entry.page.internalOnly)
     const canvasWritten = records.some((record) => record === internal?.canvasNc)
-    for (const record of variableRecords(setup, !!internalPage || canvasWritten))
+    for (const record of variableRecords(
+      setup,
+      !!internalPage || canvasWritten,
+      info.unreadVariables
+    ))
       records.push(record)
   }
   const narrowed = await narrowToChangedFields(
@@ -529,13 +577,7 @@ export async function writePatchedFigFile(
     : loaded
   if (!archived) return null
   const info = await archive.info()
-  let built: Awaited<ReturnType<typeof buildPatch>>
-  try {
-    built = await buildPatch(source, runtime, info, changes, archived, options.withoutComments)
-  } catch (error) {
-    if (error instanceof UnpatchableChangeError) return null
-    throw error
-  }
+  const built = await buildPatch(source, runtime, info, changes, archived, options.withoutComments)
   if (!built) return null
   const imageNames = nameImagesForFigma(built.patch.records, built.graph.images)
   const extras = await figFileExtras(built.graph, imageNames, options)

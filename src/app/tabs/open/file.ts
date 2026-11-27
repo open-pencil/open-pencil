@@ -1,6 +1,7 @@
 import { filename } from 'pathe/utils'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import type { DesignViewport } from '@open-pencil/dom-css'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { createDeferred } from '@open-pencil/std/async'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
@@ -33,6 +34,12 @@ function isDOMImportFile(file: File): boolean {
 export interface OpenedWebPage {
   url: string
   title: string
+  /** The window the page is laid out in; a desktop browser's when not given. */
+  viewport?: DesignViewport
+  /** Renders the page in the desktop app first, so its scripts build it. */
+  render?: boolean
+  /** The page has no HTML but what rendering it gives, as when its site let only a browser in. */
+  rendersOnly?: boolean
 }
 
 export interface OpenInTabOptions {

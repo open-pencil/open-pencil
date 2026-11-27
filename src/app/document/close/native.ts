@@ -1,7 +1,7 @@
 import { message } from '@tauri-apps/plugin-dialog'
 import type { MessageDialogOptions, MessageDialogResult } from '@tauri-apps/plugin-dialog'
 
-import { commonMessages, filesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import type { CloseChoice } from './controller'
 
@@ -15,8 +15,8 @@ export async function chooseNativeDocumentClose(
   documentName: string,
   show: NativeMessageDialog = message
 ): Promise<CloseChoice> {
-  const files = filesMessages.get()
-  const common = commonMessages.get()
+  const files = messageStores.files.get()
+  const common = messageStores.common.get()
   const result = await show(files.saveBeforeClosingDescription, {
     title: files.saveBeforeClosing({ name: documentName }),
     kind: 'warning',

@@ -1,0 +1,15 @@
+[package]
+name = "open-pencil"
+version = "0.1.0"
+description = "Rust crates of OpenPencil, an open-source design editor: reading Figma .fig files."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "README.md"
+keywords = ["design", "figma", "fig", "editor"]
+categories = ["parser-implementations", "graphics"]
+publish = ["crates-io"]
+
+[dependencies]
+open-pencil-fig = { version = "0.1.0", path = "../../packages/fig/crate" }

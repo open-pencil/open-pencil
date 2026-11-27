@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const updatesMessageDefaults = {
   upToDate: 'OpenPencil is up to date',
   windowTitle: 'Software Update',
@@ -38,5 +36,3 @@ export const updatesMessageDefaults = {
   channelStable: 'Stable',
   channelNightly: 'Nightly'
 } as const
-
-export const updatesMessages = i18n('updates', updatesMessageDefaults)

@@ -3,7 +3,9 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type {
   CharacterStyleOverride,
+  ColorProfile,
   HyperlinkTarget,
+  SceneGraph,
   SceneNode,
   TextLength
 } from '@open-pencil/scene-graph'
@@ -20,6 +22,7 @@ import {
   type TextListItem,
   type TextParagraphRange
 } from '@open-pencil/scene-graph/text'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { fillToCSS, letterSpacingToCSS, lineHeightToCSS } from './css'
@@ -147,7 +150,7 @@ function styledRanges(node: SceneNode): StyledRange[] {
 }
 
 /** Underline or strikethrough as CSS writes it: Figma's offset is CSS's, from the baseline. */
-function decorationCSS(style: CharacterStyle): DesignStyleDeclaration {
+function decorationCSS(style: CharacterStyle, profile: ColorProfile): DesignStyleDeclaration {
   if (style.textDecoration === 'NONE') return {}
   const underline = style.textDecoration === 'UNDERLINE'
   const css: DesignStyleDeclaration = {
@@ -156,7 +159,10 @@ function decorationCSS(style: CharacterStyle): DesignStyleDeclaration {
   if (style.textDecorationStyle !== 'SOLID') {
     css['text-decoration-style'] = style.textDecorationStyle.toLowerCase()
   }
-  const color = fillToCSS(style.textDecorationFills.find((fill) => fill.visible))
+  const color = fillToCSS(
+    style.textDecorationFills.find((fill) => fill.visible),
+    profile
+  )
   if (color) css['text-decoration-color'] = color
   if (style.textDecorationThickness !== null) {
     css['text-decoration-thickness'] = px(style.textDecorationThickness)
@@ -168,9 +174,13 @@ function decorationCSS(style: CharacterStyle): DesignStyleDeclaration {
   return css
 }
 
-function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDeclaration {
+function characterCSS(
+  style: CharacterStyle,
+  decorated: boolean,
+  profile: ColorProfile
+): DesignStyleDeclaration {
   return {
-    color: fillToCSS(style.fills.at(0)) ?? '',
+    color: fillToCSS(style.fills.at(0), profile) ?? '',
     'font-family': style.fontFamily,
     'font-size': px(style.fontSize),
     'font-weight': String(style.fontWeight),
@@ -178,7 +188,7 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
     'letter-spacing': letterSpacingToCSS(style.letterSpacing),
     'line-height': style.lineHeight === null ? 'normal' : lineHeightToCSS(style.lineHeight),
     'text-transform': textCaseToCSS(style.textCase) ?? 'none',
-    ...(decorated ? decorationCSS(style) : {})
+    ...(decorated ? decorationCSS(style, profile) : {})
   }
 }
 
@@ -190,9 +200,10 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
 function spanCSS(
   style: CharacterStyle,
   decorated: boolean,
-  base: DesignStyleDeclaration
+  base: DesignStyleDeclaration,
+  profile: ColorProfile
 ): DesignStyleDeclaration {
-  const own = characterCSS(style, decorated)
+  const own = characterCSS(style, decorated, profile)
   const css = differing(own, base)
   const { unit, value } = style.letterSpacing
   if (unit === 'PERCENT' && value !== 0 && 'font-size' in css) {
@@ -215,10 +226,14 @@ function differing(
  * Whether the text decorates every character alike. CSS draws an element's decoration through
  * its descendants, which cannot take it off, so mixed decorations go on the spans instead.
  */
-function uniformDecoration(node: SceneNode, ranges: readonly StyledRange[]): boolean {
+function uniformDecoration(
+  node: SceneNode,
+  ranges: readonly StyledRange[],
+  profile: ColorProfile
+): boolean {
   const decorations = ranges
     .filter((range) => node.text.slice(range.start, range.end).replaceAll('\n', '') !== '')
-    .map((range) => decorationCSS(range.style))
+    .map((range) => decorationCSS(range.style, profile))
   return decorations.every((decoration) => isEqual(decoration, decorations[0]))
 }
 
@@ -227,6 +242,8 @@ interface TextProjection {
   ranges: StyledRange[]
   base: DesignStyleDeclaration
   decorated: boolean
+  /** The profile the document's colors are in, which CSS writes them for. */
+  profile: ColorProfile
 }
 
 function textNode(text: string): DesignNode {
@@ -255,13 +272,13 @@ function linkElement(href: string, css: DesignStyleDeclaration, text: string): D
  * linked characters are a link instead.
  */
 function inlineContent(projection: TextProjection, start: number, end: number): DesignNode[] {
-  const { node, ranges, base, decorated } = projection
+  const { node, ranges, base, decorated, profile } = projection
   const pieces: { css: DesignStyleDeclaration; text: string; href: string | null }[] = []
   for (const range of ranges) {
     const from = Math.max(start, range.start)
     const to = Math.min(end, range.end)
     if (to <= from) continue
-    const css = spanCSS(range.style, !decorated, base)
+    const css = spanCSS(range.style, !decorated, base, profile)
     const text = node.text.slice(from, to)
     const previous = pieces.at(-1)
     if (previous && previous.href === range.href && isEqual(previous.css, css)) {
@@ -433,22 +450,75 @@ function groupEm(
  */
 export function textElementContent(
   node: SceneNode,
-  layerStyle: DesignStyleDeclaration
+  layerStyle: DesignStyleDeclaration,
+  profile: ColorProfile
 ): { tagName: string; style: DesignStyleDeclaration; children: DesignNode[] } {
   const ranges = styledRanges(node)
-  const decorated = uniformDecoration(node, ranges)
+  const decorated = uniformDecoration(node, ranges, profile)
   const style = Object.fromEntries(
     Object.entries(layerStyle).filter(([property]) => !DECORATION_PROPERTIES.has(property))
   )
-  if (decorated) Object.assign(style, decorationCSS(characterStyle(node)))
+  if (decorated) Object.assign(style, decorationCSS(characterStyle(node), profile))
   const projection: TextProjection = {
     node,
     ranges,
-    base: characterCSS(characterStyle(node), decorated),
-    decorated
+    base: characterCSS(characterStyle(node), decorated, profile),
+    decorated,
+    profile
   }
   if (!needsBlocks(node)) {
     return { tagName: 'span', style, children: inlineContent(projection, 0, node.text.length) }
   }
   return { tagName: 'div', style, children: blockContent(projection) }
+}
+
+/**
+ * How a text's lines wrap and end. A text that truncates shows at most its line limit and ends
+ * the last line it shows with an ellipsis, as on the canvas. A one-line limit without truncation
+ * keeps the text on one line, which is how an import reads `nowrap`. A text trimmed to its cap
+ * height starts at the top of its capitals and ends at the baseline.
+ */
+export function addTextLines(style: DesignStyleDeclaration, node: SceneNode): void {
+  const limit = node.maxLines ?? 0
+  if (node.textTruncation === 'ENDING' && limit > 0) {
+    // Text that hugs its line on the page keeps hugging it as an inline box.
+    style.display = style.display === 'inline-block' ? '-webkit-inline-box' : '-webkit-box'
+    style['-webkit-box-orient'] = 'vertical'
+    style['-webkit-line-clamp'] = String(limit)
+    style.overflow = 'hidden'
+    style['white-space'] = 'pre-wrap'
+  } else {
+    style['white-space'] = limit === 1 ? 'nowrap' : 'pre-wrap'
+  }
+  if (node.leadingTrim === 'CAP_HEIGHT') style['text-box'] = 'trim-both cap alphabetic'
+}
+
+/** Whether a frame around the node flows right to left, which exports as a `direction` it inherits. */
+export function insideRightToLeftFrame(graph: SceneGraph, node: SceneNode): boolean {
+  for (let id = node.parentId; id;) {
+    const ancestor = graph.getNode(id)
+    if (!ancestor) return false
+    if (ancestor.layoutDirection === 'RTL') return true
+    id = ancestor.parentId
+  }
+  return false
+}
+
+/** The box text lines up in: its display, direction, and the side it aligns to. */
+export function addTextBox(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  inheritsRightToLeft: boolean
+): void {
+  // Nothing lays out text on the canvas, and an inline box would ignore its width and alignment.
+  if (!parent || parent.type === 'CANVAS') style.display = 'inline-block'
+  const rtl = resolveNodeTextDirection(node) === 'RTL'
+  // Text says its own direction where a frame around it flows right to left, which it inherits.
+  if (rtl) style.direction = 'rtl'
+  else if (inheritsRightToLeft) style.direction = 'ltr'
+  // Alignment names a side whatever the direction; right-to-left text starts at the right.
+  if (node.textAlignHorizontal !== 'LEFT' || rtl)
+    style['text-align'] =
+      node.textAlignHorizontal === 'JUSTIFIED' ? 'justify' : node.textAlignHorizontal.toLowerCase()
 }

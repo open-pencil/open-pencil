@@ -1,0 +1,1 @@
+- In a Display P3 document, colors that name their color space, such as `color(display-p3 …)` or `oklch()`, keep the color they name when given to the AI tools, design tokens, or design JSX, while sRGB syntaxes such as hex keep their values, as in Figma (#2272).

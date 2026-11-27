@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { supportsFileSystemAccess } from '@/app/document/io/capability'
 import ExternalLink from '@/components/links/ExternalLink.vue'
@@ -9,7 +9,8 @@ import { IS_TAURI } from '@/constants'
 /** Neutral capability reference: the File System Access API support table. */
 const supportURL = 'https://caniuse.com/native-filesystem-api'
 
-const { files, common } = useI18n()
+const files = useMessages('files')
+const common = useMessages('common')
 const show = !IS_TAURI && !supportsFileSystemAccess()
 </script>
 

@@ -262,6 +262,7 @@ describe('instance child bindings are independent from component', () => {
           layout: null,
           symbolOverrides: [],
           componentPropAssignments: [],
+          hiddenSlotAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
           uniformScaleFactor: null

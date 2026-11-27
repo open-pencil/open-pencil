@@ -41,6 +41,7 @@ import {
   mergePluginData,
   serializePluginRelaunchData
 } from '../plugin-data'
+import { serializeSlide } from '../slides'
 import { serializeNodeStatus } from '../status'
 import {
   componentPropAssignment,
@@ -68,7 +69,7 @@ import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { boundPropertyGuid, variantPropertyCopies, writtenSetProperties } from './property-copies'
 import { exportedNode } from './resolved-bindings'
-import { slotDefinitionFields } from './slots'
+import { hiddenSlotAssignments, slotDefinitionFields } from './slots'
 import { serializeText } from './text'
 import { applyVariableModes } from './variable-modes'
 
@@ -743,11 +744,15 @@ function applyComponentMetadata(
   }
 
   applyParameterReferences(nc, parameterRefs)
-  const componentPropAssignments = compact(
+  const shownAssignments = compact(
     Object.entries(node.componentPropertyAssignments).map(([propertyId, value]) =>
       componentPropAssignment(context, node, propertyId, value, localIdCounter)
     )
   )
+  const componentPropAssignments = [
+    ...shownAssignments,
+    ...hiddenSlotAssignments(node, shownAssignments)
+  ]
   if (
     shouldSerializeRawBackedField(
       node,
@@ -1107,6 +1112,7 @@ export function sceneNodeToKiwiWithContext(
   applyExportSettingsPluginData(node)
   applyLibrarySourcePluginData(node)
   serializeNodeStatus(node, nc)
+  serializeSlide(context, node, nc, localIdCounter)
   applyTextPathBoxPluginData(node, savedInFigmaBox(node))
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData

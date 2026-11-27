@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { markRaw, ref, shallowRef, watch, type Raw } from 'vue'
 
 import { DAY_MS } from '@open-pencil/std/timing'
-import { cloudMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { recoverySessionId } from '@/app/document/recovery/session'
 import { getRecoveryStore, isRecoveryStoreMemoryFallback } from '@/app/document/recovery/store'
@@ -126,7 +126,7 @@ export async function keepDraftInCloud(page: 'sign-up' | 'sign-in'): Promise<voi
   const draft = cloudDraftSave.value
   if (!draft) return
   const failed = () => {
-    toast.error(cloudMessages.get().draftKeepFailed)
+    toast.error(messageStores['cloud/editor'].get().draftKeepFailed)
   }
   const server = cloudServers.value.find((candidate) => candidate.id === draft.serverId)
   const discovery = server ? await discoverCloudServer(server.url).catch(() => null) : null

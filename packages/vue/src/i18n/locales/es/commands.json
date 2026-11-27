@@ -12,6 +12,8 @@
   "createInstance": "Crear instancia",
   "detachInstance": "Separar instancia",
   "detachIcon": "Desvincular icono",
+  "setAsThumbnail": "Establecer como miniatura",
+  "restoreDefaultThumbnail": "Restaurar miniatura predeterminada",
   "goToMainComponent": "Ir al componente principal",
   "addAutoLayout": "Añadir auto-layout",
   "bringToFront": "Traer al frente",

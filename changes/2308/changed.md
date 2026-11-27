@@ -1,0 +1,1 @@
+- Shaders in preview show their still frame instead of playing when the system asks for reduced motion.

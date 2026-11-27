@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
@@ -46,8 +46,8 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudInvitation()
-const t = useCloudMessages()
-const common = useCommonMessages()
+const t = useMessages('cloud/editor')
+const common = useMessages('common')
 const heading = computed(() => {
   if (state === 'unavailable') return t.value.invitationUnavailableHeading
   if (!invitation) return t.value.invitationOpening

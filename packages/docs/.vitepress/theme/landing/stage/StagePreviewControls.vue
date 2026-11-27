@@ -3,7 +3,7 @@ import { matchesKeyboardEvent } from '@tanstack/hotkeys'
 import { useEventListener } from '@vueuse/core'
 
 import { resolveEditorProfile } from '@open-pencil/core'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { getActiveEditorStoreOrNull, useEditorStore } from '@/app/editor/active-store'
 import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
@@ -17,7 +17,7 @@ const PREVIEW_COMMAND = 'toggle-preview'
  * edits. The app's own preview shortcut works too, for the stage the visitor last used.
  */
 const store = useEditorStore()
-const { menu } = useI18n()
+const menu = useMessages('menu')
 const shortcut = appMenuShortcutLabel(PREVIEW_COMMAND) ?? ''
 
 const previewKey = appMenuShortcut(PREVIEW_COMMAND)

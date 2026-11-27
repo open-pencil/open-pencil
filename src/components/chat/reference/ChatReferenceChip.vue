@@ -2,7 +2,7 @@
 import { computed, inject, onBeforeUnmount, ref } from 'vue'
 
 import { errorMessage, isAbortError } from '@open-pencil/std/errors'
-import { useAIMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ChatReference } from '@/app/ai/chat/references/link'
 import { openReference, resolveReference } from '@/app/ai/chat/references/resolve'
@@ -25,7 +25,7 @@ const { reference, interactive: clickable = true } = defineProps<{
 }>()
 const interactive = computed(() => clickable && reference.kind !== 'command')
 
-const ai = useAIMessages()
+const ai = useMessages('ai')
 const ui = chatReferenceTheme()
 const live = inject(CHAT_NODES_LIVE, ref(true))
 const activeStore = useActiveEditorStoreRef()

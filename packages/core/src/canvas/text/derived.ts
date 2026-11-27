@@ -1,7 +1,14 @@
 import { fromUint8Array } from 'js-base64'
 
 import type { Canvas, Paint, Path } from '@open-pencil/canvaskit'
-import type { Fill, DerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type {
+  ColorProfile,
+  Fill,
+  DerivedTextGlyph,
+  SceneNode,
+  Stroke
+} from '@open-pencil/scene-graph'
+import { normalizeColor, toExtendedSRGB } from '@open-pencil/scene-graph/color'
 import { isGradientFill } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
@@ -307,7 +314,10 @@ export function drawsSavedText(node: SceneNode): boolean {
 class StyleRunPaints {
   private readonly byRun = new Map<StyleRun, Paint[]>()
 
-  constructor(private readonly base: Paint) {}
+  constructor(
+    private readonly base: Paint,
+    private readonly space: ColorProfile
+  ) {}
 
   for(run: StyleRun, fills: readonly Fill[]): Paint[] {
     let paints = this.byRun.get(run)
@@ -316,7 +326,7 @@ class StyleRunPaints {
     for (const fill of fills) {
       if (!fill.visible || fill.type !== 'SOLID') continue
       const paint = this.base.copy()
-      const color = fill.color
+      const color = toExtendedSRGB(normalizeColor(fill.color), this.space)
       paint.setColorComponents(color.r, color.g, color.b, color.a * fill.opacity)
       paints.push(paint)
     }
@@ -362,7 +372,7 @@ export function drawDerivedText(
   // A gradient spans the layer, so its glyphs are moved into layer space rather than drawn
   // under an em-scaled canvas that would stretch the gradient by the font size.
   const paintsLayerSpace = fill !== undefined && fill.type !== 'SOLID'
-  const runPaints = new StyleRunPaints(r.fillPaint)
+  const runPaints = new StyleRunPaints(r.fillPaint, r.documentColorSpace)
   try {
     for (const [index, glyph] of node.derivedTextGlyphs.entries()) {
       // An emoji's outline is a placeholder square; its image is drawn apart from the fills.
@@ -394,7 +404,7 @@ export function drawDerivedText(
       glyphs,
       r.fontGeneration
     )
-    drawTextDecorations(r.ck, canvas, rects, r.fillPaint)
+    drawTextDecorations(r.ck, canvas, rects, r.fillPaint, r.documentColorSpace)
   }
   return true
 }

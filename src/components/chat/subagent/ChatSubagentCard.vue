@@ -2,7 +2,7 @@
 import { isTextUIPart, isToolUIPart } from 'ai'
 import { computed, inject } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { subagentTranscript } from '@/app/ai/chat/subagents'
 import { toolDisplayName, type ChatMessagePart } from '@/app/ai/chat/tool-calls/display'
@@ -20,7 +20,7 @@ import { useSubagentFollow } from './useSubagentFollow'
  */
 const { part } = defineProps<{ part: ChatMessagePart }>()
 
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const ui = chatSubagentTheme()
 const open = inject(OPEN_SUBAGENT_THREAD, null)
 const transcript = computed(() => subagentTranscript(part))

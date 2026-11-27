@@ -3,7 +3,7 @@ import type { ChatStatus, UIMessage } from 'ai'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, provide, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
@@ -74,7 +74,7 @@ const emit = defineEmits<{
   removeQueued: [id: string]
   fixReview: [messageId: string]
 }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 provide(
   CHAT_NODES_LIVE,
   computed(() => nodesLive)

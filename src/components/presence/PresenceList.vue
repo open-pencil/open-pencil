@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
 import type { FollowTarget } from '@/app/presence/types'
@@ -26,7 +26,8 @@ const emit = defineEmits<{
   rename: [agentId: string, name: string]
 }>()
 
-const { common, collaboration: messages } = useI18n()
+const common = useMessages('common')
+const messages = useMessages('collaboration')
 const ui = presenceList()
 
 const rename = useInlineRename<string>((agentId, name) => emit('rename', agentId, name))

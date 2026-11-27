@@ -2,7 +2,8 @@ import type {
   CreateDocumentInput,
   DocumentDownload,
   DocumentSummary,
-  SharedDocument
+  SharedDocument,
+  UpdateDocumentInput
 } from '#cloud/contract'
 import { workspaceRoleCan } from '#cloud/server/auth/access-control'
 import { createUploadCleanupService } from '#cloud/server/cleanup'
@@ -89,7 +90,8 @@ export function createDocumentService(
         'storageObject.objectKey',
         'storageObject.byteSize',
         'storageObject.checksum',
-        'storageObject.contentType'
+        'storageObject.contentType',
+        'documentRevision.coverChecksum'
       ])
       .where('documentRevision.id', '=', document.currentRevisionId)
       .where('documentRevision.documentId', '=', documentId)
@@ -103,7 +105,8 @@ export function createDocumentService(
       checksum: revision.checksum,
       contentType: revision.contentType,
       download: await objects.createDownload({ key: revision.objectKey, expiresAt }),
-      images: await revisionImageDownloads(database, objects, revision.revisionId, expiresAt)
+      images: await revisionImageDownloads(database, objects, revision.revisionId, expiresAt),
+      cover: revision.coverChecksum
     }
   }
 
@@ -188,6 +191,22 @@ export function createDocumentService(
       const access = await resolveDocumentAccess(database, userId, documentId)
       if (!access) throw new DocumentNotFoundError()
       return createDownload(documentId)
+    },
+
+    /**
+     * Sets what an editor may change besides the file. It is not an edit of the document's
+     * contents, so its last change and version stay as they were.
+     */
+    async update(userId: string, documentId: string, input: UpdateDocumentInput): Promise<void> {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      if (!canEditDocument(access)) throw new DocumentForbiddenError()
+      await database
+        .updateTable('document')
+        .set({ description: input.description || null })
+        .where('id', '=', documentId)
+        .where('deletedAt', 'is', null)
+        .execute()
     },
 
     async remove(userId: string, documentId: string): Promise<void> {

@@ -1,17 +1,19 @@
 import { params } from '@nanostores/i18n'
 
-/** Messages of the `cloudPortal` namespace for the server's community gallery pages. */
+/** Messages of the Cloud server's pages for the server's community gallery pages. */
 export const communityPortalMessageDefaults = {
   communityTitle: 'Community',
   communityDescription: 'Files to open, explore, and copy into your own workspace.',
   communityEmpty: 'Nothing has been published here yet.',
   communityNoDesigns: 'No designs here yet.',
   communityNoBoards: 'No boards here yet.',
+  communityNoSlides: 'No slides here yet.',
   communityAllFiles: 'All files',
   communityOpenInBrowser: 'Open in browser',
   communityOpenInDesktop: 'Open in desktop app',
-  communityOpenNote: 'Files open read-only. Save a copy to edit one.',
-  communityLatestVersion: params('{name} · Latest'),
+  communityUpdated: params('Updated {date}'),
+  communityOpen: 'Open',
+  communityOpenVersion: params('Open {name}'),
   communityMore: 'More from the community',
   siteTagline: 'The open-source design editor. Open your Figma files, own your work.',
   siteProduct: 'Product',

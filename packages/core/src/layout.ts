@@ -7,7 +7,6 @@ import { applyComputedLayout } from './layout/apply'
 import {
   asLaidOutIn,
   fillKeepsSizeInHuggingParent,
-  heldHugAxes,
   ownAxisSizing,
   setCrossAxisSizing,
   setMainAxisSizing
@@ -33,14 +32,18 @@ export {
 } from './layout/spacing-marks'
 export {
   estimateTextSize,
+  autoLineHeight,
   getTextMeasurer,
+  installTextBaselineMeasurer,
   installTextMeasurer,
   setTextMeasurer,
+  withTextBaselineMeasurer,
+  type TextBaselineMeasurer,
   type TextMeasurer
 } from './layout/text-measurement'
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { connectorSublayers, layoutConnector } from '@open-pencil/scene-graph/connectors'
-import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { heldHugAxes, layoutSizing } from '@open-pencil/scene-graph/layout'
 
 import {
   alignCappedFill,

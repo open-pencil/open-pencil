@@ -10,7 +10,7 @@ import IconCheck from '~icons/lucide/check'
 
 import { layerTypeOptions, type LayerType } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -24,7 +24,8 @@ import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 const { node, icon } = defineProps<{ node: SceneNode; icon: Component | undefined }>()
 
 const store = useEditorStore()
-const { panels, tools } = useI18n()
+const panels = useMessages('panels')
+const tools = useMessages('tools')
 const { open: popupOpen, portalActive } = useRetainedPopup()
 
 const types = [

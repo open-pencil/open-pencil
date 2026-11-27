@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDocumentFontStatus } from '@/app/editor/fonts/status'
 import Tip from '@/components/ui/overlay/Tip.vue'
 
-const { fonts } = useI18n()
+const fonts = useMessages('fonts')
 const expanded = ref(false)
 const { status, retrying, retry, selectAffectedNodes } = useDocumentFontStatus()
 const issues = computed(() => status.value.issues)

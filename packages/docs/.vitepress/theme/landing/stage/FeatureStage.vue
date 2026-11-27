@@ -2,11 +2,11 @@
 import { useIntersectionObserver, useMediaQuery } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
-import { defineAsyncComponent, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
-import { STAGES } from './definitions'
+import { lazy, STAGES } from './definitions'
 import { prepareEngine } from './engine-assets'
 import type { SingleStageKind } from './kinds'
 import StageCanvas from './StageCanvas.vue'
@@ -15,8 +15,8 @@ import { useStageDocument } from './useStageDocument'
 import { useWheelEngagement } from './useWheelEngagement'
 
 // Only some stages show the toolbar or the preview pill, so the others never download them.
-const EditorToolbar = defineAsyncComponent(() => import('@/components/toolbar/EditorToolbar.vue'))
-const StagePreviewControls = defineAsyncComponent(() => import('./StagePreviewControls.vue'))
+const EditorToolbar = lazy(() => import('@/components/toolbar/EditorToolbar.vue'))
+const StagePreviewControls = lazy(() => import('./StagePreviewControls.vue'))
 
 /** Stages mount a screen ahead of the viewport, so a block is live before it scrolls in. */
 const MOUNT_MARGIN = '100% 0px'
@@ -27,7 +27,7 @@ const emit = defineEmits<{ start: []; ready: [] }>()
 const definition = STAGES[kind]
 
 useDocsAppearance()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 const { build, focus, ready } = useStageDocument(definition.scene)
 watch(ready, () => emit('ready'), { once: true })
 const { engage, disengage, guardWheel } = useWheelEngagement()
@@ -42,7 +42,18 @@ const { stop } = useIntersectionObserver(
     if (!entry?.isIntersecting) return
     stop()
     emit('start')
-    await prepareEngine()
+    // Its panel, toolbar, and pill are downloaded before it mounts, so they are in place by the
+    // time its scene's first frame is on screen and it reports ready, as the posters rely on.
+    // One that fails to download is tried again as it mounts, and shows nothing if it fails then
+    // too; the stage itself still mounts.
+    await Promise.all([
+      prepareEngine(),
+      ...[
+        definition.panel?.load(),
+        definition.toolbar ? EditorToolbar.load() : null,
+        definition.preview ? StagePreviewControls.load() : null
+      ].map((loaded) => loaded?.catch(() => undefined))
+    ])
     mounted.value = true
     void build()
   },
@@ -79,8 +90,11 @@ function onPointerDown() {
         >
           <template v-if="mounted">
             <StageCanvas />
-            <EditorToolbar v-if="definition.toolbar && !touch && !narrow" />
-            <StagePreviewControls v-if="definition.preview" />
+            <component
+              :is="EditorToolbar.component"
+              v-if="definition.toolbar && !touch && !narrow"
+            />
+            <component :is="StagePreviewControls.component" v-if="definition.preview" />
           </template>
         </div>
 
@@ -96,7 +110,7 @@ function onPointerDown() {
             >
               {{ panels.layers }}
             </header>
-            <component :is="definition.panel" v-bind="definition.panelProps" />
+            <component :is="definition.panel.component" v-bind="definition.panelProps" />
           </template>
         </aside>
       </div>

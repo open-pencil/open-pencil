@@ -7,7 +7,7 @@ import {
 } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -35,7 +35,7 @@ const emit = defineEmits<{
   showMore: []
 }>()
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const styles = designCheck()
 const menuCls = useMenuUI({ content: 'min-w-40' })
 const itemCls = menuItem({ justify: 'start' })

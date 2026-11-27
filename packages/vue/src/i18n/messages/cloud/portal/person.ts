@@ -1,7 +1,7 @@
 import { count, params } from '@nanostores/i18n'
 
 /**
- * Messages of the `cloudPortal` namespace for one person's page in the console: their account,
+ * Messages of the Cloud server's pages for one person's page in the console: their account,
  * ways to sign in, workspaces, and sessions.
  */
 export const personPortalMessageDefaults = {

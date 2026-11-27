@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   appPreferences,
@@ -13,7 +13,7 @@ import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const settings = useSettingsMessages()
+const settings = useMessages('settings')
 
 const nameIcons = computed({
   get: () => appPreferences.value.import.nameIcons,

@@ -20,7 +20,7 @@ Avec un nom d’objet, l’application sélectionne tous les calques portant exa
 L’application web accepte le même lien depuis sa propre barre d’adresse :
 
 ```
-https://app.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
+https://cloud.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
 ```
 
 Ici, `file` est une URL `https:` absolue se terminant par `.pen` ou `.fig` — l’application web n’a pas de système de fichiers ; un chemin relatif, une URL `http:` ou toute autre extension est donc refusé avec un avertissement dans la console, sans autre effet. `node` se comporte exactement comme ci-dessus. Le navigateur récupère le fichier d’une autre origine : l’hôte doit l’autoriser (`raw.githubusercontent.com` envoie `Access-Control-Allow-Origin: *` et convient). La requête n’envoie aucun identifiant et refuse de suivre les redirections ; une URL `https://github.com/<owner>/<repo>/raw/...` est donc refusée, et il faut pointer directement vers l’hôte brut. `file` et `node` sont retirés de la barre d’adresse dès leur lecture, de sorte qu’un rechargement ne rouvre pas le document. Un document lié est limité à 256 Mio. Un déploiement qui sert l’application avec une Content-Security-Policy doit autoriser l’hôte lié dans `connect-src`.

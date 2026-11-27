@@ -3,7 +3,7 @@ import { computed, useSlots } from 'vue'
 
 import { variableText } from '@open-pencil/scene-graph/variables'
 import { useEditor } from '@open-pencil/vue'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useBindableValue } from '@open-pencil/vue/primitives/BindableValue'
 
 import PropertyTypeIcon from '@/components/properties/component-properties/PropertyTypeIcon.vue'
@@ -30,7 +30,8 @@ const slots = useSlots()
 const config = BOUND_LAYER_FIELDS[field]
 const binding = useBindableValue()
 const property = usePropertyBinding(field)
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 
 const open = computed({
   get: () => binding.open.value,

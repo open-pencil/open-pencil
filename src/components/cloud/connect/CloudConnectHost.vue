@@ -2,7 +2,7 @@
 import { useDocumentVisibility, useNow } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import { useCloudMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import {
   backCloudConnect,
@@ -41,8 +41,8 @@ import { OFFICIAL_CLOUD_URL } from '@/constants'
 import CloudConnectDialog from './CloudConnectDialog.vue'
 
 /** The one connect dialog, driven by the app's connect flow wherever it was opened from. */
-const { locale } = useI18n()
-const t = useCloudMessages()
+const { locale } = useLocale()
+const t = useMessages('cloud/editor')
 const now = useNow({ interval: 1000 })
 const official = new URL(OFFICIAL_CLOUD_URL).host
 

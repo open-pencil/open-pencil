@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { useId } from 'vue'
 
-import { useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -19,7 +19,7 @@ import type { CampaignView } from './types'
 const { content, kind } = defineProps<CampaignView>()
 const emit = defineEmits<{ dismiss: []; act: [] }>()
 
-const common = useCommonMessages()
+const common = useMessages('common')
 const ui = tv(noteTheme)()
 const headingId = useId()
 </script>

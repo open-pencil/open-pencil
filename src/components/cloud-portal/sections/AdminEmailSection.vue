@@ -2,7 +2,7 @@
 import { useTemplateRef } from 'vue'
 
 import type { CloudAdminEmailFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import type { PortalListRequest } from '@/app/cloud-portal/list'
@@ -14,8 +14,8 @@ import PortalEmailDelivery from '../console/PortalEmailDelivery.vue'
 import type { PortalEmail } from '../types'
 
 const portal = usePortal()
-const messages = useCloudPortalMessages()
-const { locale } = useI18n()
+const messages = useMessages('cloud/portal')
+const { locale } = useLocale()
 const emails = useTemplateRef('emails')
 
 function deliveryStatus(status: string): PortalEmail['status'] {

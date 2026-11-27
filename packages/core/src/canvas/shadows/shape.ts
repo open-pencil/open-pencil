@@ -56,7 +56,8 @@ const OUTLINE_SHAPE_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['t
   'COMPONENT',
   'COMPONENT_SET',
   'INSTANCE',
-  'SECTION'
+  'SECTION',
+  'SLIDE'
 ])
 
 /**
@@ -145,7 +146,8 @@ function drawMaskShadow(
   blendMode: BlendMode | undefined,
   draw: () => void
 ): void {
-  r.auxFill.setColor(r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
+  const color = r.renderColor(effect.color)
+  r.auxFill.setColor(r.color4f(color.r, color.g, color.b, color.a))
   r.auxFill.setMaskFilter(r.getCachedMaskBlur(blurSigma(effect.radius)))
   r.auxFill.setImageFilter(null)
   setPaintBlendMode(r, r.auxFill, blendMode)
@@ -278,7 +280,8 @@ export function drawShapeInnerShadow(
   isolated = false
 ): void {
   const sp = spread
-  r.auxFill.setColorComponents(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
+  const color = r.renderColor(effect.color)
+  r.auxFill.setColorComponents(color.r, color.g, color.b, color.a)
   r.auxFill.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
 
   canvas.save()

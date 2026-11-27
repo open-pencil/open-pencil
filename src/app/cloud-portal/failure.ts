@@ -1,11 +1,11 @@
 import { CloudPortalAPIError, type CloudAuthFailure } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { cloudAuthFailureMessage } from '@/app/cloud/sessions/account-form'
 
 /** Words for a failed sign-in step, and for errors the provider sends back in the URL. */
 export function usePortalFailureMessages() {
-  const messages = useCloudPortalMessages()
+  const messages = useMessages('cloud/portal')
   const failure = (kind: CloudAuthFailure) => cloudAuthFailureMessage(kind, messages.value)
   /** The provider's `error` query values after a social sign-in comes back, or null. */
   function callback(query: Record<string, unknown>): string | null {

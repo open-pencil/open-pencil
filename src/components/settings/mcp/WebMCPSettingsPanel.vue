@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { WebMCPMode } from '@/app/automation/webmcp/schema'
 import type { WebMCPRuntimeState } from '@/app/automation/webmcp/service'
@@ -17,8 +17,8 @@ import { settingsSelectUI } from '@/theme/settings/controls'
 
 const mode = defineModel<WebMCPMode>({ required: true })
 const { state } = defineProps<{ state: WebMCPRuntimeState }>()
-const automation = useAutomationMessages()
-const common = useCommonMessages()
+const automation = useMessages('automation')
+const common = useMessages('common')
 const options = computed(() => [
   { value: 'off' as const, label: automation.value.accessOff },
   { value: 'inspect' as const, label: automation.value.accessInspect },

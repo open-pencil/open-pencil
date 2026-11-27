@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { useId } from 'vue'
 
-import { useDiagnosticsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import campaignPromptTheme from '@/theme/campaigns/prompt'
@@ -20,7 +20,7 @@ import type { CampaignView } from './types'
 const { content, kind } = defineProps<CampaignView>()
 const emit = defineEmits<{ dismiss: []; act: [] }>()
 
-const diagnostics = useDiagnosticsMessages()
+const diagnostics = useMessages('diagnostics')
 const prompt = tv(promptTheme)()
 const styles = tv(questionTheme)()
 const campaign = tv(campaignPromptTheme)()

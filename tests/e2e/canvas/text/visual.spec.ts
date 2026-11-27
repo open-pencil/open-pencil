@@ -1,5 +1,7 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { rangeFillsDriver } from '#tests/helpers/canvas/range-fills/driver'
 import { textDecorationDriver } from '#tests/helpers/canvas/text-decoration/driver'
+import { showNumericPrefixDirection } from '#tests/helpers/canvas/text-direction/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
@@ -8,6 +10,14 @@ async function expectCanvas(name: string) {
   const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot(`${name}.png`)
 }
+
+test('automatic text direction follows the letters after Arabic-Indic numbers', async () => {
+  await showNumericPrefixDirection(editor.page)
+  editor.canvas.assertNoErrors()
+  expect(await editor.canvas.screenshotCanvasRegion(360, 120)).toMatchSnapshot(
+    'text-arabic-numeric-prefix.png'
+  )
+})
 
 test('complex text fills preserve native paragraph layout', async () => {
   await editor.page.evaluate(async () => {
@@ -174,6 +184,16 @@ test('decoration pieces take the colour of the character that ends them', async 
   // character whose descender ends it, or of the line's last character, wherever fills change.
   await textDecorationDriver(() => editor.page).showColours()
   await expectCanvas('text-decoration-colours')
+})
+
+test("a range draws its own fills once, in place of the layer's", async () => {
+  // As Figma draws them: a gradient spans the layer, a range's fills stack, a solid range keeps
+  // its colour on a gradient layer, and a translucent range is painted once over two layer fills.
+  await rangeFillsDriver(() => editor.page).show()
+  // Strict colours: the default threshold takes a range's dark gradient for the layer's ink.
+  expect(await editor.canvas.screenshotCanvasRegion(440, 330)).toMatchSnapshot('range-fills.png', {
+    threshold: 0.1
+  })
 })
 
 test('text case by character range', async () => {

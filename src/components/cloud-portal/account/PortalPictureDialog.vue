@@ -5,7 +5,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { Size } from '@open-pencil/scene-graph/primitives'
 import { focusStyles } from '@open-pencil/theme'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import {
   centredCrop,
@@ -41,7 +41,7 @@ const {
 const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ save: [picture: Blob] }>()
 
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const url = useObjectUrl(() => file)
 const image = useTemplateRef<HTMLImageElement>('image')
 const size = ref<Size | null>(null)

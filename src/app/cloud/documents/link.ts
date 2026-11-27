@@ -7,7 +7,7 @@ import {
   cloudDocumentURL,
   parseCloudLinkPath
 } from '@open-pencil/cloud/contract'
-import { cloudMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import type { EditorStore } from '@/app/editor/session'
@@ -107,7 +107,7 @@ export function cloudVersionLinkURL(store: EditorStore, versionId: string): stri
  * never used is only named, not added, so a link alone never connects it anywhere new.
  */
 export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<void> {
-  const messages = cloudMessages.get()
+  const messages = messageStores['cloud/editor'].get()
   const url = normalizeCloudServerURL(link.server)
   if (!url) {
     toast.error(messages.documentLinkFailed)
@@ -167,7 +167,7 @@ async function openThread(threadId: string): Promise<void> {
     comments.threads.value.some((thread) => thread.id === threadId)
   ).toBe(true, { timeout: THREAD_WAIT_MS })
   if (arrived) await comments.focusThread(threadId)
-  else toast.error(cloudMessages.get().commentLinkFailed)
+  else toast.error(messageStores['cloud/editor'].get().commentLinkFailed)
 }
 
 /** Drops a link kept while signing in, as when the tab opens with another one. */

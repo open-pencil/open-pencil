@@ -61,14 +61,26 @@ export function withGeneratedFrameSize(
   return { ...kind.sized(changes, node), ...changes }
 }
 
-/** Whether a layer turns: any layer but a generated frame that stays upright. */
+/** A deck's slides, and the rows and grid that lay them out: their size and place are the deck's. */
+export const DECK_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'SLIDE',
+  'SLIDE_ROW',
+  'SLIDE_GRID'
+])
+
+/** Whether a layer is placed by its X and Y: any but a deck's slides, rows, and grid. */
+export function layerMoves(node: Pick<SceneNode, 'type'>): boolean {
+  return !DECK_TYPES.has(node.type)
+}
+
+/** Whether a layer turns: any layer but a generated frame that stays upright, or a deck's slides. */
 export function layerRotates(node: Pick<SceneNode, 'type'>): boolean {
-  return generatedFrameKind(node)?.rotates ?? true
+  return !DECK_TYPES.has(node.type) && (generatedFrameKind(node)?.rotates ?? true)
 }
 
 /** Whether a layer's resize handles and W and H fields resize it freely. */
 export function layerResizes(node: Pick<SceneNode, 'type'>): boolean {
-  return generatedFrameKind(node)?.resizes ?? true
+  return !DECK_TYPES.has(node.type) && (generatedFrameKind(node)?.resizes ?? true)
 }
 
 export type { GeneratedFrameKind } from './kind'

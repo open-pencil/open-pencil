@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const commandMessageDefaults = {
   undo: 'Undo',
   redo: 'Redo',
@@ -18,6 +16,8 @@ export const commandMessageDefaults = {
   createInstance: 'Create instance',
   detachInstance: 'Detach instance',
   detachIcon: 'Detach icon',
+  setAsThumbnail: 'Set as thumbnail',
+  restoreDefaultThumbnail: 'Restore default thumbnail',
   goToMainComponent: 'Go to main component',
   addAutoLayout: 'Add auto layout',
   useAsMask: 'Use as mask',
@@ -72,5 +72,3 @@ export const commandMessageDefaults = {
   paletteNoCommands: 'No commands found.',
   paletteBack: 'Back'
 } as const
-
-export const commandMessages = i18n('commands', commandMessageDefaults)

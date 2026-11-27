@@ -1,0 +1,16 @@
+{
+  "plan": "Tarif",
+  "planDescription": "Was dein Konto enthält und wofür du bezahlst.",
+  "planStorage": "Speicher",
+  "planStorageOf": "{used} von {total} belegt, in allen Arbeitsbereichen, die dir gehören",
+  "planStorageUsed": "{used} belegt, in allen Arbeitsbereichen, die dir gehören",
+  "planStorageFull": "Deine Dateien sind schreibgeschützt",
+  "planStorageFullDescription": "Sie belegen den gesamten Speicher deines Tarifs. Lösche Dateien oder hole dir mehr Speicher, um sie wieder zu bearbeiten.",
+  "planMonthlyCredits": "Guthaben pro Monat",
+  "planCredits": "{credits} Guthaben",
+  "planNoCredits": "Nicht enthalten",
+  "planUnlimitedCredits": "Kein monatliches Limit",
+  "planBilling": "Tarife und Abrechnung",
+  "planBillingDescription": "Wechsle deinen Tarif, kaufe weiteres Guthaben und sieh deine Rechnungen ein.",
+  "planOpenBilling": "Abrechnung öffnen"
+}

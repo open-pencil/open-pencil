@@ -1,0 +1,3 @@
+- Variables deleted in Figma stay out of the variables panel, pickers, and the plugin API's local lists when a `.fig` file opens; layers bound to them still resolve them and mark them as deleted, and saving keeps them (#2261).
+- `.fig` files with variables of a type OpenPencil does not model, such as PAINT, open instead of failing, and saving writes those variables back unchanged (#2261).
+- Saving a `.fig` file keeps instances' slot content under the IDs Figma gave it, including content assigned to a slot the instance's variant does not show, and an edit inside slot content saves only the changed records instead of rewriting the file.

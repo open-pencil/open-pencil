@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useWindowFocus, watchImmediate } from '@vueuse/core'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useDateFormat } from '@/app/i18n/date'
 import { useNotificationMessages } from '@/app/i18n/notifications'
@@ -23,7 +23,8 @@ const { view, snapshots } = defineProps<{
   /** The copies to list, filtered by Home's search. */
   snapshots: readonly RecoverableSnapshot[]
 }>()
-const { recovery, files } = useI18n()
+const recovery = useMessages('recovery')
+const files = useMessages('files')
 const notifications = useNotificationMessages()
 const dates = useDateFormat()
 const focused = useWindowFocus()

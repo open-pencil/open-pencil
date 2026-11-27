@@ -2,11 +2,12 @@ import { createHead } from '@unhead/vue/client'
 import { createApp, nextTick } from 'vue'
 
 import { RefusedEditError } from '@open-pencil/core'
-import { diagnosticsMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 import { createOpenOverlaysPlugin } from '@open-pencil/vue/lifecycle/overlays'
-import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
 
 import './app.css'
+import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
+
 import { recordRuntimeError } from '@/app/diagnostics'
 import { installNativeFigArchives } from '@/app/document/io/native-fig'
 import { preloadCanvasKit } from '@/app/editor/canvas/canvaskit'
@@ -63,6 +64,6 @@ export async function boot(): Promise<void> {
     console.error(error)
     // Official builds offer to report it; others keep it in the console and the diagnostics log.
     const report = reportErrorAction(error, 'vue')
-    if (report) toast.error(diagnosticsMessages.get().reportUnexpectedError, report)
+    if (report) toast.error(messageStores.diagnostics.get().reportUnexpectedError, report)
   }
 }

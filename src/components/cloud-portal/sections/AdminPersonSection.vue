@@ -2,7 +2,7 @@
 import { computed, watch } from 'vue'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
@@ -22,7 +22,8 @@ import { portalSession, portalSignIn } from './sessions'
 const { userId } = defineProps<{ userId: string }>()
 const emit = defineEmits<{ back: []; deleted: [userId: string] }>()
 const portal = usePortal()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
+const personMessages = useMessages('cloud/portal/person')
 const dates = useDateFormat()
 
 const loaded = usePortalLoad(async () => {
@@ -95,14 +96,14 @@ watch(
     <AppPlaceholder
       v-if="loaded.data.value === 'missing'"
       size="page"
-      :label="messages.personNotFound"
-      :description="messages.personNotFoundDescription"
+      :label="personMessages.personNotFound"
+      :description="personMessages.personNotFoundDescription"
       :ui="{ root: 'rounded-lg border border-dashed border-border' }"
     >
       <template #icon><icon-lucide-user-x class="size-5" /></template>
       <template #action>
         <AppButton size="sm" variant="outline" @click="emit('back')">
-          {{ messages.backToPeople }}
+          {{ personMessages.backToPeople }}
         </AppButton>
       </template>
     </AppPlaceholder>

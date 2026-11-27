@@ -5,7 +5,7 @@ import { computed, ref, watch } from 'vue'
 import type { IconCollection } from '@open-pencil/core/icons'
 import { iconNames } from '@open-pencil/scene-graph/icons'
 import { useIconSearch } from '@open-pencil/vue/controls/icon'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icons/history'
@@ -46,8 +46,9 @@ const ALL_SETS = '*'
 const open = defineModel<boolean>('open', { default: false })
 
 const store = useEditorStore()
-const panels = usePanelMessages()
-const common = useCommonMessages()
+const panels = useMessages('panels')
+const pickerMessages = useMessages('panels/pickers')
+const common = useMessages('common')
 const search = useIconSearch()
 const { query, visible, hasMore, loadMore, loading, failed, previews, setsLoading } = search
 
@@ -81,13 +82,13 @@ const unavailableSet = computed(() =>
 )
 
 const setOptions = computed<AppComboboxOption[]>(() => [
-  { value: ALL_SETS, label: panels.value.allIconSets },
+  { value: ALL_SETS, label: pickerMessages.value.allIconSets },
   ...search.sets.value.map((info) => ({
     value: info.prefix,
     label: info.name,
     meta: info.unavailable ? unavailableLabel(info.unavailable) : formatNumber(info.total),
     // A set this host cannot draw says where it is offered; choosing it says why in full.
-    group: info.category ?? panels.value.otherIconSets
+    group: info.category ?? pickerMessages.value.otherIconSets
   }))
 ])
 
@@ -136,8 +137,8 @@ const items = computed<AppPickerItem[]>(() => {
   const named = [inFile, recent, rest].filter((group) => group.length > 0).length > 1
   const setLabel = named && prefix ? search.setName(`${prefix}:`) : undefined
   return [
-    ...inFile.map((name) => item(name, panels.value.iconsInFile)),
-    ...recent.map((name) => item(name, panels.value.recentIcons)),
+    ...inFile.map((name) => item(name, pickerMessages.value.iconsInFile)),
+    ...recent.map((name) => item(name, pickerMessages.value.recentIcons)),
     ...rest.map((name) => item(name, setLabel))
   ]
 })
@@ -148,12 +149,12 @@ const summary = computed(() => {
     if (loading.value) return ''
     const count = search.found.value
     return search.capped.value
-      ? panels.value.iconResultCountCapped({ count })
-      : panels.value.iconResultCount(count)
+      ? pickerMessages.value.iconResultCountCapped({ count })
+      : pickerMessages.value.iconResultCount(count)
   }
   const info = search.set.value ? setsByPrefix.value.get(search.set.value) : undefined
   if (info) return compact([info.name, info.license, formatNumber(info.total)]).join(' · ')
-  return panels.value.iconSearchHint
+  return pickerMessages.value.iconSearchHint
 })
 /** The set and license of a highlighted icon. */
 function details(name: string) {
@@ -162,16 +163,18 @@ function details(name: string) {
 }
 
 const emptyLabel = computed(() => {
-  if (failed.value) return panels.value.iconSearchFailed
+  if (failed.value) return pickerMessages.value.iconSearchFailed
   // A set opened for an icon from it, such as one being swapped, says why it shows nothing.
   if (unavailableSet.value === 'host') return panels.value.sfSymbolsNeedMacApp
   if (unavailableSet.value === 'system') return panels.value.sfSymbolsNeedNewerMacOS
   // Typing searches; choosing a set loads it.
   if (loading.value)
-    return query.value.trim() ? panels.value.searchingIcons : panels.value.loadingIcons
+    return query.value.trim()
+      ? pickerMessages.value.searchingIcons
+      : pickerMessages.value.loadingIcons
   return query.value.trim() || search.set.value
-    ? panels.value.noIconsFound
-    : panels.value.iconSearchHint
+    ? pickerMessages.value.noIconsFound
+    : pickerMessages.value.iconSearchHint
 })
 
 function pick(name: string) {
@@ -195,7 +198,7 @@ function pick(name: string) {
     :tooltip-side="tooltipSide"
     :side="side"
     :align="align"
-    :search-placeholder="panels.searchIcons"
+    :search-placeholder="pickerMessages.searchIcons"
     :empty-label="emptyLabel"
     :close-label="common.close"
     @select="pick"
@@ -211,9 +214,9 @@ function pick(name: string) {
       <AppCombobox
         v-model="chosenSet"
         :options="setOptions"
-        :label="panels.iconSet"
-        :search-placeholder="panels.searchIconSets"
-        :empty-label="setsLoading ? panels.loadingIconSets : panels.noIconSetsFound"
+        :label="pickerMessages.iconSet"
+        :search-placeholder="pickerMessages.searchIconSets"
+        :empty-label="setsLoading ? pickerMessages.loadingIconSets : pickerMessages.noIconSetsFound"
         :result-limit="setOptions.length"
         align="end"
         :ui="{

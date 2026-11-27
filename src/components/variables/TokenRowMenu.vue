@@ -9,7 +9,7 @@ import {
   ContextMenuSubTrigger
 } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
 import AppContextMenuTrigger from '@/components/ui/menu/AppContextMenuTrigger.vue'
@@ -34,7 +34,8 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const { variables, pages } = useI18n()
+const variables = useMessages('variables/panel')
+const pages = useMessages('pages')
 const menu = useMenuUI({ content: 'w-52', item: 'justify-start gap-2' })
 const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
 </script>

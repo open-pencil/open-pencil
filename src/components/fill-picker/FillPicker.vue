@@ -8,7 +8,7 @@ import type { Fill } from '@open-pencil/scene-graph'
 import type { ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph/shaders'
 import { applySolidFillColor, type OkHCLControls } from '@open-pencil/vue/controls/color-model'
 import { DEFAULT_SHADER_PRESET } from '@open-pencil/vue/controls/shader'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import {
   pickerOutsideHandlers,
@@ -126,7 +126,7 @@ const pickerOkhcl = computed<OkHCLControls | null>(() =>
 const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-0'
 })
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 /** Dragging a gradient handle or sampling a color on the canvas leaves the picker open. */
 const keepPickerOpen = useEyedropperKeepOpen(() => keepOpen)

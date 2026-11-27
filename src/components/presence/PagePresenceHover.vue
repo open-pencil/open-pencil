@@ -3,7 +3,7 @@ import { HoverCardContent, HoverCardPortal, HoverCardRoot, HoverCardTrigger } fr
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCollaborationMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
@@ -26,7 +26,7 @@ const pagePresence = tv(pagePresenceTheme)
 const { pageId } = defineProps<{ pageId: string }>()
 
 const collab = useCollabInjected()
-const messages = useCollaborationMessages()
+const messages = useMessages('collaboration')
 const tabStore = useActiveEditorStoreRef()
 const ui = pagePresence()
 

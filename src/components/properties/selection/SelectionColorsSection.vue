@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSelectionColors } from '@open-pencil/vue/controls/selection-colors'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import PaintField from '@/components/inputs/PaintField.vue'
@@ -11,7 +11,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 /** Figma's Selection colors: each colour in the selection, recoloured everywhere it is used. */
 const selection = useSelectionColors()
-const { panels } = useI18n()
+const panels = useMessages('panels')
 
 function onPickerOpenChange(open: boolean) {
   if (open) selection.begin()

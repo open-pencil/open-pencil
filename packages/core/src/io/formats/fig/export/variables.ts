@@ -1,7 +1,9 @@
 import * as v from 'valibot'
 
+import type { FigUnreadVariable } from '@open-pencil/fig'
 import {
   collectionPluginDataNodeChange,
+  easingToKiwi,
   figmaFormulaFunction,
   parseGuidOrNull,
   mapUnsupportedExpressionReferences,
@@ -22,9 +24,12 @@ import type {
 } from '@open-pencil/scene-graph'
 import { fractionalPosition, orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 import {
+  deletedVariablesOf,
   modesDefaultFirst,
   isUnsupportedVariableValue,
   foldFormula,
+  formulaTypeOf,
+  isEasing,
   formulaValueType,
   inferFormulaType,
   variableFormulaSchema,
@@ -81,7 +86,11 @@ export function assignVariableGuids(
       )
       modeIdToGuid.set(mode.modeId, modeGuid)
     }
-    for (const varId of col.variableIds) {
+    // Deleted variables are written too, so they keep their GUIDs like the listed ones.
+    for (const varId of [
+      ...col.variableIds,
+      ...deletedVariablesOf(graph, colId).map((item) => item.id)
+    ]) {
       const varGuid = assignVariableGuid(
         varId,
         localIdCounter,
@@ -199,7 +208,14 @@ function variableValueToKiwi(
       dataType: type,
       resolvedDataType: type
     }
-  return { value: { floatValue: Number(value) }, dataType: 'FLOAT', resolvedDataType: 'FLOAT' }
+  if (type === 'EASING' && isEasing(value))
+    return { value: { easingValue: easingToKiwi(value) }, dataType: type, resolvedDataType: type }
+  // A timing is a number of seconds, written as one, as Figma writes it.
+  return {
+    value: { floatValue: Number(value) },
+    dataType: 'FLOAT',
+    resolvedDataType: type === 'TIMING' ? type : 'FLOAT'
+  }
 }
 
 function formulaToKiwi(
@@ -208,6 +224,7 @@ function formulaToKiwi(
   ids: Map<string, GUID>
 ): VariableDataEntry {
   const typeOf = (id: string) => graph.variables.get(id)?.type
+  const formulaTypeOfId = (id: string) => formulaTypeOf(typeOf(id))
   const known = <T>(type: T | undefined) => {
     if (!type) throw new Error('Formula references a missing variable')
     return type
@@ -217,7 +234,7 @@ function formulaToKiwi(
     reference: (id) => variableValueToKiwi(graph, { aliasId: id }, known(typeOf(id)), ids),
     operation: (operation, operands) => ({
       dataType: 'EXPRESSION',
-      resolvedDataType: known(inferFormulaType(operation, typeOf)),
+      resolvedDataType: known(inferFormulaType(operation, formulaTypeOfId)),
       value: {
         expressionValue: {
           expressionFunction: figmaFormulaFunction(operation.operator),
@@ -238,13 +255,18 @@ export function sequentialPositions(start = 0): () => string {
   return () => fractionalPosition(index++)
 }
 
+/**
+ * The document's collections and variables, deleted ones included, then the variable records it
+ * never read, which go back as the file saved them unless their collection is gone.
+ */
 export function appendVariableNodeChanges(
   graph: SceneGraph,
   changes: NodeChange[],
   parent: GUID,
   ids: Map<string, GUID>,
   modes: Map<string, GUID>,
-  nextPosition: () => string = sequentialPositions()
+  nextPosition: () => string = sequentialPositions(),
+  unread: readonly FigUnreadVariable[] = []
 ): void {
   const modeKey = (modeId: string) => guidToString(modes.get(modeId) ?? stringToGuid(modeId))
   for (const collection of graph.variableCollections.values()) {
@@ -266,11 +288,16 @@ export function appendVariableNodeChanges(
       ),
       pluginData: collectionPluginDataNodeChange(collection, modeKey),
       key: collection.key,
-      version: collection.version
+      version: collection.version,
+      ...(collection.deleted ? { isSoftDeleted: true } : {})
     })
-    for (const id of collection.variableIds) {
-      const variable = graph.variables.get(id)
-      if (!variable) continue
+    // Deleted variables follow the listed ones: the file keeps them for the layers bound to them.
+    const variables = [
+      ...collection.variableIds.flatMap((id) => graph.variables.get(id) ?? []),
+      ...deletedVariablesOf(graph, collection.id)
+    ]
+    for (const variable of variables) {
+      const id = variable.id
       changes.push({
         guid: ids.get(id) ?? stringToGuid(id),
         parentIndex: { guid: parent, position: nextPosition() },
@@ -292,8 +319,18 @@ export function appendVariableNodeChanges(
         },
         ...variableMetadataNodeChange(variable, modeKey),
         key: variable.key,
-        version: variable.version
+        version: variable.version,
+        ...(variable.deleted ? { isSoftDeleted: true } : {})
       })
     }
+  }
+  for (const { record, collectionId } of unread) {
+    // One the file already left without a collection stays as it was.
+    if (collectionId && !graph.variableCollections.has(collectionId)) continue
+    const written = structuredClone(record)
+    // A record named its collection as its parent, which the internal canvas now is.
+    if (!written.variableSetID && collectionId)
+      written.variableSetID = { guid: ids.get(collectionId) ?? stringToGuid(collectionId) }
+    changes.push({ ...written, parentIndex: { guid: parent, position: nextPosition() } })
   }
 }

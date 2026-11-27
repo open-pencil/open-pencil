@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import type { InteractionState } from '@open-pencil/scene-graph/behaviours'
 import type { BehaviourStatesControl } from '@open-pencil/vue/controls/behaviour'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppPickerField from '@/components/ui/select/AppPickerField.vue'
@@ -23,7 +23,9 @@ const emit = defineEmits<{
   map: [state: InteractionState, value: string]
   create: []
 }>()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const behaviourMessages = useMessages('panels/behaviours')
+const common = useMessages('common')
 const labels = useBehaviourLabels()
 
 /** Stands for "no value" in a select, which cannot hold an empty string and never a number. */
@@ -35,7 +37,7 @@ const properties = computed(() =>
 const values = computed<{ value: string | number; label: string }[]>(() => {
   const property = states.options.find((option) => option.id === states.propertyId)
   return [
-    { value: UNSET, label: panels.value.behaviourStateUnset },
+    { value: UNSET, label: behaviourMessages.value.behaviourStateUnset },
     ...(property?.values ?? []).map((value) => ({ value, label: value }))
   ]
 })
@@ -47,16 +49,16 @@ function map(state: InteractionState, value: string | number) {
 
 <template>
   <div class="flex flex-col gap-1.5" data-property="behaviour-states">
-    <div class="text-2xs text-muted">{{ panels.behaviourStates }}</div>
+    <div class="text-2xs text-muted">{{ behaviourMessages.behaviourStates }}</div>
     <template v-if="!states.options.length">
-      <p class="text-2xs leading-4 text-muted">{{ panels.behaviourStatesHint }}</p>
+      <p class="text-2xs leading-4 text-muted">{{ behaviourMessages.behaviourStatesHint }}</p>
       <BehaviourBindingField
-        :label="panels.behaviourStates"
+        :label="behaviourMessages.behaviourStates"
         :property-id="null"
         :options="[]"
-        :placeholder="panels.behaviourChooseProperty"
+        :placeholder="behaviourMessages.behaviourChooseProperty"
         :empty-label="panels.noComponentProperties"
-        :create-label="panels.behaviourAddStates"
+        :create-label="behaviourMessages.behaviourAddStates"
         data-property="behaviour-states-create"
         @bind="emit('bind', $event)"
         @create="emit('create')"
@@ -66,8 +68,8 @@ function map(state: InteractionState, value: string | number) {
       v-else
       :model-value="states.propertyId ?? ''"
       :items="properties"
-      :label="panels.behaviourStates"
-      :placeholder="panels.behaviourChooseProperty"
+      :label="behaviourMessages.behaviourStates"
+      :placeholder="behaviourMessages.behaviourChooseProperty"
       :search-placeholder="panels.searchComponentProperties"
       :empty-label="panels.noComponentProperties"
       :close-label="common.close"
@@ -77,7 +79,7 @@ function map(state: InteractionState, value: string | number) {
     <div v-if="states.propertyId" class="grid grid-cols-2 gap-x-1 gap-y-1.5">
       <PanelFieldGroup v-for="state in states.available" :key="state" :label="labels.state(state)">
         <AppSelect
-          :label="panels.behaviourStateField({ state: labels.state(state) })"
+          :label="behaviourMessages.behaviourStateField({ state: labels.state(state) })"
           :model-value="states.values[state] ?? UNSET"
           :options="values"
           :data-property="`behaviour-state-${state}`"

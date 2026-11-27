@@ -2,7 +2,7 @@
 import { useTemplateRef } from 'vue'
 
 import type { CloudAdminDocumentFilter } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
+import { useMessages, useLocale } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import type { PortalListRequest } from '@/app/cloud-portal/list'
@@ -14,8 +14,8 @@ import { documentRow, useContentActions } from './content'
 
 const emit = defineEmits<{ changed: [] }>()
 const portal = usePortal()
-const messages = useCloudPortalMessages()
-const { locale } = useI18n()
+const messages = useMessages('cloud/portal')
+const { locale } = useLocale()
 const list = useTemplateRef('list')
 
 async function load(request: PortalListRequest<CloudAdminDocumentFilter>) {

@@ -215,13 +215,15 @@ export async function verifySecondFactor(
   /** The session the code is checked for, which proves the step when it is not replaced. */
   current: { id: string; userId: string } | null
 ): Promise<Response> {
+  // The person's own headers carry the session; the body is a new one, which sets its own type
+  // and length.
+  const forwarded = new Headers(headers)
+  forwarded.set('content-type', 'application/json')
+  forwarded.delete('content-length')
   const response = await auth.handler(
     new Request(new URL(authRequestPath(endpoint.path), config.publicURL), {
       method: 'POST',
-      headers: new Headers({
-        ...Object.fromEntries(headers),
-        'Content-Type': 'application/json'
-      }),
+      headers: forwarded,
       body: JSON.stringify({ code, trustDevice: false })
     })
   )

@@ -1,7 +1,7 @@
 import { getQuery } from 'ufo'
 import { computed } from 'vue'
 
-import { RIGHT_TO_LEFT_LOCALES, useI18n, type Locale } from '@open-pencil/vue/i18n'
+import { RIGHT_TO_LEFT_LOCALES, type Locale, useLocale } from '@open-pencil/vue/i18n'
 
 import { appPreferences, updateMirrorInterface } from '@/app/settings/preferences/store'
 
@@ -28,7 +28,7 @@ const forcedRightToLeft =
  * code) stay left to right inside their own `dir="ltr"` elements.
  */
 export function useInterfaceDirection() {
-  const { locale } = useI18n()
+  const { locale } = useLocale()
   return computed<'ltr' | 'rtl'>(() =>
     forcedRightToLeft || (isRightToLeftLocale(locale.value) && mirrorInterfacePreference.value)
       ? 'rtl'

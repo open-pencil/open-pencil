@@ -1,14 +1,25 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { toPercent } from '@open-pencil/vue/controls/color-model'
-import { useI18n } from '@open-pencil/vue/i18n'
+import {
+  linearGradientCSS,
+  toPercent,
+  useColorCSS,
+  useColorSpaces
+} from '@open-pencil/vue/controls/color-model'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 import EyedropperButton from '@/components/color-picker-panel/EyedropperButton.vue'
 import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
 
 const ctx = useColorPickerPanelContext()
-const { panels } = useI18n()
+const colorCSS = useColorCSS()
+const spaces = useColorSpaces()
+const alphaGradient = () => {
+  const color = { ...ctx.color, a: 1 }
+  const stops = [{ color: { ...color, a: 0 } }, { color }]
+  return `background: ${linearGradientCSS('to right', stops, spaces.value)}`
+}
+const pickerMessages = useMessages('panels/pickers')
 const percentText = (value: number) => `${Math.round(toPercent(value))}%`
 </script>
 
@@ -19,52 +30,52 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
       <EyedropperButton v-if="ctx.eyedropper" />
       <div class="flex min-w-0 flex-1 flex-col gap-2">
         <OkhclChannelSlider
-          :label="panels.hue"
+          :label="pickerMessages.hue"
           :model-value="ctx.okhcl.okhcl.h"
           :min="0"
           :max="360"
           :step="1"
-          :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclHue ?? ctx.color)"
+          :thumb-fill="colorCSS(ctx.okhclSliderPreview?.okhclHue ?? ctx.color)"
           gradient="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);"
           data-test-id="color-slider-okhcl-h"
           @update:model-value="ctx.updateOkHCLChannel('h', $event)"
         />
 
         <OkhclChannelSlider
-          :label="panels.chroma"
+          :label="pickerMessages.chroma"
           :model-value="ctx.okhcl.okhcl.c"
           :min="0"
           :max="0.4"
           :step="0.001"
           :gradient="ctx.okhclSliderGradient?.okhclChroma ?? undefined"
-          :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclChroma ?? ctx.color)"
+          :thumb-fill="colorCSS(ctx.okhclSliderPreview?.okhclChroma ?? ctx.color)"
           :format-value-text="percentText"
           data-test-id="color-slider-okhcl-c"
           @update:model-value="ctx.updateOkHCLChannel('c', $event)"
         />
 
         <OkhclChannelSlider
-          :label="panels.lightness"
+          :label="pickerMessages.lightness"
           :model-value="ctx.okhcl.okhcl.l"
           :min="0"
           :max="1"
           :step="0.001"
           :gradient="ctx.okhclSliderGradient?.okhclLightness ?? undefined"
-          :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclLightness ?? ctx.color)"
+          :thumb-fill="colorCSS(ctx.okhclSliderPreview?.okhclLightness ?? ctx.color)"
           :format-value-text="percentText"
           data-test-id="color-slider-okhcl-l"
           @update:model-value="ctx.updateOkHCLChannel('l', $event)"
         />
 
         <OkhclChannelSlider
-          :label="panels.alpha"
+          :label="pickerMessages.alpha"
           :model-value="ctx.okhcl.okhcl.a ?? 1"
           :min="0"
           :max="1"
           :step="0.001"
           checkerboard
-          :gradient="`background: linear-gradient(to right, transparent, ${colorToCSS({ ...ctx.color, a: 1 })})`"
-          :thumb-fill="colorToCSS(ctx.color)"
+          :gradient="alphaGradient()"
+          :thumb-fill="colorCSS(ctx.color)"
           :format-value-text="percentText"
           data-test-id="color-slider-okhcl-a"
           @update:model-value="ctx.updateOkHCLChannel('a', $event)"

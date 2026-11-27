@@ -6,7 +6,7 @@ import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { useColorBindingProvider } from '@open-pencil/vue/controls/binding-provider'
 import { useFillControls } from '@open-pencil/vue/controls/fill'
 import { useOkHCL } from '@open-pencil/vue/controls/okhcl'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
   type BindableValueActions
@@ -28,6 +28,7 @@ import {
   commitPaintMutation,
   paintBindingTargets
 } from '@/components/properties/paint/binding'
+import DeletedVariableMark from '@/components/properties/paint/DeletedVariableMark.vue'
 import { useGradientEditing } from '@/components/properties/paint/gradient-edit'
 import { createFillOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -54,7 +55,8 @@ function onPickerOpenChange(
   if (!open) commitPaintMutation(binding)
 }
 const colorProvider = useColorBindingProvider()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 const blendModeGroups = useBlendModeGroups()
 const {
   visible: stylesVisible,
@@ -163,7 +165,12 @@ function updateSolidColor(
               @update:opacity="actions.patch(index, { opacity: $event })"
             >
               <template #preview>
+                <DeletedVariableMark
+                  v-if="binding.variable?.deleted"
+                  :label="panels.variableDeleted"
+                />
                 <FillPicker
+                  v-else
                   :fill="displayFill(fill, binding.resolvedValue)"
                   :okhcl="
                     createFillOkhclAdapter(okhcl, activeNode, index, (update) =>

@@ -1,4 +1,4 @@
-import { filesMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import { isFileWriteRefused } from '@/app/document/io/capability'
@@ -8,6 +8,7 @@ import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/docume
 import type { NamedDocumentState } from '@/app/document/io/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentWriter } from '@/app/document/io/write'
+import type { StorageCoverDrawer } from '@/app/integrations/storage/types'
 import { rememberRecentFile } from '@/app/recent-files'
 import { IS_TAURI } from '@/constants'
 
@@ -18,6 +19,8 @@ type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
   /** The `.fig`, encoded and compressed, streaming as its target writes it. */
   buildFigStream: () => Promise<ReadableStream<Uint8Array>>
   startWatchingFile: () => void
+  /** Draws the cover storage shows of the document as it is saved, with the provider's `draw`. */
+  buildCover?: (draw: StorageCoverDrawer) => Uint8Array | null
   onWriteSuccess?: (version: number) => void | Promise<void>
   onDownloadSuccess?: (version: number) => void | Promise<void>
 }
@@ -39,6 +42,7 @@ export function createSaveActions({
   setSavedVersion,
   setLastWriteTime,
   startWatchingFile,
+  buildCover,
   onWriteSuccess,
   onDownloadSuccess
 }: SaveActionsOptions) {
@@ -49,6 +53,7 @@ export function createSaveActions({
     getStorageBinding,
     setSavedVersion,
     setLastWriteTime,
+    buildCover,
     onFileReplaced: startWatchingFile,
     onWriteSuccess
   })
@@ -140,7 +145,7 @@ export function createSaveActions({
     }
 
     const filename = prompt(
-      filesMessages.get().saveAsPrompt,
+      messageStores.files.get().saveAsPrompt,
       getDownloadName() ?? documentFileName('Untitled', state.documentKind)
     )
     if (!filename) return false

@@ -1,5 +1,3 @@
-import { i18n } from '#vue/i18n/create'
-
 export const toolMessageDefaults = {
   move: 'Move',
   frame: 'Frame',
@@ -21,5 +19,3 @@ export const toolMessageDefaults = {
   scale: 'Scale',
   eyedropperSample: 'Pick a color from the canvas'
 } as const
-
-export const toolMessages = i18n('tools', toolMessageDefaults)

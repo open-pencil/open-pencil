@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import type { LayoutAlign, LayoutCounterAlign } from '@open-pencil/scene-graph'
 import { MIN_RESCALE } from '@open-pencil/scene-graph/scaling'
 import { useScaleControls } from '@open-pencil/vue/controls/scale'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -27,7 +27,9 @@ const ANCHOR_STOPS: Array<{ fraction: number; align: LayoutAlign & LayoutCounter
 ]
 
 const store = useEditorStore()
-const { panels, tools, common } = useI18n()
+const panels = useMessages('panels')
+const tools = useMessages('tools')
+const common = useMessages('common')
 const scale = useScaleControls()
 const { box, factor, anchor } = scale
 

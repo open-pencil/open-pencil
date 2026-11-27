@@ -1,0 +1,34 @@
+{
+  "backToPeople": "Alle Personen",
+  "personAccount": "Konto",
+  "emailVerified": "Bestätigt",
+  "emailNotVerified": "Nicht bestätigt",
+  "joinedRow": "Beigetreten",
+  "lastActiveRow": "Zuletzt aktiv",
+  "signInMethods": "Anmeldemethoden",
+  "twoStepRow": "Zweistufige Anmeldung",
+  "twoStepNone": "Nicht eingerichtet",
+  "passkeyCount": {
+    "one": "{count} Passkey",
+    "many": "{count} Passkeys"
+  },
+  "personWorkspaces": "Arbeitsbereiche",
+  "personWorkspacesEmpty": "In keinem Arbeitsbereich.",
+  "workspaceMembers": {
+    "one": "{count} Mitglied",
+    "many": "{count} Mitglieder"
+  },
+  "workspaceRoleAdmin": "Administrator",
+  "workspaceRoleEditor": "Bearbeiter",
+  "workspaceRoleViewer": "Betrachter",
+  "personSessions": "Sitzungen",
+  "noSessions": "Nirgends angemeldet.",
+  "personNotFound": "Dieses Konto gibt es nicht",
+  "personNotFoundDescription": "Es wurde möglicherweise entfernt. Kehre zur Personenliste zurück.",
+  "removeSignInMethod": "Entfernen",
+  "removeSignInMethodHeading": "{provider} aus den Anmeldemethoden von {name} entfernen?",
+  "removeSignInMethodDescription": "Die Person kann sich damit nicht mehr anmelden, bis sie es wieder hinzufügt, und erhält dazu eine E-Mail. Bereits angemeldete Geräte bleiben angemeldet, bis du sie überall abmeldest.",
+  "deletePersonAccount": "Konto löschen",
+  "deletePersonAccountHeading": "Konto von {name} löschen?",
+  "deletePersonAccountDescription": "Die Beitrittsanfrage wurde nie genehmigt, daher werden das Konto, seine Anmeldemethoden und die Anfrage gelöscht. Das Aktivitätsprotokoll behält Name und E-Mail-Adresse. Die Person kann sich erneut registrieren."
+}

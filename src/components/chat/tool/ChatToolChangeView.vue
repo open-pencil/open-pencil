@@ -4,7 +4,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, inject, ref } from 'vue'
 
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { ToolChange } from '@/app/ai/tools/changes/types'
 import CodeViewer from '@/components/code-editor/LazyCodeViewer.vue'
@@ -15,7 +15,7 @@ import { CHAT_CHANGE_REVIEW } from './context'
 import { chatToolChangeTheme } from './ui'
 
 const { change } = defineProps<{ change: ToolChange }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const changeReview = inject(CHAT_CHANGE_REVIEW, null)
 const ui = chatToolChangeTheme()
 const splitter = tv(splitterTheme)({ direction: 'horizontal' })

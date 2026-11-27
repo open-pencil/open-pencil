@@ -12,6 +12,11 @@ export type TextMeasurer = (
 
 let globalTextMeasurer: TextMeasurer | null = null
 
+/** How far down a text's box its first baseline is drawn, or `undefined` where unknown. */
+export type TextBaselineMeasurer = (node: SceneNode) => number | undefined
+
+const baselineMeasurers: TextBaselineMeasurer[] = []
+
 const GLYPH_WIDTH_FACTOR = 0.6
 
 export function estimateTextSize(
@@ -180,4 +185,49 @@ export function withTextMeasurer<T>(measurer: TextMeasurer, fn: () => T): T {
   } finally {
     globalTextMeasurer = previous
   }
+}
+
+/**
+ * The height the canvas gives each line of text whose line height is automatic, or `undefined`
+ * where its lines differ, as with runs of their own size, or nothing can measure it.
+ */
+export function autoLineHeight(node: SceneNode): number | undefined {
+  if (node.lineHeight !== null || node.styleRuns.length > 0) return undefined
+  const line: SceneNode = {
+    ...node,
+    text: node.text.split('\n').find((part) => part.trim()) ?? 'A',
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    leadingTrim: 'NONE',
+    textParagraphs: [],
+    paragraphSpacing: 0
+  }
+  return globalTextMeasurer?.(line)?.height
+}
+
+/**
+ * Lets layout align text by its first baseline, while a renderer with its fonts is installed: the
+ * editor's and headless export's. Without one, text aligns by its bottom edge. Returns a function
+ * that uninstalls it.
+ */
+export function installTextBaselineMeasurer(measurer: TextBaselineMeasurer): () => void {
+  baselineMeasurers.push(measurer)
+  return () => {
+    const index = baselineMeasurers.lastIndexOf(measurer)
+    if (index !== -1) baselineMeasurers.splice(index, 1)
+  }
+}
+
+/** Run `fn` with `measurer` installed: layout aligns text by its first baseline. */
+export function withTextBaselineMeasurer<T>(measurer: TextBaselineMeasurer, fn: () => T): T {
+  const uninstall = installTextBaselineMeasurer(measurer)
+  try {
+    return fn()
+  } finally {
+    uninstall()
+  }
+}
+
+/** How far down a text's box its first baseline is drawn, by the last installed measurer. */
+export function textBaseline(node: SceneNode): number | undefined {
+  return baselineMeasurers.at(-1)?.(node)
 }

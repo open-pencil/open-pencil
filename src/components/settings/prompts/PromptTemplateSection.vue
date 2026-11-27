@@ -2,7 +2,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 
 import { focusStyles } from '@open-pencil/theme'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { PromptVariables, TemplatePrompt } from '@/app/ai/prompts/definitions'
 import { useTemplatePromptSetting } from '@/app/ai/prompts/settings/use'
@@ -14,7 +14,7 @@ import PromptEditor from './PromptEditor.vue'
 
 /** One Knap prompt: its template, the variables it can read, and how it reads filled in. */
 const { prompt, heading } = defineProps<{ prompt: TemplatePrompt; heading: string }>()
-const { ai } = useI18n()
+const ai = useMessages('ai')
 const setting = useTemplatePromptSetting(prompt)
 const { text, modified, samples, check, preview } = setting
 const samplesOpen = ref(false)

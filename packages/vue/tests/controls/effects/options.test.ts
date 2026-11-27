@@ -4,8 +4,8 @@ import type { Effect } from '@open-pencil/scene-graph'
 import { DEFAULT_GLASS } from '@open-pencil/scene-graph/constants'
 
 import { createDefaultEffect, effectOptions, effectOptionsFor } from '#vue/controls/effects/helpers'
+import { messageDefaults, messageStores } from '#vue/i18n'
 import { setLocale } from '#vue/i18n/locale'
-import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
 
 const glass: Effect = { ...createDefaultEffect(), type: 'GLASS', glass: { ...DEFAULT_GLASS } }
 const offersGlass = (effects: Effect[], index: number) =>
@@ -41,7 +41,7 @@ describe('effect type labels', () => {
 
   /** The labels `effectOptions` gives, beside the active catalog's, in the same order. */
   const labelsBesideCatalog = () => {
-    const catalog = panelMessages.get()
+    const catalog = messageStores.panels.get()
     return {
       labels: effectOptions().map((option) => option.label),
       catalog: [
@@ -60,17 +60,17 @@ describe('effect type labels', () => {
   test('follow the language once its translations load', async () => {
     const before = labelsBesideCatalog()
     expect(before.labels).toEqual(before.catalog)
-    const english = panelMessages.get()
+    const english = messageStores.panels.get()
     setLocale('de')
     // The catalog is replaced when the German translations arrive.
     await new Promise<void>((resolve) => {
-      const stop = panelMessages.subscribe((messages) => {
+      const stop = messageStores.panels.subscribe((messages) => {
         if (messages === english) return
         queueMicrotask(() => stop())
         resolve()
       })
     })
-    expect(panelMessages.get().dropShadow).not.toBe(panelMessageDefaults.dropShadow)
+    expect(messageStores.panels.get().dropShadow).not.toBe(messageDefaults.panels.dropShadow)
     const after = labelsBesideCatalog()
     expect(after.labels).toEqual(after.catalog)
   })

@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import type { LayerIssueMark } from '@/app/editor/design-check/layers'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
@@ -14,7 +14,7 @@ const layerIssueMark = tv(layerIssueMarkTheme)
 /** A layer's own issues show as their severity icon; issues inside it as a dot. */
 const { mark } = defineProps<{ mark: LayerIssueMark }>()
 
-const messages = useDesignCheckMessages()
+const messages = useMessages('design-check')
 const styles = computed(() => layerIssueMark({ severity: mark.severity }))
 const label = computed(() =>
   mark.own ? messages.value.layerIssues({ count: mark.count }) : messages.value.layerContainsIssues

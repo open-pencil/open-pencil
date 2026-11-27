@@ -1,1 +1,0 @@
-- Opening a web page imports the pictures its CSS backgrounds show, paints layers in the page's `z-index` order, places the page in a frame the size of its window that clips what the window would not show, such as an off-screen drawer, and draws variable weights such as `font-weight: 440` (#2240).

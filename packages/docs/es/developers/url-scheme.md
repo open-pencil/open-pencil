@@ -20,7 +20,7 @@ Con un nombre de nodo, la aplicación selecciona todas las capas que llevan exac
 La versión web acepta el mismo enlace desde su propia barra de direcciones:
 
 ```
-https://app.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
+https://cloud.openpencil.dev/?file=https://raw.githubusercontent.com/open-pencil/open-pencil/master/tests/fixtures/pencil_button.pen&node=Button/Large/Default
 ```
 
 Aquí `file` es una URL `https:` absoluta que termina en `.pen` o `.fig`: la versión web no tiene sistema de archivos, así que una ruta relativa, una URL `http:` o cualquier otra extensión se rechaza con una advertencia en la consola y nada más. La extensión se lee de la ruta de la URL, por lo que una cadena de consulta en el archivo enlazado no cambia nada. El fragmento se descarta antes de la descarga: nunca llega al servidor, así que `…/hikyo.pen#a` y `…/hikyo.pen#b` abren una pestaña, no dos. `node` se comporta exactamente igual que arriba: la misma selección por nombre exacto y el mismo zoom, y el mismo aviso cuando ninguna capa lleva ese nombre. Ambos valores van codificados como URL, un `+` literal debe enviarse como `%2B` y una clave repetida toma su último valor, igual que en el escritorio. El enlace se procesa en cualquier ruta, de modo que `/share/<room>?file=…` y `/demo?file=…` funcionan como `/?file=…`.

@@ -1,10 +1,16 @@
 export const LINKS = {
-  app: 'https://app.openpencil.dev/demo',
+  app: 'https://cloud.openpencil.dev/demo',
   /** The download page, in the visitor's locale. */
   downloadPage: '/download',
   /** Every release file on GitHub, where the download page falls back. */
   download: 'https://github.com/open-pencil/open-pencil/releases/latest',
   github: 'https://github.com/open-pencil/open-pencil',
   docs: '/getting-started',
-  roadmap: '/development/roadmap'
+  roadmap: '/development/roadmap',
+  /** The official Cloud's editor, where a visitor signs up. */
+  cloud: 'https://cloud.openpencil.dev',
+  /** Cloud's plans, on its billing service. */
+  pricing: 'https://billing.openpencil.dev/pricing',
+  /** Files anyone may open and copy, from the official Cloud's gallery. */
+  community: 'https://cloud.openpencil.dev/community'
 } as const

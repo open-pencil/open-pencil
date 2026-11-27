@@ -14,14 +14,13 @@ import {
   landsOnOutputPixels,
   makeImageShader
 } from '#core/canvas/images/sampling'
-import { resolveGradientStopColor } from '#core/canvas/renderer/colors'
+import { drawnColor } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawOutline, withNodeOutline } from '#core/canvas/shapes'
 
 import { makeDiamondGradient } from './gradients/diamond'
 
 interface PaintFillsOptions {
-  readonly bindToNodeFills?: boolean
   readonly patternStack?: Set<string>
 }
 
@@ -33,13 +32,11 @@ export function paintFills(
   draw: (fill: Fill) => void,
   options: PaintFillsOptions = {}
 ): void {
-  for (let index = 0; index < fills.length; index++) {
-    const fill = fills[index]
+  for (const fill of fills) {
     if (!fill.visible) continue
-    const fillIndex = options.bindToNodeFills === false ? -1 : index
     const applied = options.patternStack
-      ? applyFill(r, fill, node, graph, fillIndex, options.patternStack)
-      : r.applyFill(fill, node, graph, fillIndex)
+      ? applyFill(r, fill, node, graph, options.patternStack)
+      : r.applyFill(fill, node, graph)
     if (!applied) continue
     r.fillPaint.setAlphaf(fill.opacity)
     const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
@@ -73,7 +70,7 @@ export function drawVectorMultiStyleFills(
       node,
       graph,
       () => canvas.drawPath(path, r.fillPaint),
-      { bindToNodeFills: !region.fills, patternStack }
+      { patternStack }
     )
   }
   return true
@@ -110,33 +107,63 @@ export function applyFill(
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  fillIndex = 0,
   patternStack = new Set<string>()
 ): boolean {
   clearFillShader(r)
-
-  if (fill.type === 'SOLID') {
-    const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
-    return true
-  }
-
-  if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
-    return applyGradientFill(r, fill, node, graph)
-  }
-
-  if (drawnImageHash(fill)) {
-    return applyImageFill(r, fill, node, graph)
-  }
-
   if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
+  return setFillPaint(r, fill, node, graph, r.fillPaint)
+}
 
-  if (fill.type === 'PATTERN' || fill.type === 'NOISE' || fill.type === 'CUSTOM') {
-    const c = r.resolveFillColor(fill, fillIndex, node, graph)
-    r.fillPaint.setColorComponents(c.r, c.g, c.b, c.a)
+/**
+ * A paint of its own for `fill` on `node`, set as `paintFills` sets the shared fill paint, or null
+ * when the fill has nothing to draw yet. A pattern takes its colour, as `applyFill` draws one
+ * whose source is missing. The caller deletes it.
+ */
+export function makeFillPaint(
+  r: SkiaRenderer,
+  fill: Fill,
+  node: SceneNode,
+  graph: SceneGraph
+): Paint | null {
+  const paint = new r.ck.Paint()
+  paint.setStyle(r.ck.PaintStyle.Fill)
+  paint.setAntiAlias(true)
+  if (!setFillPaint(r, fill, node, graph, paint)) {
+    paint.delete()
+    return null
+  }
+  paint.setAlphaf(fill.opacity)
+  if (fill.blendMode !== undefined && fill.blendMode !== 'NORMAL') {
+    setPaintBlendMode(r, paint, fill.blendMode)
+  }
+  return paint
+}
+
+/**
+ * Sets `paint` to `fill` on `node`, a pattern's tiles aside, and returns whether there is
+ * anything to draw.
+ */
+function setFillPaint(
+  r: SkiaRenderer,
+  fill: Fill,
+  node: SceneNode,
+  graph: SceneGraph,
+  paint: Paint
+): boolean {
+  if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
+    return applyGradientFill(r, fill, node, graph, paint)
+  }
+  if (drawnImageHash(fill)) return applyImageFill(r, fill, node, graph, paint)
+  if (
+    fill.type === 'SOLID' ||
+    fill.type === 'PATTERN' ||
+    fill.type === 'NOISE' ||
+    fill.type === 'CUSTOM'
+  ) {
+    const c = drawnColor(fill.color, graph)
+    paint.setColorComponents(c.r, c.g, c.b, c.a)
     return true
   }
-
   return false
 }
 
@@ -164,6 +191,7 @@ function recordPatternSource(
         (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
         { patternStack }
       )
+      if (source.type === 'TEXT') r.drawTextRangeFills(canvas, source, graph)
     }
     canvas.restore()
   }
@@ -251,7 +279,7 @@ export function applyGradientFill(
   const t = fill.gradientTransform
   if (!stops || !t) return false
   const colors = stops.map((s) => {
-    const c = resolveGradientStopColor(s.color, graph, r.presentationColorSpace)
+    const c = drawnColor(s.color, graph)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
   })
   const positions = stops.map((s) => s.position)

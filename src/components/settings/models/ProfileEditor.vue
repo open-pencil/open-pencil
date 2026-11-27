@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, useTemplateRef } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { useCodingAgentSetup, usePiSetup } from '@/app/ai/agents/setup/use'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
@@ -29,7 +29,10 @@ import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
-const { ai, common, credentials, settings } = useI18n()
+const ai = useMessages('ai')
+const common = useMessages('common')
+const credentials = useMessages('credentials')
+const settings = useMessages('settings')
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
 const nameInput = useTemplateRef('nameInput')
 /** A new model starts by choosing what it runs on; the form follows for that choice. */

@@ -1,9 +1,6 @@
 import { count, params } from '@nanostores/i18n'
 
-/**
- * Messages of the `panels` namespace for the font, icon, and stock photo pickers, and the color
- * editor.
- */
+/** Messages for the font, icon, and stock photo pickers, and the color editor. */
 export const pickerPanelMessageDefaults = {
   searchFonts: 'Search fonts...',
   noFontsFound: 'No fonts found',

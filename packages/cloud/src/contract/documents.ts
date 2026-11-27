@@ -71,13 +71,15 @@ export const documentAccessSchema = v.object({
 export type DocumentAccess = v.InferOutput<typeof documentAccessSchema>
 
 /** What a document is: a Figma design or a FigJam board, which the file it stores says too. */
-export const documentKindSchema = v.picklist(['design', 'board'])
+export const documentKindSchema = v.picklist(['design', 'board', 'slides'])
 export type CloudDocumentKind = v.InferOutput<typeof documentKindSchema>
 
 export const documentSummarySchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   workspaceId: v.pipe(v.string(), v.uuid()),
   name: v.string(),
+  /** What the file is, as its editors put it; servers from before descriptions list none. */
+  description: v.optional(v.nullable(v.string()), null),
   /** A design unless said otherwise; servers from before boards list no kind. */
   kind: v.optional(documentKindSchema, 'design'),
   currentRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
@@ -124,7 +126,9 @@ export const documentDownloadSchema = v.object({
   contentType: v.string(),
   download: objectDownloadSchema,
   /** The images the stored file leaves out, which a client puts back under their names. */
-  images: v.pipe(v.array(documentImageDownloadSchema), v.maxLength(CLOUD_MAX_DOCUMENT_IMAGES))
+  images: v.pipe(v.array(documentImageDownloadSchema), v.maxLength(CLOUD_MAX_DOCUMENT_IMAGES)),
+  /** The checksum of the cover the revision's save drew; null for none, or from older servers. */
+  cover: v.optional(v.nullable(checksumSchema), null)
 })
 export type DocumentDownload = v.InferOutput<typeof documentDownloadSchema>
 
@@ -156,6 +160,29 @@ export const createDocumentSchema = v.object({
 export type CreateDocumentInput = v.InferOutput<typeof createDocumentSchema>
 /** A new document as a client sends it, which may leave out its kind to make a design. */
 export type CreateDocumentRequest = v.InferInput<typeof createDocumentSchema>
+
+/** The longest description a document keeps: a few sentences, as a search result shows. */
+export const CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH = 500
+
+/**
+ * The size of the cover a save draws of its file for the community gallery and link previews: the
+ * 2:1 shape a large link card shows, wide enough to stay sharp on a high-density screen.
+ */
+export const CLOUD_COVER_SIZE = { width: 1920, height: 960 } as const
+
+/**
+ * The most bytes a cover may take: a cover at `CLOUD_COVER_SIZE` encodes well under it, and the
+ * gallery reads each one whole to serve it to anyone.
+ */
+export const CLOUD_COVER_MAX_BYTES = 8 * 1024 * 1024
+
+/** What an editor may change about a document besides its file: its description, or null for none. */
+export const updateDocumentSchema = v.object({
+  description: v.nullable(
+    v.pipe(v.string(), v.trim(), v.maxLength(CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH))
+  )
+})
+export type UpdateDocumentInput = v.InferOutput<typeof updateDocumentSchema>
 
 export const createUploadSchema = v.object({
   baseRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
@@ -238,6 +265,11 @@ export const commitUploadSchema = v.object({
       parts: v.pipe(v.array(completedUploadPartSchema), v.minLength(1), v.maxLength(10_000))
     })
   ),
+  /**
+   * The revision's cover, a PNG of at most `CLOUD_COVER_SIZE` stored in the workspace as its images
+   * are; omitted when the save drew none.
+   */
+  cover: v.optional(checksumSchema),
   /** The images the uploaded file leaves out, each stored in the workspace or uploaded before. */
   images: v.optional(
     v.pipe(

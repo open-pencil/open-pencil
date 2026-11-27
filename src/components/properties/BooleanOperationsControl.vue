@@ -17,7 +17,7 @@ import {
   useEditorCommands,
   type EditorCommandId
 } from '@open-pencil/vue/editor/commands'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -26,7 +26,7 @@ import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
 const { getCommand, runCommand } = useEditorCommands()
-const { commands } = useI18n()
+const commands = useMessages('commands')
 const { open: popupOpen, portalActive } = useRetainedPopup()
 
 const operations = [

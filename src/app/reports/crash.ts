@@ -3,7 +3,7 @@ import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 
 import { REPORT_ERROR_SOURCES, type ReportException } from '@open-pencil/feedback/contract'
-import { diagnosticsMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { diagnostics, type DiagnosticEvent } from '@/app/diagnostics'
 import { scrubDiagnosticText } from '@/app/diagnostics/scrub'
@@ -102,7 +102,7 @@ async function lastPanic() {
  */
 export async function offerCrashReports(): Promise<void> {
   if (!REPORTS_ENABLED) return
-  const messages = diagnosticsMessages.get()
+  const messages = messageStores.diagnostics.get()
   const panic = await lastPanic()
   if (panic) offer(messages.reportPanic, panicExceptions(panic))
 

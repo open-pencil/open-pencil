@@ -27,7 +27,8 @@ export default {
   variants: {
     kind: {
       design: { kind: 'text-primary', fallback: 'text-primary' },
-      board: { kind: 'text-board', fallback: 'text-board' }
+      board: { kind: 'text-board', fallback: 'text-board' },
+      slides: { kind: 'text-slides', fallback: 'text-slides' }
     }
   }
 } as const

@@ -1,0 +1,13 @@
+{
+  "decline": "رفض",
+  "removeAccess": "إزالة الوصول",
+  "declineHeading": "رفض {name}؟",
+  "declineDescription": "سيتلقى بريدًا إلكترونيًا بذلك، ويمكنه الطلب مجددًا لاحقًا.",
+  "removeAccessHeading": "إزالة وصول {name}؟",
+  "removeAccessDescription": "لن يتمكن من تسجيل الدخول بعد الآن، وسيتلقى بريدًا إلكترونيًا بذلك.",
+  "reviewNote": "ملاحظة للمسؤولين (اختيارية)",
+  "noteDetail": "ملاحظة: {note}",
+  "noOneWaiting": "لا أحد في الانتظار",
+  "nothingHere": "لا شيء هنا بعد",
+  "requestsEmptyDescription": "تظهر الطلبات الجديدة هنا، ويتلقى المسؤولون بريدًا إلكترونيًا لكل منها."
+}

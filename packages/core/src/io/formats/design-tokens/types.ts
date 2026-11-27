@@ -8,6 +8,7 @@ export type DesignTokenType =
   | 'color'
   | 'dimension'
   | 'duration'
+  | 'cubicBezier'
   | 'number'
   | 'fontFamily'
   | 'fontWeight'
@@ -36,6 +37,7 @@ export interface DesignTokenFile {
 export type DesignTokenIssue =
   | { kind: 'unsupported-expression'; collection: string; mode: string; token: string }
   | { kind: 'missing-value'; collection: string; mode: string; token: string }
+  | { kind: 'unsupported-easing'; collection: string; mode: string; token: string }
   | { kind: 'missing-alias'; collection: string; mode: string; token: string }
   | { kind: 'duplicate-path'; collection: string; token: string }
   | { kind: 'unsupported-effect'; style: string }
@@ -45,6 +47,8 @@ export type DesignTokenIssue =
 export function designTokenIssueMessage(issue: DesignTokenIssue): string {
   if (issue.kind === 'unsupported-expression')
     return `${issue.collection} / ${issue.mode}: ${issue.token} uses an expression that token export does not support`
+  if (issue.kind === 'unsupported-easing')
+    return `${issue.collection} / ${issue.mode}: ${issue.token} is a spring or hold, which design tokens have no type for`
   if (issue.kind === 'missing-value')
     return `${issue.collection} / ${issue.mode}: ${issue.token} has no value in this mode`
   if (issue.kind === 'missing-alias')

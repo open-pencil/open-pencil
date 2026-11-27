@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSettingsMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 
@@ -12,7 +12,7 @@ const { disabled = false } = defineProps<{
   disabled?: boolean
 }>()
 const emit = defineEmits<{ reset: [] }>()
-const settings = useSettingsMessages()
+const settings = useMessages('settings')
 </script>
 
 <template>

@@ -82,15 +82,13 @@ export class OpenPencilAPI {
     modeName?: string
   ): VariableLiteral {
     const graph = this.#graph
-    const collections = [...graph.variableCollections.values()].filter(
-      (item) => item.name === collectionName
-    )
+    const collections = graph.getLiveCollections().filter((item) => item.name === collectionName)
     const collection = collections.at(0)
     if (!collection || collections.length !== 1)
       throw new Error(`Unknown or ambiguous collection: ${collectionName}`)
-    const variables = [...graph.variables.values()].filter(
-      (item) => item.collectionId === collection.id && item.name === variableName
-    )
+    const variables = graph
+      .getLiveVariables()
+      .filter((item) => item.collectionId === collection.id && item.name === variableName)
     const variable = variables.at(0)
     if (!variable || variables.length !== 1)
       throw new Error(`Unknown or ambiguous variable: ${variableName}`)

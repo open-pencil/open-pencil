@@ -1,7 +1,5 @@
 import { params } from '@nanostores/i18n'
 
-import { i18n } from '#vue/i18n/create'
-
 export const editorMessageDefaults = {
   wideGamutUnavailable:
     'This display or browser cannot show Display-P3 colors, so the canvas previews them in sRGB. The document keeps its color space.',
@@ -31,5 +29,3 @@ export const editorMessageDefaults = {
   resetPreview: 'Reset',
   leavePreview: params('Leave preview ({shortcut})')
 } as const
-
-export const editorMessages = i18n('editor', editorMessageDefaults)

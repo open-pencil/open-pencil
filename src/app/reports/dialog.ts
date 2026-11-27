@@ -3,7 +3,7 @@ import { computed, ref, shallowRef, watch } from 'vue'
 
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import type { Build, ReportReceipt } from '@open-pencil/feedback/contract'
-import { diagnosticsMessages } from '@open-pencil/vue/i18n'
+import { messageStores } from '@open-pencil/vue/i18n'
 
 import { diagnostics, type DiagnosticEvent } from '@/app/diagnostics'
 import { useActiveEditorStoreRef, type EditorStore } from '@/app/editor/active-store'
@@ -151,7 +151,7 @@ export function useReportDialog() {
       }
       // The notice that offered this report would only offer it again.
       if (notice) toast.removeOffer(notice.toastId, notice.action)
-      toast.info(diagnosticsMessages.get().reportSent)
+      toast.info(messageStores.diagnostics.get().reportSent)
       if (current()) reportDialogOpen.value = false
     } finally {
       if (current()) sending.value = false

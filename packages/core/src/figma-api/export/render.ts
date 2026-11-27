@@ -1,4 +1,9 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  ColorProfile,
+  ExportColorProfile,
+  SceneGraph,
+  SceneNode
+} from '@open-pencil/scene-graph'
 import {
   isValidExportScale,
   MAX_EXPORT_SCALE,
@@ -12,6 +17,21 @@ import type { RasterCodec } from '#core/io/formats/raster/pixels'
 import { findPageId } from '#core/io/subgraph'
 
 import type { ExportRequest } from './settings'
+
+/**
+ * The profile an image export is encoded in, by Figma's export setting: `DOCUMENT` the document's
+ * own, the others a profile of their own, into which the document's colors are converted.
+ */
+const EXPORT_COLOR_PROFILES = {
+  DOCUMENT: undefined,
+  SRGB: 'srgb',
+  DISPLAY_P3_V4: 'display-p3'
+} as const satisfies Record<ExportColorProfile, ColorProfile | undefined>
+
+/** The profile `request` is encoded in, or undefined for the document's own. */
+function exportProfile(request: { colorProfile?: ExportColorProfile }): ColorProfile | undefined {
+  return EXPORT_COLOR_PROFILES[request.colorProfile ?? 'DOCUMENT']
+}
 
 /** What a host lends an export: its renderer, for raster formats and PDF, and its image codec. */
 export interface ExportHost {
@@ -44,7 +64,8 @@ export async function exportLayer(
       const svg = await renderNodesToLaidOutSVG(graph, pageId, ids, {
         xmlDeclaration: false,
         layerIds: request.svgIdAttribute,
-        useAbsoluteBounds: request.useAbsoluteBounds
+        useAbsoluteBounds: request.useAbsoluteBounds,
+        colorSpace: exportProfile(request)
       })
       if (svg === null) throw noVisibleLayers()
       return request.format === 'SVG' ? new TextEncoder().encode(svg) : svg
@@ -96,7 +117,8 @@ async function exportImage(
     scale,
     format: request.format,
     pageId,
-    useAbsoluteBounds: request.useAbsoluteBounds
+    useAbsoluteBounds: request.useAbsoluteBounds,
+    colorSpace: exportProfile(request)
   })
   if (!data || data.length === 0) throw nothingToExport()
   return data

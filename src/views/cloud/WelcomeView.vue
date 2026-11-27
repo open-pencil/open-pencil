@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { openLocalEditor } from '@/app/cloud-portal/site'
@@ -15,7 +15,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
  */
 const portal = usePortal()
 const router = useRouter()
-const messages = useCloudPortalMessages()
+const messages = useMessages('cloud/portal')
 const ui = portalPublic()
 </script>
 

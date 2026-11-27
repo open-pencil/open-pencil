@@ -15,7 +15,7 @@ import {
   shaderPresetJSON,
   type ShaderEffect
 } from '@open-pencil/vue/controls/shader'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import ShaderEffectControls from '@/components/fill-picker/shader/ShaderEffectControls.vue'
@@ -40,7 +40,8 @@ const { preset, preview = null } = defineProps<{
   preview?: string | null
 }>()
 const emit = defineEmits<{ update: [preset: ShaderPreset] }>()
-const { panels, common } = useI18n()
+const panels = useMessages('panels')
+const common = useMessages('common')
 // Each effect's preview toggles its settings, framed like an effect row's.
 const effectPreviewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
 

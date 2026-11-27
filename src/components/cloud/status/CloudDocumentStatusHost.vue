@@ -6,7 +6,7 @@ import { computed, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { CLOUD_ACCOUNT_PLAN_PATH } from '@open-pencil/cloud/contract'
-import { useCloudMessages } from '@open-pencil/vue/i18n'
+import { useMessages } from '@open-pencil/vue/i18n'
 
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import {
@@ -42,7 +42,7 @@ import CloudGuestStatus from './CloudGuestStatus.vue'
 /** The open document's Cloud status beside its name, and the choice when it conflicts. */
 const store = useEditorStore()
 const router = useRouter()
-const t = useCloudMessages()
+const t = useMessages('cloud/editor')
 const dates = useDateFormat()
 const { state, location, meta } = useCloudDocumentStatus(() => store.getStorageBinding())
 
