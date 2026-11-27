@@ -158,7 +158,7 @@ describe('tiles under glass', () => {
     applyInvalidations(
       { index, pageId: page.id, pictureCache: new RenderChunkPictureCache(), tileCache },
       graph,
-      [{ nodeId: stripe.id, previousBounds }],
+      [{ nodeId: stripe.id, previousBounds, layerOnly: false }],
       2
     )
     expect(tileCache.getIfPresent({ pageId: page.id, level: 1, x: 1, y: 0 })).toBeNull()
