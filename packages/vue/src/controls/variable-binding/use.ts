@@ -29,18 +29,17 @@ export function useVariableBinding(options: UseVariableBindingOptions) {
     return options.path(index ?? 0)
   }
 
+  // A text being edited shows its selected characters' bindings.
   function getBoundVariable(nodeId: string, index?: number): Variable | undefined {
-    const node = store.getNode(nodeId)
-    if (!node) return undefined
-    const variableId = node.boundVariables[bindingPath(index)]
+    const variableId = store.getBoundVariable(nodeId, bindingPath(index))
     return variableId ? store.getVariable(variableId) : undefined
   }
 
   function getBindingState(nodeIds: string[], index?: number): VariableBindingState {
     const variableIds = new Set<string | undefined>()
+    // A text being edited counts each binding its selected characters have.
     for (const nodeId of nodeIds) {
-      const node = store.getNode(nodeId)
-      variableIds.add(node?.boundVariables[bindingPath(index)])
+      for (const id of store.getBoundVariableIds(nodeId, bindingPath(index))) variableIds.add(id)
     }
     if (variableIds.size > 1) return 'mixed'
     return variableIds.has(undefined) ? 'unbound' : 'bound'

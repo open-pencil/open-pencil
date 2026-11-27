@@ -49,7 +49,9 @@ import {
   type TextSegmentField
 } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
+import { paintColorVariables } from '#core/figma-api/variables/bindings'
 import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
+import { rangeFillsRuns } from '#core/text/character/bindings'
 import {
   characterStyles,
   nodeStyle,
@@ -279,9 +281,22 @@ export function installTextRangeMethods(
       value(this: ProxyThis, start: number, end: number, value: unknown) {
         const node = raw(this, internals)
         assertTextRange(method, node, start, end)
-        const patch = setter(method, node, start, end, value, graphOf(this))
+        const graph = graphOf(this)
+        const patch = setter(method, node, start, end, value, graph)
         if (!RANGE_SETTERS_WITHOUT_FONTS.has(method)) assertTextFontsLoaded(method, node)
-        updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
+        // Paints set on a range keep the colour variables they carry, as a layer's do.
+        const fills = method === 'setRangeFills' && typeof patch !== 'function' && patch.fills
+        const styleRuns = fills
+          ? rangeFillsRuns(
+              graph,
+              node,
+              start,
+              end,
+              fills,
+              paintColorVariables(graph, value as FigmaPaint[])
+            )
+          : styleRunsWithPatch(node, start, end, patch)
+        updateNode(this, internals, { styleRuns })
       }
     }
   }

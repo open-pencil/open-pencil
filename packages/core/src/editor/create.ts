@@ -440,6 +440,31 @@ export function createEditor(options?: EditorOptions) {
       ),
     getTextSelectionStyle: textSelectionStyle.selectionStyle,
     layerChanges: textSelectionStyle.layerChanges,
+    // A variable bound while text is edited binds its selected characters, as a style does.
+    bindVariable: (id: string, path: string, variableId: string) => {
+      const update = (target: string, next: Partial<SceneNode>) =>
+        nodes.updateNodeWithUndo(target, next, 'Bind variable')
+      if (!textSelectionStyle.bindSelection(id, path, variableId, update)) {
+        nodes.bindVariable(id, path, variableId)
+      }
+    },
+    unbindVariable: (id: string, path: string) => {
+      const update = (target: string, next: Partial<SceneNode>) =>
+        nodes.updateNodeWithUndo(target, next, 'Unbind variable')
+      if (!textSelectionStyle.bindSelection(id, path, null, update)) {
+        nodes.unbindVariable(id, path)
+      }
+    },
+    /** Each variable a field is bound to as the panel shows it, so differing characters are mixed. */
+    getBoundVariableIds: (id: string, path: string): (string | undefined)[] => {
+      const node = ctx.graph.getNode(id)
+      return node ? textSelectionStyle.boundVariableIds(node, path) : [undefined]
+    },
+    /** The variable a field is bound to, as the panel shows it: a text selection's, if any. */
+    getBoundVariable: (id: string, path: string): string | undefined => {
+      const node = ctx.graph.getNode(id)
+      return node && textSelectionStyle.boundVariable(node, path)
+    },
 
     // Alignment (align, flip, rotate)
     ...alignment,

@@ -137,13 +137,36 @@ function definedOverrides(style: CharacterStyleOverride): Partial<CharacterStyle
   return defined as Partial<CharacterStyle>
 }
 
-/** Style runs with no override that only repeats the text's own value. */
+/** The bindings of fills' colours among `bound`, as `field=id` pairs in order. */
+function fillBindingPairs(bound: Readonly<Record<string, string>> | undefined): string[] {
+  return Object.entries(bound ?? {})
+    .filter(([field]) => field.startsWith('fills/'))
+    .map(([field, id]) => `${field}=${id}`)
+    .sort()
+}
+
+/**
+ * Whether a range's fills bind otherwise than the layer's, so that it keeps them even where
+ * they look like the layer's: bound on its own, or left unbound where the layer's are bound.
+ */
+function bindsFillsApart(node: SceneNode, style: CharacterStyleOverride): boolean {
+  return !isEqual(fillBindingPairs(style.boundVariables), fillBindingPairs(node.boundVariables))
+}
+
+/**
+ * Style runs with no override that only repeats the text's own value. Fills a range binds
+ * otherwise than the text stay its own even where they look like the text's, so a binding has its
+ * paint to colour, and an unbound range does not follow the text's variable.
+ */
 function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[] {
   const base = nodeStyle(node)
   const result: StyleRun[] = []
   for (const run of runs) {
     const repeated = CHARACTER_STYLE_KEYS.filter(
-      (key) => run.style[key] !== undefined && isEqual(run.style[key], base[key])
+      (key) =>
+        run.style[key] !== undefined &&
+        isEqual(run.style[key], base[key]) &&
+        !(key === 'fills' && bindsFillsApart(node, run.style))
     )
     // A key a copy left undefined overrides nothing either.
     appendStyleRun(result, run.start, run.length, omitBy(omit(run.style, repeated), isUndefined))
@@ -194,7 +217,7 @@ function withoutBindingsStyleTakesOver(
   if (!own || !tookStyle) {
     return after
   }
-  const kept = omitBy(own, (_value, field) => isTextStyleField(field))
+  const kept = omit(own, Object.keys(own).filter(isTextStyleField))
   return isEmptyObject(kept) ? omit(after, ['boundVariables']) : { ...after, boundVariables: kept }
 }
 

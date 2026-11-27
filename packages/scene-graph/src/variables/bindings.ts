@@ -15,7 +15,7 @@ import {
   isNumericVariableBindingField,
   type EffectBindingProperty
 } from './fields'
-import { refreshBoundPaints } from './paints'
+import { refreshBoundPaints, refreshedRunFills } from './paints'
 import { collectionsResolving } from './resolution'
 import {
   createStyleBindingLookup,
@@ -166,15 +166,25 @@ export function resolvedValueBindings(graph: SceneGraph, node: SceneNode): Parti
 type RunHolder = Pick<SceneNode, 'id' | 'styleRuns' | 'componentScale'>
 
 /**
- * The runs a text's character bindings resolve to in its mode, when a bound number differs from
- * what its characters hold. Bound font families and styles are left as stored, as the text's own.
+ * The runs a text's character bindings resolve to in its mode, when a bound number or a bound
+ * colour of a range's own fills differs from what its characters hold. Bound font families and
+ * styles are left as stored, as the text's own.
  */
 export function resolvedRunBindings(
   graph: SceneGraph,
   node: RunHolder,
   styles: TextStyleLookup = createStyleBindingLookup(graph)
 ): Pick<Partial<SceneNode>, 'styleRuns'> {
-  return resolvedRuns(graph, node, (run) => effectiveRunBoundVariables(run, styles))
+  const resolved = resolvedRuns(graph, node, (run) => effectiveRunBoundVariables(run, styles))
+  const runs = resolved.styleRuns ?? node.styleRuns
+  let painted: StyleRun[] | undefined
+  for (const [index, run] of runs.entries()) {
+    const fills = refreshedRunFills(graph, node.id, run.style)
+    if (!fills) continue
+    painted ??= [...runs]
+    painted[index] = { ...run, style: { ...run.style, fills } }
+  }
+  return painted ? { styleRuns: painted } : resolved
 }
 
 function resolvedRuns(

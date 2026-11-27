@@ -469,8 +469,11 @@ export const TEXT_BINDABLE_FIELDS = [
 
 export type TextBindableField = (typeof TEXT_BINDABLE_FIELDS)[number]
 
-/** Variable IDs bound to text fields, by field. */
-export type TextBoundVariables = Partial<Record<TextBindableField, string>>
+/**
+ * Variable IDs a range binds, by field: a `TextBindableField`, or the colour of one of the range's
+ * own fills, as `fills/0/color`, the way a layer names its paints' bindings.
+ */
+export type TextBoundVariables = Record<string, string>
 
 /**
  * A line height or letter spacing as Figma keeps it: pixels, or a percent of the font size that

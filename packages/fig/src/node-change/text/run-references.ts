@@ -2,7 +2,11 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 
-import { exportedStyleReference, type SceneNodeToKiwiContext } from '../export/context'
+import {
+  exportedStyleReference,
+  withColorVariable,
+  type SceneNodeToKiwiContext
+} from '../export/context'
 import { textRunVariableEntries } from '../variable/bindings'
 import { textStyleOverrides } from './data-export'
 
@@ -37,8 +41,13 @@ function applyRunReferences(
     context.graph,
     context.varIdToGuid
   )
-  // Figma writes a range's bindings as parameters only.
+  // Figma writes a range's text bindings as parameters, and its paints' on the paints.
   if (entries.length > 0) override.parameterConsumptionMap = { entries }
+  if (override.fillPaints) {
+    override.fillPaints = override.fillPaints.map((paint, index) =>
+      withColorVariable(context, paint, style.boundVariables?.[`fills/${index}/color`])
+    )
+  }
 }
 
 /**

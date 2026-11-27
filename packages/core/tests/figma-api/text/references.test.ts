@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import type { SolidPaint } from '@figma/plugin-typings/plugin-api-standalone'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -516,5 +518,40 @@ describe('style ranges with bound lengths', () => {
     expect(text.getRangeFontSize(0, 5)).toBe(21)
     expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 27, unit: 'PIXELS' })
     expect(text.getRangeLetterSpacing(0, 5)).toEqual({ value: 5, unit: 'PERCENT' })
+  })
+})
+
+describe('range paints bound to colour variables', () => {
+  function branded() {
+    const { api, text } = styledText()
+    const collection = api.variables.createVariableCollection('Colors')
+    const brand = api.variables.createVariable('brand', collection, 'COLOR')
+    brand.setValueForMode(collection.defaultModeId, RED)
+    const black = { type: 'SOLID' as const, color: { r: 0, g: 0, b: 0 } }
+    return { api, text, collection, brand, black }
+  }
+
+  test('keep the variable a paint set on a range carries, and follow it when it changes', () => {
+    const { api, text, collection, brand, black } = branded()
+    text.setRangeFills(6, 11, [api.variables.setBoundVariableForPaint(black, 'color', brand)])
+
+    const [paint] = text.getRangeFills(6, 11) as SolidPaint[]
+    expect(paint?.boundVariables?.color).toEqual({ type: 'VARIABLE_ALIAS', id: brand.id })
+    expect(paint?.color).toEqual({ r: 1, g: 0, b: 0 })
+    expect((text.getRangeFills(0, 5) as SolidPaint[])[0]?.boundVariables?.color).toBeUndefined()
+    expect(text.getStyledTextSegments(['boundVariables'], 6, 11)[0]?.boundVariables).toEqual({})
+
+    brand.setValueForMode(collection.defaultModeId, { r: 0, g: 0, b: 1, a: 1 })
+    expect((text.getRangeFills(6, 11) as SolidPaint[])[0]?.color).toEqual({ r: 0, g: 0, b: 1 })
+  })
+
+  test('drop the variable of a range paint replaced by an unbound one', () => {
+    const { api, text, brand, black } = branded()
+    text.setRangeFills(6, 11, [api.variables.setBoundVariableForPaint(black, 'color', brand)])
+    text.setRangeFills(6, 11, [black])
+
+    const [paint] = text.getRangeFills(6, 11) as SolidPaint[]
+    expect(paint?.boundVariables?.color).toBeUndefined()
+    expect(paint?.color).toEqual({ r: 0, g: 0, b: 0 })
   })
 })

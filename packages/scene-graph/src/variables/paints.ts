@@ -4,7 +4,7 @@ import { copyFills, copyStrokes } from '../copy'
 import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
-import type { Fill, SceneNode, Stroke } from '../types'
+import type { CharacterStyleOverride, Fill, SceneNode, Stroke } from '../types'
 import { paintBindingTarget, type PaintBindingList } from './fields'
 import { collectionsResolving, getNodeExplicitVariableModeId } from './resolution'
 import { subtreeNodes } from './subtree'
@@ -166,7 +166,7 @@ function recordApplied(
 }
 
 /** The variable's RGB at full alpha in the paint, and its alpha as the paint's opacity. */
-function applyColor(paint: Fill, color: Color): void {
+export function applyVariableColor(paint: Fill, color: Color): void {
   paint.color = { ...color, a: 1 }
   paint.opacity = color.a
 }
@@ -227,16 +227,38 @@ function refresh(graph: SceneGraph, node: SceneNode, forced: (field: string) => 
     if ((!forced(bound.field) && !stale) || showsColor(paint, color)) continue
     if (bound.list === 'fills') {
       fills ??= copyFills(node.fills)
-      applyColor(fills[bound.index], color)
+      applyVariableColor(fills[bound.index], color)
     } else {
       strokes ??= copyStrokes(node.strokes)
-      applyColor(strokes[bound.index], color)
+      applyVariableColor(strokes[bound.index], color)
     }
   }
   const changes: PaintLists = {}
   if (fills) changes.fills = fills
   if (strokes) changes.strokes = strokes
   if (fills || strokes) writePaints(graph, node, changes)
+}
+
+/**
+ * A range's own fills with each bound one showing the colour its variable gives the text now, or
+ * null when every one does already. A range keeps no record of the colours it was last given, so
+ * an edit to a bound range paint lasts until the next refresh of the text's bindings.
+ */
+export function refreshedRunFills(
+  graph: SceneGraph,
+  nodeId: string,
+  style: CharacterStyleOverride
+): Fill[] | null {
+  let fills: Fill[] | undefined
+  for (const [field, variableId] of Object.entries(style.boundVariables ?? {})) {
+    const target = paintBindingTarget(field)
+    const paint = target?.list === 'fills' ? style.fills?.at(target.index) : undefined
+    const color = paint && variableId && graph.resolveColorVariableForNode(nodeId, variableId)
+    if (!target || !paint || !color || showsColor(paint, color)) continue
+    fills ??= copyFills(style.fills ?? [])
+    applyVariableColor(fills[target.index], color)
+  }
+  return fills ?? null
 }
 
 const NONE_FORCED = (): boolean => false
@@ -370,7 +392,7 @@ export function keepCopyBoundPaints(
       const color = graph.resolveColorVariableForNode(target.id, variableId)
       if (!color) return
       const modes = explicitModes(graph, target, variableId)
-      if (!keeps || staleApplied(target, bound, own, color, modes)) applyColor(paint, color)
+      if (!keeps || staleApplied(target, bound, own, color, modes)) applyVariableColor(paint, color)
       recordApplied(target, bound, color, modes)
     })
   }

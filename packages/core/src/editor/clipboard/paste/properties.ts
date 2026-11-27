@@ -1,4 +1,4 @@
-import { omitBy, pick } from 'es-toolkit/object'
+import { omit, omitBy, pick } from 'es-toolkit/object'
 
 import { materializeFigFragment } from '@open-pencil/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
@@ -89,7 +89,11 @@ function runsWithout(runs: StyleRun[], fields: ReadonlySet<string>): StyleRun[] 
   return runs.flatMap((run) => {
     const style = omitBy(run.style, (_, key) => overrides.has(key))
     if (style.boundVariables) {
-      const bound = omitBy(style.boundVariables, (_, key) => fields.has(key))
+      const bound = omit(
+        style.boundVariables,
+        // A paint's binding, such as `fills/0/color`, goes with the list it belongs to.
+        Object.keys(style.boundVariables).filter((key) => fields.has(fieldOf(key)))
+      )
       if (Object.keys(bound).length > 0) style.boundVariables = bound
       else delete style.boundVariables
     }

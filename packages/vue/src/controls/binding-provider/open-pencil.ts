@@ -68,22 +68,21 @@ export function createOpenPencilBindingProvider<V>(
 
   function getBound(target: BindingTarget): Variable | undefined {
     void revision?.value
-    const variableId = editor.getNode(target.nodeId)?.boundVariables[target.path]
+    const variableId = editor.getBoundVariable(target.nodeId, target.path)
     return variableId ? editor.getVariable(variableId) : undefined
   }
 
   function getState(targets: BindingTarget[]): BindingState {
     if (targets.length === 0) return 'unbound'
+    // A text being edited counts each binding its selected characters have.
     const variableIds = new Set(
-      targets.map(
-        (target) => editor.getNode(target.nodeId)?.boundVariables[target.path] ?? undefined
-      )
+      targets.flatMap((target) => editor.getBoundVariableIds(target.nodeId, target.path))
     )
     // Identity takes precedence: an explicit mixed edit can detach the selection.
     // edit-variable still requires every bound destination to prepare successfully.
     if (variableIds.size > 1) return 'mixed'
     const unresolved = targets.some((target) => {
-      const id = editor.getNode(target.nodeId)?.boundVariables[target.path]
+      const id = editor.getBoundVariable(target.nodeId, target.path)
       return (
         id !== undefined &&
         (resolveEffectiveBindingValue(editor, id, target) === undefined ||
@@ -93,7 +92,7 @@ export function createOpenPencilBindingProvider<V>(
     if (unresolved) return 'unresolved'
     if (variableIds.has(undefined)) return 'unbound'
     const values = targets.map((target) => {
-      const id = editor.getNode(target.nodeId)?.boundVariables[target.path]
+      const id = editor.getBoundVariable(target.nodeId, target.path)
       return id ? options.resolve(editor, id, target) : undefined
     })
     if (values.some((value) => value === undefined)) return 'unresolved'
@@ -105,7 +104,7 @@ export function createOpenPencilBindingProvider<V>(
     listVariables: variables,
     collectionName: (variable) => editor.getCollection(variable.collectionId)?.name,
     filterVariables,
-    getBindingId: (target) => editor.getNode(target.nodeId)?.boundVariables[target.path],
+    getBindingId: (target) => editor.getBoundVariable(target.nodeId, target.path),
     getBound,
     getState,
     resolve: (variableId, target) => options.resolve(editor, variableId, target),

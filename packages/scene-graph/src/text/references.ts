@@ -1,5 +1,3 @@
-import { mapValues } from 'es-toolkit/object'
-
 import type { StyleRun } from '../types'
 
 /** What a text's runs refer to outside the text: the variables they bind and the styles they use. */
@@ -41,7 +39,9 @@ export function remapStyleRunReferences(
       style.hyperlink = { type: 'NODE', value: rename.node(hyperlink.value) }
     }
     if (boundVariables) {
-      style.boundVariables = mapValues(boundVariables, (id) => (id ? rename.variable(id) : id))
+      style.boundVariables = Object.fromEntries(
+        Object.entries(boundVariables).map(([field, id]) => [field, rename.variable(id)])
+      )
     }
     if (textStyleId) style.textStyleId = rename.style(textStyleId)
     if (fillStyleId) style.fillStyleId = rename.style(fillStyleId)
