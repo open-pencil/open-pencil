@@ -54,6 +54,8 @@ export async function dailyUsage(
       .select([utcDayOf('document.createdAt').as('day'), (eb) => eb.fn.countAll().as('count')])
       .where('document.createdAt', '>=', from)
       .where('document.createdAt', '<', until)
+      // Kept through its cleanup grace, but deleted forever all the same.
+      .where('document.purgedAt', 'is', null)
       .groupBy('day')
       .execute(),
     database

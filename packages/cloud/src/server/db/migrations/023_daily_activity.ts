@@ -28,11 +28,23 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     from document_revision
     group by 1
   `.execute(database)
+  // Better Auth builds `user` after Cloud's migrations, so a new database has no accounts, and no
+  // activity, to fill in. An existing one marks only accounts that still exist: a deleted one's
+  // revisions can stay in a shared workspace.
+  const { rows } = await sql<{ accounts: string | null }>`
+    select to_regclass('"user"')::text as accounts
+  `.execute(database)
+  if (!rows[0]?.accounts) return
   await sql`
     insert into daily_active_account (day, user_id)
-    select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD'), user_id::text from sign_in
-    union
-    select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD'), created_by from document_revision
+    select activity.day, activity.user_id
+    from (
+      select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD') as day, user_id::text as user_id
+      from sign_in
+      union
+      select to_char(created_at at time zone 'UTC', 'YYYY-MM-DD'), created_by from document_revision
+    ) as activity
+    where exists (select 1 from "user" where "user".id::text = activity.user_id)
   `.execute(database)
 }
 

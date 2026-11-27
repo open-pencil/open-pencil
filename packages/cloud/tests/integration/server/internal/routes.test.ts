@@ -275,6 +275,17 @@ describe('internal usage API', () => {
             createdBy: early,
             createdAt: '2026-11-03T10:00:00.000Z',
             deletedAt: '2026-11-04T10:00:00.000Z'
+          },
+          // Deleted forever, waiting out cleanup's grace: counted nowhere.
+          {
+            id: crypto.randomUUID(),
+            workspaceId,
+            name: 'Purged',
+            currentRevisionId: null,
+            createdBy: early,
+            createdAt: '2026-11-02T10:00:00.000Z',
+            deletedAt: '2026-11-04T10:00:00.000Z',
+            purgedAt: '2026-11-05T10:00:00.000Z'
           }
         ])
         .execute()
@@ -285,6 +296,8 @@ describe('internal usage API', () => {
       // Early signs in on the day they also save: still one active account that day.
       await recordActiveAccount(database, early, new Date('2026-11-01T09:00:00.000Z'))
       await recordActiveAccount(database, late, new Date('2026-11-01T09:00:00.000Z'))
+      // An account deleted meanwhile leaves no mark.
+      await recordActiveAccount(database, crypto.randomUUID(), new Date('2026-11-01T09:00:00.000Z'))
       await database
         .insertInto('workspaceStorageUsage')
         .values({ workspaceId, committedBytes: 1234 })

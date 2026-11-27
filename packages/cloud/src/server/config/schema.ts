@@ -315,6 +315,10 @@ function validateServiceConfig(config: CloudServerConfig): void {
   if (config.billingEndpoint && !config.internalServiceToken) {
     throw new CloudConfigError('Billing needs the internal API to set the plans it sells')
   }
+  // The service token reaches every internal route, so a usage token equal to it would too.
+  if (config.usageReportToken && config.usageReportToken === config.internalServiceToken) {
+    throw new CloudConfigError('The usage report token must differ from the internal API token')
+  }
   if (config.internalServiceToken && config.staticEntitlements) {
     throw new CloudConfigError(
       'The internal API writes database entitlements, which static entitlements would hide'

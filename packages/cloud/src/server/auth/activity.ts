@@ -107,19 +107,22 @@ export function createSignInActivity(
       ])
       const id = crypto.randomUUID()
       const signedInAt = new Date()
-      await database
-        .insertInto('signIn')
-        .values({
-          id,
-          userId: session.userId,
-          sessionId: session.id,
-          method,
-          ipAddress,
-          userAgent: session.userAgent || null,
-          createdAt: signedInAt
-        })
-        .execute()
-      await recordActiveAccount(database, session.userId, signedInAt)
+      // Together, so a failed mark leaves no sign-in behind and the next attempt records both.
+      await database.transaction().execute(async (transaction) => {
+        await transaction
+          .insertInto('signIn')
+          .values({
+            id,
+            userId: session.userId,
+            sessionId: session.id,
+            method,
+            ipAddress,
+            userAgent: session.userAgent || null,
+            createdAt: signedInAt
+          })
+          .execute()
+        await recordActiveAccount(transaction, session.userId, signedInAt)
+      })
       if (!email || !earlier || known || !ipAddress) return
       await email.sendNewSignIn({
         email: user.email,

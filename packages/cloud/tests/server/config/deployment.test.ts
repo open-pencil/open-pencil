@@ -378,6 +378,15 @@ provider = "posthog"
     expect(() =>
       parseCloudDeploymentTOML(`${minimalSource}\n[usage_report]\n`, environment)
     ).toThrow()
+    // A usage token equal to the service token would reach every internal route.
+    const same = 'shared-token-with-at-least-32-characters'
+    expect(() =>
+      parseCloudDeploymentTOML(`${minimalSource}\n[internal_api]\n\n[usage_report]\n`, {
+        ...environment,
+        OPENPENCIL_CLOUD_SERVICE_TOKEN: same,
+        OPENPENCIL_CLOUD_USAGE_TOKEN: same
+      })
+    ).toThrow('must differ')
   })
 
   test('advertises services and billing only when configured', () => {
