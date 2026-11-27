@@ -14,7 +14,7 @@
 //!     let values = document.properties(&expansion)?;
 //!     for layer in 0..expansion.occurrences.len() as u32 {
 //!         let fields = values.of(layer)?;
-//!         println!("{:?}", fields.get("name"));
+//!         println!("{:?}", fields.name);
 //!     }
 //! }
 //! # Ok::<(), Box<dyn std::error::Error>>(())
@@ -24,6 +24,7 @@ pub mod container;
 pub mod expand;
 pub mod index;
 pub mod kiwi;
+pub mod model;
 pub mod properties;
 #[cfg(all(target_arch = "wasm32", feature = "exports"))]
 mod wasm;
@@ -31,7 +32,7 @@ mod wasm;
 pub use container::{Canvas, Kind};
 pub use expand::Expansion;
 pub use index::Index;
-pub use kiwi::{Schema, Value};
+pub use kiwi::Schema;
 pub use properties::Properties;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

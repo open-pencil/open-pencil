@@ -1,7 +1,7 @@
 //! An expanded page's field values, following how the TypeScript reader builds an occurrence's
 //! properties (`packages/fig/src/instance-overrides/occurrence/create.ts`, `occurrence/claims.ts`,
 //! `scale/`, `resize.ts`, and `derived-symbol-data.ts`): the expansion's steps replayed in order,
-//! each layer's fields over the ones before it.
+//! each layer's fields over the ones before it, as typed [`NodeChange`] records.
 //!
 //! Sizes and positions are replayed for the whole page at once, since an instance's resize
 //! moves its layers by their own constraints and sizes. Every other field is replayed for one
@@ -14,101 +14,124 @@ mod records;
 mod replay;
 mod scale;
 
+use serde::Deserialize;
+
 use crate::Error;
 use crate::expand::{
     Expansion, INHERITED, Layer, MODES, SCALED, SIZE, SWAPPED_PAINT, Source, Step,
 };
 use crate::index::{Index, NO_GUID, NONE};
-use crate::kiwi::{Field, Reader, Schema, Span, Value};
+use crate::kiwi::{Schema, Span, from_message, from_message_where};
+use crate::model::{
+    ComponentPropAssignment, ComponentPropDef, GUID, Matrix, NodeChange, NodeField, Vector,
+};
 pub use geometry::Geometry;
 use replay::Replay;
 use scale::scale;
 
 /// A component's identity and how it sits in its parent, which an instance does not take from
 /// it (`UNINHERITED_COMPONENT_FIELDS` in `instance-overrides/fields.ts`).
-const UNINHERITED: &[&str] = &[
-    "componentKey",
-    "sourceLibraryKey",
-    "publishID",
-    "publishedVersion",
-    "sharedSymbolVersion",
-    "isSymbolPublishable",
-    "variantPropSpecs",
-    "componentPropDefs",
-    "overrideKey",
-    "stackChildAlignSelf",
-    "stackChildPrimaryGrow",
-    "stackPositioning",
-    "horizontalConstraint",
-    "verticalConstraint",
+const UNINHERITED: &[NodeField] = &[
+    NodeField::ComponentKey,
+    NodeField::SourceLibraryKey,
+    NodeField::PublishId,
+    NodeField::PublishedVersion,
+    NodeField::SharedSymbolVersion,
+    NodeField::IsSymbolPublishable,
+    NodeField::VariantPropSpecs,
+    NodeField::ComponentPropDefs,
+    NodeField::OverrideKey,
+    NodeField::StackChildAlignSelf,
+    NodeField::StackChildPrimaryGrow,
+    NodeField::StackPositioning,
+    NodeField::HorizontalConstraint,
+    NodeField::VerticalConstraint,
 ];
 
 /// Every field a uniform scale touches, which an instance record keeps in placed space
-/// (`SCALED_FIELDS`).
-const SCALED_FIELDS: &[&str] = &[
-    "stackPadding",
-    "stackSpacing",
-    "stackCounterSpacing",
-    "stackHorizontalPadding",
-    "stackVerticalPadding",
-    "stackPaddingRight",
-    "stackPaddingBottom",
-    "strokeWeight",
-    "cornerRadius",
-    "rectangleTopLeftCornerRadius",
-    "rectangleTopRightCornerRadius",
-    "rectangleBottomLeftCornerRadius",
-    "rectangleBottomRightCornerRadius",
-    "fontSize",
-    "lineHeight",
-    "letterSpacing",
-    "textData",
-    "derivedTextData",
-    "dashPattern",
-    "effects",
-    "size",
-    "transform",
+/// (`SCALED_FIELDS` in `scale/layout.ts`).
+const SCALED_FIELDS: &[NodeField] = &[
+    NodeField::StackPadding,
+    NodeField::StackSpacing,
+    NodeField::StackCounterSpacing,
+    NodeField::StackHorizontalPadding,
+    NodeField::StackVerticalPadding,
+    NodeField::StackPaddingRight,
+    NodeField::StackPaddingBottom,
+    NodeField::StrokeWeight,
+    NodeField::CornerRadius,
+    NodeField::RectangleTopLeftCornerRadius,
+    NodeField::RectangleTopRightCornerRadius,
+    NodeField::RectangleBottomLeftCornerRadius,
+    NodeField::RectangleBottomRightCornerRadius,
+    NodeField::FontSize,
+    NodeField::LineHeight,
+    NodeField::LetterSpacing,
+    NodeField::TextData,
+    NodeField::DerivedTextData,
+    NodeField::DashPattern,
+    NodeField::Effects,
+    NodeField::Size,
+    NodeField::Transform,
 ];
 
 /// The fields saved derived data sets (`applyDerivedEntry`).
-const DERIVED_FIELDS: &[&str] = &[
-    "derivedTextData",
-    "fontSize",
-    "lineHeight",
-    "letterSpacing",
-    "size",
-    "transform",
-    "fillGeometry",
-    "strokeGeometry",
-    "vectorData",
+const DERIVED_FIELDS: &[NodeField] = &[
+    NodeField::DerivedTextData,
+    NodeField::FontSize,
+    NodeField::LineHeight,
+    NodeField::LetterSpacing,
+    NodeField::Size,
+    NodeField::Transform,
+    NodeField::FillGeometry,
+    NodeField::StrokeGeometry,
+    NodeField::VectorData,
 ];
 
 /// An override entry's structural fields, which are not property values (`ownLayers`).
-const STRUCTURAL_FIELDS: &[&str] = &["guidPath", "overriddenSymbolID", "componentPropAssignments"];
+const STRUCTURAL_FIELDS: &[NodeField] = &[
+    NodeField::GuidPath,
+    NodeField::OverriddenSymbolId,
+    NodeField::ComponentPropAssignments,
+];
 
-/// Whether a layer applies the field `name` of its entry.
-fn keeps(layer: &Layer, name: &str) -> bool {
+/// Whether a layer applies a field of its entry.
+fn keeps(layer: &Layer, field: NodeField) -> bool {
     let only = layer.only;
-    if only & INHERITED != 0 && UNINHERITED.contains(&name) {
-        return false;
-    }
-    if only & SWAPPED_PAINT != 0 && (name == "fillPaints" || name == "styleIdForFill") {
-        return false;
-    }
-    if only & SCALED != 0 && !SCALED_FIELDS.contains(&name) {
-        return false;
-    }
-    if only & SIZE != 0 && name != "size" {
-        return false;
-    }
-    if only & MODES != 0 && name != "variableModeBySetMap" {
-        return false;
-    }
-    match layer.source {
-        Source::Override(_) => !STRUCTURAL_FIELDS.contains(&name),
-        Source::Derived(_) => DERIVED_FIELDS.contains(&name),
+    let kept = !(only & INHERITED != 0 && UNINHERITED.contains(&field))
+        && !(only & SWAPPED_PAINT != 0
+            && matches!(field, NodeField::FillPaints | NodeField::StyleIdForFill))
+        && (only & SCALED == 0 || SCALED_FIELDS.contains(&field))
+        && (only & SIZE == 0 || field == NodeField::Size)
+        && (only & MODES == 0 || field == NodeField::VariableModeBySetMap);
+    kept && match layer.source {
+        Source::Override(_) => !STRUCTURAL_FIELDS.contains(&field),
+        Source::Derived(_) => DERIVED_FIELDS.contains(&field),
         _ => true,
     }
+}
+
+/// A record's name, read on its own.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct Named {
+    name: Option<String>,
+}
+
+/// A record's component property assignments, read on their own.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct Assignments {
+    #[serde(rename = "componentPropAssignments")]
+    list: Option<Vec<ComponentPropAssignment>>,
+}
+
+/// A record's component property definitions, read on their own.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct Definitions {
+    #[serde(rename = "componentPropDefs")]
+    list: Option<Vec<ComponentPropDef>>,
 }
 
 /// The field values of one expanded page.
@@ -192,73 +215,60 @@ impl<'a> Properties<'a> {
         }
     }
 
-    /// Visits the fields of an entry, by name, with a reader at each value: `visit` returns
-    /// whether it read the value, which `Visit::value` decodes.
-    fn fields(
-        &self,
-        span: Span,
-        mut visit: impl FnMut(&'a str, &mut Visit<'_, 'a>) -> crate::Result<bool>,
-    ) -> crate::Result<()> {
-        let schema = self.schema;
-        let definition = &schema.definitions[self.index.ids.node_change];
-        Reader::at(self.message, span.start as usize)
-            .message(schema, self.index.ids.node_change, |reader, at| {
-                let field = &definition.fields[at];
-                let mut at_value = Visit {
-                    reader,
-                    field,
-                    schema,
-                };
-                visit(field.name.as_str(), &mut at_value).map_err(|_| crate::kiwi::Malformed)
-            })
-            .map_err(|_| Error::Message)
+    /// Decodes the `NodeChange` at `span` into `T`, which reads only the fields it names.
+    fn decode<T: Deserialize<'a>>(&self, span: Span) -> crate::Result<T> {
+        from_message(
+            self.schema,
+            self.message,
+            span.start as usize,
+            self.index.ids.node_change,
+        )
+        .map_err(|_| Error::Message)
     }
 
-    /// One field of a record.
-    fn record_field(&self, record: u32, wanted: &str) -> crate::Result<Option<Value<'a>>> {
-        let mut value = None;
-        self.fields(self.index.records[record as usize].span, |name, reader| {
-            if name != wanted {
-                return Ok(false);
-            }
-            value = Some(reader.value()?);
-            Ok(true)
-        })?;
-        Ok(value)
+    /// The fields of the `NodeChange` at `span` a layer applies, the rest skipped in the bytes.
+    fn layer_fields(&self, span: Span, layer: &Layer) -> crate::Result<NodeChange> {
+        from_message_where(
+            self.schema,
+            self.message,
+            span.start as usize,
+            self.index.ids.node_change,
+            &|name| NodeField::from_name(name).is_some_and(|field| keeps(layer, field)),
+        )
+        .map_err(|_| Error::Message)
+    }
+
+    /// A record whole.
+    fn record(&self, record: u32) -> crate::Result<NodeChange> {
+        self.decode(self.index.records[record as usize].span)
     }
 
     /// An instance's complete assignment list, leaving out assignments of slot content the file
     /// no longer has, which fall back to their component's content.
-    fn assignments(&self, list: u32) -> crate::Result<Value<'a>> {
+    fn assignments(&self, list: u32) -> crate::Result<Vec<ComponentPropAssignment>> {
         let mut assignments = Vec::new();
         for &source in &self.expansion.assignment_lists[list as usize] {
             let Some(span) = self.span(source) else {
                 continue;
             };
-            self.fields(span, |name, reader| {
-                if name != "componentPropAssignments" {
-                    return Ok(false);
-                }
-                if let Value::Array(values) = reader.value()? {
-                    assignments.extend(values.into_iter().filter(|assignment| {
-                        let content = assignment
-                            .get("varValue")
-                            .and_then(|typed| typed.get("value"))
-                            .and_then(|value| value.get("slotContentIdValue"))
-                            .and_then(|slot| slot.get("guid"))
-                            .and_then(guid_of)
-                            .filter(|&guid| guid != NO_GUID);
-                        content.is_none_or(|guid| self.index.find(guid).is_some())
-                    }));
-                }
-                Ok(true)
-            })?;
+            let found: Assignments = self.decode(span)?;
+            assignments.extend(found.list.into_iter().flatten().filter(|assignment| {
+                let content = assignment
+                    .var_value
+                    .as_ref()
+                    .and_then(|typed| typed.value.as_ref())
+                    .and_then(|value| value.slot_content_id_value.as_ref())
+                    .and_then(|slot| slot.guid.as_ref())
+                    .map(guid_of)
+                    .filter(|&guid| guid != NO_GUID);
+                content.is_none_or(|guid| self.index.find(guid).is_some())
+            }));
         }
-        Ok(Value::Array(assignments))
+        Ok(assignments)
     }
 
     /// The completed property definitions of a record's ancestors, nearest first.
-    fn ancestor_definitions(&self, record: u32) -> crate::Result<Vec<Value<'a>>> {
+    fn ancestor_definitions(&self, record: u32) -> crate::Result<Vec<Vec<ComponentPropDef>>> {
         let mut chain = Vec::new();
         let mut at = self.index.find(self.index.records[record as usize].parent);
         // Records hold no parent cycles (`Error::ParentCycle`), so the chain ends.
@@ -269,24 +279,11 @@ impl<'a> Properties<'a> {
                 .find(self.index.records[ancestor as usize].parent);
         }
         // Outermost first, so each is completed from the ones above it.
-        let mut completed: Vec<Value<'a>> = Vec::new();
+        let mut completed: Vec<Vec<ComponentPropDef>> = Vec::new();
         for &ancestor in chain.iter().rev() {
-            let mut definitions = Value::Array(Vec::new());
-            self.fields(
-                self.index.records[ancestor as usize].span,
-                |name, reader| {
-                    if name != "componentPropDefs" {
-                        return Ok(false);
-                    }
-                    let mut holder = Value::Fields(vec![(name, reader.value()?)]);
-                    records::normalize(&mut holder);
-                    if let Some(value) = holder.get("componentPropDefs") {
-                        definitions = value.clone();
-                    }
-                    Ok(true)
-                },
-            )?;
-            let outer: Vec<Value<'a>> = completed.iter().rev().cloned().collect();
+            let found: Definitions = self.decode(self.index.records[ancestor as usize].span)?;
+            let mut definitions = found.list.unwrap_or_default();
+            let outer: Vec<Vec<ComponentPropDef>> = completed.iter().rev().cloned().collect();
             records::inherit(&mut definitions, &outer);
             completed.push(definitions);
         }
@@ -295,7 +292,7 @@ impl<'a> Properties<'a> {
     }
 
     /// Every field of one occurrence, as the TypeScript reader's `properties`.
-    pub fn of(&self, occurrence: u32) -> crate::Result<Value<'a>> {
+    pub fn of(&self, occurrence: u32) -> crate::Result<NodeChange> {
         let expansion = self.expansion;
         let at = occurrence as usize;
         if at >= expansion.occurrences.len() {
@@ -326,71 +323,36 @@ impl<'a> Properties<'a> {
 
         // Sizes and positions come from the page-wide replay.
         let geometry = self.geometry[at];
-        remove(&mut props, "size");
-        remove(&mut props, "transform");
-        if let Some([x, y]) = geometry.size {
-            props.set(
-                "size",
-                Value::Fields(vec![("x", Value::Float(x)), ("y", Value::Float(y))]),
-            );
-        }
-        if let Some(m) = geometry.transform {
-            props.set(
-                "transform",
-                Value::Fields(vec![
-                    ("m00", Value::Float(m[0])),
-                    ("m01", Value::Float(m[1])),
-                    ("m02", Value::Float(m[2])),
-                    ("m10", Value::Float(m[3])),
-                    ("m11", Value::Float(m[4])),
-                    ("m12", Value::Float(m[5])),
-                ]),
-            );
-        }
+        props.size = geometry.size.map(|[x, y]| Vector { x, y });
+        props.transform = geometry
+            .transform
+            .map(|[m00, m01, m02, m10, m11, m12]| Matrix {
+                m00,
+                m01,
+                m02,
+                m10,
+                m11,
+                m12,
+            });
         // An instance names the component it finally expands, though the file may lack it.
         let guid = expansion.occurrences[at].expands;
         if guid != NO_GUID
-            && let Some(data) = props.get_mut("symbolData")
+            && let Some(data) = props.symbol_data.as_mut()
         {
-            data.set(
-                "symbolID",
-                Value::Fields(vec![
-                    ("sessionID", Value::Uint((guid >> 32) as u32)),
-                    ("localID", Value::Uint(guid as u32)),
-                ]),
-            );
+            data.symbol_id = Some(guid_value(guid));
         }
         Ok(props)
     }
 }
 
-/// A field's value, where `Properties::fields` visits it.
-pub(crate) struct Visit<'r, 'a> {
-    reader: &'r mut Reader<'a>,
-    field: &'a Field,
-    schema: &'a Schema,
+/// A `GUID` as one number, its session in the high half.
+fn guid_of(guid: &GUID) -> u64 {
+    u64::from(guid.session_id) << 32 | u64::from(guid.local_id)
 }
 
-impl<'a> Visit<'_, 'a> {
-    /// Decodes the value whole.
-    fn value(&mut self) -> crate::Result<Value<'a>> {
-        self.reader
-            .value(self.schema, self.field)
-            .map_err(|_| Error::Message)
-    }
-}
-
-/// A `GUID` value as one number, its session in the high half.
-fn guid_of(value: &Value) -> Option<u64> {
-    let part = |name| match value.get(name)? {
-        Value::Uint(part) => Some(u64::from(*part)),
-        _ => None,
-    };
-    Some(part("sessionID")? << 32 | part("localID")?)
-}
-
-fn remove(props: &mut Value, name: &str) {
-    if let Value::Fields(fields) = props {
-        fields.retain(|(field, _)| *field != name);
+fn guid_value(guid: u64) -> GUID {
+    GUID {
+        session_id: (guid >> 32) as u32,
+        local_id: guid as u32,
     }
 }

@@ -3,9 +3,11 @@
 //! (`packages/fig/src/instance-overrides/resize.ts`), and a uniform scale multiplies them
 //! (`scale/layout.ts`).
 
+use serde::Deserialize;
+
 use super::{Properties, keeps};
 use crate::expand::{MODES, SCALED, SIZE, Source, Step};
-use crate::kiwi::Value;
+use crate::model::{ConstraintType, Matrix, NodeField, StackMode, StackPositioning, Vector};
 
 /// A layer's size and position, from its `size` and `transform`.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -15,74 +17,56 @@ pub struct Geometry {
     pub transform: Option<[f64; 6]>,
 }
 
+/// The fields of an entry the replay reads; the rest are skipped in the bytes.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct Placed {
+    size: Option<Vector>,
+    transform: Option<Matrix>,
+    #[serde(rename = "stackMode")]
+    stack_mode: Option<StackMode>,
+    #[serde(rename = "stackPositioning")]
+    stack_positioning: Option<StackPositioning>,
+    #[serde(rename = "horizontalConstraint")]
+    horizontal: Option<ConstraintType>,
+    #[serde(rename = "verticalConstraint")]
+    vertical: Option<ConstraintType>,
+}
+
 /// What a resize reads of a layer besides its geometry.
 #[derive(Clone, Copy, Default)]
 struct Placement {
     auto_layout: bool,
     absolute: bool,
-    horizontal: Option<Constraint>,
-    vertical: Option<Constraint>,
+    horizontal: Option<ConstraintType>,
+    vertical: Option<ConstraintType>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Constraint {
-    Min,
-    Center,
-    Max,
-    Stretch,
-    Scale,
-}
-
-impl Constraint {
-    fn named(name: &str) -> Option<Constraint> {
-        Some(match name {
-            "MIN" => Constraint::Min,
-            "CENTER" => Constraint::Center,
-            "MAX" => Constraint::Max,
-            "STRETCH" => Constraint::Stretch,
-            "SCALE" => Constraint::Scale,
-            _ => return None,
-        })
-    }
-
-    /// A layer's position and size along one axis once its parent goes from `before` to `after`.
-    fn apply(
-        constraint: Option<Self>,
-        position: f64,
-        size: f64,
-        before: f64,
-        after: f64,
-    ) -> (f64, f64) {
-        let delta = after - before;
-        match constraint {
-            Some(Constraint::Scale) if before > 0.0 => {
-                let factor = after / before;
-                (position * factor, size * factor)
-            }
-            Some(Constraint::Max) => (position + delta, size),
-            Some(Constraint::Center) => (position + delta / 2.0, size),
-            Some(Constraint::Stretch) => (position, (size + delta).max(0.0)),
-            _ => (position, size),
+/// A layer's position and size along one axis once its parent goes from `before` to `after`.
+fn constrained(
+    constraint: Option<ConstraintType>,
+    position: f64,
+    size: f64,
+    before: f64,
+    after: f64,
+) -> (f64, f64) {
+    let delta = after - before;
+    match constraint {
+        Some(ConstraintType::Scale) if before > 0.0 => {
+            let factor = after / before;
+            (position * factor, size * factor)
         }
+        Some(ConstraintType::Max) => (position + delta, size),
+        Some(ConstraintType::Center) => (position + delta / 2.0, size),
+        Some(ConstraintType::Stretch) => (position, (size + delta).max(0.0)),
+        _ => (position, size),
     }
 }
 
 const IDENTITY: [f64; 6] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
 
-fn vector(value: &Value) -> Option<[f64; 2]> {
-    Some([value.get("x")?.as_f64()?, value.get("y")?.as_f64()?])
-}
-
-fn matrix(value: &Value) -> Option<[f64; 6]> {
-    let at = |name| value.get(name).and_then(Value::as_f64);
-    Some([
-        at("m00")?,
-        at("m01")?,
-        at("m02")?,
-        at("m10")?,
-        at("m11")?,
-        at("m12")?,
-    ])
+fn matrix(m: &Matrix) -> [f64; 6] {
+    [m.m00, m.m01, m.m02, m.m10, m.m11, m.m12]
 }
 
 impl Properties<'_> {
@@ -96,47 +80,49 @@ impl Properties<'_> {
         for step in &self.expansion.steps {
             match *step {
                 Step::Layer(layer) => {
-                    let Some(span) = self.span(layer.source) else {
-                        continue;
-                    };
                     if matches!(layer.source, Source::DefaultName(_)) {
                         continue;
                     }
+                    let Some(span) = self.span(layer.source) else {
+                        continue;
+                    };
                     let at = layer.target as usize;
                     if matches!(layer.source, Source::Record(_))
                         && layer.only & (SCALED | SIZE | MODES) == 0
                     {
                         before[at] = geometry[at].size;
                     }
+                    let placed: Placed = self.decode(span)?;
                     let (shape, place) = (&mut geometry[at], &mut placement[at]);
-                    self.fields(span, |name, reader| {
-                        if !keeps(&layer, name) {
-                            return Ok(false);
-                        }
-                        match name {
-                            "size" => shape.size = vector(&reader.value()?),
-                            "transform" => shape.transform = matrix(&reader.value()?),
-                            "stackMode" => {
-                                let mode = reader.value()?;
-                                place.auto_layout =
-                                    mode.as_str().is_some_and(|mode| mode != "NONE");
-                            }
-                            "stackPositioning" => {
-                                let mode = reader.value()?;
-                                place.absolute = mode.as_str() == Some("ABSOLUTE");
-                            }
-                            "horizontalConstraint" => {
-                                let value = reader.value()?;
-                                place.horizontal = value.as_str().and_then(Constraint::named);
-                            }
-                            "verticalConstraint" => {
-                                let value = reader.value()?;
-                                place.vertical = value.as_str().and_then(Constraint::named);
-                            }
-                            _ => return Ok(false),
-                        }
-                        Ok(true)
-                    })?;
+                    let kept = |field| keeps(&layer, field);
+                    if let Some(size) = placed.size.filter(|_| kept(NodeField::Size)) {
+                        shape.size = Some([size.x, size.y]);
+                    }
+                    if let Some(transform) = placed.transform.filter(|_| kept(NodeField::Transform))
+                    {
+                        shape.transform = Some(matrix(&transform));
+                    }
+                    if let Some(mode) = placed.stack_mode.filter(|_| kept(NodeField::StackMode)) {
+                        place.auto_layout = !matches!(mode, StackMode::None | StackMode::Unlisted);
+                    }
+                    if let Some(mode) = placed
+                        .stack_positioning
+                        .filter(|_| kept(NodeField::StackPositioning))
+                    {
+                        place.absolute = mode == StackPositioning::Absolute;
+                    }
+                    if let Some(constraint) = placed
+                        .horizontal
+                        .filter(|_| kept(NodeField::HorizontalConstraint))
+                    {
+                        place.horizontal = Some(constraint);
+                    }
+                    if let Some(constraint) = placed
+                        .vertical
+                        .filter(|_| kept(NodeField::VerticalConstraint))
+                    {
+                        place.vertical = Some(constraint);
+                    }
                 }
                 Step::Scale { owner, factor } => {
                     let end = occurrences[owner as usize].end as usize;
@@ -155,8 +141,8 @@ impl Properties<'_> {
                     let Some(base) = before[owner as usize] else {
                         continue;
                     };
-                    let size = self.record_field(record, "size")?;
-                    let Some(after) = size.as_ref().and_then(vector) else {
+                    let placed: Placed = self.decode(self.index.records[record as usize].span)?;
+                    let Some(after) = placed.size else {
                         continue;
                     };
                     // An invalid scale is none, as expansion treats it.
@@ -167,7 +153,7 @@ impl Properties<'_> {
                         1.0
                     };
                     let base = [base[0] * scale, base[1] * scale];
-                    self.resize(&mut geometry, &placement, owner, base, after);
+                    self.resize(&mut geometry, &placement, owner, base, [after.x, after.y]);
                 }
             }
         }
@@ -198,20 +184,11 @@ impl Properties<'_> {
                 continue;
             };
             let transform = geometry[at].transform.unwrap_or(IDENTITY);
-            let (x, width) = Constraint::apply(
-                placement[at].horizontal,
-                transform[2],
-                size[0],
-                before[0],
-                after[0],
-            );
-            let (y, height) = Constraint::apply(
-                placement[at].vertical,
-                transform[5],
-                size[1],
-                before[1],
-                after[1],
-            );
+            let place = placement[at];
+            let (x, width) =
+                constrained(place.horizontal, transform[2], size[0], before[0], after[0]);
+            let (y, height) =
+                constrained(place.vertical, transform[5], size[1], before[1], after[1]);
             let resized = [width, height];
             self.resize(geometry, placement, child, size, resized);
             geometry[at].size = Some(resized);

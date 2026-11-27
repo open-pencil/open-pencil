@@ -4,12 +4,9 @@
 
 use std::cell::RefCell;
 
-use core::fmt::Write;
-
 use crate::Document;
 use crate::expand::{Step, Unresolved};
 use crate::index::NONE;
-use crate::kiwi::Value;
 
 #[derive(Default)]
 struct State {
@@ -162,7 +159,7 @@ pub extern "C" fn unresolved(which: u32) -> u32 {
 }
 
 /// Writes the field values of `count` occurrences of a page from `first` on as JSON, one object
-/// per line, for `json` to read: 64-bit integers as strings, bytes as arrays of numbers. Returns
+/// per line, for `json` to read, bytes as arrays of numbers. Returns
 /// how many it wrote, or -1 with `error` saying why.
 #[unsafe(no_mangle)]
 pub extern "C" fn properties(page: u32, first: u32, count: u32) -> i32 {
@@ -195,7 +192,8 @@ pub extern "C" fn properties(page: u32, first: u32, count: u32) -> i32 {
         for occurrence in first as usize..end {
             match values.of(occurrence as u32) {
                 Ok(value) => {
-                    write_json(&value, json);
+                    // A record holds only floats JSON can write, so this cannot fail.
+                    json.push_str(&serde_json::to_string(&value).unwrap_or_default());
                     json.push('\n');
                 }
                 Err(cause) => {
@@ -216,69 +214,4 @@ pub extern "C" fn json() -> *const u8 {
 #[unsafe(no_mangle)]
 pub extern "C" fn json_length() -> usize {
     STATE.with_borrow(|state| state.json.len())
-}
-
-fn write_json(value: &Value, out: &mut String) {
-    match value {
-        Value::Bool(value) => out.push_str(if *value { "true" } else { "false" }),
-        Value::Byte(value) => _ = write!(out, "{value}"),
-        Value::Int(value) => _ = write!(out, "{value}"),
-        Value::Uint(value) => _ = write!(out, "{value}"),
-        Value::Float(value) if value.is_finite() => _ = write!(out, "{value}"),
-        Value::Float(_) | Value::Enum(None) => out.push_str("null"),
-        Value::Int64(value) => _ = write!(out, "\"{value}\""),
-        Value::Uint64(value) => _ = write!(out, "\"{value}\""),
-        Value::String(text) => write_string(text, out),
-        Value::Enum(Some(name)) => write_string(name, out),
-        Value::Bytes(bytes) => {
-            out.push('[');
-            for (at, byte) in bytes.iter().enumerate() {
-                if at > 0 {
-                    out.push(',');
-                }
-                _ = write!(out, "{byte}");
-            }
-            out.push(']');
-        }
-        Value::Array(values) => {
-            out.push('[');
-            for (at, value) in values.iter().enumerate() {
-                if at > 0 {
-                    out.push(',');
-                }
-                write_json(value, out);
-            }
-            out.push(']');
-        }
-        Value::Fields(fields) => {
-            out.push('{');
-            for (at, (name, value)) in fields.iter().enumerate() {
-                if at > 0 {
-                    out.push(',');
-                }
-                write_string(name, out);
-                out.push(':');
-                write_json(value, out);
-            }
-            out.push('}');
-        }
-    }
-}
-
-fn write_string(text: &str, out: &mut String) {
-    out.push('"');
-    for character in text.chars() {
-        match character {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            control if u32::from(control) < 0x20 => {
-                _ = write!(out, "\\u{:04x}", u32::from(control));
-            }
-            other => out.push(other),
-        }
-    }
-    out.push('"');
 }

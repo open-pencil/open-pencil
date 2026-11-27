@@ -231,14 +231,33 @@ function readPagesWithoutStyles(file: Uint8Array): (id: string) => InstanceOccur
   }
 }
 
-/** A reader's value as the crate writes it: 64-bit integers as strings, bytes as numbers. */
+/** A reader's value as the crate writes it: 64-bit integers as numbers, bytes as numbers. */
 function asCrateWrites(value: unknown): unknown {
   const text = JSON.stringify(value, (_, inner: unknown) => {
-    if (typeof inner === 'bigint') return String(inner)
+    if (typeof inner === 'bigint') return Number(inner)
     if (inner instanceof Uint8Array) return [...inner]
     return inner
   })
-  return text === undefined ? undefined : (JSON.parse(text) as unknown)
+  return text === undefined ? undefined : withoutCopiedDefaults(JSON.parse(text) as unknown)
+}
+
+/**
+ * A value without the `initialValue` the TypeScript reader copies from a property definition's
+ * typed `varValue` for its own use (`normalizeDefaults`), which the crate's typed definitions do
+ * not hold where the two kinds differ. Both sides leave out an `initialValue` equal to that copy.
+ */
+function withoutCopiedDefaults(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutCopiedDefaults)
+  if (!isPlainObject(value)) return value
+  const result: Record<string, unknown> = {}
+  for (const [key, inner] of Object.entries(value)) result[key] = withoutCopiedDefaults(inner)
+  const typed = isPlainObject(result.varValue) ? result.varValue.value : undefined
+  if (isPlainObject(typed) && 'initialValue' in result) {
+    const symbol = isPlainObject(typed.symbolIdValue) ? typed.symbolIdValue.guid : undefined
+    const copied = symbol ? { guidValue: symbol } : typed
+    if (isEqual(result.initialValue, copied)) delete result.initialValue
+  }
+  return result
 }
 
 const brief = (value: unknown) => (JSON.stringify(value) ?? 'nothing').slice(0, 160)
@@ -271,7 +290,7 @@ export async function readFieldsWithBoth(file: Uint8Array, limit = 5): Promise<F
       differences.push(`crate gave values for ${values.length} of ${count} layers`)
     for (const [at, layer] of layers.entries()) {
       const expected = asCrateWrites(layer.properties)
-      const actual = values[at]
+      const actual = withoutCopiedDefaults(values[at])
       if (!isPlainObject(expected) || !isPlainObject(actual)) continue
       for (const field of new Set([...Object.keys(expected), ...Object.keys(actual)])) {
         compared++

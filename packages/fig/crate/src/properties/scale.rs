@@ -1,94 +1,90 @@
 //! Distances an instance's uniform scale multiplies (`packages/fig/src/instance-overrides/scale/`).
 
-use crate::kiwi::Value;
+use crate::model::{NodeChange, Number, NumberUnits, Vector};
 
-/// Lengths of how a layer is drawn that a uniform scale multiplies (`VISUAL_LENGTHS`).
-const VISUAL_LENGTHS: &[&str] = &[
-    "strokeWeight",
-    "cornerRadius",
-    "rectangleTopLeftCornerRadius",
-    "rectangleTopRightCornerRadius",
-    "rectangleBottomLeftCornerRadius",
-    "rectangleBottomRightCornerRadius",
-];
+fn times(value: &mut Option<f64>, factor: f64) {
+    if let Some(value) = value {
+        *value *= factor;
+    }
+}
 
-/// Distances a uniform scale multiplies (`LAYOUT_DISTANCES` in `scale/layout.ts`).
-const LAYOUT_DISTANCES: &[&str] = &[
-    "stackPadding",
-    "stackSpacing",
-    "stackCounterSpacing",
-    "stackHorizontalPadding",
-    "stackVerticalPadding",
-    "stackPaddingRight",
-    "stackPaddingBottom",
-];
+fn times_vector(vector: &mut Option<Vector>, factor: f64) {
+    if let Some(vector) = vector {
+        vector.x *= factor;
+        vector.y *= factor;
+    }
+}
+
+/// A length given in pixels; one in percent or raw is not a distance.
+fn times_pixels(number: &mut Option<Number>, factor: f64) {
+    if let Some(number) = number
+        && number.units == NumberUnits::Pixels
+    {
+        number.value *= factor;
+    }
+}
 
 /// Multiplies the distances of one layer by an instance's uniform scale (`scale/layout.ts`),
 /// leaving its size and position to the page-wide replay.
-pub fn scale(props: &mut Value, factor: f64) {
+pub fn scale(props: &mut NodeChange, factor: f64) {
     scale_text(props, factor);
-    for &name in VISUAL_LENGTHS.iter().chain(LAYOUT_DISTANCES) {
-        props.scale_field(name, factor);
+    for length in [
+        &mut props.stroke_weight,
+        &mut props.corner_radius,
+        &mut props.rectangle_top_left_corner_radius,
+        &mut props.rectangle_top_right_corner_radius,
+        &mut props.rectangle_bottom_left_corner_radius,
+        &mut props.rectangle_bottom_right_corner_radius,
+        &mut props.stack_padding,
+        &mut props.stack_spacing,
+        &mut props.stack_counter_spacing,
+        &mut props.stack_horizontal_padding,
+        &mut props.stack_vertical_padding,
+        &mut props.stack_padding_right,
+        &mut props.stack_padding_bottom,
+    ] {
+        times(length, factor);
     }
-    if let Some(Value::Array(dashes)) = props.get_mut("dashPattern") {
-        dashes.iter_mut().for_each(|dash| dash.scale(factor));
+    for dash in props.dash_pattern.iter_mut().flatten() {
+        *dash *= factor;
     }
-    if let Some(Value::Array(effects)) = props.get_mut("effects") {
-        for effect in effects {
-            if let Some(offset) = effect.get_mut("offset") {
-                offset.scale_field("x", factor);
-                offset.scale_field("y", factor);
-            }
-            effect.scale_field("radius", factor);
-            effect.scale_field("spread", factor);
-        }
+    for effect in props.effects.iter_mut().flatten() {
+        times_vector(&mut effect.offset, factor);
+        times(&mut effect.radius, factor);
+        times(&mut effect.spread, factor);
     }
 }
 
 /// Positional text data, not font identity or glyph outlines (`scaleTextLayout`).
-fn scale_text(props: &mut Value, factor: f64) {
-    props.scale_field("fontSize", factor);
-    for name in ["lineHeight", "letterSpacing"] {
-        if let Some(value) = props.get_mut(name)
-            && value.get("units").and_then(Value::as_str) == Some("PIXELS")
-        {
-            value.scale_field("value", factor);
-        }
+fn scale_text(props: &mut NodeChange, factor: f64) {
+    times(&mut props.font_size, factor);
+    times_pixels(&mut props.line_height, factor);
+    times_pixels(&mut props.letter_spacing, factor);
+    let ranges = props
+        .text_data
+        .as_deref_mut()
+        .and_then(|text| text.style_override_table.as_mut());
+    for range in ranges.into_iter().flatten() {
+        scale_text(range, factor);
     }
-    if let Some(Value::Array(styles)) = props
-        .get_mut("textData")
-        .and_then(|text| text.get_mut("styleOverrideTable"))
-    {
-        styles
-            .iter_mut()
-            .for_each(|style| scale_text(style, factor));
-    }
-    let Some(derived) = props.get_mut("derivedTextData") else {
+    let Some(derived) = props.derived_text_data.as_deref_mut() else {
         return;
     };
-    if let Some(size) = derived.get_mut("layoutSize") {
-        size.scale_field("x", factor);
-        size.scale_field("y", factor);
+    times_vector(&mut derived.layout_size, factor);
+    times(&mut derived.truncated_height, factor);
+    for glyph in derived.glyphs.iter_mut().flatten() {
+        times_vector(&mut glyph.position, factor);
+        times(&mut glyph.font_size, factor);
     }
-    derived.scale_field("truncatedHeight", factor);
-    if let Some(Value::Array(glyphs)) = derived.get_mut("glyphs") {
-        for glyph in glyphs {
-            if let Some(position) = glyph.get_mut("position") {
-                position.scale_field("x", factor);
-                position.scale_field("y", factor);
-            }
-            glyph.scale_field("fontSize", factor);
-        }
-    }
-    if let Some(Value::Array(baselines)) = derived.get_mut("baselines") {
-        for baseline in baselines {
-            if let Some(position) = baseline.get_mut("position") {
-                position.scale_field("x", factor);
-                position.scale_field("y", factor);
-            }
-            for name in ["width", "lineHeight", "lineAscent", "lineY"] {
-                baseline.scale_field(name, factor);
-            }
+    for baseline in derived.baselines.iter_mut().flatten() {
+        times_vector(&mut baseline.position, factor);
+        for length in [
+            &mut baseline.width,
+            &mut baseline.line_height,
+            &mut baseline.line_ascent,
+            &mut baseline.line_y,
+        ] {
+            times(length, factor);
         }
     }
 }

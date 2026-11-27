@@ -18,9 +18,13 @@ crate-type = ["cdylib", "rlib"]
 # The raw exports a WebAssembly host calls (`alloc`, `open`, `expand_page`, …). Off by default, so
 # a crate depending on this one keeps those symbol names; `packages/fig/scripts/wasm.ts` turns it
 # on for the module the tests load.
-exports = []
+# It writes field values as JSON for the host to read.
+exports = ["dep:serde_json"]
 
 [dependencies]
 miniz_oxide = "0.9"
 rawzip = "0.5"
 ruzstd = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_bytes = "0.11"
+serde_json = { version = "1", optional = true }

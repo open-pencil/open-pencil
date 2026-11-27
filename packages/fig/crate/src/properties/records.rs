@@ -1,110 +1,91 @@
 //! Component property records as the reader prepares them before layering
-//! (`normalizeComponentPropertyRecords` in `packages/fig/src/document/property-records.ts`).
+//! (`packages/fig/src/document/property-records.ts` and `document/property-inheritance.ts`).
 
-use crate::kiwi::Value;
+use crate::model::{
+    ComponentPropDef, ComponentPropNodeField, ComponentPropRef, NodeChange, VariableDataType,
+    VariableField,
+};
 
-/// The layer fields a component property can bind.
-const BOUND_FIELDS: &[&str] = &[
-    "VISIBLE",
-    "TEXT_DATA",
-    "OVERRIDDEN_SYMBOL_ID",
-    "SLOT_CONTENT_ID",
-];
+/// The layer field a component property binds through a parameter map entry for `field`.
+fn bound_field(field: VariableField) -> Option<ComponentPropNodeField> {
+    Some(match field {
+        VariableField::Visible => ComponentPropNodeField::Visible,
+        VariableField::TextData => ComponentPropNodeField::TextData,
+        VariableField::OverriddenSymbolId => ComponentPropNodeField::OverriddenSymbolId,
+        VariableField::SlotContentId => ComponentPropNodeField::SlotContentId,
+        _ => return None,
+    })
+}
 
-/// Gives a record, or an override or style entry inside it, its property references from its
-/// parameter map alone, and each definition a plain default from its typed one. Figma draws
-/// nothing from a legacy `componentPropRefs` entry, so the references are the map's.
-pub fn normalize(node: &mut Value) {
-    if let Some(Value::Array(definitions)) = node.get_mut("componentPropDefs") {
-        for definition in definitions {
-            if definition.get("initialValue").is_some() {
-                continue;
+/// Gives a record, and the records inside it, its property references from its parameter map
+/// alone: Figma draws nothing from a legacy `componentPropRefs` entry, so they are the map's
+/// (`normalizeComponentPropertyRecords`).
+pub fn normalize(node: &mut NodeChange) {
+    let references: Vec<ComponentPropRef> = node
+        .parameter_consumption_map
+        .as_deref()
+        .and_then(|map| map.entries.as_deref())
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|entry| {
+            let data = entry.variable_data.as_deref()?;
+            if data.data_type != Some(VariableDataType::PropRef) {
+                return None;
             }
-            let Some(value) = definition
-                .get("varValue")
-                .and_then(|typed| typed.get("value"))
-            else {
-                continue;
-            };
-            let initial = match value.get("symbolIdValue").and_then(|id| id.get("guid")) {
-                Some(guid) => Value::Fields(vec![("guidValue", guid.clone())]),
-                None => value.clone(),
-            };
-            definition.set("initialValue", initial);
-        }
-    }
-    let mut references = Vec::new();
-    if let Some(Value::Array(entries)) = node
-        .get("parameterConsumptionMap")
-        .and_then(|map| map.get("entries"))
-    {
-        for entry in entries {
-            let data = entry.get("variableData");
-            let is_reference = data
-                .and_then(|data| data.get("dataType"))
-                .and_then(Value::as_str)
-                == Some("PROP_REF");
             let definition = data
-                .and_then(|data| data.get("value"))
-                .and_then(|value| value.get("propRefValue"))
-                .and_then(|reference| reference.get("defId"));
-            let field = entry.get("variableField");
-            let bound = field
-                .and_then(Value::as_str)
-                .is_some_and(|field| BOUND_FIELDS.contains(&field));
-            if let (true, Some(definition), Some(field), true) =
-                (is_reference, definition, field, bound)
-            {
-                references.push(Value::Fields(vec![
-                    ("defID", definition.clone()),
-                    ("componentPropNodeField", field.clone()),
-                ]));
-            }
-        }
-    }
-    if let Value::Fields(fields) = node {
-        fields.retain(|(name, _)| *name != "componentPropRefs");
-    }
-    if !references.is_empty() {
-        node.set("componentPropRefs", Value::Array(references));
-    }
-    // A text's ranges, a vector's regions, and an instance's overrides are records of their own.
-    let nested: [(&str, &str); 4] = [
-        ("textData", "styleOverrideTable"),
-        ("vectorData", "styleOverrideTable"),
-        ("symbolData", "symbolOverrides"),
-        ("", "derivedSymbolData"),
-    ];
-    for (outer, list) in nested {
-        let holder = if outer.is_empty() {
-            Some(&mut *node)
-        } else {
-            node.get_mut(outer)
-        };
-        if let Some(Value::Array(entries)) = holder.and_then(|holder| holder.get_mut(list)) {
-            entries.iter_mut().for_each(normalize);
-        }
+                .value
+                .as_deref()?
+                .prop_ref_value
+                .as_deref()?
+                .def_id
+                .clone()?;
+            Some(ComponentPropRef {
+                def_id: Some(definition),
+                component_prop_node_field: Some(bound_field(entry.variable_field?)?),
+                ..ComponentPropRef::default()
+            })
+        })
+        .collect();
+    node.component_prop_refs = (!references.is_empty()).then_some(references);
+    for entry in nested(node) {
+        normalize(entry);
     }
 }
 
+/// A text's ranges, a vector's regions, and an instance's overrides and derived entries: records
+/// of their own inside a record.
+pub fn nested(node: &mut NodeChange) -> impl Iterator<Item = &mut NodeChange> {
+    let ranges = node
+        .text_data
+        .as_deref_mut()
+        .and_then(|text| text.style_override_table.as_mut());
+    let regions = node
+        .vector_data
+        .as_deref_mut()
+        .and_then(|vector| vector.style_override_table.as_mut());
+    let overrides = node
+        .symbol_data
+        .as_deref_mut()
+        .and_then(|data| data.symbol_overrides.as_mut());
+    let derived = node.derived_symbol_data.as_mut();
+    [ranges, regions, overrides, derived]
+        .into_iter()
+        .flatten()
+        .flatten()
+}
+
 /// Completes a record's definitions that name a parent definition with the fields of the one
-/// they copy, taken from the nearest of `ancestors`' definitions (`inheritFromAncestors` in
-/// `document/property-inheritance.ts`). `ancestors` run outward, each already completed.
-pub fn inherit<'a>(definitions: &mut Value<'a>, ancestors: &[Value<'a>]) {
-    let Value::Array(definitions) = definitions else {
-        return;
-    };
+/// they copy, taken from the nearest of `ancestors`' definitions (`inheritFromAncestors`).
+/// `ancestors` run outward, each already completed.
+pub fn inherit(definitions: &mut [ComponentPropDef], ancestors: &[Vec<ComponentPropDef>]) {
     for definition in definitions {
-        let Some(parent) = definition.get("parentPropDefId").cloned() else {
+        let Some(parent) = definition.parent_prop_def_id.clone() else {
             continue;
         };
-        for ancestor in ancestors {
-            let Value::Array(candidates) = ancestor else {
-                continue;
-            };
+        for candidates in ancestors {
             let mut matches = candidates
                 .iter()
-                .filter(|candidate| candidate.get("id") == Some(&parent));
+                .filter(|candidate| candidate.id.as_ref() == Some(&parent));
             let found = match (matches.next(), matches.next()) {
                 (None, _) => continue,
                 (Some(found), None) => found,
@@ -112,11 +93,7 @@ pub fn inherit<'a>(definitions: &mut Value<'a>, ancestors: &[Value<'a>]) {
                 (Some(_), Some(_)) => break,
             };
             let mut completed = found.clone();
-            if let Value::Fields(own) = definition {
-                for (name, value) in own.drain(..) {
-                    completed.set(name, value);
-                }
-            }
+            completed.overlay(core::mem::take(definition));
             *definition = completed;
             break;
         }

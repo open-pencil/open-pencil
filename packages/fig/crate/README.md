@@ -4,6 +4,10 @@ Reads Figma `.fig` files without a design editor: the canvas inside the archive,
 its Kiwi records that leaves their fields encoded, pages with their component instances expanded
 into the layers they show, and each layer's field values.
 
+Records decode through serde into Rust types generated from Figma's Kiwi schema
+(`open_pencil_fig::model`), and a layer's fields are a typed `NodeChange`. Fields a rule does not
+need are skipped in the bytes, never decoded.
+
 It is the Rust counterpart of the reader in [OpenPencil](https://github.com/open-pencil/open-pencil),
 an open-source design editor, whose tests compare the two on every page of their fixtures.
 
@@ -15,7 +19,7 @@ for page in 0..document.index.pages.len() {
     let values = document.properties(&expansion)?;
     for layer in 0..expansion.occurrences.len() as u32 {
         let fields = values.of(layer)?;
-        println!("{:?}", fields.get("name"));
+        println!("{:?}", fields.name);
     }
 }
 # Ok::<(), Box<dyn std::error::Error>>(())

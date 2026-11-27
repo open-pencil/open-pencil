@@ -1,9 +1,10 @@
 //! Kiwi's binary schema and a cursor over a message encoded with it. Callers read the fields
-//! they need and the cursor skips the rest; [`Reader::value`] decodes one field whole.
+//! they need and the cursor skips the rest; [`from_message`] decodes a message into Rust types
+//! through serde.
 
-mod value;
+mod de;
 
-pub use value::Value;
+pub use de::{Error as DecodeError, from_message, from_message_where};
 
 /// A message, or a schema, ended early or holds a value its schema does not allow.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -367,10 +368,15 @@ impl<'a> Reader<'a> {
     }
 
     pub fn skip_field(&mut self, schema: &Schema, field: &Field) -> Result<()> {
-        if !field.is_array {
-            return self.skip(schema, field.ty);
+        self.skip_typed(schema, field.ty, field.is_array)
+    }
+
+    /// Skips a value of a type, an array of them where `is_array`.
+    pub fn skip_typed(&mut self, schema: &Schema, ty: i32, is_array: bool) -> Result<()> {
+        if !is_array {
+            return self.skip(schema, ty);
         }
-        if field.ty == BYTE {
+        if ty == BYTE {
             let length = self.varuint()? as usize;
             let end = self.position.checked_add(length).ok_or(Malformed)?;
             if end > self.data.len() {
@@ -385,7 +391,7 @@ impl<'a> Reader<'a> {
             return Err(Malformed);
         }
         for _ in 0..count {
-            self.skip(schema, field.ty)?;
+            self.skip(schema, ty)?;
         }
         Ok(())
     }
