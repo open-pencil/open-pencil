@@ -47,7 +47,10 @@ const RUSTC_FEATURES =
 
 const binaryenPackageSchema = v.object({ version: v.string() })
 
-/** How modules are optimized, for the sources hash: the Binaryen release and its level. */
+/**
+ * How modules are optimized, for the sources hash: the Binaryen release and this file, which
+ * holds every setting `optimized` applies.
+ */
 async function optimizer(): Promise<string> {
   const manifest = join(dirname(fileURLToPath(import.meta.resolve('binaryen'))), 'package.json')
   const parsed = v.safeParse(
@@ -55,7 +58,10 @@ async function optimizer(): Promise<string> {
     await readFile(manifest, 'utf8')
   )
   if (!parsed.success) throw new Error('binaryen has no version')
-  return `binaryen ${parsed.output.version} -Oz without inlining`
+  const settings = new Bun.CryptoHasher('sha256')
+    .update(await readFile(fileURLToPath(import.meta.url)))
+    .digest('hex')
+  return `binaryen ${parsed.output.version} ${settings}`
 }
 
 /** Reads one unsigned LEB128 number from `bytes` at `at`. */
