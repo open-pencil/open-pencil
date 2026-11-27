@@ -25,7 +25,8 @@ const TABLES = [
   'sitePages',
   'siteCountries',
   'repoItems',
-  'cloudUsage'
+  'cloudUsage',
+  'npmDownloads'
 ] as const
 
 const accessToken = (key: CryptoKey, claims?: Parameters<typeof signAccessToken>[2]) =>
@@ -54,6 +55,7 @@ function ping(
     app: string
     browser?: string
     stepped?: boolean
+    usageStats?: 'unset' | 'granted' | 'denied'
   },
   count: number
 ) {
@@ -66,7 +68,7 @@ function ping(
       arch: build.arch ?? 'arm64',
       app: build.app,
       browser: build.browser ?? 'unknown',
-      usageStats: 'unset',
+      usageStats: build.usageStats ?? 'unset',
       stepped: build.stepped ? 1 : 0,
       count
     })
@@ -102,7 +104,14 @@ function answerPostHog() {
         ['document_opened', 'fig', 496],
         ['document_opened', 'pen', 19],
         ['ai_reply_finished', 'openrouter', 22],
-        ['ai_reply_finished', 'openai-compatible', 85]
+        ['ai_reply_finished', 'openai-compatible', 85],
+        ['campaign_shown', 'donation prompt', 24],
+        ['campaign_dismissed', 'donation prompt', 16],
+        ['campaign_acted', 'donation prompt', 2],
+        ['campaign_shown', 'cloud-trial share', 40],
+        ['campaign_shown', 'retired nowhere', 5],
+        ['donate_clicked', 'menu', 3],
+        ['donate_clicked', 'settings', 4]
       ]
     })
   })
@@ -353,6 +362,47 @@ describe('metrics snapshot API', () => {
     ])
   })
 
+  test('sharing splits checked pings by the answer to usage stats, each day of the range', async () => {
+    const checked = { platform: 'macos', app: 'desktop', stepped: true }
+    await ping('2026-10-15', { ...checked, usageStats: 'granted' }, 6)
+    await ping('2026-10-15', { ...checked, usageStats: 'denied' }, 40)
+    await ping('2026-10-15', { ...checked, app: 'web', usageStats: 'denied' }, 2)
+    await ping('2026-10-16', checked, 50)
+    // Pings that send no step are left out, as everywhere the dashboard counts installs.
+    await ping('2026-10-16', { platform: 'windows', app: 'desktop', usageStats: 'denied' }, 700)
+    const { sharing } = await snapshot('2026-10-15', '2026-10-17')
+    expect(sharing).toEqual([
+      { day: '2026-10-15', granted: 6, denied: 42, unset: 0 },
+      { day: '2026-10-16', granted: 0, denied: 0, unset: 50 },
+      { day: '2026-10-17', granted: 0, denied: 0, unset: 0 }
+    ])
+  })
+
+  test('npm downloads add up each finished day and rank the packages over the range', async () => {
+    const downloads = (day: string, name: string, count: number) =>
+      database()
+        .insertInto('npmDownloads')
+        .values({ day, package: name, downloads: count })
+        .execute()
+    await downloads('2026-10-13', '@open-pencil/core', 900)
+    await downloads('2026-10-15', '@open-pencil/core', 120)
+    await downloads('2026-10-15', '@open-pencil/vue', 30)
+    await downloads('2026-10-16', '@open-pencil/vue', 45)
+    const { npm } = await snapshot('2026-10-15', '2026-10-17')
+    expect(npm).toEqual({
+      daily: [
+        { day: '2026-10-15', downloads: 150 },
+        { day: '2026-10-16', downloads: 45 },
+        { day: '2026-10-17', downloads: 0 }
+      ],
+      packages: [
+        { name: '@open-pencil/core', value: 120 },
+        { name: '@open-pencil/vue', value: 75 }
+      ]
+    })
+    expect((await snapshot('2026-10-17', '2026-10-17')).npm).toEqual({ daily: [], packages: [] })
+  })
+
   test('visits pivot to the website and the web app, and rankings add up the range', async () => {
     await database()
       .insertInto('siteVisits')
@@ -460,6 +510,15 @@ describe('metrics snapshot API', () => {
       aiProviders: [
         { name: 'openai-compatible', value: 85 },
         { name: 'openrouter', value: 22 }
+      ],
+      // A placement this Worker does not know is left out rather than failing the page.
+      campaigns: [
+        { campaign: 'cloud-trial', placement: 'share', shown: 40, dismissed: 0, acted: 0 },
+        { campaign: 'donation', placement: 'prompt', shown: 24, dismissed: 16, acted: 2 }
+      ],
+      donations: [
+        { source: 'settings', clicks: 4 },
+        { source: 'menu', clicks: 3 }
       ]
     })
     const call = service.fetchCalls.findLast((candidate) => candidate.url === POSTHOG_QUERY)

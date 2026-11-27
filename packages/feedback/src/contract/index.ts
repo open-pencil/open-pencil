@@ -1,4 +1,5 @@
 export * from './schema'
+export * from './metrics/schema'
 export * from './inbox/schema'
 export * from './campaigns/schema'
 export {

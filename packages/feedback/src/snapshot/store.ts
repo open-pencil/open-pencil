@@ -19,6 +19,7 @@ type SnapshotTable =
   | 'sitePages'
   | 'siteCountries'
   | 'cloudUsage'
+  | 'npmDownloads'
 
 // D1 binds at most 100 values per statement, so long lists go in several statements.
 const MAX_BOUND_VALUES = 100
@@ -35,7 +36,8 @@ const CLEAR_DAYS: Record<SnapshotTable, ClearDays> = {
   siteVisits: (db, days) => db.deleteFrom('siteVisits').where('day', 'in', days).compile(),
   sitePages: (db, days) => db.deleteFrom('sitePages').where('day', 'in', days).compile(),
   siteCountries: (db, days) => db.deleteFrom('siteCountries').where('day', 'in', days).compile(),
-  cloudUsage: (db, days) => db.deleteFrom('cloudUsage').where('day', 'in', days).compile()
+  cloudUsage: (db, days) => db.deleteFrom('cloudUsage').where('day', 'in', days).compile(),
+  npmDownloads: (db, days) => db.deleteFrom('npmDownloads').where('day', 'in', days).compile()
 }
 
 /**
@@ -127,4 +129,23 @@ export async function lastCloudDay(db: Kysely<FeedbackDatabase>): Promise<string
     .select((eb) => eb.fn.max('day').as('day'))
     .executeTakeFirst()
   return row?.day ?? undefined
+}
+
+/**
+ * The last day every one of `packages` has downloads recorded for, or `undefined` while one has
+ * none: a package published later is then filled from as far back as npm keeps.
+ */
+export async function lastNpmDay(
+  db: Kysely<FeedbackDatabase>,
+  packages: string[]
+): Promise<string | undefined> {
+  if (!packages.length) return undefined
+  const rows = await db
+    .selectFrom('npmDownloads')
+    .select(['package', (eb) => eb.fn.max('day').as('day')])
+    .where('package', 'in', packages)
+    .groupBy('package')
+    .execute()
+  if (rows.length < packages.length) return undefined
+  return rows.map((row) => row.day).toSorted()[0]
 }

@@ -7,6 +7,7 @@ import { countBy, groupBy, maxBy, omit, partition, sumBy } from 'es-toolkit'
 import type { Kysely } from 'kysely'
 
 import { installs } from './installs'
+import { npmDownloads } from './npm'
 import { fetchUsage } from './posthog'
 
 /** How many entries a ranking keeps. */
@@ -59,7 +60,7 @@ async function pings(
     .selectFrom('usagePings')
     .where('day', '>=', range.start)
     .where('day', '<=', range.end)
-  const [byDay, byPlatform, byVersion, versions, counted] = await Promise.all([
+  const [byDay, byPlatform, byVersion, versions, counted, byAnswer] = await Promise.all([
     inRange
       .select(['day', 'stepped', (eb) => eb.fn.sum<number>('count').as('pings')])
       .groupBy(['day', 'stepped'])
@@ -78,7 +79,12 @@ async function pings(
       .select(['version', (eb) => eb.fn.min<string>('day').as('firstDay')])
       .groupBy('version')
       .execute(),
-    installs(db, end, days)
+    installs(db, end, days),
+    inRange
+      .select(['day', 'usageStats', (eb) => eb.fn.sum<number>('count').as('pings')])
+      .where('stepped', '=', 1)
+      .groupBy(['day', 'usageStats'])
+      .execute()
   ])
   const latest = newestStable(versions.map((row) => row.version)) ?? null
   const uncheckedOn = (day: string) =>
@@ -90,6 +96,8 @@ async function pings(
     const day = counted.byApp[app]?.at(index)
     return day ? day.new + day.returning : 0
   }
+  const answered = (day: string, answer: string) =>
+    Number(byAnswer.find((row) => row.day === day && row.usageStats === answer)?.pings ?? 0)
   const platforms = Object.entries(groupBy(byPlatform, (row) => row.platform)).map(
     ([os, rows]) => ({
       os,
@@ -102,6 +110,12 @@ async function pings(
       day,
       desktop: installsOf('desktop', index),
       web: installsOf('web', index)
+    })),
+    sharing: days.map((day) => ({
+      day,
+      granted: answered(day, 'granted'),
+      denied: answered(day, 'denied'),
+      unset: answered(day, 'unset')
     })),
     installs: counted.total.map((day) => ({ ...day, unchecked: uncheckedOn(day.day) })),
     platforms: platforms.toSorted((a, b) => b.desktop + b.web - (a.desktop + a.web)),
@@ -513,13 +527,14 @@ export async function buildSnapshot(
   // Visits and the issue mirror are recorded once a day has ended, so today never has any.
   const finished = days.filter((day) => parseDate(day).compare(today) < 0)
   const db = createFeedbackDatabase(env.DB)
-  const [earliest, pinged, byNetwork, visited, repository, cloud, usage] = await Promise.all([
+  const [earliest, pinged, byNetwork, visited, repository, cloud, npm, usage] = await Promise.all([
     firstDay(db),
     pings(db, range, days, end),
     networks(db, range),
     site(db, env, range, finished),
     github(db, range, days, finished),
     cloudUsage(db, range, finished),
+    npmDownloads(db, range, finished),
     fetchUsage(env, services, range).catch((error: unknown) => {
       console.warn('PostHog usage unavailable', { error: String(error) })
       return null
@@ -535,6 +550,7 @@ export async function buildSnapshot(
     ...visited,
     github: repository,
     cloud,
+    npm,
     usage
   }
 }

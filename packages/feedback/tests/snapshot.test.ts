@@ -24,7 +24,8 @@ const TABLES = [
   'sitePages',
   'siteCountries',
   'repoItems',
-  'cloudUsage'
+  'cloudUsage',
+  'npmDownloads'
 ] as const
 
 /** An issue or pull request as `/issues` lists it, last updated `updated`. */
@@ -192,6 +193,8 @@ beforeEach(async () => {
   answerGithub()
   answerCloudflare()
   answerCloud()
+  // npm has its own tests (`npm.test.ts`); here the organization publishes nothing.
+  service.respond('https://registry.npmjs.org/-/org/', () => Response.json({}))
 })
 
 afterAll(async () => {

@@ -100,6 +100,12 @@ export interface CloudUsageTable {
   storageBytes: number | null
 }
 
+export interface NpmDownloadsTable {
+  day: string
+  package: string
+  downloads: number
+}
+
 /** The D1 tables `migrations/` creates, in Kysely's camelCase. */
 export interface FeedbackDatabase {
   usagePings: UsagePingTable
@@ -114,4 +120,5 @@ export interface FeedbackDatabase {
   siteCountries: SiteCountriesTable
   repoItems: RepoItemTable
   cloudUsage: CloudUsageTable
+  npmDownloads: NpmDownloadsTable
 }

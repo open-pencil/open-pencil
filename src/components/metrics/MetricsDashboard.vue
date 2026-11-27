@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { BarList } from 'vccs'
 import { computed } from 'vue'
 
-import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
+import type { DonationSource, MetricsSnapshot } from '@open-pencil/feedback/contract'
 
 import {
   formatBytes,
@@ -23,6 +23,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { metricsDashboardTheme } from '@/theme/metrics/dashboard'
 
+import CampaignsTable from './CampaignsTable.vue'
 import DailyChart from './DailyChart.vue'
 import type { DailySeries } from './DailyChart.vue'
 import DailyLevelChart from './DailyLevelChart.vue'
@@ -37,13 +38,21 @@ import type {
   DailyCloud,
   DailyContributors,
   DailyInstalls,
+  DailyNpm,
   DailyPulls,
+  DailySharing,
   DailyTraffic,
   DailyVersions,
   DailyVisits
 } from './types'
 
 const metricsDashboard = tv(metricsDashboardTheme)
+
+const DONATION_SOURCES: Record<DonationSource, string> = {
+  prompt: 'Corner prompt',
+  menu: 'Help menu',
+  settings: 'Settings'
+}
 
 /**
  * Day-to-day numbers in one place: anonymous daily pings and Cloudflare visits for reach,
@@ -170,6 +179,15 @@ const NEW_CONTRIBUTOR_SERIES: DailySeries<
   { key: 'newCommunity', name: 'Community', color: 'var(--color-chart-1)' },
   { key: 'newTeam', name: 'Team', color: 'var(--color-chart-3)' }
 ]
+// Agreeing leads; the installs never asked recede, as they have not decided.
+const SHARING_SERIES: DailySeries<keyof DailySharing & ('granted' | 'denied' | 'unset')>[] = [
+  { key: 'granted', name: 'Share stats', color: 'var(--color-chart-1)' },
+  { key: 'denied', name: 'No thanks', color: 'var(--color-chart-2)' },
+  { key: 'unset', name: 'Not answered', color: 'var(--color-muted)' }
+]
+const NPM_SERIES: DailySeries<keyof DailyNpm & 'downloads'>[] = [
+  { key: 'downloads', name: 'Downloads', color: 'var(--color-chart-1)' }
+]
 const TRAFFIC_SERIES: DailySeries<keyof DailyTraffic & string>[] = [
   { key: 'views', name: 'Views', color: 'var(--color-chart-1)' },
   { key: 'uniqueViews', name: 'Unique visitors', color: 'var(--color-chart-3)' }
@@ -238,6 +256,21 @@ const reachedEditor = computed(() => {
   )
   return visits ? web / visits : undefined
 })
+// Over full days, the share of checked installs that agreed to share usage stats.
+const grantedShare = computed(() => {
+  const days = snapshot.sharing.filter((day) => fullDaySet.value.has(day.day))
+  const all = sumBy(days, (day) => day.granted + day.denied + day.unset)
+  return all ? sumBy(days, (day) => day.granted) / all : undefined
+})
+const donationClicks = computed(() =>
+  (usage.value?.donations ?? []).map((row) => ({
+    name: DONATION_SOURCES[row.source],
+    value: row.clicks
+  }))
+)
+const npmTotal = computed(() =>
+  snapshot.npm.daily.length ? sumBy(snapshot.npm.daily, (day) => day.downloads) : undefined
+)
 const countries = computed(() =>
   snapshot.website.countries.map((country) => ({ ...country, name: formatCountry(country.name) }))
 )
@@ -420,6 +453,22 @@ const sharingNote = computed(() => {
 
         <section :class="ui.section()" aria-labelledby="metrics-engagement">
           <h2 id="metrics-engagement" :class="ui.sectionHeading()">Engagement</h2>
+          <MetricsCard
+            heading="Sharing usage stats"
+            note="Daily pings from versions that send a step, replayed ones included, by the install's answer to sharing usage stats. Only installs that share stats reach PostHog, so everything below counts a sample of this size."
+          >
+            <template v-if="grantedShare !== undefined" #aside>
+              {{ formatShare(grantedShare) }} share stats
+            </template>
+            <DailyChart
+              label="Daily pings by the answer to sharing usage stats"
+              :days="snapshot.sharing"
+              :series="SHARING_SERIES"
+              :today="snapshot.today"
+              :height="160"
+              stacked
+            />
+          </MetricsCard>
           <div v-if="usage" :class="ui.row()">
             <MetricsCard
               heading="Retention"
@@ -457,6 +506,29 @@ const sharingNote = computed(() => {
                   />
                 </div>
               </div>
+            </MetricsCard>
+          </div>
+          <div v-if="usage" :class="ui.row()">
+            <MetricsCard
+              heading="Campaigns"
+              note="Our messages, such as the donation ask, where they showed: Not now includes closing. Only installs sharing stats, so the counts are a sample; what happened after a button is not known."
+            >
+              <CampaignsTable v-if="usage.campaigns.length" :campaigns="usage.campaigns" />
+              <p v-else :class="ui.sectionLabel()">No campaign showed in this range</p>
+            </MetricsCard>
+            <MetricsCard
+              heading="Donation page"
+              note="Times the donation page was opened, by where; only installs sharing stats. Whether a donation followed is not known."
+            >
+              <BarList
+                v-if="donationClicks.length"
+                class="text-xs"
+                :data="donationClicks"
+                :value-formatter="formatCount"
+                :row-height="28"
+                :is-animation-active="false"
+              />
+              <p v-else :class="ui.sectionLabel()">Not opened in this range</p>
             </MetricsCard>
           </div>
           <MetricsCard v-else heading="Usage">
@@ -533,6 +605,44 @@ const sharingNote = computed(() => {
               </AppPlaceholder>
             </MetricsCard>
           </div>
+        </section>
+
+        <section :class="ui.section()" aria-labelledby="metrics-packages">
+          <h2 id="metrics-packages" :class="ui.sectionHeading()">Packages</h2>
+          <MetricsCard
+            heading="npm downloads"
+            note="Downloads of every @open-pencil package per finished day, as npm counts them: CI runs and mirrors included, so they show interest in the SDK rather than people."
+          >
+            <template v-if="npmTotal !== undefined" #aside>
+              {{ formatCount(npmTotal) }} {{ phrase }}
+            </template>
+            <template v-if="snapshot.npm.daily.length">
+              <DailyChart
+                label="npm downloads of every package per day"
+                :days="snapshot.npm.daily"
+                :series="NPM_SERIES"
+                :today="snapshot.today"
+                :height="160"
+              />
+              <h4 :class="ui.sectionLabel()">By package</h4>
+              <BarList
+                class="text-xs"
+                :data="snapshot.npm.packages"
+                :value-formatter="formatCount"
+                :row-height="28"
+                :is-animation-active="false"
+              />
+            </template>
+            <AppPlaceholder
+              v-else
+              size="compact"
+              :fill="false"
+              label="Not recorded yet"
+              description="The nightly snapshot at 00:05 UTC reads npm's download counts, the last 18 months included."
+            >
+              <template #icon><icon-lucide-package class="size-4" /></template>
+            </AppPlaceholder>
+          </MetricsCard>
         </section>
 
         <section :class="ui.section()" aria-labelledby="metrics-development">
