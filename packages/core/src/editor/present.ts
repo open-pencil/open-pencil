@@ -190,7 +190,11 @@ export function createPresentActions(ctx: EditorContext) {
       }
       current.next(now)
     }
-    ctx.state.buildPreview = { slideId, layers: current.sceneAt(now).layers }
+    ctx.state.buildPreview = {
+      slideId,
+      layers: current.sceneAt(now).layers,
+      animatingId: current.animatingAt(now)
+    }
     ctx.requestRepaint()
     preview.cancel = nextFrame(previewFrame)
   }

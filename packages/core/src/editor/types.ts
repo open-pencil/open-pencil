@@ -88,6 +88,8 @@ export interface ShapeHandleHover {
 export interface BuildPreview {
   slideId: string
   layers: ReadonlyMap<string, LayerFrame>
+  /** The layer whose animation is under way, as the Animate tab marks its step. */
+  animatingId: string | null
 }
 
 /** Where a presentation is, for what shows around it: the presenter's view, the slide count. */

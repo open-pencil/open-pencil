@@ -409,11 +409,16 @@ test("Play moves a slide's layers through its build on the canvas, then lets go"
   expect(editor.state.buildPreview?.slideId).toBe(slide)
   expect(editor.state.buildPreview?.layers.get(boxes[1])?.opacity).toBe(0)
   const seen = new Set<string>()
+  const marked = new Set<string>()
   while (editor.state.buildPreview) {
     for (const [id, frame] of editor.state.buildPreview.layers)
       if (frame.opacity > 0 && frame.opacity < 1) seen.add(id)
+    // The Animate tab marks the step under way.
+    const animating = editor.state.buildPreview.animatingId
+    if (animating) marked.add(animating)
     await Bun.sleep(10)
   }
   expect([...seen].sort()).toEqual([...boxes].sort())
+  expect([...marked].sort()).toEqual([...boxes].sort())
   expect(editor.state.buildPreview).toBeNull()
 })

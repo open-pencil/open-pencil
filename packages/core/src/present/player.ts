@@ -250,6 +250,17 @@ export function createSlidePlayer(graph: SceneGraph, slides: readonly string[], 
       return stepping !== null && now < stepping.start + (steps[stepping.index]?.seconds ?? 0)
     },
 
+    /** The layer whose animation is under way at `now`, or null between and outside steps. */
+    animatingAt(now: number): string | null {
+      const step = stepping && steps[stepping.index]
+      if (!stepping || !step) return null
+      const elapsed = now - stepping.start
+      return (
+        step.layers.find((layer) => elapsed > layer.start && elapsed < layer.start + layer.seconds)
+          ?.id ?? null
+      )
+    },
+
     /** Where everything is at `now`. */
     sceneAt(now: number): PlayerScene {
       const layers = new Map<string, LayerFrame>()

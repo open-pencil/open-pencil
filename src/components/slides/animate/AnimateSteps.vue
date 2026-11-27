@@ -106,6 +106,7 @@ function dropPosition(id: string) {
         :class="ui.step()"
         :data-dragging="reorder.draggingId.value === step.id || undefined"
         :data-selected="selectedId === step.id || undefined"
+        :data-playing="store.state.buildPreview?.animatingId === step.id || undefined"
         data-test-id="animate-step"
       >
         <div
