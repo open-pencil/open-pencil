@@ -89,6 +89,9 @@ export class LibrarySyncSession implements LibrarySyncRemote {
   /** One pass: probe when asked, then pull what open documents need. */
   async pass(request: PassRequest, stores: readonly EditorStore[]): Promise<PassOutcome> {
     this.#failures = {}
+    // A resume during the pass voids every pre-resume verdict, so the failure verdicts this
+    // pass settles must not land once the epoch moved.
+    const passEpoch = currentResolutionsEpoch()
     const objects = await this.#openObjects().catch((error: unknown) => {
       this.#record(error)
       return null
@@ -96,7 +99,7 @@ export class LibrarySyncSession implements LibrarySyncRemote {
     this.#assertOpen()
     if (!objects) {
       // Nothing will arrive on its own: waiting rows settle as failed rather than hang.
-      failSyncingResolutions()
+      failSyncingResolutions(passEpoch)
       return this.#failures
     }
     const remote = new StorageLibraryCatalog(objects)
@@ -151,11 +154,21 @@ export class LibrarySyncSession implements LibrarySyncRemote {
             this.#manifestEtags.delete(libraryId)
             return
           }
-          await this.mirror.cacheSummaries([summary])
-          // The record is the etag of the object actually read — a publish between the
-          // listing and this read may already have moved it past `manifestEtag`; a read
-          // without an etag falls back on the listed one.
-          this.#manifestEtags.set(libraryId, etag ?? manifestEtag)
+          const named = await this.mirror.cacheSummary(summary)
+          if (named) {
+            // The record is the etag of the object actually read — a publish between the
+            // listing and this read may already have moved it past `manifestEtag`; a read
+            // without an etag falls back on the listed one.
+            this.#manifestEtags.set(libraryId, etag ?? manifestEtag)
+          } else {
+            // The mirror rejected the summary — it holds a row the chain proves newer.
+            // Recording the etag of a read the row does not project would skip this
+            // manifest on every later probe while the row stays put: a permanent wedge.
+            // Recording nothing re-reads instead, the safe direction for a rare,
+            // transient rejection — a mirror ahead of the remote heals when the remote's
+            // manifest advances onto the chain.
+            this.#manifestEtags.delete(libraryId)
+          }
         } catch (error) {
           // A failed read records nothing, so the next probe retries.
           this.#manifestEtags.delete(libraryId)

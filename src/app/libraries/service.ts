@@ -92,6 +92,8 @@ export class LibraryService {
   /** Follows the sync engine's remote: each remote identity has its own mirror. */
   attachCatalog(catalog: MirroredLibraryCatalog): void {
     this.#catalog = markRaw(catalog)
+    // Reads started against the previous mirror must not publish their results.
+    this.#reads += 1
     // Revisions cached from one mirror's rows do not describe the next one's.
     this.#revisionCache.clear()
   }
@@ -129,8 +131,11 @@ export class LibraryService {
   }
 
   async listLibraries(): Promise<LibrarySummary[]> {
-    this.#summaries.value = await this.#catalog.listLibraries()
-    return this.#summaries.value
+    const read = ++this.#reads
+    const summaries = await this.#catalog.listLibraries()
+    // The caller keeps its rows, but rows of a catalog swapped mid-read must not publish.
+    if (read === this.#reads) this.#summaries.value = summaries
+    return summaries
   }
 
   /** The `ComponentCatalog` view of `store`'s document (see `component-catalog.ts`). */

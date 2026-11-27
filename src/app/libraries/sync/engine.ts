@@ -27,6 +27,7 @@ import {
 import { LibrarySyncSession, type PassRequest } from '@/app/libraries/sync/session'
 import {
   clearFailedResolutions,
+  currentResolutionsEpoch,
   failSyncingResolutions,
   librarySyncRemote,
   librarySyncResolution
@@ -191,6 +192,10 @@ async function pullOnce(probe: boolean): Promise<void> {
     if (wait > 0 && wait !== Infinity) scheduleWake(wait)
     return
   }
+  // The epoch beside the session identity: a resume during the pass voids its verdicts,
+  // so an outcome recorded after one must be discarded the same way as one recorded after
+  // a remote rebuild.
+  const resumeEpoch = currentResolutionsEpoch()
   try {
     const outcome = await current.pass(
       { probe, includeInstanceRevs: wantsInstanceRevs, includePublication: wantsPublication },
@@ -199,8 +204,9 @@ async function pullOnce(probe: boolean): Promise<void> {
     // A pass whose remote was replaced while it ran must not write its outcome — a park,
     // the backoff, or a clean slate — onto the live remote. The session object is the
     // generation: `close()` can only stop checkpoints, but a pass has outcome paths that
-    // return past the last one, so the identity check goes here instead.
-    if (current !== session) return
+    // return past the last one, so the identity check goes here instead. A resume keeps
+    // the session but voids every pre-resume verdict; the epoch is that generation.
+    if (current !== session || resumeEpoch !== currentResolutionsEpoch()) return
     if (outcome.permanent !== undefined) {
       parked = true
       failSyncingResolutions()
@@ -214,7 +220,9 @@ async function pullOnce(probe: boolean): Promise<void> {
     attempts = 0
     nextAttemptAt = 0
   } catch (error) {
-    // A pass of a replaced remote must not count against the live remote's backoff.
+    // A pass of a replaced remote or one a resume superseded must not count against the
+    // live remote's backoff.
+    if (current !== session || resumeEpoch !== currentResolutionsEpoch()) return
     if (!isAbortError(error)) failAttempt(error)
   }
 }

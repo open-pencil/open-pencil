@@ -359,6 +359,48 @@ describe('library sync engine', () => {
     expect(librarySyncResolution.value.has(failedKey)).toBe(false)
   })
 
+  test('a resume during an active pass discards a permanent outcome the pass then reports', async () => {
+    await seedLibrary(objects, 'design-system', 1)
+    await useObjects(objects)
+    startLibrarySync()
+    await track()
+    await flush()
+    await whenLibrarySyncIdle()
+    expect(objects.listCalls).toBe(1)
+
+    // Gate the next probe's listing and arm a permanent failure behind it, so the pass
+    // is in flight when the resume lands and ends by reporting `permanent`.
+    const gate = createDeferred<undefined>()
+    const listingInFlight = ref(false)
+    const originalList = objects.listObjects.bind(objects)
+    objects.listObjects = async (prefix) => {
+      listingInFlight.value = true
+      await gate.promise
+      listingInFlight.value = false
+      return originalList(prefix)
+    }
+    void kickLibrarySync()
+    await withDeadline(SYNC_SETTLE_DEADLINE_MS, () => until(listingInFlight).toBe(true))
+    objects.listFailure = new S3HttpError(403, 'AccessDenied')
+
+    // The resume clears the park state and queues a follow-up pass while the gated one
+    // hovers; its verdict must win, not the stale outcome's park.
+    await resumeLibrarySync()
+    gate.resolve(undefined)
+    objects.listObjects = originalList
+    objects.listFailure = null
+    await whenLibrarySyncIdle()
+
+    const diagnostics = librarySyncDiagnostics()
+    expect(diagnostics.parked).toBe(false)
+    expect(diagnostics.attempts).toBe(0)
+    // The resume's queued pass ran as the discarded outcome's replacement and probed again.
+    expect(objects.listCalls).toBe(3)
+    expect(
+      (await librarySyncRemote.value?.catalog.listLibraries())?.map((row) => row.libraryId)
+    ).toEqual(['design-system'])
+  })
+
   test('a flagged need stays syncing through a transient failure until it lands', async () => {
     const [first, second] = await seedLibrary(objects, 'design-system', 2)
     await useObjects(objects)

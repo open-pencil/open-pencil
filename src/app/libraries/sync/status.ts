@@ -16,8 +16,13 @@ export const librarySyncResolution = shallowRef<Map<string, LibraryResolutionSta
   new Map<string, LibraryResolutionState>()
 )
 
-/** Settles every `syncing` row as `failed`: nothing is going to deliver them. */
-export function failSyncingResolutions(): void {
+/**
+ * Settles every `syncing` row as `failed`: nothing is going to deliver them. A caller finishing
+ * work that started before a resume passes the epoch it captured — a resume voided every verdict
+ * of that generation, so the rows it cleared must not be failed again.
+ */
+export function failSyncingResolutions(expectedEpoch?: number): void {
+  if (expectedEpoch !== undefined && expectedEpoch !== currentResolutionsEpoch()) return
   const map = librarySyncResolution.value
   if (![...map.values()].includes('syncing')) return
   const next = new Map(map)
