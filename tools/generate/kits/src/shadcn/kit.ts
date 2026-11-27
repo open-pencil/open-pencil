@@ -11,5 +11,6 @@ export const SHADCN_KIT: KitDefinition = {
   sources: shadcnSources,
   // shadcn's examples sit in its docs site's wrapper, which fills a screen; here they take the
   // room they need.
-  css: '[data-slot="example-wrapper"] { min-height: 0; }'
+  css: '[data-slot="example-wrapper"] { min-height: 0; }',
+  instances: join(import.meta.dir, 'variants.ts')
 }

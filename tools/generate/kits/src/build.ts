@@ -30,7 +30,7 @@ export async function renderKitPage(
       worker.onmessage = (event: MessageEvent<RenderReply>) => resolve(event.data)
       worker.onerror = (event) => reject(new Error(event.message))
       // A worker takes no target origin; an empty transfer list is its second argument.
-      const request: RenderRequest = { page: kit.page, sources, about }
+      const request: RenderRequest = { page: kit.page, sources, about, instances: kit.instances }
       worker.postMessage(request, { transfer: [] })
     })
     if ('error' in reply) throw new Error(`Could not render ${kit.name}: ${reply.error}`)

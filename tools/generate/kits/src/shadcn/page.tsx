@@ -15,13 +15,20 @@ import {
   type KitCell,
   type KitComponentProps,
   type KitMarks,
-  type KitModules,
-  type KitState
+  type KitModules
 } from '../kit'
 import { RenderBoundary } from '../react/boundary'
-
-const STATES: KitState[] = ['Default', 'Hover', 'Focus', 'Disabled']
-const OFF_ON = ['Off', 'On'] as const
+import {
+  ALERT_STYLES,
+  AVATAR_SIZES,
+  BADGE_STYLES,
+  BUTTON_SIZES,
+  BUTTON_STYLES,
+  named,
+  OFF_ON,
+  STATES,
+  TOGGLE_STYLES
+} from './variants'
 
 /** A control's checked or pressed value, bound to its `Checked` or `Pressed` variants. */
 const checked = (property: string): KitBehaviour => ({
@@ -49,14 +56,6 @@ const rowsOf = (...properties: (readonly string[])[]): string[] =>
     ['']
   )
 
-/** shadcn's prop values as the variants' values read: `sm` is Small, `ghost` is Ghost. */
-const NAMES: Record<string, string> = { sm: 'Small', lg: 'Large' }
-const named = (value: string) => NAMES[value] ?? `${value[0].toUpperCase()}${value.slice(1)}`
-
-const BUTTON_STYLES = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link']
-const BUTTON_SIZES = ['default', 'sm', 'lg']
-const TOGGLE_STYLES = ['default', 'outline']
-
 /** How each component's set is drawn, by the module it is in. */
 const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
   button: (ui, { variant }) => {
@@ -83,7 +82,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
   badge: (ui, { variant }) => {
     const Badge = ui('Badge')
     return {
-      variants: ['default', 'secondary', 'destructive', 'outline', 'ghost', 'link'].map((style) => (
+      variants: BADGE_STYLES.map((style) => (
         <Badge key={style} variant={style} {...variant({ Variant: named(style) })}>
           Badge
         </Badge>
@@ -245,7 +244,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const Avatar = ui('Avatar')
     const AvatarFallback = ui('AvatarFallback')
     return {
-      variants: ['sm', 'default', 'lg'].map((size) => (
+      variants: AVATAR_SIZES.map((size) => (
         <Avatar key={size} size={size} {...variant({ Size: named(size) })}>
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
@@ -257,7 +256,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const AlertTitle = ui('AlertTitle')
     const AlertDescription = ui('AlertDescription')
     return {
-      variants: ['default', 'destructive'].map((style) => (
+      variants: ALERT_STYLES.map((style) => (
         <Alert key={style} variant={style} className="w-96" {...variant({ Variant: named(style) })}>
           <AlertTitle>Heads up!</AlertTitle>
           <AlertDescription>You can add components to your app.</AlertDescription>

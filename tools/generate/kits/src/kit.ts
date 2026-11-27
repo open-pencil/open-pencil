@@ -28,6 +28,26 @@ export const PAGE_PREFIX = 'page:'
 /** The id that marks an element as shown in another mode of the kit's variables, likewise. */
 export const MODE_PREFIX = 'mode:'
 
+/** What one use of a kit component is: an instance of the page's component or set `of`. */
+export interface KitInstance {
+  of: string
+  /** The variant of the set it is, by its properties. */
+  variant?: Record<string, string>
+}
+
+/** For each of the kit's modules, which instance a use of each export is, if any, by its props. */
+export type KitInstances = Record<
+  string,
+  Record<string, (props: Record<string, unknown>) => KitInstance | null>
+>
+
+/** A variant's name, as its properties make it: `Size=Small, State=Hover`. */
+export function variantName(properties: Readonly<Record<string, string>>): string {
+  return Object.entries(properties)
+    .map(([property, value]) => `${property}=${value}`)
+    .join(', ')
+}
+
 /** The size of each cell of a set laid out in rows, in pixels. */
 export interface KitCell {
   width: number
@@ -117,6 +137,11 @@ export interface KitDefinition {
   sources: () => Promise<KitSources>
   /** CSS for the page around the kit's components, after the kit's own stylesheet. */
   css?: string
+  /**
+   * The module whose `INSTANCES` export says, for the kit's components, which of the page's
+   * components or variants each use of one is, so the kit's own examples become instances.
+   */
+  instances?: string
 }
 
 export function createKitMarks(attributes: {
@@ -135,7 +160,9 @@ export function createKitMarks(attributes: {
               display: 'grid',
               gridTemplateColumns: `repeat(${columns}, ${cell.width}px)`,
               gridAutoRows: `${cell.height}px`,
-              alignItems: 'center'
+              alignItems: 'center',
+              // Each variant keeps its own size in its cell, as an app draws it.
+              justifyItems: 'start'
             }
           : {
               display: 'flex',
@@ -146,10 +173,7 @@ export function createKitMarks(attributes: {
             }
     }),
     variant(properties, { state, behaviour } = {}) {
-      const name = Object.entries(properties)
-        .map(([property, value]) => `${property}=${value}`)
-        .join(', ')
-      const props: VariantProps = { [attributes.component]: name }
+      const props: VariantProps = { [attributes.component]: variantName(properties) }
       const forced = state && FORCED[state]
       if (forced) props['data-force-state'] = forced
       if (state === 'Disabled') props.disabled = true

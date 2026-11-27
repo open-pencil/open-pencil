@@ -14,10 +14,12 @@ import { COMPONENT_ATTRIBUTES } from '@open-pencil/dom-css/scene-graph'
 import {
   createKitMarks,
   type KitAbout,
+  type KitInstances,
   type KitMarks,
   type KitModules,
   type KitSources
 } from '../kit'
+import { kitInstancesPlugin } from './instances'
 import { installBrowserGlobals, mountedMarkup } from './mount'
 import { markedRadixPlugin } from './radix'
 
@@ -29,6 +31,8 @@ export interface RenderRequest {
   page: string
   sources: KitSources
   about: KitAbout
+  /** The module of the kit's `INSTANCES`, when its uses of components are to be instances. */
+  instances?: string
 }
 
 /** What the worker posts back: the page's markup, or why it could not render it. */
@@ -56,7 +60,31 @@ async function shareReact(project: string): Promise<void> {
   }
 }
 
-async function render({ page, sources, about }: RenderRequest): Promise<string> {
+/** The plugin that marks the instances the kit's own uses of its components are, if any. */
+async function instancesPlugin(instances: string | undefined, sources: KitSources) {
+  if (!instances) return []
+  const config: unknown = await import(instances)
+  const mapping = isInstancesModule(config) ? config.INSTANCES : {}
+  return [
+    kitInstancesPlugin({
+      modules: sources.modules,
+      exports: Object.fromEntries(
+        Object.entries(mapping).map(([module, components]) => [module, Object.keys(components)])
+      ),
+      instances,
+      attributes: {
+        instance: COMPONENT_ATTRIBUTES.instance,
+        variant: COMPONENT_ATTRIBUTES.variant
+      }
+    })
+  ]
+}
+
+function isInstancesModule(value: unknown): value is { INSTANCES: KitInstances } {
+  return typeof value === 'object' && value !== null && 'INSTANCES' in value
+}
+
+async function render({ page, sources, about, instances }: RenderRequest): Promise<string> {
   await shareReact(sources.root)
   const server = await createServer({
     root: import.meta.dir,
@@ -67,7 +95,7 @@ async function render({ page, sources, about }: RenderRequest): Promise<string> 
     resolve: { alias: sources.aliases },
     // Kits are React; the repository's own TypeScript settings keep JSX for Vue.
     oxc: { jsx: { runtime: 'automatic', importSource: 'react' } },
-    plugins: [markedRadixPlugin()],
+    plugins: [markedRadixPlugin(), ...(await instancesPlugin(instances, sources))],
     // Radix is served through the plugin rather than loaded as a package of its own.
     ssr: { noExternal: ['radix-ui'] }
   })
