@@ -10,12 +10,13 @@ import {
   until,
   type TestRelayClient
 } from '#cloud-tests/helpers/relay'
-import { cloudMCPResource, decodeAgentToolMessage, encodeAgentToolMessage } from '#cloud/contract'
+import { cloudMCPResource } from '#cloud/contract'
 import { createAgentPairingHub, parseCloudServerConfig } from '#cloud/server'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import * as v from 'valibot'
 
 import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import { decodeAutomationMessage, encodeAutomationMessage } from '@open-pencil/collab/automation'
 
 const config = parseCloudServerConfig({ ...accountAuthenticationConfig, agentPairing: true })
 const token = `opg_${'5e'.repeat(32)}`
@@ -57,21 +58,21 @@ async function pairTab(): Promise<{ tab: TestRelayClient; stop(): Promise<void> 
       target: RELAY_SERVER_PEER,
       payload
     })
-  say(encodeAgentToolMessage({ type: 'host' }))
+  say(encodeAutomationMessage({ type: 'register' }))
   const answered = new Set<string>()
   const stopping = new AbortController()
   const answering = (async () => {
     while (!stopping.signal.aborted && !tab.closed) {
       for (const frame of tab.messages(COLLAB_ACTIONS.agentTools)) {
-        const message = decodeAgentToolMessage(frame.payload)
-        if (message?.type !== 'call' || answered.has(message.id)) continue
+        const message = decodeAutomationMessage(frame.payload)
+        if (message?.type !== 'request' || answered.has(message.id)) continue
         answered.add(message.id)
         say(
-          encodeAgentToolMessage({
-            type: 'result',
+          encodeAutomationMessage({
+            type: 'response',
             id: message.id,
             ok: true,
-            result: { ran: message.name, args: message.args }
+            result: { ran: message.command, args: message.args }
           })
         )
       }
@@ -123,7 +124,10 @@ describe('MCP for an agent paired with an editor tab', () => {
         })
         expect(
           v.parse(v.pipe(v.string(), v.parseJson()), v.parse(textSchema, result).content[0].text)
-        ).toEqual({ ran: 'get_page_tree', args: { page_id: '0:1' } })
+        ).toMatchObject({
+          ran: 'tool',
+          args: { page_id: '0:1', name: 'get_page_tree', args: {}, agent: { kind: 'mcp' } }
+        })
       })
     } finally {
       await paired.stop()

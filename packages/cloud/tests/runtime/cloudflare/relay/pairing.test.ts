@@ -3,9 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { asDouble } from '#cloud-tests/helpers/doubles'
 import {
   agentPairingId,
-  decodeAgentToolMessage,
   decodeRelayServerFrame,
-  encodeAgentToolMessage,
   encodeRelayClientFrame,
   type RelayServerFrame
 } from '#cloud/contract'
@@ -13,6 +11,7 @@ import { createPairingSockets } from '#cloud/runtime/cloudflare/relay/pairing'
 import { createAgentPairingHub, type PairedTabState } from '#cloud/server'
 
 import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import { decodeAutomationMessage, encodeAutomationMessage } from '@open-pencil/collab/automation'
 
 const token = `opg_${'9f'.repeat(32)}`
 const call = { name: 'get_page_tree', args: {}, agent: { session: 'pairing:test' } }
@@ -65,16 +64,16 @@ describe('paired tabs on a Durable Object', () => {
     const object = sockets([tab], pairing)
     const outcome = (await object.open(pairing)).call(pairing, call)
     const handed = tab.frames
-      .flatMap((frame) => (frame.type === 'message' ? [decodeAgentToolMessage(frame.payload)] : []))
-      .find((message) => message?.type === 'call')
-    if (handed?.type !== 'call') throw new Error('No call arrived')
+      .flatMap((frame) => (frame.type === 'message' ? [decodeAutomationMessage(frame.payload)] : []))
+      .find((message) => message?.type === 'request')
+    if (handed?.type !== 'request') throw new Error('No call arrived')
     await object.message(
       asSocket(tab),
       encodeRelayClientFrame({
         type: 'message',
         namespace: COLLAB_ACTIONS.agentTools,
         target: RELAY_SERVER_PEER,
-        payload: encodeAgentToolMessage({ type: 'result', id: handed.id, ok: true, result: 1 })
+        payload: encodeAutomationMessage({ type: 'response', id: handed.id, ok: true, result: 1 })
       }).buffer
     )
     expect(await outcome).toEqual({ ok: true, result: 1 })

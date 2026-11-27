@@ -6,16 +6,15 @@ import {
   until,
   type TestRelayClient
 } from '#cloud-tests/helpers/relay'
-import {
-  agentPairingId,
-  decodeAgentToolMessage,
-  encodeAgentToolMessage,
-  RELAY_CLOSE,
-  type AgentToolMessage
-} from '#cloud/contract'
+import { agentPairingId, RELAY_CLOSE } from '#cloud/contract'
 import { createAgentPairingHub, type AgentPairingHubOptions } from '#cloud/server'
 
 import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import {
+  decodeAutomationMessage,
+  encodeAutomationMessage,
+  type AutomationMessage
+} from '@open-pencil/collab/automation'
 
 const token = `opg_${'ab'.repeat(32)}`
 const call = { name: 'get_page_tree', args: {}, agent: { session: 'pairing:test' } }
@@ -28,12 +27,12 @@ function hub(options: Partial<AgentPairingHubOptions> = {}) {
   })
 }
 
-function say(client: TestRelayClient, message: AgentToolMessage) {
+function say(client: TestRelayClient, message: AutomationMessage) {
   client.send({
     type: 'message',
     namespace: COLLAB_ACTIONS.agentTools,
     target: RELAY_SERVER_PEER,
-    payload: encodeAgentToolMessage(message)
+    payload: encodeAutomationMessage(message)
   })
 }
 
@@ -42,7 +41,7 @@ async function pairedTab(pairing: ReturnType<typeof hub>, presented = token) {
   const tab = connectTestClient((socket) => pairing.connect(pairingSocket(socket)))
   tab.send({ type: 'auth', token: presented })
   await until(() => tab.peerId() !== undefined || tab.closed !== null)
-  if (tab.peerId()) say(tab, { type: 'host' })
+  if (tab.peerId()) say(tab, { type: 'register' })
   return tab
 }
 
@@ -50,11 +49,11 @@ async function nextCall(tab: TestRelayClient) {
   const calls = () =>
     tab
       .messages(COLLAB_ACTIONS.agentTools)
-      .map((frame) => decodeAgentToolMessage(frame.payload))
-      .filter((message) => message?.type === 'call')
+      .map((frame) => decodeAutomationMessage(frame.payload))
+      .filter((message) => message?.type === 'request')
   await until(() => calls().length > 0)
   const found = calls()[0]
-  if (found?.type !== 'call') throw new Error('No call arrived')
+  if (found?.type !== 'request') throw new Error('No call arrived')
   return found
 }
 
@@ -69,8 +68,41 @@ describe('agent pairing hub', () => {
     const tab = await pairedTab(pairing)
     const outcome = pairing.call(await agentPairingId(token), call)
     const handed = await nextCall(tab)
-    say(tab, { type: 'result', id: handed.id, ok: true, result: { page: 'Page 1' } })
+    say(tab, { type: 'response', id: handed.id, ok: true, result: { page: 'Page 1' } })
     expect(await outcome).toEqual({ ok: true, result: { page: 'Page 1' } })
+  })
+
+  test("sends a tool as the local MCP server's tool request, and its document commands as its own", async () => {
+    const pairing = hub()
+    const tab = await pairedTab(pairing)
+    const id = await agentPairingId(token)
+    const tool = pairing.call(id, { ...call, args: { document_id: 'tab-1', page_id: '0:1' } })
+    const handedTool = await nextCall(tab)
+    expect(handedTool).toMatchObject({
+      command: 'tool',
+      args: {
+        document_id: 'tab-1',
+        page_id: '0:1',
+        name: 'get_page_tree',
+        args: {},
+        agent: { session: 'pairing:test', kind: 'mcp' }
+      }
+    })
+    say(tab, { type: 'response', id: handedTool.id, ok: true, result: null })
+    await tool
+    const listed = pairing.call(id, { ...call, name: 'list_documents' })
+    await until(() => tab.messages(COLLAB_ACTIONS.agentTools).length > 1)
+    const handedList = decodeAutomationMessage(
+      tab.messages(COLLAB_ACTIONS.agentTools).at(-1)?.payload ?? new Uint8Array()
+    )
+    expect(handedList).toMatchObject({
+      type: 'request',
+      command: 'list_documents',
+      args: { agent: { session: 'pairing:test', kind: 'mcp' } }
+    })
+    if (handedList?.type !== 'request') throw new Error('No request arrived')
+    say(tab, { type: 'response', id: handedList.id, ok: true, result: { documents: [] } })
+    expect(await listed).toEqual({ ok: true, result: { documents: [] } })
   })
 
   test('answers that no tab has it open for a pairing nobody connected or one that left', async () => {
@@ -91,7 +123,7 @@ describe('agent pairing hub', () => {
     // The editor the sign-in opened is still loading when the agent calls.
     const tab = await pairedTab(pairing)
     const handed = await nextCall(tab)
-    say(tab, { type: 'result', id: handed.id, ok: true, result: { page: 'Page 1' } })
+    say(tab, { type: 'response', id: handed.id, ok: true, result: { page: 'Page 1' } })
     expect(await outcome).toEqual({ ok: true, result: { page: 'Page 1' } })
   })
 
@@ -116,10 +148,10 @@ describe('agent pairing hub', () => {
     first.send({ type: 'auth', token })
     await until(() => first.peerId() !== undefined)
     const second = await pairedTab(pairing)
-    say(first, { type: 'host' })
+    say(first, { type: 'register' })
     const outcome = pairing.call(await agentPairingId(token), call)
     const handed = await nextCall(first)
-    say(first, { type: 'result', id: handed.id, ok: true, result: 'first' })
+    say(first, { type: 'response', id: handed.id, ok: true, result: 'first' })
     expect(await outcome).toEqual({ ok: true, result: 'first' })
     expect(second.messages(COLLAB_ACTIONS.agentTools)).toHaveLength(0)
   })
@@ -136,7 +168,7 @@ describe('agent pairing hub', () => {
     )
     const outcome = pairing.call(id, call)
     const handed = await nextCall(tab)
-    say(tab, { type: 'result', id: handed.id, ok: false, error: 'No document is open' })
+    say(tab, { type: 'response', id: handed.id, ok: false, error: 'No document is open' })
     expect(await outcome).toEqual({
       ok: false,
       failure: 'tool_failed',

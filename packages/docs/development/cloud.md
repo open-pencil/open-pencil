@@ -336,8 +336,10 @@ itself, without an open editor, is a later step.
 Where `deployment.agent_pairing` is on, a tab of the server's editor can pair with a coding agent
 without an account. The tab makes an `opg_` token, connects to `/api/agent-pairing/relay` with its
 SHA-256 as `?pairing=` and presents the token in its first frame; `createAgentPairingHub` holds
-the tab's socket and nothing else, and `/mcp` turns a call with that token into the same
-`agent-tools` call the relay makes, to the tab that offered last. A call with no tab to take it
+the tab's socket and nothing else, and `/mcp` turns a call with that token into the request a
+local MCP server sends the app, to the tab that registered last: a `tool` request, or one of the
+document commands in `AGENT_PAIRING_COMMANDS`. The tab runs it through the app's own request
+handler, as it runs the local server's, and refuses files, settings, and code. A call with no tab to take it
 waits up to ten seconds for one to offer, since an agent may call while the editor its sign-in
 opened is still loading, then answers that the editor is not open. On Cloudflare a pairing's tabs
 meet on the relay object named `pairing:<id>`, tagged so the object tells them from collaboration

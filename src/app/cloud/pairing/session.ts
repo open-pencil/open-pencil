@@ -16,7 +16,7 @@ import { cloudConnections } from '@/app/cloud/sessions/connection'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 
-import { runPairedTool } from './run'
+import { PAIRED_COMMANDS, runPairedRequest } from './run'
 import { newPairingToken, storedPairing, type StoredPairing } from './stored'
 
 /** How long the transport goes before it presents the token again; the pairing lasts past it. */
@@ -80,10 +80,11 @@ async function serve(
         joined = null
       }
     },
-    run: (store, call, callSignal) => {
+    commands: PAIRED_COMMANDS,
+    run: (store, command, args, callSignal) => {
       lastCallAt = Date.now()
       agentPairing.value = { status: 'paired', ...paired, lastCallAt }
-      return runPairedTool(store, call, callSignal)
+      return runPairedRequest(store, command, args, callSignal)
     }
   })
   transport.onPeerJoin((peerId) => {

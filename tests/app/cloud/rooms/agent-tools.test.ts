@@ -80,7 +80,7 @@ describe('serving agent tools through a room', () => {
   test("answers the relay's calls in the order they came, with results and failures", async () => {
     const room = channel()
     const ran: string[] = []
-    const run: RunAgentTool = async (_store, { name }) => {
+    const run: RunAgentTool = async (_store, _command, { name }) => {
       ran.push(String(name))
       if (name === 'get_node') throw new Error('Node 9:9 not found')
       return { name }
@@ -98,13 +98,47 @@ describe('serving agent tools through a room', () => {
     ])
   })
 
+  test('runs the commands it was given, as a paired tab does its document commands', async () => {
+    const room = channel()
+    const ran: string[] = []
+    serveRoomAgentTools([...room.action], {
+      store,
+      onPeerJoin: room.onPeerJoin,
+      commands: new Set(['tool', 'list_documents']),
+      run: async (_store, command) => {
+        ran.push(command)
+        return { documents: [] }
+      }
+    })
+    const listed: AutomationRequest = {
+      type: 'request',
+      id: crypto.randomUUID(),
+      command: 'list_documents',
+      args: { agent }
+    }
+    const saved: AutomationRequest = {
+      type: 'request',
+      id: crypto.randomUUID(),
+      command: 'save_document',
+      args: { path: '/tmp/a.fig' }
+    }
+    room.deliver(listed)
+    room.deliver(saved)
+    await settled()
+    expect(ran).toEqual(['list_documents'])
+    expect(room.results()).toEqual([
+      { type: 'response', id: saved.id, ok: false, error: 'Unknown command: save_document' },
+      { type: 'response', id: listed.id, ok: true, result: { documents: [] } }
+    ])
+  })
+
   test('runs tool requests alone, refusing what else a local MCP server may ask', async () => {
     const room = channel()
     const ran: string[] = []
     serveRoomAgentTools([...room.action], {
       store,
       onPeerJoin: room.onPeerJoin,
-      run: async (_store, { name }) => {
+      run: async (_store, _command, { name }) => {
         ran.push(String(name))
         return null
       }
@@ -129,7 +163,7 @@ describe('serving agent tools through a room', () => {
     serveRoomAgentTools([...room.action], {
       store,
       onPeerJoin: room.onPeerJoin,
-      run: async (_store, { name }) => {
+      run: async (_store, _command, { name }) => {
         ran.push(String(name))
         return null
       }
@@ -147,7 +181,7 @@ describe('serving agent tools through a room', () => {
     serveRoomAgentTools([...room.action], {
       store,
       onPeerJoin: room.onPeerJoin,
-      run: async (_store, { name }, signal) => {
+      run: async (_store, _command, { name }, signal) => {
         ran.push(String(name))
         signal.addEventListener('abort', () => {
           aborted = true

@@ -5,9 +5,7 @@ import {
   agentPairingId,
   agentPairingURL,
   cloudMCPResource,
-  decodeAgentToolMessage,
   defaultRelayURL,
-  encodeAgentToolMessage,
   RELAY_CLOSE,
   RELAY_HEARTBEAT,
   relayClientMessages,
@@ -20,6 +18,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import * as Y from 'yjs'
 
 import { COLLAB_ACTIONS, MAX_COLLAB_MESSAGE_BYTES, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import { decodeAutomationMessage, encodeAutomationMessage } from '@open-pencil/collab/automation'
 
 // Checks a running Cloud Worker (see run.ts): the API, the editor, and the portal answer, and the relay's
 // Durable Object admits ticket holders, keeps the room, and saves it to PostgreSQL, and an agent's
@@ -268,14 +267,14 @@ async function checkAgentPairing(documentTicket: string) {
       target: RELAY_SERVER_PEER,
       payload
     })
-  say(encodeAgentToolMessage({ type: 'host' }))
+  say(encodeAutomationMessage({ type: 'register' }))
   const answered = new Set<string>()
   const answering = setInterval(() => {
     for (const frame of messages(tab, COLLAB_ACTIONS.agentTools)) {
-      const message = decodeAgentToolMessage(frame.payload)
-      if (message?.type !== 'call' || answered.has(message.id)) continue
+      const message = decodeAutomationMessage(frame.payload)
+      if (message?.type !== 'request' || answered.has(message.id)) continue
       answered.add(message.id)
-      say(encodeAgentToolMessage({ type: 'result', id: message.id, ok: true, result: 'ran' }))
+      say(encodeAutomationMessage({ type: 'response', id: message.id, ok: true, result: 'ran' }))
     }
   }, 10)
 

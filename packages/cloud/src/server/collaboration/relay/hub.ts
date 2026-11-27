@@ -9,7 +9,7 @@ import { logCloud, loggedError } from '#cloud/server/logging'
 import { COLLAB_ACTIONS, MAX_COLLAB_MESSAGE_BYTES, RELAY_SERVER_PEER } from '@open-pencil/collab'
 import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
-import { createAgentToolCalls, mayHostTools } from './agent-tools'
+import { createAgentToolCalls, mayHostTools, toolRequest } from './agent-tools'
 import type { RelayAuthorization } from './authorize'
 import { stampAwareness } from './awareness'
 import {
@@ -560,7 +560,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         )
       const host = hosts.at(-1)
       if (!host) return Promise.resolve({ ok: false, failure: 'editor_not_open' })
-      return agentTools.call(host, call)
+      return agentTools.call(host, toolRequest(call))
     },
 
     /** Tells everyone in a document's rooms that its version history changed. */

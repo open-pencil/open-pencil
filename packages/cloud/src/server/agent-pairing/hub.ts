@@ -1,4 +1,5 @@
 import {
+  AGENT_PAIRING_COMMANDS,
   agentPairingId,
   createRelayClientAssembler,
   decodeRelayClientFrame,
@@ -7,7 +8,12 @@ import {
   type AgentToolCall,
   type AgentToolOutcome
 } from '#cloud/contract'
-import { createAgentToolCalls } from '#cloud/server/collaboration/relay/agent-tools'
+import {
+  createAgentToolCalls,
+  mcpAgent,
+  toolRequest,
+  type AgentToolRequest
+} from '#cloud/server/collaboration/relay/agent-tools'
 import type { RelayConnection, RelaySocket } from '#cloud/server/collaboration/relay/connection'
 import { send } from '#cloud/server/collaboration/relay/room'
 import * as v from 'valibot'
@@ -63,6 +69,14 @@ export type AgentPairingHubOptions = {
   toolTimeoutMs?: number
   /** How long a call waits for a tab of its pairing to offer when none has. */
   editorWaitMs?: number
+}
+
+const PAIRING_COMMANDS: ReadonlySet<string> = new Set(AGENT_PAIRING_COMMANDS)
+
+/** A paired agent's call as the local MCP server sends it: one of its document commands, or a tool. */
+function pairedRequest(call: AgentToolCall): AgentToolRequest {
+  if (!PAIRING_COMMANDS.has(call.name)) return toolRequest(call)
+  return { command: call.name, args: { ...call.args, agent: mcpAgent(call.agent) } }
 }
 
 /**
@@ -214,7 +228,7 @@ export function createAgentPairingHub(options: AgentPairingHubOptions) {
     async call(pairing: string, call: AgentToolCall): Promise<AgentToolOutcome> {
       const host = hostOf(pairing) ?? (await offerOf(pairing))
       if (!host) return { ok: false, failure: 'editor_not_open' }
-      return calls.call(host, call)
+      return calls.call(host, pairedRequest(call))
     },
 
     /** Closes every paired tab, as the runtime shuts down. */

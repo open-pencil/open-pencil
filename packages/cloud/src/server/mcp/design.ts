@@ -1,4 +1,4 @@
-import type { AgentToolCall, AgentToolOutcome } from '#cloud/contract'
+import type { AgentPairingCommand, AgentToolCall, AgentToolOutcome } from '#cloud/contract'
 import { scopesAllow } from '#cloud/server/tokens'
 import type { McpServer } from '@modelcontextprotocol/server'
 import { omit } from 'es-toolkit/object'
@@ -110,7 +110,7 @@ const PAIRED_DOCUMENT_TOOLS = [
     description: 'Show an open document in the paired OpenPencil, and a page of it when named.',
     input: v.object({ document_id: v.string(), page_id: v.optional(v.string()) })
   }
-]
+] satisfies { name: AgentPairingCommand; description: string; input: v.GenericSchema }[]
 
 /** Runs a design tool in the editor tab paired with the token. */
 export type RunPairedTool = (call: Omit<AgentToolCall, 'agent'>) => Promise<AgentToolOutcome>
