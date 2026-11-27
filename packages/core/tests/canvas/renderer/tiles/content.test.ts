@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, mock, test } from 'bun:test'
 import {
   color,
   createGridScene,
+  idleRenderer,
   isPending,
   pixelAt,
   renderFramesWhile,
@@ -189,6 +190,172 @@ describe('tile page content changes', () => {
       expect(moved.covered).toBe(true)
       expect(rgbAt(30, 430)).toEqual([255, 255, 255])
       expect(rgbAt(230, 430)).toEqual([255, 0, 0])
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  /**
+   * One frame filling the viewport, a single chunk of few layers, holding a square in the top
+   * left tile and another in the bottom right one.
+   */
+  function frameScene(frame: Parameters<SceneGraph['createNode']>[2] = {}) {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    const holder = graph.createNode('FRAME', page.id, {
+      x: 0,
+      y: 0,
+      width: 1280,
+      height: 800,
+      fills: color(1, 1, 1),
+      ...frame
+    })
+    const square = (x: number, y: number) =>
+      graph.createNode('RECTANGLE', holder.id, {
+        x,
+        y,
+        width: 80,
+        height: 80,
+        fills: color(0.2, 0.4, 0.8)
+      })
+    const near = square(40, 40)
+    square(1100, 600)
+    const { surface, renderer } = idleRenderer(ck, page.id)
+    const rgbAt = (x: number, y: number) => pixelAt(ck, surface, x, y).slice(0, 3)
+    return { graph, surface, renderer, pageId: page.id, holder, near, rgbAt }
+  }
+
+  function tilesRendered(result: ReturnType<SkiaRenderer['tiledScene']['renderFrame']>) {
+    return result.metrics.interruptibleCompleted + result.metrics.mandatoryCompleted
+  }
+
+  test('a layer changed inside a frame redraws only its tiles, not the whole frame', () => {
+    const { graph, surface, renderer, pageId, near, rgbAt } = frameScene()
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+      const farTile = { pageId, level: 1, x: 2, y: 1 }
+
+      graph.updateNode(near.id, { fills: color(1, 0, 0) })
+      controller.invalidateNode(near.id, graph)
+      const changed = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(changed)).toBe(1)
+      expect(controller.isRendered(farTile)).toBe(true)
+      expect(rgbAt(80, 80)).toEqual([255, 0, 0])
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('a layer moved inside a frame redraws where it was and where it went', () => {
+    const { graph, surface, renderer, near, rgbAt } = frameScene()
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+
+      graph.updateNode(near.id, { x: 600 })
+      controller.invalidateNode(near.id, graph)
+      // A second change before the next frame still redraws where the tiles last drew it.
+      graph.updateNode(near.id, { x: 640 })
+      controller.invalidateNode(near.id, graph)
+      const moved = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(moved)).toBe(2)
+      expect(rgbAt(80, 80)).toEqual([255, 255, 255])
+      expect(rgbAt(680, 80)).toEqual([51, 102, 204])
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test("a frame's shadow, cast from its layers, redraws the whole frame when one changes", () => {
+    const { graph, surface, renderer, near } = frameScene({
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 0, y: 4 },
+          radius: 8,
+          spread: 0,
+          visible: true
+        }
+      ]
+    })
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+
+      graph.updateNode(near.id, { x: 600 })
+      controller.invalidateNode(near.id, graph)
+      const moved = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(moved)).toBe(6)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('a mask redraws the whole frame when it changes, as it clips the layers above it', () => {
+    const { graph, surface, renderer, near } = frameScene()
+    graph.updateNode(near.id, { isMask: true })
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+
+      graph.updateNode(near.id, { x: 600 })
+      controller.invalidateNode(near.id, graph)
+      const moved = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(moved)).toBe(6)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('a mask hidden directly redraws the whole frame, as it no longer clips', () => {
+    const { graph, surface, renderer, near } = frameScene()
+    graph.updateNode(near.id, { isMask: true })
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+
+      graph.updateNode(near.id, { visible: false })
+      controller.invalidateNode(near.id, graph)
+      const hidden = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(hidden)).toBe(6)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('a frame drawn as one past the split size redraws whole, without recording its layers', () => {
+    const { graph, surface, renderer, holder, near } = frameScene({ opacity: 0.9 })
+    for (let index = 0; index < 40; index++) {
+      graph.createNode('RECTANGLE', holder.id, {
+        x: 300 + (index % 10) * 20,
+        y: 300 + Math.floor(index / 10) * 20,
+        width: 10,
+        height: 10,
+        fills: color(0.5, 0.5, 0.5)
+      })
+    }
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+
+      graph.updateNode(near.id, { fills: color(1, 0, 0) })
+      controller.invalidateNode(near.id, graph)
+      const changed = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(changed)).toBe(6)
     } finally {
       controller.destroy()
       renderer.destroy()

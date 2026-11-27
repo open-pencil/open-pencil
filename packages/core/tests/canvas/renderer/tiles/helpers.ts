@@ -26,16 +26,24 @@ export function createGridScene(ck: CanvasKit) {
       fills: color(0.2, 0.4, 0.8)
     })
   }
+  return { graph, ...idleRenderer(ck, page.id), pageId: page.id }
+}
+
+/**
+ * An idle renderer over a 1280 × 800 viewport at zoom 1 and DPR 1 showing `pageId` on white:
+ * three columns of two 512px tiles.
+ */
+export function idleRenderer(ck: CanvasKit, pageId: string) {
   const surface = expectDefined(ck.MakeSurface(1280, 800), 'scheduling surface')
   const renderer = new SkiaRenderer(ck, surface)
-  renderer.pageId = page.id
+  renderer.pageId = pageId
   renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
   renderer.viewportWidth = 1280
   renderer.viewportHeight = 800
   renderer.dpr = 1
   renderer.zoom = 1
   renderer.navigationPhase = 'idle'
-  return { graph, surface, renderer, pageId: page.id }
+  return { surface, renderer }
 }
 
 /** The red, green, blue, and alpha of the surface's pixel at `x`, `y`, after a flush. */

@@ -89,6 +89,35 @@ export function nodeRequiresAtomicChunk(graph: SceneGraph, node: SceneNode): boo
   return isolated || hasMasks
 }
 
+/**
+ * Whether a change to `node`, inside the subtree chunk rooted at `rootId`, draws only where the
+ * layer itself draws. A mask clips the layers above it, hidden or not, as the change may be what
+ * hid it; a boolean operation draws its result from its operands; a container's shadows and blurs are cast from what its children draw. Under none
+ * of them, the rest of the chunk draws as before, so only the layer's own bounds change.
+ */
+export function changeStaysWithinLayer(
+  graph: SceneGraph,
+  node: SceneNode,
+  rootId: string
+): boolean {
+  if (node.id === rootId || node.isMask) return false
+  const seen = new Set<string>()
+  let parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  while (parent && !seen.has(parent.id)) {
+    seen.add(parent.id)
+    if (
+      parent.type === 'BOOLEAN_OPERATION' ||
+      parent.effects.some((effect) => effect.visible) ||
+      parent.childIds.some((childId) => graph.getNode(childId)?.isMask === true)
+    ) {
+      return false
+    }
+    if (parent.id === rootId) return true
+    parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
+  }
+  return false
+}
+
 export function shouldSplit(graph: SceneGraph, node: SceneNode, descendantCount: number): boolean {
   return (
     node.childIds.length > 0 &&

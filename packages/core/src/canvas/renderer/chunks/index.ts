@@ -17,7 +17,7 @@ import {
   subtreeBounds
 } from './build'
 
-export { nodeRequiresAtomicChunk } from './build'
+export { changeStaysWithinLayer, nodeRequiresAtomicChunk, subtreeBounds } from './build'
 export type {
   RenderChunk,
   RenderChunkBuildStats,

@@ -1,10 +1,13 @@
+import { compact } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/std/arrays'
 
-import type {
-  RenderChunk,
-  RenderChunkIndex,
-  RenderChunkPictureCache
+import {
+  subtreeBounds,
+  type RenderChunk,
+  type RenderChunkIndex,
+  type RenderChunkPictureCache
 } from '#core/canvas/renderer/chunks'
 
 import type { TileImageCache } from './cache'
@@ -13,10 +16,15 @@ import type { TileWorldBounds } from './geometry'
 /** Structural changes a frame applies one subtree at a time; more rebuild the whole page. */
 const MAX_INCREMENTAL_STRUCTURE_CHANGES = 32
 
-/** A layer that changed, with the bounds of the chunks that drew it before the change. */
+/**
+ * A layer that changed, with where it was drawn before the change: the bounds of the chunks that
+ * drew it, or, when `layerOnly`, its own bounds inside the one chunk that holds it, as nothing
+ * between it and that chunk's root paints outside it.
+ */
 export interface PendingInvalidation {
   nodeId: string
   previousBounds: TileWorldBounds[]
+  layerOnly: boolean
 }
 
 /** A layer added, removed, or moved, with the parent that reported it. */
@@ -64,7 +72,9 @@ export function applyInvalidations(
     const chunks = index.getChunksDependingOnNode(invalidation.nodeId)
     for (const chunk of chunks) pictureCache.invalidate(chunk.id)
     for (const chunk of chunks) index.updateNode(graph, chunk.nodeId)
-    const after = index.getChunksDependingOnNode(invalidation.nodeId)
+    const after = invalidation.layerOnly
+      ? compact([subtreeBounds(graph, invalidation.nodeId)])
+      : index.getChunksDependingOnNode(invalidation.nodeId)
     for (const bounds of [...before, ...after]) invalidateTiles(page, bounds, contentGeneration)
   }
 }
@@ -98,7 +108,7 @@ export function applyStructureChanges(
     else if (parentId) changed = index.pruneUnder(graph, pageId, parentId)
     if (!changed) return false
     reordered ||= changed.reordered === true
-    for (const chunk of changed.removed) pictureCache.invalidate(chunk.id)
+    for (const chunk of changed.removed) pictureCache.forget(chunk.id)
     for (const chunk of changed.removed) invalidateTiles(page, chunk, contentGeneration)
     for (const chunk of changed.added) invalidateTiles(page, chunk, contentGeneration)
   }
