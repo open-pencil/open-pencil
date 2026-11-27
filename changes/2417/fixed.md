@@ -1,0 +1,1 @@
+- Text layers are named by their text and follow it until renamed, as in Figma, so layers the AI makes no longer all read "Text" (#2417).
