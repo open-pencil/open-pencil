@@ -29,7 +29,7 @@ Zawartość kart „Design”, „Kod”, „AI” i „Sprawdź” zależy od z
 - **Układ:** ustawienia automatycznego układu.
 - **Eksport:** skala, format PNG/JPG/WEBP/SVG i podgląd.
 - **Kod:** Design JSX i Tailwind JSX dla zaznaczenia; dwukierunkowa edycja Design JSX na żywo aktualizuje kod wraz ze zmianami warstw. Element pod kursorem obrysowuje swoją warstwę na obszarze roboczym, a problemy projektowe są podkreślone przy właściwości, która je powoduje.
-- **Sprawdź:** lint projektu na żywo dla strony lub zaznaczenia: niski kontrast, małe obszary dotykowe, niepowiązane kolory, odstępy spoza skali. Znaczniki problemów widać na obszarze roboczym, a zmienną można powiązać jednym kliknięciem ([Checking Designs](/user-guide/checking-designs)).
+- **Sprawdź:** lint projektu na żywo dla strony lub zaznaczenia: niski kontrast, małe obszary dotykowe, niepowiązane kolory, odstępy spoza skali. Znaczniki problemów widać na obszarze roboczym, a zmienną można powiązać jednym kliknięciem ([Checking Designs](/pl/user-guide/checking-designs)).
 
 ## Renderowanie
 

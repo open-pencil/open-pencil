@@ -29,7 +29,7 @@ Serwer MCP udostępnia Claude Code, Cursorowi, Windsurfowi i każdemu klientowi 
   <SdkCard title="Opis JSX projektu" to="/reference/design-authoring" description="Co akceptuje JSX projektu." />
 </SdkCardGroup>
 
-Jeśli wolisz używać agenta w aplikacji, zobacz [Czat AI](/user-guide/ai-chat) i [Agenci programistyczni](/user-guide/coding-agents).
+Jeśli wolisz używać agenta w aplikacji, zobacz [Czat AI](/pl/user-guide/ai-chat) i [Agenci programistyczni](/pl/user-guide/coding-agents).
 
 ## Własny edytor
 
