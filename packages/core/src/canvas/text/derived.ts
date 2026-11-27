@@ -404,7 +404,7 @@ export function drawDerivedText(
       glyphs,
       r.fontGeneration
     )
-    drawTextDecorations(r.ck, canvas, rects, r.fillPaint, r.documentColorSpace)
+    drawTextDecorations(r.ck, canvas, rects, r.fillPaint, r.documentColorSpace, node.fills)
   }
   return true
 }

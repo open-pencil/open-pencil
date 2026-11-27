@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { type Fill, SceneGraph } from '@open-pencil/scene-graph'
+import { type Fill, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
@@ -55,7 +55,11 @@ const missingImage: Fill = {
 }
 
 /** The text drawn on a transparent canvas, as unpremultiplied RGBA. */
-function draw(fills: Fill[], rangeFills?: Fill[]): ArrayLike<number> {
+function draw(
+  fills: Fill[],
+  rangeFills?: Fill[],
+  props: Partial<SceneNode> = {}
+): ArrayLike<number> {
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')
   graph.createNode('TEXT', page.id, {
@@ -65,7 +69,8 @@ function draw(fills: Fill[], rangeFills?: Fill[]): ArrayLike<number> {
     width: WIDTH,
     height: HEIGHT,
     fills,
-    styleRuns: rangeFills ? [{ ...RANGE, style: { fills: rangeFills } }] : []
+    styleRuns: rangeFills ? [{ ...RANGE, style: { fills: rangeFills } }] : [],
+    ...props
   })
   renderer.pageId = page.id
   const canvas = renderer.surface.getCanvas()
@@ -112,11 +117,18 @@ function rangeStart(rgba: ArrayLike<number>): number {
   return best.start + Math.floor(best.length / 2)
 }
 
-/** The largest difference of any channel between the two images, over columns `from`–`to`. */
-function difference(a: ArrayLike<number>, b: ArrayLike<number>, from: number, to: number): number {
+interface Region {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+/** The largest difference of any channel between the two images over `region`. */
+function difference(a: ArrayLike<number>, b: ArrayLike<number>, region: Region): number {
   let largest = 0
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = from; x < to; x++) {
+  for (let y = region.top; y < region.bottom; y++) {
+    for (let x = region.left; x < region.right; x++) {
       for (let channel = 0; channel < 4; channel++) {
         const index = (y * WIDTH + x) * 4 + channel
         largest = Math.max(largest, Math.abs((a[index] ?? 0) - (b[index] ?? 0)))
@@ -130,13 +142,45 @@ function difference(a: ArrayLike<number>, b: ArrayLike<number>, from: number, to
  * Expects the text with `rangeFills` on its second word to draw that word as the text whose layer
  * has `rangeFills` does, and its first word as the text whose layer has `fills` does.
  */
-function expectRangeDrawnAsLayer(fills: Fill[], rangeFills: Fill[]): void {
-  const ranged = draw(fills, rangeFills)
-  const layer = draw(fills)
-  const range = draw(rangeFills)
+function expectRangeDrawnAsLayer(
+  fills: Fill[],
+  rangeFills: Fill[],
+  props: Partial<SceneNode> = {}
+): void {
+  const ranged = draw(fills, rangeFills, props)
+  const layer = draw(fills, undefined, props)
+  const range = draw(rangeFills, undefined, props)
   const split = rangeStart(layer)
-  expect(difference(ranged, layer, 0, split)).toBeLessThanOrEqual(CHANNEL_TOLERANCE)
-  expect(difference(ranged, range, split, WIDTH)).toBeLessThanOrEqual(CHANNEL_TOLERANCE)
+  const rows = { top: 0, bottom: HEIGHT }
+  expect(difference(ranged, layer, { left: 0, right: split, ...rows })).toBeLessThanOrEqual(
+    CHANNEL_TOLERANCE
+  )
+  expect(difference(ranged, range, { left: split, right: WIDTH, ...rows })).toBeLessThanOrEqual(
+    CHANNEL_TOLERANCE
+  )
+}
+
+/** The first row below every glyph of an undecorated text: an underline is all that is under it. */
+function belowGlyphs(fills: Fill[]): number {
+  const rgba = draw(fills)
+  for (let y = HEIGHT - 1; y >= 0; y--) {
+    for (let x = 0; x < WIDTH; x++) if ((rgba[(y * WIDTH + x) * 4 + 3] ?? 0) > 0) return y + 1
+  }
+  return 0
+}
+
+/**
+ * Expects the underline of the text whose second word has `rangeFills` to draw as the underline
+ * of the text whose layer has `rangeFills` does: one piece, which the range's last character
+ * ends, in all of that character's paints, as Figma draws it.
+ */
+function expectUnderlineInRangePaints(fills: Fill[], rangeFills: Fill[]): void {
+  const underlined = { textDecoration: 'UNDERLINE' as const }
+  const ranged = draw(fills, rangeFills, underlined)
+  const range = draw(rangeFills, undefined, underlined)
+  const below = { left: 0, right: WIDTH, top: belowGlyphs(rangeFills), bottom: HEIGHT }
+  expect(difference(range, draw(rangeFills), below)).toBeGreaterThan(CHANNEL_TOLERANCE)
+  expect(difference(ranged, range, below)).toBeLessThanOrEqual(CHANNEL_TOLERANCE)
 }
 
 describe('style runs with fills of their own', () => {
@@ -167,5 +211,28 @@ describe('style runs with fills of their own', () => {
 
   test('a range of one solid fill on a solid layer takes its colour', () => {
     expectRangeDrawnAsLayer([black], [green])
+  })
+
+  test("a keycap's frame takes its range's fills", () => {
+    // The range covers the keycap: a digit and the combining mark that frames it.
+    expectRangeDrawnAsLayer([black], [gradient()], { text: 'MM 1\u20E3' })
+  })
+})
+
+describe('decorations of style runs with fills of their own', () => {
+  test('an underline ending in a gradient range spans the layer in its gradient', () => {
+    expectUnderlineInRangePaints([black], [gradient()])
+  })
+
+  test("an underline takes a range's stacked fills", () => {
+    expectUnderlineInRangePaints([black], [green, gradient(0.5)])
+  })
+
+  test('an underline ending in a solid range on a gradient layer takes its colour', () => {
+    expectUnderlineInRangePaints([gradient()], [green])
+  })
+
+  test('an underline in the layer fills is drawn in each of them, once', () => {
+    expectUnderlineInRangePaints([black], [gradient(), solid(1, 0, 0, 0.5)])
   })
 })

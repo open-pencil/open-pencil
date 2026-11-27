@@ -70,15 +70,10 @@ function textStyleOverrideToKiwi(
   if (style.lineHeight !== undefined) override.lineHeight = figmaLineHeight(style.lineHeight)
   applyTextDecorationOverrideFields(override, style, fillToKiwiPaint)
   if (style.textCase) override.textCase = style.textCase
-  let exportedFills: SceneNode['fills'] | undefined
-  if (style.fills?.length) {
-    exportedFills = style.fills
-  } else if (hasFillVariableBinding(style)) {
-    exportedFills = node.fills
-  }
-  if (exportedFills && exportedFills.length > 0) {
-    override.fillPaints = exportedFills.map(fillToKiwiPaint)
-  }
+  // An empty list stays: the range draws nothing, as Figma stores a range whose fills were removed.
+  const exportedFills =
+    style.fills ?? (hasFillVariableBinding(style) && node.fills.length > 0 ? node.fills : undefined)
+  if (exportedFills) override.fillPaints = exportedFills.map(fillToKiwiPaint)
   return override
 }
 

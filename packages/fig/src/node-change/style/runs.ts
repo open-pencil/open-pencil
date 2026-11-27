@@ -98,10 +98,8 @@ function convertStyleOverride(override: NodeChange, text: NodeChange): Character
     style.lineHeight = convertLineHeight(override.lineHeight)
   }
   applyTextDecorationOverride(style, override)
-  if (override.fillPaints) {
-    const fills = convertFills(override.fillPaints)
-    if (fills.length > 0) style.fills = fills
-  }
+  // An empty list is the range's own: Figma draws a range whose fills were all removed as nothing.
+  if (override.fillPaints) style.fills = convertFills(override.fillPaints)
   applyRangeReferences(style, override, text)
   return style
 }
