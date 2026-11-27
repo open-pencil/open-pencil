@@ -372,6 +372,7 @@ export function cloneNodeProps(
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null,
     targetAspectRatio: src.targetAspectRatio ? { ...src.targetAspectRatio } : null,
     slide: structuredClone(src.slide),
+    animation: structuredClone(src.animation),
     connectorStart: src.connectorStart ? copyConnectorEndpoint(src.connectorStart) : null,
     connectorEnd: src.connectorEnd ? copyConnectorEndpoint(src.connectorEnd) : null,
     connectorControlPoints: structuredClone(src.connectorControlPoints),

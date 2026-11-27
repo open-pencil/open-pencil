@@ -13,6 +13,24 @@ function element(node: DesignNode | undefined): DesignElement {
 }
 
 describe('DOM projection', () => {
+  test('a root its host places keeps its size but not its place in its parent', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const slide = graph.createNode('FRAME', page.id, { width: 1920, height: 1080 })
+    const toggle = graph.createNode('FRAME', slide.id, { x: 160, y: 420, width: 44, height: 24 })
+    graph.createNode('ELLIPSE', toggle.id, { x: 22, y: 2, width: 20, height: 20 })
+
+    const placed = element(sceneNodeToDesignDocument(graph, toggle.id).children[0])
+    expect(placed.inlineStyle).toMatchObject({ position: 'absolute', left: '160px', top: '420px' })
+    const root = element(
+      sceneNodeToDesignDocument(graph, toggle.id, { placeRoots: false }).children[0]
+    )
+    expect(root.inlineStyle).toMatchObject({ position: 'relative', width: '44px', height: '24px' })
+    expect(root.inlineStyle?.left).toBeUndefined()
+    expect(root.inlineStyle?.top).toBeUndefined()
+    expect(element(root.children[0]).inlineStyle).toMatchObject({ left: '22px', top: '2px' })
+  })
+
   test('a frame without auto layout places its layers at their coordinates', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

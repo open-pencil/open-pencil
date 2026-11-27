@@ -57,6 +57,11 @@ function collectAncestors(
   }
 }
 
+/** A style Figma deleted: it keeps the record, but no longer lists or applies the style. */
+export function isDeletedStyle(record: NodeChange): boolean {
+  return !!record.styleType && record.isSoftDeleted === true
+}
+
 /** Plan reachability without deleting records or expanding unrelated internal siblings. */
 export function collectSceneDependencies(
   changes: readonly NodeChange[],
@@ -124,6 +129,8 @@ export function collectSceneDependencies(
       else missingIds.add(id)
       continue
     }
+    // Figma keeps a deleted style's record for the layers that used it, which show detached.
+    if (isDeletedStyle(node)) continue
     contentIds.add(id)
     const record = whole(node)
     const components = componentDependencies(record, resolveReference, (key) =>

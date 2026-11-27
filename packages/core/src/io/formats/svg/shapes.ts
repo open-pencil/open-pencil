@@ -1,5 +1,6 @@
 import type { Fill, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
+import { drawsStroke } from '@open-pencil/scene-graph/geometry'
 import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { looseSegments, regionSVGPaths } from '@open-pencil/scene-graph/vector-network'
 import { appendAll } from '@open-pencil/std/arrays'
@@ -18,11 +19,10 @@ import {
   geometryBlobToSVGPath,
   makePolygonPoints,
   round,
-  roundedPolygonPath,
-  shapeWithTextOutlinePath
+  roundedPolygonPath
 } from './paths'
 import { fillOutlines, outlineElements } from './regions'
-import { shapeWithTextDetailElements } from './strokes'
+import { shapeWithTextElements } from './shape-with-text'
 
 /**
  * A vector network's paths: its regions as they are traced, and its open segments as the canvas
@@ -124,7 +124,9 @@ export function nodeShapeElements(
 
     case 'LINE': {
       // Where the canvas strokes it: to one side of the line, with its caps inside its length.
-      const stroke = node.strokes.find(isDrawnPaint)
+      const stroke = node.strokes.find(
+        (stroke) => isDrawnPaint(stroke) && drawsStroke(node, stroke)
+      )
       const {
         network,
         from: start,
@@ -185,20 +187,4 @@ export function boxOutlineElement(
   // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
   const radius = round(Math.min(node.cornerRadius, node.width / 2, node.height / 2))
   return svg('rect', { width, height, rx: radius, ry: radius, ...attrs })
-}
-
-/**
- * A FigJam shape's outline, and its inner lines, such as a database's front rim, stroked as the
- * canvas strokes them: at the stroke's own weight, ending where the outline does.
- */
-function shapeWithTextElements(
-  node: SceneNode,
-  common: Record<string, string | number | undefined>,
-  strokeAttrs: Record<string, string | number | undefined>,
-  ctx: SVGExportContext
-): SVGNode[] {
-  return [
-    svg('path', { d: shapeWithTextOutlinePath(node), ...common }),
-    ...shapeWithTextDetailElements(node, strokeAttrs, ctx)
-  ]
 }

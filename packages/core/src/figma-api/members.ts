@@ -23,7 +23,6 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import type { SlideTransition } from '@open-pencil/scene-graph/slides'
 
 import type { TextRangeMethods } from './accessors/text/ranges'
 import type { VariableNodeMembers } from './accessors/variables'
@@ -35,6 +34,7 @@ import type { FigmaInstanceOverride } from './overrides'
 import type { FigmaPaint } from './paints'
 import type { PluginDataMethods } from './plugin-data'
 import type { FigmaNodeProxy } from './proxy'
+import type { PluginSlideTransition } from './slides'
 import type { FigmaLetterSpacing, FigmaLineHeight } from './text'
 import type { FigmaDecorationColor } from './text/style'
 import type { FigmaTransform } from './types'
@@ -166,8 +166,8 @@ export abstract class FigmaNodeMembers {
   declare shapeType: ShapeWithTextType | undefined
   /** On slides alone, as in Figma. */
   declare isSkippedSlide: boolean | undefined
-  declare getSlideTransition: () => SlideTransition
-  declare setSlideTransition: (transition: SlideTransition) => void
+  declare getSlideTransition: () => PluginSlideTransition
+  declare setSlideTransition: (transition: PluginSlideTransition) => void
   /** On pages alone, as in Figma. */
   declare loadAsync: () => Promise<void>
   declare resetOverrides: () => void

@@ -4,10 +4,24 @@ import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-/** The attributes of the `<line>` an SVG export writes for a line with a 6 px black stroke. */
+const blackStroke = (stroke: Partial<Stroke>): Stroke => ({
+  type: 'SOLID',
+  color: { r: 0, g: 0, b: 0, a: 1 },
+  opacity: 1,
+  visible: true,
+  weight: 6,
+  align: 'CENTER',
+  ...stroke
+})
+
+/**
+ * The attributes of the `<line>` an SVG export writes for a line with a 6 px black stroke, drawn
+ * over `under`.
+ */
 function exportedLine(
   props: Partial<SceneNode>,
-  stroke: Partial<Stroke> = {}
+  stroke: Partial<Stroke> = {},
+  under: Partial<Stroke>[] = []
 ): Map<string, string> {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
@@ -16,17 +30,7 @@ function exportedLine(
     height: 0,
     strokeWeight: 6,
     ...props,
-    strokes: [
-      {
-        type: 'SOLID',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        opacity: 1,
-        visible: true,
-        weight: 6,
-        align: 'CENTER',
-        ...stroke
-      }
-    ]
+    strokes: [...under.map(blackStroke), blackStroke(stroke)]
   })
   const svg = expectDefined(renderNodesToSVG(graph, page, [line.id]), 'SVG output')
   const element = expectDefined(/<line\b([^>]*)>/.exec(svg), 'line element')[1]
@@ -43,6 +47,13 @@ describe('a line exported to SVG', () => {
     expect(line.get('x1')).toBe('3')
     expect(line.get('x2')).toBe('297')
     expect(line.get('y1')).toBe('-3')
+  })
+
+  test('takes its ends from the stroke that draws, past a zero-weight one', () => {
+    const line = exportedLine({}, { cap: 'ROUND' }, [{ weight: 0, cap: 'NONE' }])
+    expect(line.get('stroke-width')).toBe('6')
+    expect(line.get('x1')).toBe('3')
+    expect(line.get('x2')).toBe('297')
   })
 
   test('stretches its dashes to whole periods, with half a dash at each end', () => {

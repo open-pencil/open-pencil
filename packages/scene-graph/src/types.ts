@@ -5,7 +5,7 @@ import type { CanvasGuide } from './guides'
 import type { InstanceOverrideState } from './instances/overrides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
 import type { ShapeWithTextType } from './shape-with-text/kinds'
-import type { SlideSettings } from './slides/types'
+import type { LayerAnimation, SlideSettings } from './slides/types'
 
 export interface SceneGraphEvents {
   'node:created': (node: SceneNode) => void
@@ -961,6 +961,8 @@ export interface SceneNode {
   shapeWithTextType: ShapeWithTextType
   /** What a slide keeps besides its layers; null on other layers. */
   slide: SlideSettings | null
+  /** How the layer comes onto or leaves the slide it is on while presenting; null for none. */
+  animation: LayerAnimation | null
   /** The height a shape with text was given; it grows past it to fit its label. 0 is unset. */
   shapeUserHeight: number
   /**

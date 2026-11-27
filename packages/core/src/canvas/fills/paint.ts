@@ -16,7 +16,7 @@ import {
 } from '#core/canvas/images/sampling'
 import { drawnColor } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
-import { drawOutline, withNodeOutline } from '#core/canvas/shapes'
+import { drawOutline, makeShapeWithTextFillCut, withNodeOutline } from '#core/canvas/shapes'
 
 import { makeDiamondGradient } from './gradients/diamond'
 
@@ -98,7 +98,16 @@ function markShaded(r: SkiaRenderer, paint: Paint): void {
 export function drawNodeFill(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   if (node.type === 'TEXT') r.renderText(canvas, node, fill)
   else if (node.type !== 'LINE') {
+    const cut = makeShapeWithTextFillCut(r, node)
+    if (cut) {
+      canvas.save()
+      canvas.clipPath(cut, r.ck.ClipOp.Difference, true)
+    }
     withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.fillPaint))
+    if (cut) {
+      canvas.restore()
+      cut.delete()
+    }
   }
 }
 

@@ -1,0 +1,1 @@
+- Opening and saving `.fig` files keeps a text style's font style, font weight, paragraph spacing, and paragraph indent variable bindings (#2384).

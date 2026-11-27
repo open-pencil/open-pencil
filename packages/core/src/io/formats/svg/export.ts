@@ -6,6 +6,7 @@ import {
   localTransformFromWorld
 } from '@open-pencil/scene-graph/coordinate'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
+import { drawsStroke } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { exportBounds } from '#core/io/formats/raster'
@@ -34,8 +35,9 @@ import { booleanOutlines, type SVGBooleanOutlines } from './boolean/outline'
 import { renderMaskedChildren } from './masks'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
+import { shapeWithTextDetailElements } from './shape-with-text'
 import { boxOutlineElement, nodeShapeElements, vectorShapeElements } from './shapes'
-import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
+import { alignedStroke, alignedStrokeElement } from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
 
@@ -216,7 +218,9 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
-  const visibleStrokes = node.strokes.filter(isDrawnPaint)
+  const visibleStrokes = node.strokes.filter(
+    (stroke) => isDrawnPaint(stroke) && drawsStroke(node, stroke)
+  )
   const tint = ctx.tint?.(node) ?? []
   const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
   const fill = exportedFill(ownFill, node, ctx)

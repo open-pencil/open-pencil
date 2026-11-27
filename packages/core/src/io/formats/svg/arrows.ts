@@ -10,6 +10,7 @@ import {
   triangleCapPoints,
   type ArrowEndpoint
 } from '@open-pencil/scene-graph/arrow-caps'
+import { drawsStroke } from '@open-pencil/scene-graph/geometry'
 import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { addOpenSegmentsToPath, svgPathSink } from '@open-pencil/scene-graph/paths'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
@@ -61,12 +62,12 @@ const NO_STROKE = {
  * the line pulled back under its heads, with any fill kept to the whole path.
  */
 export function openPathElements(
-  node: Pick<SceneNode, 'cornerRadius' | 'strokeCap' | 'strokes'>,
+  node: Pick<SceneNode, 'type' | 'cornerRadius' | 'strokeCap' | 'strokes'>,
   network: VectorNetwork,
   common: Attrs,
   segmentsOf: SegmentsOf = allSegments
 ): SVGNode[] {
-  const stroke = node.strokes.find(isDrawnPaint)
+  const stroke = node.strokes.find((stroke) => isDrawnPaint(stroke) && drawsStroke(node, stroke))
   const d = openStrokePath(node, network, stroke, segmentsOf)
   const whole = openStrokePath(node, network, undefined, segmentsOf)
   if (d === whole) return [svg('path', { d, ...common })]
@@ -137,12 +138,12 @@ export function arrowHeadElements(
   )
 }
 
-/** The heads a vector's first visible stroke puts on its open ends. */
+/** The heads a vector's first stroke that draws puts on its open ends. */
 export function vectorArrowHeads(
-  node: Pick<SceneNode, 'strokeCap' | 'strokes'>,
+  node: Pick<SceneNode, 'type' | 'strokeCap' | 'strokes'>,
   network: VectorNetwork,
   strokeAttrs: Attrs
 ): SVGNode[] {
-  const stroke = node.strokes.find(isDrawnPaint)
+  const stroke = node.strokes.find((stroke) => isDrawnPaint(stroke) && drawsStroke(node, stroke))
   return arrowHeadElements(node, network, stroke, strokeAttrs)
 }

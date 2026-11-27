@@ -9,7 +9,7 @@ import {
   triangleCapPoints
 } from '@open-pencil/scene-graph/arrow-caps'
 import { nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
-import { strokeAlignShare } from '@open-pencil/scene-graph/geometry'
+import { drawsStroke, strokeAlignShare } from '@open-pencil/scene-graph/geometry'
 import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import { isFigmaShaderPaint } from '@open-pencil/scene-graph/paints'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
@@ -298,7 +298,8 @@ export function forVisibleStrokes(
   draw: (stroke: Stroke, color: Color) => void
 ): void {
   for (const stroke of node.strokes) {
-    if (!stroke.visible) continue
+    // Skia would stroke a zero weight as a hairline.
+    if (!drawsStroke(node, stroke)) continue
     const draws = applyStrokeShader(r, stroke, node, graph)
     setStrokeBlendMode(r, stroke.blendMode)
     try {
