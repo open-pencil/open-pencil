@@ -9,8 +9,12 @@ import { isRecord, type UnknownRecord } from '@open-pencil/std/records'
 
 import { isToolError } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
-import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
-import { resolveAutomationTarget, stripAutomationTargetArgs } from '@/app/automation/bridge/target'
+import {
+  prepareAutomationTarget,
+  resolveAutomationTarget,
+  stripAutomationTargetArgs
+} from '@/app/automation/bridge/target'
+import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/session'
 
 /** Runs a request on the tab's documents and answers what the command returned. */
@@ -24,22 +28,18 @@ export type RunAgentTool = (
 /** What a room's relay may ask: design tools, the way a local MCP server asks for them. */
 const TOOL_COMMANDS: ReadonlySet<string> = new Set(['tool'])
 
-let handlers: ReturnType<typeof createAutomationCommandHandlers> | null = null
+let handleTool: ReturnType<typeof createAutomationToolHandler> | null = null
 
 /**
- * Runs an app's call as the app runs a local MCP server's `tool` request, once it has found the
- * page: on the page the call names or the one on screen, showing the app as an agent at work,
+ * Runs an app's call with the tool handler a local MCP server's `tool` request runs, once the page
+ * is loaded: on the page the call names or the one on screen, showing the app as an agent at work,
  * its edits one undo step each. It works on the room's own document whatever the call names.
  */
 export const runAgentTool: RunAgentTool = async (store, _command, args, signal) => {
-  handlers ??= createAutomationCommandHandlers(makeFigmaFromStore)
+  handleTool ??= createAutomationToolHandler(makeFigmaFromStore)
   const target = resolveAutomationTarget(store, { page_id: args.page_id })
-  const response = await handlers.handleTargetCommand(
-    target,
-    'tool',
-    stripAutomationTargetArgs(args),
-    signal
-  )
+  await prepareAutomationTarget(target, signal)
+  const response = await handleTool(target, stripAutomationTargetArgs(args), signal)
   const result = isRecord(response) ? response.result : response
   // A tool may answer with its error rather than throw it.
   if (isToolError(result)) throw new Error(errorMessage(result.error))
