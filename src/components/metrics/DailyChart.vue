@@ -12,7 +12,7 @@ import {
 } from 'vccs'
 import { computed } from 'vue'
 
-import { formatCompact, formatCount, formatDay } from '@/app/metrics/format'
+import { formatCompact, formatDay } from '@/app/metrics/format'
 
 import type { Release } from './types'
 
