@@ -1,55 +1,11 @@
-import type {
-  McpServer,
-  RequestPermissionRequest,
-  RequestPermissionResponse,
-  SessionUpdate
-} from '@agentclientprotocol/sdk/unstable'
+import type { McpServer, SessionUpdate } from '@agentclientprotocol/sdk/unstable'
 
-import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
+import { OPEN_PENCIL_MCP_SERVER, type ACPAgentDef } from '@open-pencil/core/constants'
 
 import { buildACPMCPServers } from '@/app/integrations/mcp'
 import { linkChatAgent } from '@/app/integrations/mcp/link'
 
-import { isOwnToolCall, textFromContent } from './events'
-
-/**
- * The options a chat's agent session opens with. Claude's adapter passes them to the Claude Agent
- * SDK, and other agents ignore them. OpenPencil's own tools run without asking each time: their
- * edits are undoable and stay in the document the chat works on, and a bare server name allows
- * every tool on it. Claude Code omits its thinking unless asked, so the chat would show nothing
- * while it thinks; summarized thinking arrives as thought chunks once each stretch of it ends.
- */
-export const AGENT_SESSION_META = {
-  claudeCode: {
-    options: {
-      allowedTools: [`mcp__${OPEN_PENCIL_MCP_SERVER}`],
-      thinking: { type: 'adaptive', display: 'summarized' }
-    }
-  }
-} as const
-
-/**
- * Answers the permission requests of agents that ask before every MCP call, as Cursor does, for
- * OpenPencil's own tools, on the same grounds as `AGENT_SESSION_META`. A request carries only the
- * call's id, so the updates that name the call's server are noted first. Each call is allowed
- * once, which leaves the agent's saved permissions alone.
- */
-export function createOwnToolApproval() {
-  const ownCalls = new Set<string>()
-  return {
-    noteUpdate(update: SessionUpdate) {
-      if (update.sessionUpdate !== 'tool_call' && update.sessionUpdate !== 'tool_call_update')
-        return
-      if (isOwnToolCall(update)) ownCalls.add(update.toolCallId)
-    },
-    /** The answer for a call to OpenPencil's tools; null when the person decides. */
-    answer(request: RequestPermissionRequest): RequestPermissionResponse | null {
-      if (!ownCalls.has(request.toolCall.toolCallId)) return null
-      const allow = request.options.find((option) => option.kind === 'allow_once')
-      return allow ? { outcome: { outcome: 'selected', optionId: allow.optionId } } : null
-    }
-  }
-}
+import { textFromContent } from './events'
 
 /** Whether an agent's session reached OpenPencil's tools; null when the server cannot tell. */
 export type OwnToolsOutcome =
@@ -62,7 +18,6 @@ export interface OwnToolsLink {
   /** The id the agent's MCP session and tool calls carry, which ties them to this chat. */
   chat: string
   mcpServers: McpServer[]
-  meta: typeof AGENT_SESSION_META
   /** Reads an update sent before any prompt, where a failed tool call is a server that failed. */
   noteUpdate(update: SessionUpdate): void
   /** Waits, once the session exists, for the agent to open its MCP session. */
@@ -85,7 +40,6 @@ export async function linkOwnTools(
   return {
     chat: link.chat,
     mcpServers: link.servers,
-    meta: AGENT_SESSION_META,
     noteUpdate(update) {
       if (update.sessionUpdate !== 'tool_call' || update.status !== 'failed') return
       const text = textFromContent(update.content ?? undefined)
@@ -98,4 +52,17 @@ export async function linkOwnTools(
     },
     stop: () => link.stop()
   }
+}
+
+/** The agent never opened its session with OpenPencil's MCP server, so it has no design tools. */
+export function toolsUnreachableError(agentDef: ACPAgentDef, reason: string | null): Error {
+  return new Error(
+    `${agentDef.name} couldn't reach OpenPencil's tools, so your message wasn't sent.` +
+      (reason ? ` ${agentDef.name} reported: ${reason}` : '')
+  )
+}
+
+/** Closes a tools link that opens after the startup gave up, so it does not stay open. */
+export function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
+  linking.then((late) => late.stop()).catch(() => undefined)
 }

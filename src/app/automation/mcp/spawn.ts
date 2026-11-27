@@ -1,18 +1,15 @@
 import { invoke } from '@tauri-apps/api/core'
 import { homeDir } from '@tauri-apps/api/path'
-import { Command } from '@tauri-apps/plugin-shell'
 import { promiseTimeout } from '@vueuse/core'
 import { compact } from 'es-toolkit/array'
+import * as v from 'valibot'
 
-import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { serializeDisabledTools } from '@open-pencil/mcp/tools'
+import { createDeferred } from '@open-pencil/std/async'
 import { errorMessage, toError } from '@open-pencil/std/errors'
-import { randomHex } from '@open-pencil/std/random'
 
-import { decodeTauriStderr } from '@/app/shell/ui'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
-import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
+import { startHostProgram, type HostChild, type HostClose } from '@/app/tauri/host'
 
 import { DEV_MCP_RESTART_PATH, type DevMCPConfiguration } from './dev-control'
 import {
@@ -24,7 +21,6 @@ import {
 import {
   classifySpawnFailure,
   mcpFailure,
-  MCP_EXECUTABLE,
   MCP_INSTALL_TARGET,
   MCPStartupError,
   type MCPFailure
@@ -69,7 +65,8 @@ interface MCPLookup {
 // While no app is attached, the spawned server waits this long for a register
 // or reconnect before closing itself and removing its discovery file. This
 // prevents a server that outlives a crashed/reloaded app from squatting the
-// port forever while still allowing brief renderer reloads (issue #488).
+// port forever while still allowing brief renderer reloads (issue #488). The
+// desktop app passes it as `OPENPENCIL_MCP_APP_TIMEOUT_MS` (`desktop/src/host/program.rs`).
 const MCP_APP_ATTACH_TIMEOUT_MS = 30_000
 // A server started from a cold npm shim can take longer than a few seconds to answer (14.8 s on
 // a Windows VM, issue #1167). The app waits this long for it, leaving the rest of the attach
@@ -88,6 +85,11 @@ export interface MCPStartupTiming {
 const DEFAULT_STARTUP_TIMING: MCPStartupTiming = { earlyExitMs: 250, healthPollMs: 1000 }
 
 let runtimeAutomationAuthToken: string | null = DEV_AUTOMATION_AUTH_TOKEN
+/**
+ * The token agents connect with, when the desktop app runs the server and holds its own token:
+ * the editor gets this one and an app token, never the server's (`desktop/src/host/mcp.rs`).
+ */
+let runtimeClientToken: string | null = null
 let runtimeAutomationStartupError: Error | null = null
 let runtimeAutomationStartupFailure: MCPFailure | null = null
 
@@ -96,6 +98,18 @@ let runtimeAutomationStartupFailure: MCPFailure | null = null
  * this so a missing install, a rejected shell command, or a server that exited
  * is reported instead of a single generic health message.
  */
+/** The token agents connect with, when the desktop app runs the server; see `runtimeClientToken`. */
+export function desktopMCPClientToken(): string | null {
+  return runtimeClientToken
+}
+
+const editorTokensSchema = v.nullable(v.object({ appToken: v.string(), clientToken: v.string() }))
+
+/** The tokens the desktop app made for the server it runs; null while it runs none. */
+async function readMCPTokens(): Promise<v.InferOutput<typeof editorTokensSchema>> {
+  return v.parse(editorTokensSchema, await invoke<unknown>('mcp_tokens'))
+}
+
 export function getAutomationStartupError(): Error | null {
   return runtimeAutomationStartupError
 }
@@ -119,10 +133,14 @@ function rememberStartupError(error: unknown): null {
   return null
 }
 
+/**
+ * The server's health. When the desktop app runs the server, the editor reads it with the client
+ * token, which sees the tools, as its own app token only registers it.
+ */
 export async function readAutomationHealth(
   authToken: string | null = runtimeAutomationAuthToken
 ): Promise<AutomationHealth | null> {
-  return probeAutomationHealth(authToken)
+  return probeAutomationHealth(runtimeClientToken ?? authToken)
 }
 
 /**
@@ -238,69 +256,70 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
   runtimeAutomationStartupFailure = null
   if (import.meta.env.DEV) return configureDevMCP()
   if (!isTauri()) return null
-
-  const existing = await readExistingServerHandle()
-  if (existing) {
-    return existing
-  }
-  // A sandboxed package cannot start the server; one the user runs is still found by
-  // its health check, as in the browser.
-  if (!canRunHostProcesses()) return null
+  // A sandboxed package cannot start the server; one the user runs is still found through its
+  // discovery file, which the desktop app lets such a package read.
+  if (!canRunHostProcesses()) return readExistingServerHandle()
   return launchMCPServer(timing)
+}
+
+type EditorTokens = NonNullable<v.InferOutput<typeof editorTokensSchema>>
+
+/** Forgets the tokens of a server that ended, unless a later server's replaced them already. */
+function forgetDesktopTokens(tokens: EditorTokens | null) {
+  if (!tokens) return
+  if (runtimeAutomationAuthToken === tokens.appToken) runtimeAutomationAuthToken = null
+  if (runtimeClientToken === tokens.clientToken) runtimeClientToken = null
 }
 
 async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServerHandle | null> {
   const lookup = await invoke<MCPLookup>('mcp_lookup')
   if (!lookup.available) return rememberStartupError(missingMCPError(lookup.searched))
 
-  const authToken = mcpAuthenticationEnabled.value ? randomHex(32) : null
-  // Cache only after MCP startup is confirmed healthy.
-
   // Scope file tools to the configured root, defaulting to the user's home.
   // The app bundle directory (Tauri executableDir) is read-only and cannot be
   // used as a safe fallback for open_document, save_document, or export tools.
   const mcpRoot = mcpRootDirectory.value.trim() || (await resolveTauriHomeDir())
-  const resolved = resolvePlatformCommand(MCP_EXECUTABLE)
-  const command = Command.create(resolved.command, resolved.args, {
-    env: {
-      PORT: String(AUTOMATION_HTTP_PORT),
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
-      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
-      OPENPENCIL_MCP_TCP: '1',
-      OPENPENCIL_MCP_ROOT: mcpRoot,
-      OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
-      // Killing the shell wrapper on Windows leaves the server it started running; the app's end
-      // of the pipe closes with it, and the server exits on that.
-      OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1',
-      OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
-      OPENPENCIL_MCP_SCOPE: mcpScope()
-    }
-  })
-
   let startupStderr = ''
-  command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
-    if (startupStderr.length >= MAX_STARTUP_STDERR_LENGTH) return
-    startupStderr += decodeTauriStderr(raw).slice(
-      0,
-      MAX_STARTUP_STDERR_LENGTH - startupStderr.length
-    )
+  // The tokens this launch stored, which its server's end forgets.
+  let owned: EditorTokens | null = null
+  const closed = createDeferred<HostClose>()
+  const childClosed = closed.promise.then(({ code, signal }) => {
+    forgetDesktopTokens(owned)
+    return { code, signal }
   })
-
-  let spawnedToken: string | null = null
-  let child: Awaited<ReturnType<typeof command.spawn>>
-  const childClosed = new Promise<{ code: number | null; signal: number | null }>((resolve) => {
-    command.on('close', (event) => {
-      resolve(event)
-      if (spawnedToken && runtimeAutomationAuthToken === spawnedToken) {
-        runtimeAutomationAuthToken = null
-      }
-    })
-  })
-
+  let child: HostChild
   try {
-    child = await command.spawn()
+    // The desktop app starts the server on its port, with the editor's origin allowed to call it.
+    child = await startHostProgram(
+      {
+        kind: 'mcpServer',
+        tokenlessClients: !mcpAuthenticationEnabled.value,
+        root: mcpRoot,
+        disabledTools: [...disabledMCPTools.value],
+        scope: mcpScope()
+      },
+      {
+        onStderr: (text) => {
+          if (startupStderr.length >= MAX_STARTUP_STDERR_LENGTH) return
+          startupStderr += text.slice(0, MAX_STARTUP_STDERR_LENGTH - startupStderr.length)
+        },
+        onClose: (event) => closed.resolve(event)
+      }
+    )
   } catch (error) {
     return rememberStartupError(error)
+  }
+  // The desktop app made the tokens: the app's registers this editor, and the client's reads the
+  // tools and connects agents.
+  const tokens = await readMCPTokens().catch(() => null)
+  if (!tokens) {
+    await child.kill().catch(() => undefined)
+    return rememberStartupError(
+      new MCPStartupError(
+        'The desktop app did not hand over the MCP server’s tokens.',
+        mcpFailure('unknown')
+      )
+    )
   }
   const earlyExit = await Promise.race([
     childClosed,
@@ -314,18 +333,16 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
   const health = await waitForHealth(
     timing.healthDeadlineMs ?? MCP_STARTUP_HEALTH_DEADLINE_MS,
     timing.healthPollMs,
-    authToken,
+    tokens.clientToken,
     childClosed
   )
 
   if (health) {
     try {
       assertCompatibleMCPVersion(health)
-      const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
-      const discovered = await readDiscoveryToken(discoveryPath)
-      const token = health.authRequired ? (discovered ?? authToken) : null
-      spawnedToken = token
-      runtimeAutomationAuthToken = token
+      runtimeAutomationAuthToken = tokens.appToken
+      runtimeClientToken = tokens.clientToken
+      owned = tokens
       runtimeAutomationStartupError = null
       runtimeAutomationStartupFailure = null
       return {
@@ -333,16 +350,14 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
           await child.kill().catch((e) => {
             console.error('[MCP] Failed to kill server:', e)
           })
-          if (runtimeAutomationAuthToken === token) {
-            runtimeAutomationAuthToken = null
-          }
+          forgetDesktopTokens(tokens)
         },
-        authToken: token,
+        authToken: tokens.appToken,
         managed: true
       }
     } catch (err) {
       await child.kill().catch(() => undefined)
-      runtimeAutomationAuthToken = null
+      forgetDesktopTokens(tokens)
       throw err
     }
   }

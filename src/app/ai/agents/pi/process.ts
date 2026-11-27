@@ -87,13 +87,15 @@ function sidecarMessages(): TransformStream<Uint8Array, HarnessSidecarMessage> {
   })
 }
 
+/** How the harness signs in to Pi: with an API key, or with Pi's own folder and its login. */
+export type HarnessAuth = { apiKey?: string; agentDir?: string }
+
 export async function spawnHarnessProcess(options: {
-  environment: Record<string, string>
+  auth: HarnessAuth
   onUnexpectedClose: () => void
 }): Promise<HarnessProcess> {
   const companion = await spawnAgentProcess({
-    command: 'openpencil-harness',
-    env: options.environment,
+    program: { kind: 'harness', ...options.auth },
     // Diagnostics only: the companion reports failures as protocol errors.
     onStderr: (text) => console.warn('[Harness]', text),
     onClose: options.onUnexpectedClose

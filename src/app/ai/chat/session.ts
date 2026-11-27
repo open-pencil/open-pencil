@@ -7,6 +7,7 @@ import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
 import { agentOwnChoices, type AgentChoices } from '@/app/ai/agents/acp/options'
+import type { HarnessAuth } from '@/app/ai/agents/pi/process'
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
@@ -291,9 +292,7 @@ export function createChatSessionManager({
         mcpServers: await buildPiMCPServers(),
         skills: await harnessSkills()
       },
-      apiKey
-        ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
-        : { OPENPENCIL_HARNESS_AGENT_DIR: account?.agentDir ?? '' },
+      harnessAuth(apiKey, account?.agentDir),
       undefined,
       (usage) => recordModelStepCompleted({ provider: providerID.value, model, ...usage }, context)
     )
@@ -452,4 +451,10 @@ export function createChatSessionManager({
     failure,
     clearFailure
   }
+}
+
+/** How the harness signs in: with the provider's API key, or else with Pi's own folder. */
+function harnessAuth(apiKey: string | null | undefined, agentDir: string | undefined): HarnessAuth {
+  if (apiKey) return { apiKey }
+  return agentDir ? { agentDir } : {}
 }

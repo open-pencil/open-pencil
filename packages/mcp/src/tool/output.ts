@@ -351,9 +351,14 @@ export async function writeToolOutput(
   toolName: string,
   result: Record<string, unknown>,
   filePath: string,
-  root: string
+  root: string,
+  /** Asked before the file is written, with its canonical path. */
+  consent?: (path: string) => Promise<void>
 ): Promise<MCPResult | null> {
   const content = FILE_OUTPUTS[toolName]?.(result)
   if (content == null) return null
-  return ok(await writeInsideRoot(filePath, root, content))
+  // The file written is the one asked about, even if a link inside the root changes meanwhile.
+  const { realPath } = await resolveSafePath(filePath, root)
+  await consent?.(realPath)
+  return ok(await writeInsideRoot(realPath, root, content))
 }

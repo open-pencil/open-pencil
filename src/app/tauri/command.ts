@@ -1,56 +1,8 @@
 /**
- * Resolve a CLI invocation into the form the Tauri process spawner can launch
- * on the current platform.
- *
- * On Windows, npm-installed global CLIs (e.g. `claude-agent-acp`,
- * `openpencil-mcp-http`) are `.cmd` shims. The Rust spawner behind
- * `@tauri-apps/plugin-shell` only resolves real executables, so launching a
- * `.cmd` directly fails with ENOENT. Routing through `cmd /c` lets the shell
- * resolve the shim via PATHEXT.
- *
- * `command` is the name of a shell scope entry in desktop/capabilities/host-processes.json, and
- * each scope entry pins the whole command line. On Windows the entry for `name` is
- * `cmd-<name>`, which runs exactly `cmd /c <name> <args>`: a scope that let `cmd` take any
- * arguments would let the webview run any command.
- *
- * The `userAgent` argument is injectable for testing; it defaults to the live
- * navigator value at runtime, falling back to an empty string in non-browser
- * contexts (e.g. headless tests) where `navigator` is unavailable.
+ * The browser's user agent, which tells setup which platform's install commands to show. The
+ * argument is injectable for testing; it is empty in non-browser contexts such as headless tests.
  */
 export function detectUserAgent(): string {
   const ua = typeof navigator === 'undefined' ? undefined : navigator.userAgent
   return typeof ua === 'string' ? ua : ''
-}
-
-export function resolvePlatformCommand(
-  command: string,
-  args: string[] = [],
-  userAgent: string = detectUserAgent()
-): { command: string; args: string[] } {
-  return resolveScopedCommand(command, command, args, userAgent)
-}
-
-/**
- * Like `resolvePlatformCommand`, for a scope entry named apart from the program it runs, such
- * as `claude-agent-acp-sign-in`, which pins different arguments for `claude-agent-acp`.
- */
-export function resolveScopedCommand(
-  scope: string,
-  program: string,
-  args: string[] = [],
-  userAgent: string = detectUserAgent()
-): { command: string; args: string[] } {
-  if (userAgent.includes('Windows')) {
-    return { command: `cmd-${scope}`, args: ['/c', program, ...args] }
-  }
-  return { command: scope, args }
-}
-
-/**
- * Environment for a program started through `cmd /c`. `cmd` looks in its own folder before
- * `PATH`, so a `.cmd` or `.exe` left in an agent's workspace would run in place of the agent;
- * `NoDefaultCurrentDirectoryInExePath` is Windows' switch that turns that lookup off.
- */
-export function platformCommandEnv(userAgent: string = detectUserAgent()): Record<string, string> {
-  return userAgent.includes('Windows') ? { NoDefaultCurrentDirectoryInExePath: '1' } : {}
 }

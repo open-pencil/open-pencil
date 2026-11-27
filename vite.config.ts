@@ -108,8 +108,8 @@ export default defineConfig(async ({ command, mode }) => {
       sourcemap: !metrics && env.VITE_OPENPENCIL_FEEDBACK === 'on' ? 'hidden' : false,
       outDir,
       rolldownOptions: {
-        // The desktop Software Update window and a deck's presenter window are their own pages;
-        // a Cloud server adds its own pages beside the editor, and the metrics dashboard builds
+        // The desktop Software Update and permission windows and a deck's presenter window are their own
+        // pages; a Cloud server adds its own pages beside the editor, and the metrics dashboard builds
         // alone.
         input: metrics
           ? { metrics: resolve(__dirname, 'pages/metrics.html') }
@@ -122,6 +122,7 @@ export default defineConfig(async ({ command, mode }) => {
             : {
                 main: resolve(__dirname, 'index.html'),
                 updater: resolve(__dirname, 'pages/updater.html'),
+                permission: resolve(__dirname, 'pages/permission.html'),
                 presenter: resolve(__dirname, 'pages/presenter.html')
               },
         output: { chunkFileNames }

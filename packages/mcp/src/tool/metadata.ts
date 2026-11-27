@@ -1,3 +1,4 @@
+import type { ToolAnnotations } from '@modelcontextprotocol/server'
 import * as v from 'valibot'
 
 import type { ToolCapability } from '@open-pencil/core/tools'
@@ -51,4 +52,12 @@ export interface ToolPolicy {
 export function parseToolDescriptor(value: unknown): ToolDescriptor | null {
   const parsed = v.safeParse(toolDescriptorSchema, value)
   return parsed.success ? parsed.output : null
+}
+
+/** The MCP hints a tool's effect gives: a read is read-only, and a write may destroy. */
+export function toolAnnotations(effect: ToolEffect): ToolAnnotations {
+  return {
+    readOnlyHint: effect === 'read',
+    destructiveHint: effect === 'write'
+  }
 }

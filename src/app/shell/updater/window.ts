@@ -1,34 +1,13 @@
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { invoke } from '@tauri-apps/api/core'
+
 export const UPDATER_WINDOW_LABEL = 'updater'
-/** Separate Vite entry, so the window never boots the editor. */
-export const UPDATER_WINDOW_URL = 'pages/updater.html'
 
-const UPDATER_WINDOW_WIDTH = 560
-const UPDATER_WINDOW_HEIGHT = 520
-
-/** Shows the Software Update window, focusing it when it is already open. */
+/**
+ * Shows the Software Update window, focusing it when it is already open, and fails as the
+ * desktop app reports, so a check from the menu can say so. The desktop app opens it
+ * (`desktop/src/system/windows.rs`): the editor creates no windows, since a window's label
+ * decides what it may do.
+ */
 export async function openUpdaterWindow(title: string): Promise<void> {
-  const existing = await WebviewWindow.getByLabel(UPDATER_WINDOW_LABEL)
-  if (existing) {
-    await existing.unminimize()
-    await existing.setFocus()
-    return
-  }
-
-  const window = new WebviewWindow(UPDATER_WINDOW_LABEL, {
-    url: UPDATER_WINDOW_URL,
-    title,
-    width: UPDATER_WINDOW_WIDTH,
-    height: UPDATER_WINDOW_HEIGHT,
-    minWidth: UPDATER_WINDOW_WIDTH,
-    minHeight: UPDATER_WINDOW_HEIGHT,
-    center: true,
-    minimizable: false,
-    maximizable: false,
-    dragDropEnabled: false,
-    focus: true
-  })
-  await window.once<unknown>('tauri://error', (event) => {
-    console.error('Could not open the Software Update window', event.payload)
-  })
+  await invoke('open_updater_window', { title })
 }

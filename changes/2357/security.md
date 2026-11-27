@@ -1,0 +1,2 @@
+- On desktop, the app itself starts coding agents, the MCP server, and the harness, and asks you in a window of its own before an agent runs a tool other than OpenPencil's own, switches to a mode that never asks, or has an OpenPencil tool read or write a file it named; Claude Code chats start in Manual.
+- On desktop, the editor reaches only the files you open, save, or allow, and a recent file from before this release is picked again in the Open dialog.

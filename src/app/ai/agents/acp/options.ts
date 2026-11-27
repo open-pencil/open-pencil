@@ -7,6 +7,7 @@ import {
   type SetSessionConfigOptionResponse
 } from '@agentclientprotocol/sdk/unstable'
 import { mapValues, omit } from 'es-toolkit'
+import * as v from 'valibot'
 
 import type { ModelOption } from '@open-pencil/core/constants'
 
@@ -122,6 +123,19 @@ export function agentModeCategories(offered: Partial<Record<AgentChoiceCategory,
   return { mode: offered.mode ? 'mode' : null, access: null }
 }
 
+/**
+ * The values a session opened on in place of those the chat named, as when the person kept the
+ * agent asking or the desktop app moved it to a mode that asks; the composer shows these.
+ */
+export function choicesKept(named: AgentChoices, opened: SessionChoices): AgentChoices {
+  const kept: AgentChoices = {}
+  for (const category of AGENT_CHOICE_CATEGORIES) {
+    const current = opened[category]?.current
+    if (named[category] && current && current !== named[category]) kept[category] = current
+  }
+  return kept
+}
+
 /** The agent's own values among a session's options: those the chat did not name. */
 export function agentOwnChoices(offered: AgentModelChoices, named: AgentChoices): AgentChoices {
   const own: AgentChoices = {}
@@ -140,6 +154,17 @@ export function shownChoices(choices: SessionChoices): AgentModelChoices {
 /** What a session offers to choose besides its model, as the chat shows it. */
 export function agentModelChoices(offered: OfferedSessionOptions): AgentModelChoices {
   return shownChoices(sessionChoices(offered))
+}
+
+/**
+ * The desktop app's answer when the person keeps the agent asking instead of switching to a mode
+ * in which it runs tools on its own (`mode_refused` in `desktop/src/host/acp.rs`). The session
+ * stays on the mode it had.
+ */
+const modeRefusalSchema = v.object({ data: v.object({ openpencil: v.literal('mode-refused') }) })
+
+export function isModeRefusal(error: unknown): boolean {
+  return v.is(modeRefusalSchema, error)
 }
 
 /** The agent request that changes a session option, which tests make without a connection. */

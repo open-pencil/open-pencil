@@ -110,7 +110,7 @@ export function useEditorMenu() {
       const index = Number(id.slice(OPEN_RECENT_EVENT_PREFIX.length))
       const path = Number.isInteger(index) ? recentLocalFileAt(index) : null
       if (path) {
-        void openFileFromPath(path).catch((error) => {
+        void openFileFromPath(path, { askAgain: true }).catch((error) => {
           forgetRecentFile(path)
           console.warn('[Recent files] Failed to open file', error)
         })

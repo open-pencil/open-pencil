@@ -1,14 +1,17 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import type { Channel } from '@tauri-apps/api/core'
-
 import { ACP_AGENTS } from '@open-pencil/core/constants'
-import { createDeferred } from '@open-pencil/std/async'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { installAgentAdapter, lookupAgents } from '@/app/ai/agents/setup/native'
+import {
+  installAgentAdapter,
+  installCanvasBridge,
+  installHarnessCompanion,
+  lookupAgents
+} from '@/app/ai/agents/setup/native'
+import { APP_VERSION } from '@/app/runtime/version'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
+import { clearTauriMocks, mockHost, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(clearTauriMocks)
 
@@ -28,38 +31,33 @@ test('validates native discovery responses', async () => {
   await expect(lookupAgents()).rejects.toThrow()
 })
 
+const codex = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'codex'),
+  'Codex'
+)
+
 test.each([0, 1])('installs the selected adapter and handles exit code %i', async (code) => {
-  const commands: string[] = []
-  await mockTauriIPC((command, args) => {
-    commands.push(command)
-    expect(command).toBe('plugin:shell|spawn')
-    const spawn = args as {
-      program: string
-      args: string[]
-      options: { env: { PATH: string } }
-      onEvent: Channel
-    }
-    expect(spawn.program).toBe('npm')
-    expect(spawn.args).toEqual([
-      'install',
-      '--global',
-      '@agentclientprotocol/codex-acp',
-      '--registry=https://registry.npmjs.org'
-    ])
-    expect(spawn.options.env.PATH).toBe('/agents/bin')
-    queueMicrotask(() =>
-      spawn.onEvent.onmessage({ event: 'Terminated', payload: { code, signal: null } })
-    )
-    return 42
+  const host = await mockHost({
+    onStart: (start) => queueMicrotask(() => start.emit({ type: 'close', code, signal: null }))
   })
-  const codex = expectDefined(
-    ACP_AGENTS.find((agent) => agent.id === 'codex'),
-    'Codex'
-  )
-  const installation = installAgentAdapter(codex, '/agents/bin')
+  const installation = installAgentAdapter(codex)
   if (code === 0) await installation
   else await expect(installation).rejects.toThrow('Adapter installation failed.')
-  expect(commands).toEqual(['plugin:shell|spawn'])
+  expect(host.started.map((start) => start.program)).toEqual([
+    { kind: 'install', manager: 'npm', package: { kind: 'adapter', agent: 'codex' } }
+  ])
+})
+
+test("installs the companions at this app's version with the chosen manager", async () => {
+  const host = await mockHost({
+    onStart: (start) => queueMicrotask(() => start.emit({ type: 'close', code: 0, signal: null }))
+  })
+  await installCanvasBridge('bun')
+  await installHarnessCompanion()
+  expect(host.started.map((start) => start.program)).toEqual([
+    { kind: 'install', manager: 'bun', package: { kind: 'mcp', version: APP_VERSION } },
+    { kind: 'install', manager: 'npm', package: { kind: 'harness', version: APP_VERSION } }
+  ])
 })
 
 test('rejects native agents before attempting an adapter install', async () => {
@@ -67,30 +65,14 @@ test('rejects native agents before attempting an adapter install', async () => {
     ACP_AGENTS.find((agent) => agent.id === 'gemini-cli'),
     'Gemini CLI'
   )
-  await expect(installAgentAdapter(gemini, '/bin')).rejects.toThrow(
-    'This agent does not need an adapter.'
-  )
+  await expect(installAgentAdapter(gemini)).rejects.toThrow('This agent does not need an adapter.')
 })
 
-test('cleans up an installer that reports an error before its process handle arrives', async () => {
-  const spawned = createDeferred<number>()
-  const killed = createDeferred<undefined>()
-  await mockTauriIPC((command, args) => {
-    if (command === 'plugin:shell|kill') {
-      expect(args).toMatchObject({ pid: 42 })
-      killed.resolve(undefined)
-      return
+test('fails the install when the desktop app refuses to start it', async () => {
+  await mockHost({
+    onStart: () => {
+      throw new Error('refused')
     }
-    expect(command).toBe('plugin:shell|spawn')
-    const { onEvent } = args as { onEvent: Channel }
-    queueMicrotask(() => onEvent.onmessage({ event: 'Error', payload: 'private npm details' }))
-    return spawned.promise
   })
-  const codex = expectDefined(
-    ACP_AGENTS.find((agent) => agent.id === 'codex'),
-    'Codex'
-  )
-  await expect(installAgentAdapter(codex, '/bin')).rejects.toThrow('Adapter installation failed.')
-  spawned.resolve(42)
-  await killed.promise
+  await expect(installAgentAdapter(codex)).rejects.toThrow('Adapter installation failed.')
 })

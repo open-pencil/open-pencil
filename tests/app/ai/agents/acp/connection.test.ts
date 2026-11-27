@@ -33,10 +33,13 @@ describe('a request with a deadline', () => {
 })
 
 describe('connecting to an agent', () => {
-  test('starts it in the given folder and stops it on close', async () => {
+  test('starts it refusing tools when asked, and stops it on close', async () => {
     const fake = fakeOneOffAgent()
-    const connection = await connectAgent(agent, { cwd: '/work', launch: fake.startup.launch })
-    expect(fake.cwds).toEqual(['/work'])
+    const connection = await connectAgent(agent, {
+      refusesTools: true,
+      launch: fake.startup.launch
+    })
+    expect(fake.refusals).toEqual([true])
     await connection.close()
     expect(fake.kills()).toBe(1)
   })

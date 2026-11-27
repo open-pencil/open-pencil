@@ -37,7 +37,7 @@
         "form-action": "'self'"
       },
       "dangerousDisableAssetCspModification": ["style-src"],
-      "capabilities": ["default", "updater"]
+      "capabilities": ["default", "updater", "permission"]
     }
   },
   "bundle": {

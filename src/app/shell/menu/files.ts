@@ -140,12 +140,46 @@ export async function chooseTauriOpenPaths(): Promise<string[]> {
   return typeof paths === 'string' ? [paths] : paths
 }
 
-/** Opens the design file at `path` on desktop, and resolves with its tab's store. */
-export async function openFileFromPath(path: string): Promise<EditorStore | undefined> {
+/** What the fs plugin answers for a file the editor was not given. */
+function isForbiddenPath(error: unknown): boolean {
+  return errorMessage(error).startsWith('forbidden path')
+}
+
+/**
+ * The file at `path`, or the one the person picks there when the editor was not given it, as a
+ * recent file from before the editor reached only the files it was given. The Open dialog
+ * starts at the file, so one click gives it back. Null when the person cancels.
+ */
+async function readOrPickDesignFile(path: string): Promise<{ file: File; path: string } | null> {
+  try {
+    return { file: await readTauriDesignFile(path), path }
+  } catch (error) {
+    if (!isForbiddenPath(error)) throw error
+  }
+  const picked = await open({
+    defaultPath: path,
+    filters: [{ name: 'Design file', extensions: READABLE_DOCUMENT_EXTENSIONS }]
+  })
+  if (typeof picked !== 'string') return null
+  return { file: await readTauriDesignFile(picked), path: picked }
+}
+
+/**
+ * Opens the design file at `path` on desktop, and resolves with its tab's store. One the person
+ * asked for, as from Open Recent, is picked again in the Open dialog when the editor was not given
+ * it; an agent's file was given when the person allowed the agent to open it.
+ */
+export async function openFileFromPath(
+  path: string,
+  { askAgain = false }: { askAgain?: boolean } = {}
+): Promise<EditorStore | undefined> {
   if (!isTauri()) return undefined
-  const file = await readTauriDesignFile(path)
-  const store = await openFileInNewTab(file, { path })
-  rememberRecentFile(path, store.state.documentKind)
+  const read = askAgain
+    ? await readOrPickDesignFile(path)
+    : { file: await readTauriDesignFile(path), path }
+  if (!read) return undefined
+  const store = await openFileInNewTab(read.file, { path: read.path })
+  rememberRecentFile(read.path, store.state.documentKind)
   return store
 }
 

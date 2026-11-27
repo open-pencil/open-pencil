@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { MAX_TIMER_MS } from '@open-pencil/std/timing'
 
+import { stdioPathConsent } from '#mcp/consent'
 import { resolveMCPRoot } from '#mcp/root'
 import { MCP_VERSION, startServer } from '#mcp/server'
 import { readToolPolicyFromEnv } from '#mcp/tool/policy'
@@ -43,6 +44,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `                               grace period starts at startup and after disconnects.\n` +
       `                               Unset/0 disables it (default) — do not set this for\n` +
       `                               manual/CLI use, since nothing may ever register.\n` +
+      `  OPENPENCIL_MCP_APP_TOKEN     Token that only registers as the app\n` +
+      `  OPENPENCIL_MCP_TOKENLESS_CLIENTS  Set to 1 to let MCP clients connect without a token\n` +
+      `  OPENPENCIL_MCP_CONSENT       Set to stdio to ask over stdin/stdout before a tool reads\n` +
+      `                               or writes a file it was given\n` +
       `  OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE  Set to 1 to shut down when stdin closes, so a\n` +
       `                               parent that starts the server through a shell wrapper\n` +
       `                               can stop it by closing the pipe. Unset for manual/CLI use.\n`
@@ -111,6 +116,13 @@ const handle = await startServer({
     return trimmed
   })(),
   corsOrigin: resolveCORSOrigins(process.env.OPENPENCIL_MCP_CORS_ORIGIN),
+  appToken: process.env.OPENPENCIL_MCP_APP_TOKEN?.trim() || null,
+  tokenlessClients: process.env.OPENPENCIL_MCP_TOKENLESS_CLIENTS === '1',
+  // The desktop app asks the person before a tool reads or writes a file it was given.
+  pathConsent:
+    process.env.OPENPENCIL_MCP_CONSENT === 'stdio'
+      ? stdioPathConsent(process.stdin, process.stdout)
+      : undefined,
   appAttachTimeoutMs,
   sessionIdleTimeoutMs
 })

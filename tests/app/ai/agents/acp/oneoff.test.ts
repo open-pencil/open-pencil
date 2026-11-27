@@ -37,10 +37,10 @@ describe('reading what an agent offers', () => {
     expect(fake.kills()).toBe(1)
   })
 
-  test('starts the agent in its workspace, with no OpenPencil tools', async () => {
+  test('opens its session in the workspace, refusing tools, with no OpenPencil tools', async () => {
     const fake = fakeOneOffAgent()
     await readAgentOffer(agent, fake.startup)
-    expect(fake.cwds).toEqual([WORKSPACE])
+    expect(fake.refusals).toEqual([true])
     expect(fake.created).toEqual([{ cwd: WORKSPACE, mcpServers: [] }])
   })
 

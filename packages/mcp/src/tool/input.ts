@@ -1,7 +1,7 @@
 import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
-import { readInsideRoot } from '#mcp/tool/output'
+import { readInsideRoot, resolveSafePath } from '#mcp/tool/output'
 
 interface FileInput {
   /** The argument naming a file inside the MCP root. */
@@ -42,7 +42,9 @@ export function withFileInput(toolName: string, entries: v.ObjectEntries): v.Obj
 export async function readFileInput(
   toolName: string,
   args: Record<string, unknown>,
-  root: string
+  root: string,
+  /** Asked before the file is read, with its canonical path. */
+  consent?: (path: string) => Promise<void>
 ): Promise<Record<string, unknown>> {
   const input = FILE_INPUTS[toolName]
   if (!input) return args
@@ -53,5 +55,8 @@ export async function readFileInput(
     throw new Error(`Pass ${input.path} or ${input.data}`)
   }
   if (hasData) throw new Error(`Pass ${input.path} or ${input.data}, not both`)
-  return { ...rest, [input.data]: fromUint8Array(await readInsideRoot(path, root)) }
+  // The file read is the one asked about, even if a link inside the root changes meanwhile.
+  const { realPath } = await resolveSafePath(path, root)
+  await consent?.(realPath)
+  return { ...rest, [input.data]: fromUint8Array(await readInsideRoot(realPath, root)) }
 }

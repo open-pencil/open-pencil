@@ -14,6 +14,27 @@ describe('desktop file scope', () => {
     if (process.platform !== 'darwin') this.skip()
   })
 
+  it('reaches only the files it was given', async () => {
+    const documents = mkdtempSync(join(tmpdir(), 'openpencil-scope-'))
+    const given = join(documents, 'given.fig')
+    try {
+      const ungiven = await writeNativeFile(join(documents, 'other.fig'), 'design')
+      assert.match(ungiven ?? '', /forbidden|not allowed/i, 'a file nobody gave was writable')
+      await invokeNative('native_test_allow_file', { path: given })
+      assert.equal(await writeNativeFile(given, 'design'), null)
+      // A save writes a copy beside the file it was given, which the desktop app names.
+      const partial = await invokeNative<string>('allow_save_partial', { path: given })
+      assert.ok(partial.startsWith(`${given}.`) && partial.endsWith('.saving'), partial)
+      assert.equal(await writeNativeFile(partial, 'design'), null)
+      const refusedPartial = await invokeNative('allow_save_partial', {
+        path: join(documents, 'other.fig')
+      }).then(() => null, String)
+      assert.match(refusedPartial ?? '', /forbidden/i, 'a save beside a file nobody gave')
+    } finally {
+      rmSync(documents, { recursive: true, force: true })
+    }
+  })
+
   it('saves documents but not where a written file would run', async () => {
     const documents = mkdtempSync(join(tmpdir(), 'openpencil-scope-'))
     const refused = [
@@ -24,8 +45,12 @@ describe('desktop file scope', () => {
     // Only files this test would have created are removed afterwards.
     const created = refused.filter((path) => !existsSync(path))
     try {
+      await invokeNative('native_test_allow_file', { path: join(documents, 'design.fig') })
       assert.equal(await writeNativeFile(join(documents, 'design.fig'), 'design'), null)
       for (const path of refused) {
+        // Given or not, a place where a written file would run stays refused; a hidden file
+        // nobody gave stays out of reach as any other.
+        if (!path.includes(`.${NAME}`)) await invokeNative('native_test_allow_file', { path })
         const error = await writeNativeFile(path, 'not allowed')
         assert.match(error ?? '', /forbidden|not allowed/i, `${path} was writable`)
         // A save moves its finished copy over the file, so moving one there is refused too.

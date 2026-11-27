@@ -1,13 +1,17 @@
 import { invoke } from '@tauri-apps/api/core'
-import { Command } from '@tauri-apps/plugin-shell'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { createDeferred } from '@open-pencil/std/async'
 import { MINUTE_MS } from '@open-pencil/std/timing'
 
-import { HARNESS_INSTALL_TARGET } from '@/app/ai/agents/pi/companion'
-import { MCP_INSTALL_TARGET } from '@/app/automation/mcp/failure'
-import { resolvePlatformCommand } from '@/app/tauri/command'
+import { APP_VERSION } from '@/app/runtime/version'
+import {
+  startHostProgram,
+  type HostChild,
+  type HostClose,
+  type HostPackage
+} from '@/app/tauri/host'
 
 import type { PackageManager } from './companions'
 
@@ -33,77 +37,47 @@ export async function agentWorkspace(): Promise<string> {
 
 const INSTALL_TIMEOUT_MS = 2 * MINUTE_MS
 
-export async function installAgentAdapter(agent: ACPAgentDef, searchPath: string): Promise<void> {
+export async function installAgentAdapter(agent: ACPAgentDef): Promise<void> {
   if (!agent.adapterPackage) throw new Error('This agent does not need an adapter.')
-  return installPackage(agent.adapterPackage, searchPath)
+  return installPackage({ kind: 'adapter', agent: agent.id })
 }
 
-export async function installCanvasBridge(
-  searchPath: string,
-  manager: PackageManager = 'npm'
-): Promise<void> {
-  await installPackage(MCP_INSTALL_TARGET, searchPath, manager)
+export async function installCanvasBridge(manager: PackageManager = 'npm'): Promise<void> {
+  await installPackage({ kind: 'mcp', version: APP_VERSION }, manager)
 }
 
-export async function installHarnessCompanion(
-  searchPath: string,
-  manager: PackageManager = 'npm'
-): Promise<void> {
-  await installPackage(HARNESS_INSTALL_TARGET, searchPath, manager)
+export async function installHarnessCompanion(manager: PackageManager = 'npm'): Promise<void> {
+  await installPackage({ kind: 'harness', version: APP_VERSION }, manager)
 }
 
-// These are public packages; a user's private project registry may not mirror them.
-const PUBLIC_REGISTRY = '--registry=https://registry.npmjs.org'
-
-/** The npm arguments that install a package globally; the desktop shell scope pins them. */
-export function npmInstallArgs(packageName: string): string[] {
-  return ['install', '--global', packageName, PUBLIC_REGISTRY]
-}
-
-/** The Bun arguments that install a package globally; the desktop shell scope pins them. */
-export function bunInstallArgs(packageName: string): string[] {
-  return ['add', '--global', packageName, PUBLIC_REGISTRY]
-}
-
-async function installPackage(
-  packageName: string,
-  searchPath: string,
-  manager: PackageManager = 'npm'
-): Promise<void> {
-  const resolved = resolvePlatformCommand(
-    manager,
-    manager === 'bun' ? bunInstallArgs(packageName) : npmInstallArgs(packageName)
-  )
-  const command = Command.create(resolved.command, resolved.args, {
-    env: { PATH: searchPath }
-  })
-  let child: Awaited<ReturnType<typeof command.spawn>> | undefined
+/**
+ * Installs a package globally with npm or Bun. The desktop app holds the command line, from the
+ * public registry, since a user's private project registry may not mirror these packages.
+ */
+async function installPackage(pkg: HostPackage, manager: PackageManager = 'npm'): Promise<void> {
+  const closed = createDeferred<HostClose>()
+  let child: HostChild | undefined
   let timer: ReturnType<typeof setTimeout> | undefined
-  let closed = false
   let finished = false
-  async function killIfRunning() {
-    if (!closed) await child?.kill().catch(() => undefined)
-  }
   try {
-    await new Promise<void>((resolve, reject) => {
-      command.on('close', ({ code }) => {
-        closed = true
-        if (code === 0) resolve()
-        else reject(new Error('Adapter installation failed.'))
-      })
-      command.on('error', () => reject(new Error('Adapter installation failed.')))
-      timer = setTimeout(() => {
-        reject(new Error('Adapter installation timed out.'))
-      }, INSTALL_TIMEOUT_MS)
-      void command.spawn().then((spawned) => {
-        child = spawned
-        if (finished) void killIfRunning()
-        return undefined
-      }, reject)
+    child = await startHostProgram(
+      { kind: 'install', manager, package: pkg },
+      { onClose: (event) => closed.resolve(event) }
+    )
+    const timedOut = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error('Adapter installation timed out.')),
+        INSTALL_TIMEOUT_MS
+      )
     })
-  } finally {
+    const { code } = await Promise.race([closed.promise, timedOut])
     finished = true
+    if (code !== 0) throw new Error('Adapter installation failed.')
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Adapter installation')) throw error
+    throw new Error('Adapter installation failed.', { cause: error })
+  } finally {
     clearTimeout(timer)
-    await killIfRunning()
+    if (!finished) await child?.kill().catch(() => undefined)
   }
 }

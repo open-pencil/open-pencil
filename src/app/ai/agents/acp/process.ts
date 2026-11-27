@@ -1,5 +1,7 @@
+import type { ACPAgentID } from '@open-pencil/core/constants'
+
 import { spawnAgentProcess, type AgentChild } from '@/app/ai/agents/process'
-import { platformCommandEnv } from '@/app/tauri/command'
+import type { PermissionNotice } from '@/app/tauri/host'
 
 /** A started agent: its process, and the pipes the ACP connection reads and writes. */
 export interface ACPProcess {
@@ -8,42 +10,40 @@ export interface ACPProcess {
   output: ReadableStream<Uint8Array>
 }
 
-type ACPProcessOptions = {
-  command: string
-  args: string[]
+export type ACPProcessOptions = {
+  agent: ACPAgentID
+  /** Every permission request is refused without asking, for a connection in which nothing runs. */
+  refusesTools?: boolean
   logId: string
-  /** The `PATH` the agent starts with, from the lookup that found it; omitted keeps the app's. */
-  searchPath?: string | null
-  /**
-   * The folder the agent runs in, the same one its sessions open in. Antigravity CLI adds its
-   * process folder to the session's workspace, which would otherwise be wherever the app started.
-   */
-  cwd?: string
   destroying: () => boolean
   onUnexpectedClose: () => void
+  /** The agent waits on the person in the desktop app's permission window, or stopped waiting. */
+  onPermission?: (event: PermissionNotice) => void
 }
 
+/**
+ * Starts an ACP agent. The desktop app runs it in the agent workspace, answers its permission
+ * requests itself or through its permission window, and pins the folder and options of the
+ * sessions the chat opens (`desktop/src/host/acp.rs`).
+ */
 export async function spawnACPProcess({
-  command,
-  args,
+  agent,
+  refusesTools = false,
   logId,
-  searchPath = null,
-  cwd,
   destroying,
-  onUnexpectedClose
+  onUnexpectedClose,
+  onPermission
 }: ACPProcessOptions): Promise<ACPProcess> {
-  const agent = await spawnAgentProcess({
-    command,
-    args,
-    env: { ...platformCommandEnv(), ...(searchPath ? { PATH: searchPath } : {}) },
-    cwd,
+  const started = await spawnAgentProcess({
+    program: { kind: 'agent', agent, refusesTools },
     onStderr: (text) => console.error(`[ACP ${logId}]`, text),
     // A connection still reading learns the agent is gone, unless it was stopped on purpose.
     closeError: () => (destroying() ? null : new Error('Agent process exited unexpectedly.')),
     onClose: () => {
       if (!destroying()) onUnexpectedClose()
-    }
+    },
+    onPermission
   })
-  const input = new WritableStream<Uint8Array>({ write: (chunk) => agent.write(chunk) })
-  return { child: agent.child, input, output: agent.stdout }
+  const input = new WritableStream<Uint8Array>({ write: (chunk) => started.write(chunk) })
+  return { child: started.child, input, output: started.stdout }
 }

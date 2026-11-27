@@ -1,7 +1,8 @@
+import { invoke } from '@tauri-apps/api/core'
 import { lstat, remove, rename, writeFile as tauriWrite } from '@tauri-apps/plugin-fs'
+import * as v from 'valibot'
 
 import { createMutex } from '@open-pencil/std/async'
-import { randomHex } from '@open-pencil/std/random'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { storageLocationOf } from '@/app/integrations/storage/location'
@@ -67,9 +68,10 @@ async function writeTauriFile(path: string, stream: ReadableStream<Uint8Array>):
 
 /**
  * Writes `stream` beside `path` and moves it over `path` once it is complete, so a save that fails
- * partway leaves the file as it was. Each save has its own copy, without a leading dot, which the
- * fs scope would refuse (`desktop/AGENTS.md`). A symbolic link is written through instead, so it
- * keeps pointing at its target, as a save always did.
+ * partway leaves the file as it was. The editor reaches only files it was given, so the desktop
+ * app names and allows each save's copy, beside a document it was given (`allow_save_partial`). A
+ * symbolic link is written through instead, so it keeps pointing at its target, as a save always
+ * did.
  * @returns whether the file was replaced rather than written in place.
  */
 async function saveTauriFile(path: string, stream: ReadableStream<Uint8Array>): Promise<boolean> {
@@ -77,7 +79,7 @@ async function saveTauriFile(path: string, stream: ReadableStream<Uint8Array>): 
     await writeTauriFile(path, stream)
     return false
   }
-  const partial = `${path}.${randomHex(8)}.saving`
+  const partial = v.parse(v.string(), await invoke<unknown>('allow_save_partial', { path }))
   try {
     await writeTauriFile(partial, stream)
     await rename(partial, path)

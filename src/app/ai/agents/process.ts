@@ -1,14 +1,12 @@
-import { Command } from '@tauri-apps/plugin-shell'
+import {
+  startHostProgram,
+  type HostChild,
+  type HostProgram,
+  type PermissionNotice
+} from '@/app/tauri/host'
 
-import { decodeTauriStderr } from '@/app/shell/ui'
-import { spawnAgentChild } from '@/app/tauri/children'
-import { resolvePlatformCommand } from '@/app/tauri/command'
-
-/** A running agent process, as plugin-shell gives it: its stdin and its end. */
-export interface AgentChild {
-  write(data: number[]): Promise<void>
-  kill(): Promise<void>
-}
+/** A running agent process: its end. */
+export type AgentChild = Pick<HostChild, 'kill'>
 
 /** A started agent: its process, what it writes to stdout, and how to write to its stdin. */
 export interface AgentProcess {
@@ -18,11 +16,8 @@ export interface AgentProcess {
 }
 
 export interface AgentProcessOptions {
-  /** The program, resolved for the platform, as a Windows command shim is. */
-  command: string
-  args?: string[]
-  env: Record<string, string>
-  cwd?: string
+  /** Which program from the desktop app's table. */
+  program: HostProgram
   /** What the agent wrote to stderr, which is diagnostics only. */
   onStderr: (text: string) => void
   /**
@@ -32,25 +27,22 @@ export interface AgentProcessOptions {
   closeError?: () => Error | null
   /** The process closed, whoever ended it. */
   onClose: () => void
+  /** The agent waits on the person in the desktop app's permission window, or stopped waiting. */
+  onPermission?: (event: PermissionNotice) => void
 }
 
 /**
- * Starts an agent process that talks over its standard streams: an ACP agent or the Harness
- * companion. It starts through `spawnAgentChild`, so the next page stops it if this one leaves it
- * running.
+ * Starts an agent process that talks JSON lines over its standard streams: an ACP agent or the
+ * Harness companion. The desktop app starts it, checks what passes between it and the editor,
+ * and stops it when this page reloads.
  */
 export async function spawnAgentProcess({
-  command: program,
-  args = [],
-  env,
-  cwd,
+  program,
   onStderr,
   closeError = () => null,
-  onClose
+  onClose,
+  onPermission
 }: AgentProcessOptions): Promise<AgentProcess> {
-  const resolved = resolvePlatformCommand(program, args)
-  const command = Command.create(resolved.command, resolved.args, { encoding: 'raw', env, cwd })
-
   // The process's output, queued by the stream until it is read. It closes when the process
   // does; an exit with an error fails the stream only after what was queued is read, since
   // `flush` runs once every chunk has passed through.
@@ -72,27 +64,27 @@ export async function spawnAgentProcess({
       }
     })
   )
-  command.stdout.on('data', (raw: Uint8Array | number[]) => {
-    if (open) source?.enqueue(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
-  })
-  command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
-    onStderr(decodeTauriStderr(raw))
-  })
-  command.on('close', () => {
-    if (open) {
-      open = false
-      exitError = closeError()
-      source?.close()
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+  const child = await startHostProgram(program, {
+    onStdout: (data) => {
+      if (open) source?.enqueue(encoder.encode(data))
+    },
+    onStderr,
+    onPermission,
+    onClose: () => {
+      if (open) {
+        open = false
+        exitError = closeError()
+        source?.close()
+      }
+      onClose()
     }
-    onClose()
   })
-
-  const child = await spawnAgentChild(command)
   return {
     child,
     stdout,
-    async write(bytes) {
-      await child.write(Array.from(bytes))
-    }
+    // A character split across writes waits for its last byte.
+    write: (bytes) => child.write(decoder.decode(bytes, { stream: true }))
   }
 }

@@ -16,7 +16,6 @@ import {
   scheduleStartupUpdateCheck,
   STARTUP_UPDATE_CHECK_DELAY_MS
 } from '@/app/shell/updater/check'
-import { UPDATER_WINDOW_LABEL, UPDATER_WINDOW_URL } from '@/app/shell/updater/window'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
@@ -123,42 +122,22 @@ describe('checkForAppUpdate', () => {
     expect(toast.toasts.value.map((entry) => entry.message)).toEqual([messages.value.upToDate])
   })
 
-  test('opens the Software Update window for an available update', async () => {
+  test('asks the desktop app to open the Software Update window for an available update', async () => {
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
       if (cmd === 'check_for_update') return AVAILABLE_UPDATE
-      if (cmd === 'plugin:window|get_all_windows') return ['main']
       return null
     })
 
     await checkForAppUpdate({ silent: true, messages })
 
-    const created = calls.find((call) => call.cmd === 'plugin:webview|create_webview_window')
-    expect(created?.args).toMatchObject({
-      options: {
-        label: UPDATER_WINDOW_LABEL,
-        url: UPDATER_WINDOW_URL,
-        title: messages.value.windowTitle
-      }
-    })
+    const opened = calls.find((call) => call.cmd === 'open_updater_window')
+    expect(opened?.args).toEqual({ title: messages.value.windowTitle })
+    // The editor creates no window itself.
+    expect(calls.map((call) => call.cmd)).not.toContain('plugin:webview|create_webview_window')
     // The window checks again for its own handle; this one is released.
     expect(calls.map((call) => call.cmd)).toContain('plugin:resources|close')
-  })
-
-  test('focuses the Software Update window when it is already open', async () => {
-    const calls: string[] = []
-    await mockTauriIPC((cmd) => {
-      calls.push(cmd)
-      if (cmd === 'check_for_update') return AVAILABLE_UPDATE
-      if (cmd === 'plugin:window|get_all_windows') return ['main', UPDATER_WINDOW_LABEL]
-      return null
-    })
-
-    await checkForAppUpdate({ messages })
-
-    expect(calls).toContain('plugin:window|set_focus')
-    expect(calls).not.toContain('plugin:webview|create_webview_window')
   })
 
   test('reports a failed check from the menu', async () => {

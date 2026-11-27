@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -13,6 +13,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import type { PathConsent } from '#mcp/consent'
 import { createMCPSessionManager } from '#mcp/server/sessions'
 import { registerTools } from '#mcp/tool/registration'
 
@@ -43,14 +44,19 @@ type AppAnswer = (args: Record<string, unknown>) => unknown
 /**
  * An MCP server over a fresh root, or with no root, whose app answers each tool with
  * `results[name]`, or what it returns for the call's arguments, keeping the arguments each call
- * reached the app with in `sent`.
+ * reached the app with in `sent` and every command the app received in `commands`.
  */
 async function server(
   results: Record<string, unknown>,
-  { withRoot = true, open = ['design'] }: { withRoot?: boolean; open?: string[] } = {}
+  {
+    withRoot = true,
+    open = ['design'],
+    pathConsent
+  }: { withRoot?: boolean; open?: string[]; pathConsent?: PathConsent } = {}
 ) {
   const root = await mkdtemp(join(tmpdir(), 'op-mcp-root-'))
   const sent: Record<string, unknown>[] = []
+  const commands: string[] = []
   const manager = createMCPSessionManager({
     serverVersion: '0.0.0',
     registerTools: (mcpServer, agentSession, onToolSettled) =>
@@ -59,10 +65,15 @@ async function server(
         agentSession,
         onToolSettled,
         mcpRoot: withRoot ? root : undefined,
+        pathConsent,
         sendRPC: async (body) => {
           // A session asks which documents are open when it starts; no tool is called then.
           if (body.command === 'list_documents')
             return { ok: true, result: { documents: open.map((kind) => ({ kind })) } }
+          const { command } = body as { command: string }
+          commands.push(command)
+          // Document commands get the app's answer, or an empty success.
+          if (command !== 'tool') return { ok: true, result: results[command] ?? {} }
           const { args } = body as { args: { name: string; args: Record<string, unknown> } }
           sent.push(args.args)
           const answer = results[args.name]
@@ -114,7 +125,7 @@ async function server(
       (tool) => tool.name
     )
   }
-  return { root, sent, call, list }
+  return { root, sent, commands, call, list }
 }
 
 const zigzag = `M0 0${Array.from({ length: 64 }, (_, i) => ` L${(i + 1) * 3} ${(i % 2) * 20}`).join('')}`
@@ -266,6 +277,128 @@ describe('MCP tool file input', () => {
     })
     expect(both.content[0].text).toContain('not both')
     expect(sent).toEqual([])
+  })
+})
+
+describe('MCP path consent', () => {
+  /** A consent that allows everything and keeps what it was asked. */
+  function recording() {
+    const asked: Parameters<PathConsent>[0][] = []
+    const consent: PathConsent = async (request) => {
+      asked.push(request)
+    }
+    return { asked, consent }
+  }
+
+  const refuse: PathConsent = async (request) => {
+    throw new Error(`refused ${request.path}`)
+  }
+
+  test('document tools ask to write the canonical path before the app gets the command', async () => {
+    const { asked, consent } = recording()
+    const { root, commands, call } = await server({}, { pathConsent: consent })
+    await writeFile(join(root, 'open.fig'), '')
+    const canonical = (name: string) => realpath(root).then((real) => join(real, name))
+
+    expect((await call('open_document', { path: 'open.fig' })).isError).toBeFalsy()
+    expect((await call('save_document', { path: 'saved.fig' })).isError).toBeFalsy()
+    expect((await call('create_document', { path: 'new.fig' })).isError).toBeFalsy()
+    const closed = await call('close_document', { unsaved: 'save', path: 'closed.fig' })
+    expect(closed.isError).toBeFalsy()
+
+    expect(asked).toEqual([
+      { tool: 'open_document', access: 'write', path: await canonical('open.fig'), client: 'test' },
+      {
+        tool: 'save_document',
+        access: 'write',
+        path: await canonical('saved.fig'),
+        client: 'test'
+      },
+      {
+        tool: 'create_document',
+        access: 'write',
+        path: await canonical('new.fig'),
+        client: 'test'
+      },
+      {
+        tool: 'close_document',
+        access: 'write',
+        path: await canonical('closed.fig'),
+        client: 'test'
+      }
+    ])
+    expect(commands).toEqual([
+      'open_document',
+      'save_document',
+      'create_document',
+      'close_document'
+    ])
+  })
+
+  test('document tools without a path ask nothing', async () => {
+    const { asked, consent } = recording()
+    const { commands, call } = await server({}, { pathConsent: consent })
+
+    expect((await call('save_document', {})).isError).toBeFalsy()
+    expect((await call('create_document', {})).isError).toBeFalsy()
+    expect((await call('close_document', { unsaved: 'discard' })).isError).toBeFalsy()
+    expect(asked).toEqual([])
+    expect(commands).toEqual(['save_document', 'create_document', 'close_document'])
+  })
+
+  test('a file input asks to read it, and a file output asks to write it', async () => {
+    const { asked, consent } = recording()
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const pdf = { mimeType: 'application/pdf', base64: fromUint8Array(png), byteLength: 8 }
+    const { root, call } = await server(
+      { set_image_fill: { id: '0:1' }, export_pdf: pdf },
+      { pathConsent: consent }
+    )
+    await writeFile(join(root, 'photo.png'), png)
+    const real = await realpath(root)
+
+    expect(
+      (await call('set_image_fill', { id: '0:1', image_path: 'photo.png' })).isError
+    ).toBeFalsy()
+    expect((await call('export_pdf', { path: 'doc.pdf' })).isError).toBeFalsy()
+    expect(asked).toEqual([
+      { tool: 'set_image_fill', access: 'read', path: join(real, 'photo.png'), client: 'test' },
+      { tool: 'export_pdf', access: 'write', path: join(real, 'doc.pdf'), client: 'test' }
+    ])
+  })
+
+  test('a refused document path never reaches the app', async () => {
+    const { root, commands, call } = await server({}, { pathConsent: refuse })
+    await writeFile(join(root, 'open.fig'), '')
+
+    for (const [name, args] of [
+      ['open_document', { path: 'open.fig' }],
+      ['save_document', { path: 'saved.fig' }],
+      ['create_document', { path: 'new.fig' }],
+      ['close_document', { unsaved: 'save', path: 'closed.fig' }]
+    ] as const) {
+      const result = await call(name, args)
+      expect(result.isError).toBe(true)
+      expect(result.content[0].text).toContain('refused')
+    }
+    expect(commands).toEqual([])
+  })
+
+  test('a refused file input never reaches the app, and a refused output is not written', async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const pdf = { mimeType: 'application/pdf', base64: fromUint8Array(png), byteLength: 8 }
+    const { root, sent, call } = await server(
+      { set_image_fill: { id: '0:1' }, export_pdf: pdf },
+      { pathConsent: refuse }
+    )
+    await writeFile(join(root, 'photo.png'), png)
+
+    const filled = await call('set_image_fill', { id: '0:1', image_path: 'photo.png' })
+    expect(filled.isError).toBe(true)
+    expect(sent).toEqual([])
+
+    expect((await call('export_pdf', { path: 'doc.pdf' })).isError).toBe(true)
+    expect(await readdir(root)).toEqual(['photo.png'])
   })
 })
 

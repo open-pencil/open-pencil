@@ -58,6 +58,8 @@ describe('close_document and save_document never prompt', () => {
       __TAURI_INTERNALS__: {
         invoke: async (cmd: string, args?: { path?: string }) => {
           commands.push(cmd)
+          // The desktop app names a save's copy beside the file it was given.
+          if (cmd === 'allow_save_partial') return `${args?.path ?? ''}.00000000.saving`
           if (cmd !== 'plugin:path|dirname') return null
           const path = args?.path ?? ''
           const slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
@@ -83,11 +85,13 @@ describe('close_document and save_document never prompt', () => {
     expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
 
-  test('a native save to a .fig path creates the directory and writes the file', async () => {
+  test('a native save to a .fig path writes the file without making its folder', async () => {
+    // The desktop app makes the folder when the person allows the save (`give_editor` in
+    // desktop/src/host/mod.rs), before the MCP server asks the editor to write.
     const commands = recordNativeFs()
     const tab = dirtyTab()
     await request('save_document', { document_id: tab.id, path: '/tmp/nested/saved.fig' })
-    expect(fsWrites(commands)).toEqual(['plugin:fs|mkdir', 'plugin:fs|write_file'])
+    expect(fsWrites(commands)).toEqual(['plugin:fs|write_file'])
     expect(tab.store.hasUnsavedChanges()).toBe(false)
   })
 

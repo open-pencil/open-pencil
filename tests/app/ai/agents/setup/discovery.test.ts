@@ -81,7 +81,7 @@ describe('local agent discovery', () => {
     expect(discovery.canvasBridgeOutdated.value).toBe(true)
     await discovery.setupCanvasBridge()
     // npm would install beside the Bun copy, which stays first on PATH.
-    expect(installBridge).toHaveBeenCalledWith('/home/test/.bun/bin', 'bun')
+    expect(installBridge).toHaveBeenCalledWith('bun')
     expect(discovery.error.value).toBeNull()
   })
 
@@ -100,7 +100,7 @@ describe('local agent discovery', () => {
     await discovery.refresh()
     expect(discovery.canvasBridgeNeedsAdmin.value).toBe(false)
     await discovery.setupCanvasBridge()
-    expect(installBridge).toHaveBeenCalledWith('/test/bin', 'bun')
+    expect(installBridge).toHaveBeenCalledWith('bun')
   })
 
   test('never runs an npm install that needs administrator rights', async () => {
@@ -237,7 +237,7 @@ describe('local agent discovery', () => {
   test('installs only on request, blocks duplicate installs, and rescans afterward', async () => {
     let installed = false
     const pending = createDeferred<undefined>()
-    const install = mock(async (_agent: ACPAgentDef, _searchPath: string) => {
+    const install = mock(async (_agent: ACPAgentDef) => {
       await pending.promise
       installed = true
     })
@@ -252,8 +252,7 @@ describe('local agent discovery', () => {
     await discovery.install('claude-code')
     expect(install).toHaveBeenCalledTimes(1)
     expect(install.mock.calls[0]).toEqual([
-      expect.objectContaining({ adapterPackage: '@agentclientprotocol/claude-agent-acp' }),
-      '/test/bin'
+      expect.objectContaining({ adapterPackage: '@agentclientprotocol/claude-agent-acp' })
     ])
     pending.resolve(undefined)
     await operation
@@ -328,7 +327,7 @@ describe('Harness companion setup', () => {
     await discovery.refresh()
     expect(discovery.harnessAvailable.value).toBe(false)
     await discovery.setupHarness()
-    expect(installHarness).toHaveBeenCalledWith('/test/bin', 'npm')
+    expect(installHarness).toHaveBeenCalledWith('npm')
     expect(discovery.harnessAvailable.value).toBe(true)
     expect(discovery.error.value).toBeNull()
   })

@@ -104,24 +104,22 @@ describe('agent accounts', () => {
   test('signs in through the terminal login, then reads the new login from the agent', async () => {
     const exited = createDeferred<undefined>()
     const submitCode = mock(async (_code: string) => undefined)
-    const startTerminalSignIn = mock(
-      async (_agent: ACPAgentDef, _args: string[], onURL: (url: string) => void) => {
-        onURL('https://claude.com/sign-in')
-        const login: TerminalSignIn = {
-          done: exited.promise,
-          submitCode,
-          cancel: async () => undefined
-        }
-        return login
+    const startTerminalSignIn = mock(async (_agent: ACPAgentDef, onURL: (url: string) => void) => {
+      onURL('https://claude.com/sign-in')
+      const login: TerminalSignIn = {
+        done: exited.promise,
+        submitCode,
+        cancel: async () => undefined
       }
-    )
+      return login
+    })
     const { accounts } = accountsWith([signedOut(), { ...signedOut(), status: CLAUDE_MAX }], {
       startTerminalSignIn
     })
     await accounts.check(claude)
     const signingIn = accounts.signIn(claude)
     await Bun.sleep(0)
-    expect(startTerminalSignIn.mock.calls[0]?.[1]).toEqual(['--cli', 'auth', 'login', '--claudeai'])
+    expect(startTerminalSignIn.mock.calls[0]?.[0].id).toBe('claude-code')
     expect(accounts.account('claude-code')).toMatchObject({
       signingIn: true,
       signInURL: 'https://claude.com/sign-in',

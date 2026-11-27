@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import * as v from 'valibot'
+
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { readReloadSource } from '@/app/document/io/reload-source'
@@ -20,6 +22,20 @@ function streamOf(...chunks: number[][]): ReadableStream<Uint8Array> {
 const bytesOf = (args: unknown) => (args instanceof Uint8Array ? [...args] : args)
 
 /** The decoded path a `write_file` call names in its headers. */
+let partials = 0
+
+/**
+ * Mocks the desktop app for a save: it names each save's copy beside the file it was given, as
+ * `allow_save_partial` does, and `handler` answers everything else.
+ */
+function mockSaves(handler: Parameters<typeof mockTauriIPC>[0]) {
+  return mockTauriIPC((cmd, args, options) => {
+    if (cmd !== 'allow_save_partial') return handler(cmd, args, options)
+    const path = v.parse(v.object({ path: v.string() }), args).path
+    return `${path}.${(partials++).toString(16).padStart(8, '0')}.saving`
+  })
+}
+
 function pathOf(options: unknown): string {
   const headers = (options as { headers?: { path?: string } } | undefined)?.headers
   return decodeURIComponent(headers?.path ?? '')
@@ -72,7 +88,7 @@ describe('Tauri document IO helpers', () => {
 
   test('writes beside the file in gathered raw chunks and moves the copy over it once complete', async () => {
     const calls: Array<{ cmd: string; args: unknown; options: unknown }> = []
-    await mockTauriIPC((cmd, args, options) => {
+    await mockSaves((cmd, args, options) => {
       calls.push({ cmd, args, options })
       return null
     })
@@ -82,7 +98,7 @@ describe('Tauri document IO helpers', () => {
     await write(streamOf([1, 2], [3]), 42)
 
     const partial = pathOf(calls[1]?.options)
-    expect(partial).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{16}\.saving$/)
+    expect(partial).toMatch(/^\/tmp\/document\.fig\.[0-9a-f]{8}\.saving$/)
     expect(calls.map(({ cmd, args, options }) => ({ cmd, args: bytesOf(args), options }))).toEqual([
       { cmd: 'plugin:fs|lstat', args: { path: '/tmp/document.fig' }, options: undefined },
       {
@@ -101,7 +117,7 @@ describe('Tauri document IO helpers', () => {
 
   test('writes a large document in bounded raw chunks', async () => {
     const sizes: Array<[number, string]> = []
-    await mockTauriIPC((cmd, args, options) => {
+    await mockSaves((cmd, args, options) => {
       if (cmd === 'plugin:fs|write_file' && args instanceof Uint8Array) {
         sizes.push([args.byteLength, (options as { headers: { options: string } }).headers.options])
       }
@@ -126,7 +142,7 @@ describe('Tauri document IO helpers', () => {
 
   test('leaves the file alone when the document fails partway through', async () => {
     const calls: string[] = []
-    await mockTauriIPC((cmd) => {
+    await mockSaves((cmd) => {
       calls.push(cmd)
       return null
     })
@@ -144,7 +160,7 @@ describe('Tauri document IO helpers', () => {
 
   test('writes through a symbolic link instead of replacing it', async () => {
     const paths: string[] = []
-    await mockTauriIPC((cmd, _args, options) => {
+    await mockSaves((cmd, _args, options) => {
       if (cmd === 'plugin:fs|lstat') return { ...EMPTY_FILE_INFO, isSymlink: true }
       paths.push(`${cmd} ${cmd === 'plugin:fs|write_file' ? pathOf(options) : ''}`)
       return null
@@ -161,7 +177,7 @@ describe('Tauri document IO helpers', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve
     })
-    await mockTauriIPC((cmd, _args, options) => {
+    await mockSaves((cmd, _args, options) => {
       if (cmd === 'plugin:fs|write_file') events.push(pathOf(options))
       if (cmd === 'plugin:fs|rename') events.push('rename')
       return null
@@ -188,7 +204,7 @@ describe('Tauri document IO helpers', () => {
   })
 
   test('keeps a completed write successful when recovery cleanup fails', async () => {
-    await mockTauriIPC(() => null)
+    await mockSaves(() => null)
     const savedVersions: number[] = []
     const write = writer({
       setSavedVersion: (version) => savedVersions.push(version),
@@ -200,7 +216,7 @@ describe('Tauri document IO helpers', () => {
   })
 
   test('chooses a Tauri save path through plugin-dialog', async () => {
-    await mockTauriIPC((cmd, args) => {
+    await mockSaves((cmd, args) => {
       expect(cmd).toBe('plugin:dialog|save')
       expect(args).toEqual({
         options: {
@@ -215,7 +231,7 @@ describe('Tauri document IO helpers', () => {
   })
 
   test('saves slides as a Figma Slides .deck', async () => {
-    await mockTauriIPC((_cmd, args) => {
+    await mockSaves((_cmd, args) => {
       expect(args).toEqual({
         options: {
           defaultPath: 'Untitled.deck',
@@ -229,7 +245,7 @@ describe('Tauri document IO helpers', () => {
   })
 
   test('saves a board as a FigJam .jam', async () => {
-    await mockTauriIPC((cmd, args) => {
+    await mockSaves((cmd, args) => {
       expect(cmd).toBe('plugin:dialog|save')
       expect(args).toEqual({
         options: {

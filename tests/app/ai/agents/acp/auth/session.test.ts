@@ -17,7 +17,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { checkAgentAuth, signInWithAgent, type ToolsProbe } from '@/app/ai/agents/acp/auth/session'
 import { AUTH_STATUS_UPDATE_METHOD, type AgentAuthStatus } from '@/app/ai/agents/acp/auth/status'
 import type { AgentLaunch } from '@/app/ai/agents/acp/connection'
-import { AGENT_SESSION_META, type OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
+import type { OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
 const codex = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'codex'),
   'Codex'
@@ -90,22 +90,28 @@ function fakeAgent(options: {
   toClient.readable
     .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
     .catch(() => undefined)
+  /** Whether each start refuses every tool call, as the desktop app is asked to. */
+  const refusals: boolean[] = []
   const launch: AgentLaunch = {
     resolveTarget: async (agent) => ({ command: agent.command, searchPath: null }),
-    spawn: async () => ({
-      child: {
-        write: async () => undefined,
-        kill: async () => {
-          stop.abort()
-          closed.resolve(undefined)
-        }
-      },
-      input: toAgent.writable,
-      output: output.readable
-    })
+    spawn: async ({ refusesTools = false }) => {
+      refusals.push(refusesTools)
+      return {
+        child: {
+          write: async () => undefined,
+          kill: async () => {
+            stop.abort()
+            closed.resolve(undefined)
+          }
+        },
+        input: toAgent.writable,
+        output: output.readable
+      }
+    }
   }
   return {
     launch,
+    refusals,
     initialized,
     sessions,
     closed: closed.promise,
@@ -130,6 +136,13 @@ describe('checkAgentAuth', () => {
     const agent = fakeAgent({ status: SIGNED_OUT })
     await checkAgentAuth(codex, { launch: agent.launch })
     expect(agent.initialized[0]?.clientCapabilities?._meta).toEqual({ 'terminal-auth': true })
+  })
+
+  test('starts the agent refusing every tool call, since nothing runs in a sign-in check', async () => {
+    const agent = fakeAgent({ status: SIGNED_IN })
+    await checkAgentAuth(codex, { launch: agent.launch })
+    expect(agent.refusals).toEqual([true])
+    await agent.closed
   })
 
   test('stops an agent that never answers initialize', async () => {
@@ -181,7 +194,6 @@ function toolsProbe(outcome: OwnToolsOutcome) {
         mcpServers: [
           { type: 'http', name: 'open-pencil', url: 'http://127.0.0.1:7600/mcp', headers: [] }
         ],
-        meta: AGENT_SESSION_META,
         noteUpdate: () => undefined,
         outcome: async () => outcome,
         stop: () => undefined
@@ -200,8 +212,7 @@ describe("checking a signed-in agent reaches OpenPencil's tools", () => {
     expect(agent.sessions).toHaveLength(1)
     expect(agent.sessions[0]).toMatchObject({
       cwd: '/workspace',
-      mcpServers: [{ name: 'open-pencil' }],
-      _meta: { claudeCode: { options: { allowedTools: ['mcp__open-pencil'] } } }
+      mcpServers: [{ name: 'open-pencil' }]
     })
     await agent.closed
   })

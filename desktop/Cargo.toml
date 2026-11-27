@@ -41,6 +41,13 @@ tauri-plugin-notification = "2.8.0"
 zstd = "0.13"
 which = "7.0.3"
 semver = "1"
+# The MCP server's tokens (`host/mcp.rs`).
+getrandom = "0.3"
+hex = "0.4"
+hmac = "0.12"
+sha2 = "0.10"
+# Locks without poisoning, for state the host commands share (`host/`).
+parking_lot = "0.12"
 fontique = "0.11"
 # The same read-fonts fontique uses, to read each face's style names and named instances.
 read-fonts = "0.41"
