@@ -57,16 +57,10 @@ export function mcpAgent(agent: AgentToolCaller) {
  */
 export function toolRequest({ name, args, agent }: AgentToolCall): AgentToolRequest {
   const { document_id: documentId, page_id: pageId, ...toolArgs } = args
-  return {
-    command: 'tool',
-    args: {
-      ...(typeof documentId === 'string' ? { document_id: documentId } : {}),
-      ...(typeof pageId === 'string' ? { page_id: pageId } : {}),
-      name,
-      args: toolArgs,
-      agent: mcpAgent(agent)
-    }
-  }
+  const target: { document_id?: string; page_id?: string } = {}
+  if (typeof documentId === 'string') target.document_id = documentId
+  if (typeof pageId === 'string') target.page_id = pageId
+  return { command: 'tool', args: { ...target, name, args: toolArgs, agent: mcpAgent(agent) } }
 }
 
 /**

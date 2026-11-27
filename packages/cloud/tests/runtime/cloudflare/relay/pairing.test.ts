@@ -64,7 +64,9 @@ describe('paired tabs on a Durable Object', () => {
     const object = sockets([tab], pairing)
     const outcome = (await object.open(pairing)).call(pairing, call)
     const handed = tab.frames
-      .flatMap((frame) => (frame.type === 'message' ? [decodeAutomationMessage(frame.payload)] : []))
+      .flatMap((frame) =>
+        frame.type === 'message' ? [decodeAutomationMessage(frame.payload)] : []
+      )
       .find((message) => message?.type === 'request')
     if (handed?.type !== 'request') throw new Error('No call arrived')
     await object.message(

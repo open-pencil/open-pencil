@@ -16,7 +16,7 @@ import { cloudConnections } from '@/app/cloud/sessions/connection'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 
-import { PAIRED_COMMANDS, runPairedRequest } from './run'
+import { PAIRED_COMMANDS, pairedRequests, type HandleAutomationRequest } from './run'
 import { newPairingToken, storedPairing, type StoredPairing } from './stored'
 
 /** How long the transport goes before it presents the token again; the pairing lasts past it. */
@@ -49,8 +49,10 @@ export const agentPairingServer = computed(() => {
 async function serve(
   pairing: StoredPairing,
   signal: AbortSignal,
+  handleRequest: HandleAutomationRequest,
   createSocket?: CloudRelayOptions['createSocket']
 ): Promise<void> {
+  const runRequest = pairedRequests(handleRequest)
   const pairingId = await agentPairingId(pairing.token)
   if (signal.aborted) return
   const paired = { mcpURL: cloudMCPResource(pairing.server), token: pairing.token }
@@ -84,7 +86,7 @@ async function serve(
     run: (store, command, args, callSignal) => {
       lastCallAt = Date.now()
       agentPairing.value = { status: 'paired', ...paired, lastCallAt }
-      return runPairedRequest(store, command, args, callSignal)
+      return runRequest(store, command, args, callSignal)
     }
   })
   transport.onPeerJoin((peerId) => {
@@ -100,7 +102,10 @@ async function serve(
  * Keeps this browser's pairing served while one is stored, from one of its windows at a time, and
  * ends it in every window once it is cleared.
  */
-export function followAgentPairing(createSocket?: CloudRelayOptions['createSocket']): () => void {
+export function followAgentPairing(
+  handleRequest: HandleAutomationRequest,
+  createSocket?: CloudRelayOptions['createSocket']
+): () => void {
   let serving: AbortController | null = null
   const stopWatching = watch(
     storedPairing,
@@ -120,7 +125,7 @@ export function followAgentPairing(createSocket?: CloudRelayOptions['createSocke
       }
       void navigator.locks
         .request(SERVING_LOCK, { signal: controller.signal }, () =>
-          serve(pairing, controller.signal, createSocket)
+          serve(pairing, controller.signal, handleRequest, createSocket)
         )
         .catch((error: unknown) => {
           if (!controller.signal.aborted) {

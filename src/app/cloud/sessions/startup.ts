@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 
+import type { HandleAutomationRequest } from '@/app/cloud/pairing/run'
 import { followAgentPairing } from '@/app/cloud/pairing/session'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { isTauri } from '@/app/tauri/env'
@@ -66,6 +67,8 @@ export async function startCloudSessions(options: {
   leaveLinkAddress(): Promise<unknown>
   /** Save to, kept to one server, for a draft on its way to Cloud. */
   saveTo: SaveToCloud
+  /** How the app runs a local MCP server's requests, which a paired agent's run as. */
+  handleAutomationRequest: HandleAutomationRequest
 }): Promise<void> {
   // Taken first, so a sign-in this tab leaves for below is the only one left pending.
   const pending = takePendingCloudSignIn()
@@ -95,7 +98,7 @@ export async function startCloudSessions(options: {
       forgetCloudDocumentLink()
       forgetCloudLink()
     }
-    if (IS_BROWSER && !isTauri()) followAgentPairing()
+    if (IS_BROWSER && !isTauri()) followAgentPairing(options.handleAutomationRequest)
     await startCloudDrafts({ returnedFrom: pending, saveTo: options.saveTo })
     // Later sign-ins, as in the connect dialog, open what they were for once they finish.
     resumeCloudDocumentLink()

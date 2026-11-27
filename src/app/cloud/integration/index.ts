@@ -6,6 +6,7 @@ import { watchCloudDocumentNotices } from '../documents/notifications'
  * stays out of that build; app code outside Cloud's folders imports Cloud only from here.
  */
 import type { SaveToCloud } from '../drafts/save'
+import type { HandleAutomationRequest } from '../pairing/run'
 import { watchCloudRooms } from '../rooms/live'
 import { watchCloudAccountSwitches } from '../sessions/forget'
 import { startCloudSessions } from '../sessions/startup'
@@ -52,6 +53,7 @@ export const CLOUD_INCLUDED: boolean = true
 export function startCloud(options: {
   leaveLinkAddress(): Promise<unknown>
   saveTo: SaveToCloud
+  handleAutomationRequest: HandleAutomationRequest
 }): () => void {
   const stopRooms = watchCloudRooms()
   const stopComments = watchCloudComments()
