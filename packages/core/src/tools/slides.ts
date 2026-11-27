@@ -90,6 +90,7 @@ function animationOutline(graph: SceneGraph, id: string, animation: LayerAnimati
 
 export const getDeck = defineTool({
   name: 'get_deck',
+  documentKinds: ['slides'],
   description:
     'Read the deck on the current page as an outline: its sections and their slides in ' +
     'presenting order, each with its number (none for a skipped slide), size, speaker notes, ' +
@@ -180,6 +181,7 @@ function lastSlide(graph: SceneGraph, pageId: string): string | null {
 
 export const createSlides = defineTool({
   name: 'create_slides',
+  documentKinds: ['slides'],
   description:
     'Add empty slides to the deck on the current page, at the size of the slide before them, ' +
     'after a slide or at the end, optionally as a new section. Slides are numbered by their ' +
@@ -215,6 +217,7 @@ export const createSlides = defineTool({
 
 export const moveSlides = defineTool({
   name: 'move_slides',
+  documentKinds: ['slides'],
   description:
     'Move slides of the deck on the current page, kept in the order given, after a slide, to ' +
     'the start, or into a section of their own. Sections left empty are removed and slides are ' +
@@ -274,6 +277,7 @@ function slideTransitionFrom(
 
 export const setSlides = defineTool({
   name: 'set_slides',
+  documentKinds: ['slides'],
   description:
     "Set slides' speaker notes (plain text, a line per paragraph), whether presenting skips " +
     'them, and how they move on to the next slide: a style and direction, a duration in ' +
@@ -347,6 +351,7 @@ function layerAnimationFrom(
 
 export const setAnimations = defineTool({
   name: 'set_animations',
+  documentKinds: ['slides'],
   description:
     'Animate layers on slides as steps of the slide build, or with null stop animating them; a ' +
     'layer inside an instance animates as its instance, as in Figma, and the result names it. ' +

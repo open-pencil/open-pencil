@@ -358,6 +358,8 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 ### Slides
 
+These are listed while a deck is open: `list_documents` reports each document's kind, and the tool list changes when a deck opens or closes.
+
 | Tool             | Description                                                                                                         |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `get_deck`       | Outline the deck on the current page: sections, slides with numbers, notes, text, transitions, and animated layers |

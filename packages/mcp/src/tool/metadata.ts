@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { ToolCapability } from '@open-pencil/core/tools'
+import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import type { MCPToolScope } from '#mcp/tool/scope'
 
@@ -17,6 +18,13 @@ const TOOL_CAPABILITIES = [
   'settings:write'
 ] as const satisfies readonly ToolCapability[]
 
+/** The kinds of document a tool can be for. */
+export const DOCUMENT_KINDS = [
+  'design',
+  'board',
+  'slides'
+] as const satisfies readonly DocumentKind[]
+
 export type ToolEffect = (typeof TOOL_EFFECTS)[number]
 export type ToolAvailability = (typeof TOOL_AVAILABILITIES)[number]
 
@@ -26,7 +34,9 @@ const toolDescriptorSchema = v.object({
   effect: v.picklist(TOOL_EFFECTS),
   availability: v.picklist(TOOL_AVAILABILITIES),
   capabilities: v.array(v.picklist(TOOL_CAPABILITIES)),
-  enabled: v.boolean()
+  enabled: v.boolean(),
+  /** The kinds of document the tool is listed for while one is open; every kind when left out. */
+  documentKinds: v.optional(v.nullable(v.array(v.picklist(DOCUMENT_KINDS))))
 })
 
 export type ToolDescriptor = v.InferOutput<typeof toolDescriptorSchema>
