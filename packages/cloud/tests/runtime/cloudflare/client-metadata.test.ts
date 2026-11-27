@@ -1,24 +1,30 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
+import dns from 'node:dns/promises'
 
 import { fetchClientMetadataOnCloudflare } from '#cloud/runtime/cloudflare/client-metadata'
+
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 const realFetch = globalThis.fetch
 const document = 'https://agent.example.com/client.json'
 
+/** A lookup of a family the host has no records of, as `node:dns` fails it. */
+function noRecords(): never {
+  throw Object.assign(new Error('queryA ENODATA'), { code: 'ENODATA' })
+}
+
 /** Answers lookups with `addresses` and records what else the transport fetched, and how. */
 function resolveTo(addresses: { A?: string[]; AAAA?: string[] }) {
   const fetched: { url: string; redirect?: RequestRedirect }[] = []
+  spyOn(dns, 'resolve4').mockImplementation(
+    asDouble<typeof dns.resolve4>(async () => addresses.A ?? noRecords())
+  )
+  spyOn(dns, 'resolve6').mockImplementation(
+    asDouble<typeof dns.resolve6>(async () => addresses.AAAA ?? noRecords())
+  )
   globalThis.fetch = Object.assign(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(input instanceof Request ? input.url : input)
-      if (url.hostname === 'cloudflare-dns.com') {
-        const type = url.searchParams.get('type') === 'AAAA' ? 'AAAA' : 'A'
-        const code = type === 'A' ? 1 : 28
-        return Response.json({
-          Status: 0,
-          Answer: (addresses[type] ?? []).map((data) => ({ type: code, data }))
-        })
-      }
       fetched.push({ url: url.href, redirect: init?.redirect })
       return new Response('{}', { status: 200 })
     },
@@ -29,6 +35,7 @@ function resolveTo(addresses: { A?: string[]; AAAA?: string[] }) {
 
 afterEach(() => {
   globalThis.fetch = realFetch
+  mock.restore()
 })
 
 describe('client metadata on Cloudflare', () => {
@@ -56,7 +63,18 @@ describe('client metadata on Cloudflare', () => {
     }
   })
 
-  test('refuses a host that does not resolve', async () => {
+  test('checks the addresses a CNAME leads to, not the names it passes', async () => {
+    const fetched = resolveTo({
+      A: ['agent.example.net.', '10.0.0.5'],
+      AAAA: ['agent.example.net.']
+    })
+    await expect(fetchClientMetadataOnCloudflare(document)).rejects.toThrow('public addresses')
+    expect(fetched).toEqual([])
+  })
+
+  test('refuses a host that does not resolve, or only to names', async () => {
+    resolveTo({ AAAA: ['agent.example.net.'] })
+    await expect(fetchClientMetadataOnCloudflare(document)).rejects.toThrow('public addresses')
     const fetched = resolveTo({})
     await expect(fetchClientMetadataOnCloudflare(document)).rejects.toThrow('public addresses')
     expect(fetched).toEqual([])
