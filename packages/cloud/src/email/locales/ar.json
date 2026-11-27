@@ -143,12 +143,5 @@
   "commentSomeone": "شخص ما",
   "openComment": "افتح التعليق",
   "commentSettings": "تصلك هذه الرسائل وفق إعدادات الإشعارات لديك. غيّرها في {link}.",
-  "commentSettingsLink": "إعدادات حسابك",
-  "waitlistSubject": "أكّد مكانك في قائمة انتظار OpenPencil Cloud",
-  "waitlistHeading": "أكّد بريدك الإلكتروني",
-  "waitlistPreview": "نقرة واحدة للانضمام إلى قائمة انتظار OpenPencil Cloud.",
-  "waitlist": "شكرًا لاهتمامك بـOpenPencil Cloud. أكّد هذا العنوان للانضمام إلى قائمة الانتظار، وسنراسلك مرة واحدة فقط، عندما يصبح Cloud جاهزًا لك.",
-  "waitlistAction": "الانضمام إلى قائمة الانتظار",
-  "waitlistNote": "لم تسجّل؟ تجاهل هذه الرسالة وسيُحذف العنوان خلال سبعة أيام، أو {link}.",
-  "waitlistLeave": "احذفه الآن"
+  "commentSettingsLink": "إعدادات حسابك"
 }

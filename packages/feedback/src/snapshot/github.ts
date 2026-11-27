@@ -27,6 +27,8 @@ const clonesSchema = v.object({ clones: v.array(trafficDaySchema) })
 const issuesSchema = v.array(
   v.object({
     number: v.number(),
+    // A deleted account's items name GitHub's `ghost` user; `user` itself is never missing.
+    user: v.nullable(v.object({ login: v.string(), type: v.string() })),
     author_association: v.string(),
     created_at: v.string(),
     updated_at: v.string(),
@@ -62,6 +64,8 @@ export interface RepoItem {
   kind: 'issue' | 'pull'
   /** How the author relates to the repository, as GitHub names it: `MEMBER`, `CONTRIBUTOR`... */
   authorAssociation: string
+  /** The author's login, or `null` for a bot or an item without one. */
+  author: string | null
   createdAt: string
   closedAt: string | null
   mergedAt: string | null
@@ -151,6 +155,7 @@ export function githubClient(
         number: item.number,
         kind: item.pull_request ? 'pull' : 'issue',
         authorAssociation: item.author_association,
+        author: item.user && item.user.type !== 'Bot' ? item.user.login : null,
         createdAt: timestamp(item.created_at),
         closedAt: item.closed_at ? timestamp(item.closed_at) : null,
         mergedAt: item.pull_request?.merged_at ? timestamp(item.pull_request.merged_at) : null,

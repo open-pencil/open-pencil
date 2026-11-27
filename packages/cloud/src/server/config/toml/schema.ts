@@ -26,6 +26,7 @@ const DEFAULT_SECRET_NAMES = {
   turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
   servicesSigningKey: 'OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY',
   internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN',
+  usageReportToken: 'OPENPENCIL_CLOUD_USAGE_TOKEN',
   posthogProjectAPIKey: 'POSTHOG_PROJECT_API_KEY'
 } as const
 
@@ -293,6 +294,13 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   billing: v.optional(v.strictObject({ endpoint: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
+  /**
+   * Optional: lets the operator's own dashboard read daily usage counts from the internal API with
+   * a token that can do nothing else.
+   */
+  usage_report: v.optional(
+    v.strictObject({ token: defaultReference(DEFAULT_SECRET_NAMES.usageReportToken) })
   ),
   /**
    * Optional: the operator's terms and privacy policy, linked at sign-up and in the portal, and

@@ -491,7 +491,8 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
   const baseFill = firstVisibleFill(node)
   return segs.map((seg) => {
     const s = seg.style ?? {}
-    const fill = s.fills?.find((f) => f.visible && f.type === 'SOLID') ?? baseFill
+    // A run's own fills replace the layer's: one whose fills are empty or hidden draws nothing.
+    const fill = s.fills ? (s.fills.find((f) => f.visible) ?? null) : baseFill
     const fontSize = s.fontSize ?? node.fontSize
     const weight = s.fontWeight ?? node.fontWeight
     const deco = s.textDecoration ?? node.textDecoration
@@ -503,7 +504,7 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
         bold: weight >= 600,
         italic: s.italic ?? node.italic,
         color: fill ? hex(fill.color) : '000000',
-        transparency: transparency(opacity * (fill ? fill.opacity * fill.color.a : 1)),
+        transparency: fill ? transparency(opacity * fill.opacity * fill.color.a) : 100,
         charSpacing: charSpacingPt(
           ctx,
           textLengthPixels(s.letterSpacing ?? node.letterSpacing, fontSize)

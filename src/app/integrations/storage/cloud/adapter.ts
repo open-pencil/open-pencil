@@ -138,6 +138,7 @@ export function createCloudStorageAdapter(
           name,
           kind,
           baseRevision,
+          cover: options?.cover,
           objectFetch: (input, init) => dependencies.objectFetch(input, init),
           onProgress
         })

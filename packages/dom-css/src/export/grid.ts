@@ -27,6 +27,12 @@ export function addGridContainer(
     style['grid-template-rows'] = tracksToCSS(node.gridTemplateRows)
   if (node.gridColumnGap > 0) style['column-gap'] = css('gridColumnGap', `${node.gridColumnGap}px`)
   if (node.gridRowGap > 0) style['row-gap'] = css('gridRowGap', `${node.gridRowGap}px`)
+  // A track that hugs its cells keeps their size in a larger grid, as auto layout's does; CSS
+  // stretches auto tracks into the room left.
+  if (node.gridTemplateColumns.some((track) => track.sizing === 'AUTO'))
+    style['justify-content'] = 'start'
+  if (node.gridTemplateRows.some((track) => track.sizing === 'AUTO'))
+    style['align-content'] = 'start'
 }
 
 /** A span sets the whole placement, so the start follows it. */
