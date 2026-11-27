@@ -14,7 +14,6 @@ export interface SidebarLabels {
   icons: string
   photos: string
   layers: string
-  contextMenu: string
   exporting: string
   autoLayout: string
   components: string
@@ -24,6 +23,9 @@ export interface SidebarLabels {
   componentLibraries: string
   cloudStorage: string
   gettingStarted: string
+  responsiveCard: string
+  comingFromFigma: string
+  comingFromPenDev: string
   features: string
   architecture: string
   techStack: string
@@ -213,7 +215,6 @@ export const EN: SidebarLabels = {
   pen: 'Pen Tool',
   vectorEditing: 'Vector Editing',
   layers: 'Layers & Pages',
-  contextMenu: 'Context Menu',
   exporting: 'Exporting',
   autoLayout: 'Auto Layout',
   components: 'Components',
@@ -225,6 +226,9 @@ export const EN: SidebarLabels = {
   icons: 'Icons',
   photos: 'Photos',
   gettingStarted: 'Getting Started',
+  responsiveCard: 'Build a Responsive Card',
+  comingFromFigma: 'Coming from Figma',
+  comingFromPenDev: 'Coming from pen.dev',
   features: 'Features',
   architecture: 'Architecture',
   techStack: 'Tech Stack',
@@ -246,7 +250,6 @@ export const DE: SidebarLabels = {
   pen: 'Stiftwerkzeug',
   vectorEditing: 'Vektorbearbeitung',
   layers: 'Ebenen & Seiten',
-  contextMenu: 'Kontextmenü',
   exporting: 'Exportieren',
   autoLayout: 'Auto-Layout',
   components: 'Komponenten',
@@ -258,6 +261,9 @@ export const DE: SidebarLabels = {
   icons: 'Symbole',
   photos: 'Fotos',
   gettingStarted: 'Erste Schritte',
+  responsiveCard: 'Eine responsive Karte bauen',
+  comingFromFigma: 'Umstieg von Figma',
+  comingFromPenDev: 'Umstieg von pen.dev',
   features: 'Funktionen',
   architecture: 'Architektur',
   techStack: 'Tech-Stack',
@@ -279,7 +285,6 @@ export const IT: SidebarLabels = {
   pen: 'Strumento penna',
   vectorEditing: 'Modifica vettoriale',
   layers: 'Livelli e pagine',
-  contextMenu: 'Menu contestuale',
   exporting: 'Esportazione',
   autoLayout: 'Auto-layout',
   components: 'Componenti',
@@ -291,6 +296,9 @@ export const IT: SidebarLabels = {
   icons: 'Icone',
   photos: 'Foto',
   gettingStarted: 'Per iniziare',
+  responsiveCard: 'Creare una scheda adattiva',
+  comingFromFigma: 'Arrivare da Figma',
+  comingFromPenDev: 'Arrivare da pen.dev',
   features: 'Funzionalità',
   architecture: 'Architettura',
   techStack: 'Stack tecnologico',
@@ -312,7 +320,6 @@ export const FR: SidebarLabels = {
   pen: 'Outil plume',
   vectorEditing: 'Édition vectorielle',
   layers: 'Calques et pages',
-  contextMenu: 'Menu contextuel',
   exporting: 'Exportation',
   autoLayout: 'Mise en page auto',
   components: 'Composants',
@@ -324,6 +331,9 @@ export const FR: SidebarLabels = {
   icons: 'Icônes',
   photos: 'Photos',
   gettingStarted: 'Premiers pas',
+  responsiveCard: 'Créer une carte adaptative',
+  comingFromFigma: 'Venir de Figma',
+  comingFromPenDev: 'Venir de pen.dev',
   features: 'Fonctionnalités',
   architecture: 'Architecture',
   techStack: 'Stack technique',
@@ -345,7 +355,6 @@ export const ES: SidebarLabels = {
   pen: 'Herramienta pluma',
   vectorEditing: 'Edición vectorial',
   layers: 'Capas y páginas',
-  contextMenu: 'Menú contextual',
   exporting: 'Exportar',
   autoLayout: 'Auto-layout',
   components: 'Componentes',
@@ -357,6 +366,9 @@ export const ES: SidebarLabels = {
   icons: 'Iconos',
   photos: 'Fotos',
   gettingStarted: 'Primeros pasos',
+  responsiveCard: 'Crear una tarjeta adaptable',
+  comingFromFigma: 'Si vienes de Figma',
+  comingFromPenDev: 'Si vienes de pen.dev',
   features: 'Características',
   architecture: 'Arquitectura',
   techStack: 'Stack tecnológico',
@@ -378,7 +390,6 @@ export const PL: SidebarLabels = {
   pen: 'Narzędzie pióro',
   vectorEditing: 'Edycja wektorów',
   layers: 'Warstwy i strony',
-  contextMenu: 'Menu kontekstowe',
   exporting: 'Eksportowanie',
   autoLayout: 'Auto-layout',
   components: 'Komponenty',
@@ -390,6 +401,9 @@ export const PL: SidebarLabels = {
   icons: 'Ikony',
   photos: 'Zdjęcia',
   gettingStarted: 'Rozpoczęcie pracy',
+  responsiveCard: 'Tworzenie responsywnej karty',
+  comingFromFigma: 'Przejście z Figmy',
+  comingFromPenDev: 'Przejście z pen.dev',
   features: 'Funkcje',
   architecture: 'Architektura',
   techStack: 'Stack technologiczny',
@@ -411,7 +425,6 @@ export const RU: SidebarLabels = {
   pen: 'Инструмент «Перо»',
   vectorEditing: 'Редактирование векторов',
   layers: 'Слои и страницы',
-  contextMenu: 'Контекстное меню',
   exporting: 'Экспорт',
   autoLayout: 'Авто-раскладка',
   components: 'Компоненты',
@@ -423,6 +436,9 @@ export const RU: SidebarLabels = {
   icons: 'Иконки',
   photos: 'Фото',
   gettingStarted: 'Начало работы',
+  responsiveCard: 'Адаптивная карточка',
+  comingFromFigma: 'Переход с Figma',
+  comingFromPenDev: 'Переход с pen.dev',
   features: 'Возможности',
   architecture: 'Архитектура',
   techStack: 'Технологии',

@@ -30,6 +30,17 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'saving-consumer-documents': '/user-guide/component-libraries#where-libraries-live',
     'behaviours-and-preview': '/user-guide/components#make-a-component-work-like-a-control'
   },
+  // The Context Menu page's actions moved to the pages of the tasks they belong to.
+  '/user-guide/selection-and-manipulation/': {
+    'copy-paste-as': '/user-guide/exporting#copy-into-another-app',
+    'clipboard-actions': '/user-guide/selection-and-manipulation#copy-paste-and-delete',
+    'copy-and-paste-properties': '/user-guide/selection-and-manipulation#copy-the-look-of-a-layer',
+    'z-order': '/user-guide/selection-and-manipulation#put-layers-in-front-or-behind',
+    grouping: '/user-guide/selection-and-manipulation#group-layers',
+    'component-actions': '/user-guide/components',
+    'visibility-lock': '/user-guide/selection-and-manipulation#hide-and-lock-layers',
+    'move-to-page': '/user-guide/layers-and-pages#work-with-pages'
+  },
   // Provider sign-ins moved to Models and Providers when AI Chat was rewritten.
   '/user-guide/ai-chat/': {
     'supported-providers': '/user-guide/models-and-providers#providers'
