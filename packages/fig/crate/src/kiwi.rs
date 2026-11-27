@@ -47,6 +47,15 @@ pub struct Definition {
     by_id: Vec<u32>,
 }
 
+impl Definition {
+    /// A message field by its id on the wire, with its index; damaged when no field has it.
+    pub(crate) fn field_by_id(&self, id: u32) -> Result<(usize, &Field)> {
+        let index = self.by_id.get(id as usize).ok_or(Malformed)?;
+        let index = index.checked_sub(1).ok_or(Malformed)? as usize;
+        Ok((index, self.fields.get(index).ok_or(Malformed)?))
+    }
+}
+
 #[derive(Debug)]
 pub struct Schema {
     pub definitions: Vec<Definition>,
@@ -205,6 +214,12 @@ const MAX_LOOKUP_ENTRIES: usize = 1 << 20;
 const MAX_DEPTH: u32 = 64;
 
 /// A cursor over an encoded message.
+/// Text as a TypeScript `TextDecoder` reads it: without one leading byte order mark, and with
+/// U+FFFD for bytes that are not UTF-8.
+pub(crate) fn text(bytes: &[u8]) -> std::borrow::Cow<'_, str> {
+    String::from_utf8_lossy(bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes))
+}
+
 pub struct Reader<'a> {
     data: &'a [u8],
     pub position: usize,
@@ -420,10 +435,9 @@ impl<'a> Reader<'a> {
             if id == 0 {
                 break Ok(());
             }
-            let index = *definition.by_id.get(id as usize).ok_or(Malformed)?;
-            let index = index.checked_sub(1).ok_or(Malformed)? as usize;
+            let (index, field) = definition.field_by_id(id)?;
             if !visit(self, index)? {
-                self.skip_field(schema, &definition.fields[index])?;
+                self.skip_field(schema, field)?;
             }
         };
         self.depth -= 1;

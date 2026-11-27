@@ -148,6 +148,38 @@ describe('field values from the Rust reader', () => {
     expectSameFields(pages)
   })
 
+  test("name an instance swapped to a variant of an unnamed set by the variant's name", async () => {
+    const pages = await fieldsAfter('gold-preview.fig', (records) => {
+      const { addOverride, nested } = documentOf(records)
+      const { inner, outer } = nested()
+      const sets = records.filter((record) => record.isStateGroup === true && record.guid)
+      const variant = records.find(
+        (record) =>
+          record.type === 'SYMBOL' &&
+          record.guid &&
+          record.name &&
+          sets.some(
+            (set) =>
+              set.guid &&
+              record.parentIndex?.guid &&
+              guidToString(set.guid) === guidToString(record.parentIndex.guid)
+          ) &&
+          guidToString(record.guid) !==
+            (inner.symbolData?.symbolID && guidToString(inner.symbolData.symbolID))
+      )
+      const set = sets.find(
+        (candidate) =>
+          candidate.guid &&
+          variant?.parentIndex?.guid &&
+          guidToString(candidate.guid) === guidToString(variant.parentIndex.guid)
+      )
+      if (!variant?.guid || !set) throw new Error('gold-preview.fig lacks a named variant')
+      delete set.name
+      addOverride(outer, { guidPath: { guids: [inner.guid] }, overriddenSymbolID: variant.guid })
+    })
+    expectSameFields(pages)
+  })
+
   test('keep the text a property binds when a scaled instance restores its own fields', async () => {
     const pages = await fieldsAfter('gold-preview.fig', (records) => {
       const { componentOf, nested } = documentOf(records)

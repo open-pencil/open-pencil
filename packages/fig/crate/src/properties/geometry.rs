@@ -34,7 +34,7 @@ struct Placed {
 }
 
 /// What a resize reads of a layer besides its geometry.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Default)]
 struct Placement {
     auto_layout: bool,
     absolute: bool,
@@ -44,7 +44,7 @@ struct Placement {
 
 /// A layer's position and size along one axis once its parent goes from `before` to `after`.
 fn constrained(
-    constraint: Option<ConstraintType>,
+    constraint: Option<&ConstraintType>,
     position: f64,
     size: f64,
     before: f64,
@@ -103,7 +103,8 @@ impl Properties<'_> {
                         shape.transform = Some(matrix(&transform));
                     }
                     if let Some(mode) = placed.stack_mode.filter(|_| kept(NodeField::StackMode)) {
-                        place.auto_layout = !matches!(mode, StackMode::None | StackMode::Unlisted);
+                        place.auto_layout =
+                            !matches!(mode, StackMode::None | StackMode::Unlisted(_));
                     }
                     if let Some(mode) = placed
                         .stack_positioning
@@ -184,11 +185,21 @@ impl Properties<'_> {
                 continue;
             };
             let transform = geometry[at].transform.unwrap_or(IDENTITY);
-            let place = placement[at];
-            let (x, width) =
-                constrained(place.horizontal, transform[2], size[0], before[0], after[0]);
-            let (y, height) =
-                constrained(place.vertical, transform[5], size[1], before[1], after[1]);
+            let place = &placement[at];
+            let (x, width) = constrained(
+                place.horizontal.as_ref(),
+                transform[2],
+                size[0],
+                before[0],
+                after[0],
+            );
+            let (y, height) = constrained(
+                place.vertical.as_ref(),
+                transform[5],
+                size[1],
+                before[1],
+                after[1],
+            );
             let resized = [width, height];
             self.resize(geometry, placement, child, size, resized);
             geometry[at].size = Some(resized);

@@ -11,18 +11,19 @@ fn entries(map: Option<&VariableDataMap>) -> &[VariableDataMapEntry] {
         .unwrap_or_default()
 }
 
-/// The field a binding binds, or `None` for one the schema does not name.
-fn field_of(entry: &VariableDataMapEntry) -> Option<VariableField> {
+/// The field a binding binds, or `None` for one the file's schema does not name.
+fn field_of(entry: &VariableDataMapEntry) -> Option<&VariableField> {
     entry
         .variable_field
-        .filter(|field| *field != VariableField::Unlisted)
+        .as_ref()
+        .filter(|field| !matches!(field, VariableField::Unlisted(name) if name.is_empty()))
 }
 
 /// A layer's variable bindings: its legacy map's entries, then its parameter map's, one per
 /// bound field, the later winning in the earlier one's place (`variableConsumptionEntries`).
 pub fn consumption(node: &NodeChange) -> Vec<&VariableDataMapEntry> {
     let mut unkeyed = Vec::new();
-    let mut keyed: Vec<(VariableField, &VariableDataMapEntry)> = Vec::new();
+    let mut keyed: Vec<(&VariableField, &VariableDataMapEntry)> = Vec::new();
     let all = entries(node.variable_consumption_map.as_deref())
         .iter()
         .chain(entries(node.parameter_consumption_map.as_deref()));

@@ -7,7 +7,7 @@ use crate::model::{
 };
 
 /// The layer field a component property binds through a parameter map entry for `field`.
-fn bound_field(field: VariableField) -> Option<ComponentPropNodeField> {
+fn bound_field(field: &VariableField) -> Option<ComponentPropNodeField> {
     Some(match field {
         VariableField::Visible => ComponentPropNodeField::Visible,
         VariableField::TextData => ComponentPropNodeField::TextData,
@@ -41,7 +41,7 @@ pub fn normalize(node: &mut NodeChange) {
                 .clone()?;
             Some(ComponentPropRef {
                 def_id: Some(definition),
-                component_prop_node_field: Some(bound_field(entry.variable_field?)?),
+                component_prop_node_field: Some(bound_field(entry.variable_field.as_ref()?)?),
                 ..ComponentPropRef::default()
             })
         })

@@ -120,7 +120,7 @@ export async function openWithCrate(file: Uint8Array): Promise<CrateDocument> {
       const text = new TextDecoder().decode(
         new Uint8Array(crate.memory.buffer, crate.json(), crate.json_length())
       )
-      return compact(text.split('\n')).map((line): unknown => JSON.parse(line))
+      return compact(text.split('\n')).map((line): unknown => JSON.parse(line, exactIntegers))
     }
   }
 }
@@ -231,10 +231,25 @@ function readPagesWithoutStyles(file: Uint8Array): (id: string) => InstanceOccur
   }
 }
 
-/** A reader's value as the crate writes it: 64-bit integers as numbers, bytes as numbers. */
+/**
+ * The crate's integers past what a number holds exactly, as their decimal digits, the way
+ * `asCrateWrites` writes the reader's.
+ */
+function exactIntegers(_: string, value: unknown, context?: { source?: string }): unknown {
+  if (typeof value !== 'number' || Number.isSafeInteger(value) || !context?.source) return value
+  return /^-?\d+$/.test(context.source) ? context.source : value
+}
+
+/**
+ * A reader's value as the crate writes it: bytes as numbers, and 64-bit integers as numbers, or
+ * as their decimal digits past what a number holds exactly.
+ */
 function asCrateWrites(value: unknown): unknown {
   const text = JSON.stringify(value, (_, inner: unknown) => {
-    if (typeof inner === 'bigint') return Number(inner)
+    if (typeof inner === 'bigint') {
+      const number = Number(inner)
+      return Number.isSafeInteger(number) ? number : String(inner)
+    }
     if (inner instanceof Uint8Array) return [...inner]
     return inner
   })

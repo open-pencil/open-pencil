@@ -55,14 +55,16 @@ impl Replay {
                 if self.has_own_name {
                     return Ok(());
                 }
-                // A replacement without a name leaves the layer none.
-                self.props.name = if record == NONE {
-                    self.name_before.clone()
+                // The variant set's name, else the replacement's own; a replacement without a
+                // name leaves the layer none.
+                let set = if record == NONE {
+                    None
                 } else {
                     let named: Named =
                         properties.decode(properties.index.records[record as usize].span)?;
                     named.name
                 };
+                self.props.name = set.or_else(|| self.name_before.clone());
             }
             Source::Assignments(list) => {
                 self.props.component_prop_assignments = Some(properties.assignments(list)?);
@@ -173,7 +175,7 @@ impl Replay {
 
 /// A record's text with the characters a text property binds, and whether they are its own.
 fn bound_text(properties: &Properties<'_>, own: Option<TextData>, text: Span) -> (TextData, bool) {
-    let characters = String::from_utf8_lossy(&properties.message[text.range()]).into_owned();
+    let characters = crate::kiwi::text(&properties.message[text.range()]).into_owned();
     let mut data = own.unwrap_or_default();
     let same = data.characters.as_deref() == Some(characters.as_str());
     data.characters = Some(characters);

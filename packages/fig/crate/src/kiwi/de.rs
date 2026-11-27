@@ -3,6 +3,7 @@
 //! so a type with a few fields reads only those.
 
 use core::fmt;
+use std::borrow::Cow;
 
 use serde::de::value::BorrowedStrDeserializer;
 use serde::de::{self, DeserializeSeed, EnumAccess, MapAccess, SeqAccess, VariantAccess, Visitor};
@@ -102,10 +103,9 @@ impl<'r, 'a> Decoder<'r, 'a> {
             STRING => {
                 let span = reader.span()?;
                 let bytes: &'a [u8] = &reader.data[span.range()];
-                match core::str::from_utf8(bytes) {
-                    Ok(text) => visitor.visit_borrowed_str(text),
-                    // As a TypeScript `TextDecoder` reads it.
-                    Err(_) => visitor.visit_string(String::from_utf8_lossy(bytes).into_owned()),
+                match super::text(bytes) {
+                    Cow::Borrowed(text) => visitor.visit_borrowed_str(text),
+                    Cow::Owned(text) => visitor.visit_string(text),
                 }
             }
             INT64 => {
@@ -153,12 +153,20 @@ impl<'r, 'a> Decoder<'r, 'a> {
         if left > reader.data.len() - reader.position {
             return Err(Malformed.into());
         }
-        visitor.visit_seq(Elements {
+        let mut elements = Elements {
             reader,
             schema: self.schema,
             ty: self.ty,
             left,
-        })
+        };
+        let value = visitor.visit_seq(&mut elements)?;
+        // Unread elements would be taken for the fields after the array.
+        if elements.left != 0 {
+            return Err(de::Error::custom(
+                "the array has more elements than its type",
+            ));
+        }
+        Ok(value)
     }
 
     /// A struct's or a message's fields.
@@ -181,14 +189,24 @@ impl<'r, 'a> Decoder<'r, 'a> {
         };
         let reader = self.reader;
         reader.enter()?;
-        let result = visitor.visit_map(Fields {
+        let mut fields = Fields {
             reader: &mut *reader,
             schema: self.schema,
             definition,
             shape,
-        });
+            done: false,
+        };
+        let result = visitor.visit_map(&mut fields);
+        let done = fields.done;
         reader.depth -= 1;
-        result
+        let value = result?;
+        // Unread fields would be taken for the ones after this value.
+        if !done {
+            return Err(de::Error::custom(
+                "the value has fields its type did not read",
+            ));
+        }
+        Ok(value)
     }
 }
 
@@ -410,21 +428,26 @@ struct Fields<'r, 'a> {
     schema: &'a Schema,
     definition: &'a Definition,
     shape: Shape<'r, 'a>,
+    /// Whether the visitor reached the end: past a struct's last field, a message's zero.
+    done: bool,
 }
 
 impl<'a> Fields<'_, 'a> {
     /// The next field, or `None` past the last.
     fn next_field(&mut self) -> Result<Option<&'a Field>, Error> {
         match &mut self.shape {
-            Shape::Struct { next } => Ok(self.definition.fields.get(*next)),
+            Shape::Struct { next } => {
+                let field = self.definition.fields.get(*next);
+                self.done = field.is_none();
+                Ok(field)
+            }
             Shape::Message { field, keep } => loop {
                 let id = self.reader.varuint()?;
                 if id == 0 {
+                    self.done = true;
                     return Ok(None);
                 }
-                let index = *self.definition.by_id.get(id as usize).ok_or(Malformed)?;
-                let found =
-                    &self.definition.fields[index.checked_sub(1).ok_or(Malformed)? as usize];
+                let (_, found) = self.definition.field_by_id(id)?;
                 if keep.is_none_or(|keep| keep(&found.name)) {
                     *field = Some(found);
                     return Ok(Some(found));
@@ -536,5 +559,56 @@ mod tests {
         let unnamed: Partial = from_message(&schema, &[1, 9, 0], 0, 2).unwrap();
         assert_eq!(unnamed.k, Some(Kind::Unlisted));
         assert!(from_message::<Partial>(&schema, &message[..6], 0, 2).is_err());
+        // One leading byte order mark is dropped, as a `TextDecoder` drops it.
+        let marked: Partial = from_message(
+            &schema,
+            &[4, 0xEF, 0xBB, 0xBF, b'A', 0xEF, 0xBB, 0xBF, 0, 0],
+            0,
+            2,
+        )
+        .unwrap();
+        assert_eq!(marked.n.as_deref(), Some("A\u{FEFF}"));
+    }
+
+    #[derive(Debug, Default, Deserialize)]
+    #[serde(default)]
+    struct Short {
+        l: Option<(u32,)>,
+    }
+
+    #[test]
+    fn rejects_values_their_type_leaves_unread() {
+        // message M { uint[] l = 1; }
+        let schema = Schema::parse(&[1, b'M', 0, 2, 1, b'l', 0, 7, 1, 1]).unwrap();
+        // Two elements for a type that reads one, with the message's zero after them.
+        assert!(from_message::<Short>(&schema, &[1, 2, 7, 0, 0], 0, 0).is_err());
+        let one: Short = from_message(&schema, &[1, 1, 7, 0], 0, 0).unwrap();
+        assert_eq!(one.l, Some((7,)));
+    }
+
+    #[derive(Debug, Default, Deserialize)]
+    #[serde(default)]
+    struct Blend {
+        k: Option<crate::model::BlendMode>,
+    }
+
+    #[test]
+    fn keeps_the_name_of_a_member_the_model_does_not_list() {
+        // enum E { NORMAL = 0; EXTRA_BLEND = 1; } message M { E k = 1; }
+        let schema = Schema::parse(&[
+            2, b'E', 0, 0, 2, b'N', b'O', b'R', b'M', b'A', b'L', 0, 0, 0, 0, //
+            b'E', b'X', b'T', b'R', b'A', b'_', b'B', b'L', b'E', b'N', b'D', 0, 0, 0, 1, //
+            b'M', 0, 2, 1, b'k', 0, 0, 0, 1,
+        ])
+        .unwrap();
+        let normal: Blend = from_message(&schema, &[1, 0, 0], 0, 1).unwrap();
+        assert_eq!(normal.k, Some(crate::model::BlendMode::Normal));
+        let extra: Blend = from_message(&schema, &[1, 1, 0], 0, 1).unwrap();
+        let extra = extra.k.unwrap();
+        assert_eq!(
+            extra,
+            crate::model::BlendMode::Unlisted("EXTRA_BLEND".into())
+        );
+        assert_eq!(serde_json::to_string(&extra).unwrap(), r#""EXTRA_BLEND""#);
     }
 }
