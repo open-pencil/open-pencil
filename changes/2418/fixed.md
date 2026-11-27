@@ -1,0 +1,1 @@
+- A gradient with three or more stops shows each stop's full hex value in the fill picker.

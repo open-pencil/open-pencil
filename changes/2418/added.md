@@ -1,0 +1,1 @@
+- Edit a shader's color stops, such as a mesh or linear gradient's palette, with the gradient editor instead of the preset's JSON.
