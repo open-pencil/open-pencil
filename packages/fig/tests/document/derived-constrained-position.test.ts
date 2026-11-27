@@ -186,6 +186,19 @@ test('a saved size without a transform keeps the layer of an instance at its sym
   expect(placedLayer(changes)).toEqual({ x: 100, y: 0, width: 1800, height: 1080 })
 })
 
+test('a later saved transform for the same layer wins over its size-only record', () => {
+  const instance = { x: 2560, y: 1440 }
+  const layerPath = { guids: [guid(3), guid(4)] }
+  const changes = layerInResizedInstance({ horizontal: 'CENTER', instance, saved: null })
+  const instanceRecord = changes[changes.length - 1]
+  instanceRecord.derivedSymbolData = [
+    { guidPath: { guids: [guid(3)] }, size: instance },
+    { guidPath: layerPath, size: { x: 2400, y: 1440 } },
+    { guidPath: layerPath, transform: at(7, 0) }
+  ]
+  expect(placedLayer(changes)).toEqual({ x: 7, y: 0, width: 2400, height: 1440 })
+})
+
 test('a saved transform still places the layer', () => {
   const changes = layerInResizedInstance({
     horizontal: 'CENTER',

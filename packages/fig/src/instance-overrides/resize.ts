@@ -77,15 +77,15 @@ function constrainedAxis(
   after: number,
   constraint: string | undefined
 ) {
-  const span = { start: 0, end: size }
-  const anchored = anchoredPosition(position, span, span, before, after, constraint)
+  const delta = after - before
   if (constraint === 'SCALE' && before > 0) {
-    return { position: anchored, size: size * (after / before) }
+    const factor = after / before
+    return { position: position * factor, size: size * factor }
   }
-  if (constraint === 'STRETCH') {
-    return { position: anchored, size: Math.max(0, size + after - before) }
-  }
-  return { position: anchored, size }
+  if (constraint === 'MAX') return { position: position + delta, size }
+  if (constraint === 'CENTER') return { position: position + delta / 2, size }
+  if (constraint === 'STRETCH') return { position, size: Math.max(0, size + delta) }
+  return { position, size }
 }
 
 export function transformForSavedSize(
