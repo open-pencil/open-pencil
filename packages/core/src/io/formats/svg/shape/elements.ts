@@ -8,11 +8,10 @@ import { appendAll } from '@open-pencil/std/arrays'
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
-
-import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import { booleanOutlines } from './boolean/outline'
-import type { SVGExportContext } from './defs'
-import { svg, type SVGNode } from './node'
+import { arrowHeadElements, openPathElements, vectorArrowHeads } from '#core/io/formats/svg/arrows'
+import { booleanOutlines } from '#core/io/formats/svg/boolean/outline'
+import type { SVGExportContext } from '#core/io/formats/svg/defs'
+import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import {
   arcPath,
   boxOutlinePath,
@@ -20,9 +19,10 @@ import {
   makePolygonPoints,
   round,
   roundedPolygonPath
-} from './paths'
-import { fillOutlines, outlineElements } from './regions'
-import { shapeWithTextElements } from './shape-with-text'
+} from '#core/io/formats/svg/paths'
+import { fillOutlines, outlineElements } from '#core/io/formats/svg/regions'
+
+import { shapeWithTextElements } from './with-text'
 
 /**
  * A vector network's paths: its regions as they are traced, and its open segments as the canvas

@@ -4,9 +4,9 @@ import {
   shapeWithTextCutsFill
 } from '@open-pencil/scene-graph/shape-with-text'
 
-import { nextDefId, type SVGExportContext } from './defs'
-import { svg, type SVGNode } from './node'
-import { shapeWithTextDetailsPath, shapeWithTextOutlinePath } from './paths'
+import { nextDefId, type SVGExportContext } from '#core/io/formats/svg/defs'
+import { svg, type SVGNode } from '#core/io/formats/svg/node'
+import { shapeWithTextDetailsPath, shapeWithTextOutlinePath } from '#core/io/formats/svg/paths'
 
 type Attrs = Record<string, string | number | undefined>
 
