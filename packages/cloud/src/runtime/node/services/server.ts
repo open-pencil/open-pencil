@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
 import { CLOUD_SERVICES_JWKS_PATH } from '#cloud/contract'
+import { POSTGRES_CONNECTION_TIMEOUT_MS } from '#cloud/runtime/postgres/timeouts'
 import {
   ServicesConfigError,
   createServicesApp,
@@ -28,7 +29,12 @@ export async function startNodeServices(options: NodeServicesOptions = {}) {
   }
   const config = parseServicesTOML(await readFile(path, 'utf8'), environment)
   const database = createServicesDatabase(
-    new PostgresDialect({ pool: new Pool({ connectionString: config.databaseURL }) })
+    new PostgresDialect({
+      pool: new Pool({
+        connectionString: config.databaseURL,
+        connectionTimeoutMillis: POSTGRES_CONNECTION_TIMEOUT_MS
+      })
+    })
   )
   try {
     await migrateServicesDatabase(database)
