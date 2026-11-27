@@ -1,0 +1,20 @@
+{
+  "name": "@open-pencil/mcp-catalog-tools",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "mcp-catalog": "./src/generate.ts"
+  },
+  "type": "module",
+  "imports": {
+    "#mcp-catalog/*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/mcp": "workspace:*",
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "dedent": "^1.7.2",
+    "es-toolkit": "^1.52.0",
+    "valibot": "^1.5.0"
+  }
+}

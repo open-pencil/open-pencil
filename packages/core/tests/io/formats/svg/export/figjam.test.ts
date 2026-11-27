@@ -7,19 +7,19 @@ import { outlineSVGPath } from '@open-pencil/scene-graph/paths'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { BLACK_STROKE } from './helpers'
+import { BLACK_STROKE, solid } from './helpers'
 
 describe('FigJam shapes exported to SVG', () => {
   const stroke = BLACK_STROKE
 
   /** The SVG a page holding one FigJam shape of `type`, outlined in black, exports to. */
-  function exportedShape(shapeWithTextType: SceneNode['shapeWithTextType']) {
+  function exportedShape(shapeWithTextType: SceneNode['shapeWithTextType'], strokes = [stroke]) {
     const graph = new SceneGraph()
     const page = graph.getPages()[0].id
     const shape = createShapeWithText(
       graph,
       page,
-      { shapeWithTextType, width: 120, height: 80, strokes: [stroke] },
+      { shapeWithTextType, width: 120, height: 80, fills: [solid(0.9, 0.9, 0.9, 1, 1)], strokes },
       {}
     )
     return { shape, svg: expectDefined(renderNodesToSVG(graph, page, [shape.id])) }
@@ -42,5 +42,15 @@ describe('FigJam shapes exported to SVG', () => {
     )
     expect(svg).toContain(`<clipPath id="${rim[1]}">`)
     expect(exportedShape('DIAMOND').svg).not.toContain('clip-path')
+  })
+
+  test('cut their inner lines out of the fill when no stroke draws them', () => {
+    const { svg } = exportedShape('ENG_DATABASE', [])
+    const fill = expectDefined(svg.match(/<path d="[^"]+" fill="[^"]+"[^>]*mask="url\(#([^)]+)\)"/))
+    const mask = expectDefined(svg.match(new RegExp(`<mask id="${fill[1]}">[\\s\\S]*?</mask>`)))
+    expect(mask[0]).toContain('fill="white"')
+    expect(mask[0]).toContain('stroke="black" stroke-width="3"')
+    expect(exportedShape('ENG_DATABASE').svg).not.toContain('<mask')
+    expect(exportedShape('SQUARE', []).svg).not.toContain('<mask')
   })
 })

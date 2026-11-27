@@ -3,6 +3,7 @@ import { documentTokenRoutes } from '#cloud/server/api/tokens'
 import {
   DocumentConflictError,
   DocumentForbiddenError,
+  DocumentKindMismatchError,
   DocumentNotFoundError,
   DocumentPurgeFailedError,
   UploadInvalidError
@@ -22,6 +23,7 @@ function documentErrorCode(error: unknown): CloudAPIErrorCode | null {
   // Reported where cleanup failed, so the request handler doesn't report it again.
   if (error instanceof DocumentPurgeFailedError) return 'purge_failed'
   if (error instanceof UploadInvalidError) return 'invalid_upload'
+  if (error instanceof DocumentKindMismatchError) return 'wrong_document_kind'
   return null
 }
 
@@ -74,6 +76,9 @@ export function createDocumentProcedures(service: DocumentService) {
     }),
     access: documents.access.handler(async ({ context, input }) => ({
       access: await service.access(context.actor.userId, input.params.documentId)
+    })),
+    summary: documents.summary.handler(async ({ context, input }) => ({
+      document: await service.summary(context.actor.userId, input.params.documentId)
     })),
     download: documents.download.handler(async ({ context, input }) => ({
       document: await service.download(context.actor.userId, input.params.documentId)

@@ -63,3 +63,60 @@ test('inside and outside strokes follow the outline, and inner lines keep their 
     'shapes-with-text-aligned-strokes.png'
   )
 })
+
+const WITH_INNER_LINES = [
+  'ENG_DATABASE',
+  'ENG_QUEUE',
+  'ENG_FILE',
+  'ENG_FOLDER',
+  'DOCUMENT_MULTIPLE',
+  'PREDEFINED_PROCESS',
+  'INTERNAL_STORAGE',
+  'OR'
+] as const
+
+test('without a stroke, shapes cut their outline and inner lines out of the fill', async () => {
+  await shapes.place(
+    WITH_INNER_LINES.map((kind, index): ShapeWithTextSetup => ({
+      kind,
+      label: '',
+      x: 40 + (index % 4) * 170,
+      y: 40 + Math.floor(index / 4) * 140,
+      width: 150,
+      height: 110,
+      fill: [0.2, 0.35, 0.7],
+      stroke: null,
+      labelColor: [0.1, 0.12, 0.2]
+    }))
+  )
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
+    'shapes-with-text-without-stroke.png'
+  )
+})
+
+test('a document keeps its wave’s height and rounds its corners at every size', async () => {
+  const sizes = [
+    [40, 40, 150, 110],
+    [210, 40, 300, 110],
+    [530, 40, 150, 250],
+    [40, 170, 150, 80]
+  ] as const
+  await shapes.place(
+    sizes.map(([x, y, width, height]): ShapeWithTextSetup => ({
+      kind: 'DOCUMENT_SINGLE',
+      label: '',
+      x,
+      y,
+      width,
+      height,
+      fill: [0.86, 0.92, 1],
+      stroke: [0.1, 0.12, 0.2],
+      labelColor: [0.1, 0.12, 0.2]
+    }))
+  )
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  expect(await editor.canvas.screenshotCanvasRegion(700, 300)).toMatchSnapshot('documents.png')
+})

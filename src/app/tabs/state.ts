@@ -89,13 +89,18 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   return tab
 }
 
+/** An empty document of this kind, its page in the interface's current theme. */
+export function emptyDocumentGraph(kind: DocumentKind): SceneGraph {
+  return createDocumentGraph(kind, resolvedAppTheme.value)
+}
+
 /**
  * Opens an empty document of this kind: a design or a board. Picked in a New file tab, it takes
  * that tab's place; otherwise it gets a tab of its own.
  */
 export function createDocumentTab(kind: DocumentKind): Tab {
   const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
-  const tab = createTab(undefined, createDocumentGraph(kind, resolvedAppTheme.value))
+  const tab = createTab(undefined, emptyDocumentGraph(kind))
   if (picker) {
     const rest = tabsRef.value.filter((entry) => entry !== tab)
     tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))

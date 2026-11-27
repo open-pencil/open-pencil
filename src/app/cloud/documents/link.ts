@@ -130,17 +130,18 @@ export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<vo
   }
   stored.value = null
   const client = cloudAPIClient(server, connection.discovery)
-  const download = await client.getDocument(link.documentId).catch(() => null)
-  if (!download) {
+  // Its summary, not its file: one an app just created has no file until an editor saves it.
+  const document = await client.getDocumentSummary(link.documentId).catch(() => null)
+  if (!document) {
     toast.error(messages.documentLinkFailed)
     return
   }
-  const { document } = download
   // Opening reports its own failure.
   const store = await openStorageDocumentInNewTab(
     {
       id: document.id,
       name: document.name,
+      kind: document.kind,
       updatedAt: document.updatedAt,
       revision: document.currentRevisionId
     },

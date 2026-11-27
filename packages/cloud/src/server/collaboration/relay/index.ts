@@ -4,10 +4,10 @@ export { relayDocumentLookups } from './documents'
 export {
   createCollaborationRelay,
   type CollaborationRelay,
-  type CollaborationRelayOptions,
   type RelayConnection,
   type RelaySocket
 } from './hub'
+export type { CollaborationRelayOptions } from './options'
 export {
   createCollaborationStateStore,
   type CollaborationRoomIdentity,

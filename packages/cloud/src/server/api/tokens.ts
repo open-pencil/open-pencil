@@ -1,5 +1,6 @@
 import {
   commentsContract,
+  documentToolsContract,
   documentsContract,
   sessionContract,
   sharingContract,
@@ -31,6 +32,7 @@ export const documentTokenRoutes = {
   update: write.document,
   remove: write.document,
   access: read.document,
+  summary: read.document,
   download: read.document,
   createUpload: write.document,
   commitUpload: write.upload,
@@ -38,6 +40,11 @@ export const documentTokenRoutes = {
   commitImageUploads: write.document,
   imageLinks: read.document
 } satisfies TokenRoutesOf<typeof documentsContract>
+
+export const documentToolTokenRoutes = {
+  read: read.document,
+  write: write.document
+} satisfies TokenRoutesOf<typeof documentToolsContract>
 
 export const versionTokenRoutes = {
   list: read.document,
@@ -119,6 +126,7 @@ function declared<Contract extends Record<string, AnyProcedureContract>>(
  */
 export const declaredContractTokenRoute = contractTokenRoutes([
   ...declared(documentsContract, documentTokenRoutes, '/api'),
+  ...declared(documentToolsContract, documentToolTokenRoutes, '/api'),
   ...declared(versionsContract, versionTokenRoutes, '/api'),
   ...declared(commentsContract, commentTokenRoutes, '/api'),
   ...declared(sharingContract, sharingTokenRoutes, '/api'),

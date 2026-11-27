@@ -39,4 +39,3 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 
 ## Referencja
 
-- [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje
