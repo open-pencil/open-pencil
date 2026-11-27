@@ -57,7 +57,7 @@
       "GITHUB_TOKEN",
       "CLOUDFLARE_ANALYTICS_TOKEN",
       "POSTHOG_PERSONAL_KEY",
-      // Cloud's internal API token, the same value as OPENPENCIL_CLOUD_SERVICE_TOKEN on Cloud.
+      // Cloud's usage report token, the same value as OPENPENCIL_CLOUD_USAGE_TOKEN on Cloud.
       "CLOUD_SERVICE_TOKEN",
       // Not secret, but set per deployment once the Access application in front of /admin exists.
       "ACCESS_TEAM_DOMAIN",

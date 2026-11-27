@@ -16,6 +16,7 @@ import { recordActiveAccount, recordSave } from '#cloud/server/usage/activity'
 import * as v from 'valibot'
 
 const SERVICE_TOKEN = 'billing-service-token-with-at-least-32-characters'
+const USAGE_TOKEN = 'dashboard-usage-token-with-at-least-32-characters'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -27,7 +28,8 @@ const config = parseCloudServerConfig({
   s3Bucket: 'openpencil',
   s3AccessKeyId: 'openpencil',
   s3SecretAccessKey: 'openpencil-secret',
-  internalServiceToken: SERVICE_TOKEN
+  internalServiceToken: SERVICE_TOKEN,
+  usageReportToken: USAGE_TOKEN
 })
 
 async function testApp() {
@@ -304,6 +306,29 @@ describe('internal usage API', () => {
         ],
         totals: { accounts: 3, documents: 1, workspaces: 1, storageBytes: 1234 }
       })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('the usage token reads usage and nothing else', async () => {
+    const context = await testApp()
+    try {
+      const range = 'start=2026-11-01&end=2026-11-01'
+      expect((await usage(context, range, USAGE_TOKEN)).status).toBe(200)
+      // It can't count seats or set a plan, even for an account that exists.
+      const seats = await context.app.request(`/api/internal/accounts/${context.userId}/seats`, {
+        headers: { Authorization: `Bearer ${USAGE_TOKEN}` }
+      })
+      expect(seats.status).toBe(401)
+      const plan = await context.put(
+        context.userId,
+        { values: { services: { enabled: true } }, source: 'billing', externalVersion: 1 },
+        USAGE_TOKEN
+      )
+      expect(plan.status).toBe(401)
+      // No plan was written.
+      expect(await context.enabled()).toBeNull()
     } finally {
       await context.runtime.close()
     }

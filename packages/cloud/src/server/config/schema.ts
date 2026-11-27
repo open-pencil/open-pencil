@@ -179,6 +179,8 @@ const rawCloudServerConfigSchema = v.object({
   billingEndpoint: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** The bearer token that reads the internal API's daily usage counts and nothing else. */
+  usageReportToken: v.optional(v.pipe(v.string(), v.minLength(32))),
   /** Whether people may connect apps through OAuth, with this server as their authorization server. */
   oauthEnabled: v.optional(v.boolean(), false),
   /**

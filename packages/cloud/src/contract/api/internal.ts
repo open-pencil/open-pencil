@@ -84,12 +84,17 @@ export const dailyUsageSchema = v.object({
   })
 })
 
-const route = oc.errors({ not_found: {}, invalid_request: {} } satisfies ErrorMap)
+const route = oc.errors({
+  not_found: {},
+  invalid_request: {},
+  unauthorized: {}
+} satisfies ErrorMap)
 
 /**
  * What the deployment's own services, such as billing, ask of Cloud under `/api/internal`, with the
  * internal API's bearer token: setting an account's plan, counting the seats it pays for, and
- * counting the deployment's use per day for its operator's dashboard.
+ * counting the deployment's use per day for its operator's dashboard. The usage report's own
+ * token reaches only `dailyUsage`; any other route answers it `unauthorized`.
  */
 export const internalContract = {
   setAccountEntitlements: route

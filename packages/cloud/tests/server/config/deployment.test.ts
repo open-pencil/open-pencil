@@ -367,6 +367,19 @@ provider = "posthog"
     ).toBe(true)
   })
 
+  test('reads the usage report token only when its table is there', () => {
+    const plain = parseCloudDeploymentTOML(minimalSource, environment)
+    expect(plain.usageReportToken).toBeUndefined()
+    const config = parseCloudDeploymentTOML(`${minimalSource}\n[usage_report]\n`, {
+      ...environment,
+      OPENPENCIL_CLOUD_USAGE_TOKEN: 'usage-token-with-at-least-32-characters'
+    })
+    expect(config.usageReportToken).toBe('usage-token-with-at-least-32-characters')
+    expect(() =>
+      parseCloudDeploymentTOML(`${minimalSource}\n[usage_report]\n`, environment)
+    ).toThrow()
+  })
+
   test('advertises services and billing only when configured', () => {
     const plain = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment))
     expect(plain.services).toBeUndefined()

@@ -51,7 +51,7 @@ export interface FeedbackBindings {
   ACCESS_AUD: string
   /** OpenPencil Cloud's Worker, whose internal API reports its daily usage counts. */
   CLOUD: Fetcher
-  /** Cloud's internal API token, `OPENPENCIL_CLOUD_SERVICE_TOKEN` on the Cloud Worker. */
+  /** Cloud's read-only usage report token, `OPENPENCIL_CLOUD_USAGE_TOKEN` on the Cloud Worker. */
   CLOUD_SERVICE_TOKEN: string
   /** PostHog's app host for its query API, which is not the ingestion host. */
   POSTHOG_APP_HOST: string
