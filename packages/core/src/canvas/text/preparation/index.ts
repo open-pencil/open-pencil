@@ -38,7 +38,7 @@ export function withPreparedText<T>(
   }
 }
 
-/** Borrow native text without caching mutable foreground shaders or transferring resource ownership. */
+/** Borrow native text without caching mutable paints or transferring resource ownership. */
 export function withTextParagraph<T>(
   r: PreparationRenderer & {
     buildParagraph: (
@@ -58,6 +58,6 @@ export function withTextParagraph<T>(
     `draw:${Boolean(options.halfLeading)}:${color.join(',')}`,
     () => r.buildParagraph(node, color, options),
     (prepared) => draw(prepared.paragraph, prepared),
-    !options.foregroundPaint
+    !options.foregroundPaint && !options.rangePaint
   )
 }

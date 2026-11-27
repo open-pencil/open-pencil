@@ -35,6 +35,7 @@ import {
   hiddenPart,
   splitOutOfFlow,
   isRightToLeft,
+  isUnseen,
   textLayerAlign,
   type FlowKind,
   type ParentFlow
@@ -289,7 +290,7 @@ function createElementNode(
 ): SceneNode | null {
   const style = decoratedStyle(element, around)
   const display = elementDisplay(element, style)
-  if (display === 'none' || isTableColumn(display)) return null
+  if (display === 'none' || isTableColumn(display) || isUnseen(element)) return null
   if (isInlineSVG(element) || isSVGArtwork(element))
     return createSVGFrame(graph, parentId, element, parentFlow, recorded)
   if (
@@ -565,7 +566,7 @@ export function designDocumentToSceneGraph(
 
 export { elementSVG, imagePicture, type ElementSVG, type ImagePicture } from './pictures'
 export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
-export { COMPONENT_ATTRIBUTES, isMarked }
+export { COMPONENT_ATTRIBUTES, isMarked, isUnseen }
 export { bindThemeVariables, type LayerSources } from './variables/bindings'
 export type { HTMLTheme, ThemeMode } from './variables/theme'
 export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'

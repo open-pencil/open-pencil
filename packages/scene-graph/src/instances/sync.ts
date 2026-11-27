@@ -16,13 +16,21 @@ import {
   withStrokeLines
 } from '../strokes'
 import type { SceneNode } from '../types'
-import { resolvedNumericBindings } from '../variables/bindings'
-import { isNumericVariableBindingField } from '../variables/fields'
+import {
+  resolvedNumericBindings,
+  resolvedRunBindings,
+  resolvesToNumber
+} from '../variables/bindings'
 import {
   applyBoundPaintColorsIn,
   copyAppliedBoundPaints,
   keepCopyBoundPaints
 } from '../variables/paints'
+import {
+  createStyleBindingLookup,
+  effectiveBoundVariables,
+  type TextStyleLookup
+} from '../variables/style-bindings'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -225,19 +233,68 @@ function resolveBoundNumbersInPlace(
   updates: Partial<SceneNode>,
   kept: (field: string) => boolean
 ): void {
-  const bound = updates.boundVariables ?? target.boundVariables
-  // The fields the sync writes, and the ones it binds anew, which keep an equal value only in
-  // the component's mode.
-  const rebound = updates.boundVariables
-    ? Object.keys(bound).filter((field) => bound[field] !== target.boundVariables[field])
-    : []
-  const synced = uniq([...Object.keys(updates), ...rebound]).filter(
-    (field) => isNumericVariableBindingField(field) && bound[field] && !kept(field)
+  const own = updates.boundVariables ?? target.boundVariables
+  // The fields the sync writes, and the ones whose binding it changes, which keep an equal value
+  // only in the component's mode.
+  const rebound = updates.boundVariables ? changedBindings(target.boundVariables, own) : []
+  const styles = styleBindingsOf(graph)
+  const textStyleId = updates.textStyleId === undefined ? target.textStyleId : updates.textStyleId
+  const bound = effectiveBoundVariables(
+    { type: target.type, textStyleId, boundVariables: own },
+    styles
   )
+  const restyled = textStyleId !== target.textStyleId ? Object.keys(bound) : []
+  const synced = uniq([...Object.keys(updates), ...rebound, ...restyled]).filter(
+    (field) => resolvesToNumber(field) && bound[field] && !kept(field)
+  )
+  resolveSyncedRunsInPlace(graph, target, updates, styles)
   if (synced.length === 0) return
   applySyncedModes(graph, target, updates)
-  const resolved = resolvedNumericBindings(graph, { ...target, ...updates })
+  const resolved = resolvedNumericBindings(graph, { ...target, ...updates }, styles)
   Object.assign(updates, pick(resolved, synced as (keyof SceneNode)[]))
+}
+
+function changedBindings(before: Record<string, string>, after: Record<string, string>): string[] {
+  return uniq([...Object.keys(before), ...Object.keys(after)]).filter(
+    (field) => before[field] !== after[field]
+  )
+}
+
+function resolveSyncedRunsInPlace(
+  graph: SceneGraph,
+  target: SceneNode,
+  updates: Partial<SceneNode>,
+  styles: TextStyleLookup
+): void {
+  if (!updates.styleRuns) {
+    return
+  }
+  applySyncedModes(graph, target, updates)
+  const copy = {
+    id: target.id,
+    styleRuns: updates.styleRuns,
+    componentScale: updates.componentScale ?? target.componentScale
+  }
+  Object.assign(updates, resolvedRunBindings(graph, copy, styles))
+}
+
+const styleBindingsDuringSync = new WeakMap<SceneGraph, TextStyleLookup>()
+
+export function withSyncedStyleBindings(graph: SceneGraph, sync: () => void): void {
+  if (styleBindingsDuringSync.has(graph)) {
+    sync()
+    return
+  }
+  styleBindingsDuringSync.set(graph, createStyleBindingLookup(graph))
+  try {
+    sync()
+  } finally {
+    styleBindingsDuringSync.delete(graph)
+  }
+}
+
+function styleBindingsOf(graph: SceneGraph): TextStyleLookup {
+  return styleBindingsDuringSync.get(graph) ?? createStyleBindingLookup(graph)
 }
 
 /** The modes the copy takes in this sync decide what its bindings resolve to. */

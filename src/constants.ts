@@ -80,8 +80,6 @@ export const ROOM_STATUS_TICK_MS = 500
 export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 /** The privacy page: every request the app makes, and every usage event and field. */
 export const PRIVACY_URL = 'https://openpencil.dev/overview/privacy'
-/** The OpenPencil Cloud section of the website, with its waitlist form. */
-export const CLOUD_WAITLIST_URL = 'https://openpencil.dev/#cloud'
 /**
  * The hosted OpenPencil Cloud server, offered first when connecting. An official deployment's own
  * editor build names that deployment, such as staging.

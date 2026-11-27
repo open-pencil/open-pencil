@@ -496,17 +496,9 @@ zh-cn:panels.shaderPreset
 zh-cn:panels.invalidShaderPreset
 zh-cn:panels.shaderNeedsWebGPU
 ja:panels.gridSummaryGrid
-ja:storage.cloudDescription
-ja:storage.waitlistJoinedDetail
-ja:storage.waitlistOpenWebsite
-ja:storage.waitlistUnavailable
 ja:statuses.figmaShows
 ja:statuses.presetHandoff
 zh-cn:panels.gridSummaryGrid
-zh-cn:storage.cloudDescription
-zh-cn:storage.waitlistJoinedDetail
-zh-cn:storage.waitlistOpenWebsite
-zh-cn:storage.waitlistUnavailable
 zh-cn:statuses.figmaShows
 zh-cn:statuses.presetHandoff
 ja:cloud/portal.columnAddress
@@ -701,9 +693,6 @@ ja:email.newSignInApp
 ja:email.twoStepSubject
 ja:email.storageFullSubject
 ja:email.storageFullPreview
-ja:email.waitlistSubject
-ja:email.waitlistPreview
-ja:email.waitlist
 zh-cn:email.openCloud
 zh-cn:email.footer
 zh-cn:email.documentInvitationView
@@ -740,9 +729,6 @@ zh-cn:email.newSignInApp
 zh-cn:email.twoStepSubject
 zh-cn:email.storageFullSubject
 zh-cn:email.storageFullPreview
-zh-cn:email.waitlistSubject
-zh-cn:email.waitlistPreview
-zh-cn:email.waitlist
 ja:cloud/portal/community.siteTagline
 ja:cloud/portal/community.siteCloudDocs
 ja:cloud/portal/community.siteLicense

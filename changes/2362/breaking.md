@@ -1,0 +1,1 @@
+- `findSharedStyle` is removed from `@open-pencil/scene-graph/shared-styles`; use `graph.getSharedStyleNode(id, type)`, which finds the style through an index instead of walking the document (#2362).

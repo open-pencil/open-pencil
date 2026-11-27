@@ -283,6 +283,14 @@ describe('variables from custom properties', () => {
     expect(path?.fills[0]).toMatchObject({ color: { r: 0x11 / 255, g: 0x22 / 255, b: 0x33 / 255 } })
   })
 
+  test('keep a box that shows only in another mode', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div id="tip" style="position:absolute;width:9px;height:9px;background:red"></div>',
+      { cssText: '#tip { opacity: 0 } .dark #tip { opacity: 1 }', variables: VARIABLES }
+    )
+    expect(named(graph, 'tip')).toMatchObject({ opacity: 0 })
+  })
+
   test('keep a border transparent in one mode that another colors', async () => {
     const { graph } = await readHTMLDocument(
       '<div id="box" style="width:9px;height:9px;border:1px solid var(--line);box-shadow:0 0 0 3px red"></div>',

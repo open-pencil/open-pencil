@@ -1,3 +1,4 @@
+import type { MetricsSnapshot } from '#feedback/contract'
 import { exportJWK, generateKeyPair, SignJWT, type CryptoKey } from 'jose'
 
 import type { TestService } from './harness'
@@ -32,4 +33,20 @@ export function signAccessToken(
     .setIssuedAt(seconds - 7200)
   const expiresIn = claims.expiresIn === undefined ? 3600 : claims.expiresIn
   return (expiresIn === null ? token : token.setExpirationTime(seconds + expiresIn)).sign(key)
+}
+
+/** The metrics snapshot for a range through the typed client, signed in as the dashboard is. */
+export async function requestSnapshot(
+  service: TestService,
+  key: CryptoKey,
+  now: Date,
+  start: string,
+  end: string
+): Promise<MetricsSnapshot> {
+  const response = await service.client.admin.api.snapshot.$get(
+    { query: { start, end } },
+    { headers: { 'cf-access-jwt-assertion': await signAccessToken(key, now) } }
+  )
+  if (response.status !== 200) throw new Error(`The snapshot answered ${response.status}`)
+  return response.json()
 }

@@ -55,6 +55,57 @@ describe('OpenPencil plugin data readers', () => {
     }
   })
 
+  // A text style's face and paragraph fields use FONT_STYLE and PARAGRAPH_*, which a value that
+  // is not a variable clears, as it clears a layer's own fields.
+  test("a text style's face and paragraph bindings clear when its record holds plain values", () => {
+    const value = JSON.stringify({
+      fontWeight: 'VariableID:1:2',
+      paragraphSpacing: 'VariableID:1:3',
+      paragraphIndent: 'VariableID:1:3'
+    })
+    const plain = (variableField: string, variableData: object) => ({ variableField, variableData })
+    expect(
+      extractBoundVariables(
+        withPluginValue(OPEN_PENCIL_PLUGIN_DATA.boundVariables.key, value, {
+          styleType: 'TEXT',
+          parameterConsumptionMap: {
+            entries: [
+              plain('FONT_STYLE', { dataType: 'STRING', value: { textValue: 'Bold' } }),
+              plain('PARAGRAPH_SPACING', { dataType: 'FLOAT', value: { floatValue: 4 } }),
+              plain('PARAGRAPH_INDENT', { dataType: 'FLOAT', value: { floatValue: 0 } })
+            ]
+          }
+        } as NodeChange)
+      )
+    ).toEqual({})
+  })
+
+  test("a text style's saved face binds by what its record names, style or weight", () => {
+    const record = (savedField: string, resolvedDataType: string) =>
+      withPluginValue(
+        OPEN_PENCIL_PLUGIN_DATA.boundVariables.key,
+        JSON.stringify({ [savedField]: 'VariableID:1:2' }),
+        {
+          styleType: 'TEXT',
+          parameterConsumptionMap: {
+            entries: [
+              {
+                variableField: 'FONT_STYLE',
+                variableData: {
+                  dataType: 'ALIAS',
+                  resolvedDataType,
+                  value: { alias: { guid: { sessionID: 1, localID: 3 } } }
+                }
+              }
+            ]
+          }
+        } as NodeChange
+      )
+
+    expect(extractBoundVariables(record('fontWeight', 'STRING'))).toEqual({ fontStyle: '1:3' })
+    expect(extractBoundVariables(record('fontStyle', 'FLOAT'))).toEqual({ fontWeight: '1:3' })
+  })
+
   test('effect aliases bind only the properties each effect has', () => {
     const alias = (localID: number, resolvedDataType: 'COLOR' | 'FLOAT') => ({
       dataType: 'ALIAS' as const,

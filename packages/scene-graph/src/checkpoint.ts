@@ -103,6 +103,7 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     graph.figSchemaDeflated = structuredClone(snapshot.figSchemaDeflated)
     graph.documentColorSpace = snapshot.documentColorSpace
     graph.clearAbsPosCache()
+    graph.sharedStyleIndex.invalidate()
     // Notify consumers only after the complete hierarchy and indexes have been restored.
     for (const [id, node] of failedNodes) {
       if (!graph.nodes.has(id)) graph.emitter.emit('node:deleted', id, node.parentId)
@@ -390,6 +391,7 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
     graph.figSchemaDeflated = figSchemaDeflated
     graph.documentColorSpace = documentColorSpace
     graph.clearAbsPosCache()
+    graph.sharedStyleIndex.invalidate()
     const touched = new Set([
       ...nodes.keys(),
       ...created,
