@@ -1,0 +1,1 @@
+- Self-hosted Cloud stops at startup with a logged error when PostgreSQL does not answer within 10 seconds, instead of hanging silently without serving `/ready` (#2389).
