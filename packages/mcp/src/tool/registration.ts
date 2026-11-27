@@ -27,52 +27,22 @@ import {
   writesFileOutput
 } from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
+import {
+  automationTargetSchema,
+  sendCommand,
+  splitAutomationTarget,
+  withTarget,
+  type RPCSender
+} from '#mcp/tool/rpc'
 import { toolInputSchema } from '#mcp/tool/schema'
 import { SELECTION_SCOPE_FILE_OUTPUT_ERROR } from '#mcp/tool/scope'
 
-export type RPCSender = (body: Record<string, unknown>) => Promise<unknown>
 export type MCPToolSettled = (context: ServerContext) => Promise<void>
-
-/**
- * The document and page a call targets when not the active ones. Every document tool takes them,
- * so they carry no description: their names say it, and list_documents gives the IDs.
- */
-const automationTargetSchema = {
-  document_id: v.optional(v.string()),
-  page_id: v.optional(v.string())
-}
-
-function splitAutomationTarget(args: Record<string, unknown>): {
-  target: { document_id?: string; page_id?: string }
-  args: Record<string, unknown>
-} {
-  const { document_id, page_id, ...rest } = args
-  const target: { document_id?: string; page_id?: string } = {}
-  if (typeof document_id === 'string') target.document_id = document_id
-  if (typeof page_id === 'string') target.page_id = page_id
-  return { target, args: rest }
-}
-
-type RPCResponse = { ok?: boolean; result?: unknown; target?: unknown; error?: string }
 
 /** The app's recent files; the server keeps only those `open_document` could reach. */
 const recentFilesResultSchema = v.object({
   files: v.array(v.object({ path: v.string(), name: v.string(), updated_at: v.string() }))
 })
-
-async function sendCommand(
-  sendRPC: RPCSender,
-  command: string,
-  args: Record<string, unknown>
-): Promise<RPCResponse> {
-  const res = (await sendRPC({ command, args })) as RPCResponse
-  if (res.ok === false) throw new Error(res.error)
-  return res
-}
-
-function withTarget<T extends object>(body: T, res: RPCResponse): T & { target?: unknown } {
-  return res.target ? { ...body, target: res.target } : body
-}
 
 /** Who sends a session's tool calls: any MCP client, or an ACP or Pi harness chat in the app. */
 export const MCP_AGENT_KINDS = ['mcp', 'acp', 'harness'] as const

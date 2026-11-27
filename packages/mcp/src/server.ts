@@ -76,9 +76,9 @@ export {
   registerTools,
   type MCPAgentKind,
   type MCPAgentSession,
-  type RegisterToolsOptions,
-  type RPCSender
+  type RegisterToolsOptions
 } from '#mcp/tool/registration'
+export type { RPCSender } from '#mcp/tool/rpc'
 import { MAX_TIMER_MS } from '@open-pencil/std/timing'
 
 export interface ServerHandle {

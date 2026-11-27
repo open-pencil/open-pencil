@@ -4,7 +4,7 @@ import * as v from 'valibot'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import { DOCUMENT_KINDS } from '#mcp/tool/metadata'
-import type { RPCSender } from '#mcp/tool/registration'
+import type { RPCSender } from '#mcp/tool/rpc'
 
 const documentListSchema = v.object({
   documents: v.array(v.looseObject({ kind: v.optional(v.picklist(DOCUMENT_KINDS)) }))
