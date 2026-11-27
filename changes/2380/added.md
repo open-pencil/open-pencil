@@ -1,0 +1,1 @@
+- Cloud's community gallery and link previews show a sharp 1920 × 960 cover of each file: the frame set as its thumbnail, or the top of its page (#2380).

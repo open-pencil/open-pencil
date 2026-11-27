@@ -51,6 +51,11 @@ export type LocalCanvasWriteInput = LocalCanvasLocation & {
   /** The `.fig`; a Blob, as a save produces, is stored without being read into memory. */
   figBytes: Uint8Array | Blob
   thumbBytes?: Uint8Array | null
+  /**
+   * The cover the save drew for a provider that shows one, as Cloud's gallery does; a write
+   * without one drops the cover an earlier write left, which no longer matches the file.
+   */
+  coverBytes?: Uint8Array | null
   /** If set, keep this revision; otherwise increment from existing. */
   revision?: number
   syncStatus?: LocalSyncStatus
