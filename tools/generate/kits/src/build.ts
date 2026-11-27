@@ -8,8 +8,8 @@ import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { KitDefinition } from './kit'
-import type { RenderReply } from './react/worker'
+import type { KitDefinition, KitSources } from './kit'
+import type { RenderReply, RenderRequest } from './react/worker'
 
 export type { KitDefinition } from './kit'
 
@@ -17,14 +17,15 @@ export type { KitDefinition } from './kit'
  * Renders the kit's page from its own components as a browser shows it once mounted, in a worker
  * whose realm holds the browser's globals and ends with the render.
  */
-export async function renderKitPage(kit: KitDefinition): Promise<string> {
+export async function renderKitPage(kit: KitDefinition, sources: KitSources): Promise<string> {
   const worker = new Worker(new URL('react/worker.ts', import.meta.url))
   try {
     const reply = await new Promise<RenderReply>((resolve, reject) => {
       worker.onmessage = (event: MessageEvent<RenderReply>) => resolve(event.data)
       worker.onerror = (event) => reject(new Error(event.message))
       // A worker takes no target origin; an empty transfer list is its second argument.
-      worker.postMessage(kit, { transfer: [] })
+      const request: RenderRequest = { page: kit.page, sources }
+      worker.postMessage(request, { transfer: [] })
     })
     if ('error' in reply) throw new Error(`Could not render ${kit.name}: ${reply.error}`)
     return reply.html
@@ -34,10 +35,10 @@ export async function renderKitPage(kit: KitDefinition): Promise<string> {
 }
 
 /** The kit's stylesheet compiled for the classes the page uses, as Tailwind builds it for a site. */
-export async function compileKitStylesheet(kit: KitDefinition, html: string): Promise<string> {
+export async function compileKitStylesheet(sources: KitSources, html: string): Promise<string> {
   const candidates = new Scanner({}).scanFiles([{ content: html, extension: 'html' }])
-  const compiler = await compile(await Bun.file(kit.stylesheet).text(), {
-    base: dirname(kit.stylesheet),
+  const compiler = await compile(await Bun.file(sources.stylesheet).text(), {
+    base: dirname(sources.stylesheet),
     // The kit is built once, so nothing watches the files the stylesheet reads.
     onDependency: () => undefined,
     shouldRewriteUrls: true
@@ -45,15 +46,19 @@ export async function compileKitStylesheet(kit: KitDefinition, html: string): Pr
   return compiler.build(candidates)
 }
 
-/** Draws the kit: its page rendered, styled in each of its modes, and imported with components. */
+/**
+ * Draws the kit: its page rendered from its installed sources, styled in each of its modes, and
+ * imported with components. The page is named after what installed them.
+ */
 export async function buildKitGraph(kit: KitDefinition): Promise<SceneGraph> {
-  const html = await renderKitPage(kit)
-  const cssText = await compileKitStylesheet(kit, html)
+  const sources = await kit.sources()
+  const html = await renderKitPage(kit, sources)
+  const cssText = await compileKitStylesheet(sources, html)
   const { graph } = await readHTMLDocument(html, {
     cssText,
     // The stylesheet's URLs, such as its fonts', are relative to it.
-    baseURL: pathToFileURL(`${dirname(kit.stylesheet)}/`).href,
-    pageName: kit.name,
+    baseURL: pathToFileURL(`${dirname(sources.stylesheet)}/`).href,
+    pageName: `Components (${sources.installer})`,
     components: true,
     variables: { collection: kit.name, modes: kit.modes }
   })

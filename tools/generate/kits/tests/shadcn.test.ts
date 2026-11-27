@@ -8,9 +8,12 @@ import { missingBindings, readBehaviour } from '@open-pencil/scene-graph/behavio
 
 let graph: SceneGraph
 
+/** The first build installs shadcn/ui with its CLI, which downloads the registry and packages. */
+const INSTALL_TIMEOUT = 600_000
+
 beforeAll(async () => {
   graph = await buildKitGraph(SHADCN_KIT)
-})
+}, INSTALL_TIMEOUT)
 
 function set(name: string): SceneNode {
   const found = [...graph.getAllNodes()].find(

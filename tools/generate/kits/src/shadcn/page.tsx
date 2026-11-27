@@ -1,28 +1,18 @@
-import { Alert, AlertDescription, AlertTitle } from '#shadcn-ui/alert'
-import { Avatar, AvatarFallback } from '#shadcn-ui/avatar'
-import { Badge } from '#shadcn-ui/badge'
-import { Button } from '#shadcn-ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#shadcn-ui/card'
-import { Checkbox } from '#shadcn-ui/checkbox'
-import { Input } from '#shadcn-ui/input'
-import { Kbd } from '#shadcn-ui/kbd'
-import { Label } from '#shadcn-ui/label'
-import { Progress } from '#shadcn-ui/progress'
-import { Separator } from '#shadcn-ui/separator'
-import { Skeleton } from '#shadcn-ui/skeleton'
-import { Slider } from '#shadcn-ui/slider'
-import { Switch } from '#shadcn-ui/switch'
-import { Textarea } from '#shadcn-ui/textarea'
-import { Toggle } from '#shadcn-ui/toggle'
 /** @jsxImportSource react */
 /**
- * shadcn/ui's components, each a set of its variants in every interaction state, rendered from
- * the copied sources as an app renders them. Controls built on a Radix root are marked with the
+ * shadcn/ui's components, each a set of its variants in every interaction state, drawn from the
+ * modules its CLI installed as an app draws them. Controls built on a Radix root are marked with the
  * behaviour they bind, so the import makes them behave in preview and code.
  */
 import type { ReactElement } from 'react'
 
-import type { KitBehaviour, KitMarks, KitState } from '../kit'
+import {
+  kitComponent,
+  type KitBehaviour,
+  type KitMarks,
+  type KitModules,
+  type KitState
+} from '../kit'
 
 const STATES: KitState[] = ['Default', 'Hover', 'Focus', 'Disabled']
 const OFF_ON = ['Off', 'On'] as const
@@ -33,7 +23,32 @@ const checked = (property: string): KitBehaviour => ({
   states: 'State'
 })
 
-export default function page(marks: KitMarks): ReactElement {
+export default function page(marks: KitMarks, modules: KitModules): ReactElement {
+  const ui = (module: string, name: string) => kitComponent(modules, module, name)
+  const Alert = ui('alert', 'Alert')
+  const AlertTitle = ui('alert', 'AlertTitle')
+  const AlertDescription = ui('alert', 'AlertDescription')
+  const Avatar = ui('avatar', 'Avatar')
+  const AvatarFallback = ui('avatar', 'AvatarFallback')
+  const Badge = ui('badge', 'Badge')
+  const Button = ui('button', 'Button')
+  const Card = ui('card', 'Card')
+  const CardHeader = ui('card', 'CardHeader')
+  const CardTitle = ui('card', 'CardTitle')
+  const CardDescription = ui('card', 'CardDescription')
+  const CardContent = ui('card', 'CardContent')
+  const Checkbox = ui('checkbox', 'Checkbox')
+  const Input = ui('input', 'Input')
+  const Kbd = ui('kbd', 'Kbd')
+  const Label = ui('label', 'Label')
+  const Progress = ui('progress', 'Progress')
+  const Separator = ui('separator', 'Separator')
+  const Skeleton = ui('skeleton', 'Skeleton')
+  const Slider = ui('slider', 'Slider')
+  const Switch = ui('switch', 'Switch')
+  const Textarea = ui('textarea', 'Textarea')
+  const Toggle = ui('toggle', 'Toggle')
+
   const set = (name: string, items: ReactElement[]) => (
     <div key={name} {...marks.set(name)}>
       {items}
@@ -49,8 +64,8 @@ export default function page(marks: KitMarks): ReactElement {
           STATES.map((state) => (
             <Button
               key={`${style}${size}${state}`}
-              variant={style as 'default'}
-              size={size as 'default'}
+              variant={style}
+              size={size}
               {...variant({ Variant: style, Size: size, State: state }, { state })}
             >
               Button
@@ -62,7 +77,7 @@ export default function page(marks: KitMarks): ReactElement {
     set(
       'Badge',
       ['default', 'secondary', 'destructive', 'outline'].map((style) => (
-        <Badge key={style} variant={style as 'default'} {...variant({ Variant: style })}>
+        <Badge key={style} variant={style} {...variant({ Variant: style })}>
           Badge
         </Badge>
       ))
@@ -98,7 +113,7 @@ export default function page(marks: KitMarks): ReactElement {
           STATES.map((state) => (
             <Toggle
               key={`${style}${value}${state}`}
-              variant={style as 'default'}
+              variant={style}
               defaultPressed={value === 'On'}
               {...variant(
                 { Variant: style, Pressed: value, State: state },
@@ -168,7 +183,7 @@ export default function page(marks: KitMarks): ReactElement {
     set(
       'Avatar',
       ['sm', 'default', 'lg'].map((size) => (
-        <Avatar key={size} size={size as 'default'} {...variant({ Size: size })}>
+        <Avatar key={size} size={size} {...variant({ Size: size })}>
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
       ))
@@ -176,12 +191,7 @@ export default function page(marks: KitMarks): ReactElement {
     set(
       'Alert',
       ['default', 'destructive'].map((style) => (
-        <Alert
-          key={style}
-          variant={style as 'default'}
-          className="w-96"
-          {...variant({ Variant: style })}
-        >
+        <Alert key={style} variant={style} className="w-96" {...variant({ Variant: style })}>
           <AlertTitle>Heads up!</AlertTitle>
           <AlertDescription>You can add components to your app.</AlertDescription>
         </Alert>

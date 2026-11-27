@@ -1,12 +1,7 @@
-import { dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+/** The shadcn CLI that installs the kit; its registry serves the components as of the build. */
+export const SHADCN_CLI = 'shadcn@4.23.1'
 
-/** Where the copied shadcn/ui sources live, beside the tool's own. */
-export const SHADCN_UPSTREAM = dirname(
-  fileURLToPath(import.meta.resolve('#upstream/shadcn/index.css'))
-)
-
-/** The shadcn/ui components the kit draws; `sources.ts` copies these and what they use. */
+/** The shadcn/ui components the kit draws, which the CLI installs with what they use. */
 export const SHADCN_COMPONENTS = [
   'accordion',
   'alert',

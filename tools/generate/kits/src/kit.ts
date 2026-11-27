@@ -1,3 +1,5 @@
+import type { ComponentType, ReactNode } from 'react'
+
 import type { ReadHTMLMode } from '@open-pencil/core/io/formats/html/import'
 
 /** An interaction state a variant is drawn in, as the behaviour's states name them. */
@@ -43,18 +45,33 @@ export interface KitMarks {
   ) => VariantProps
 }
 
-/** A UI kit the runner draws: its components rendered to a page, styled, and imported. */
-export interface KitDefinition {
-  /** The document's and its page's name. */
-  name: string
-  /** The folder the kit's modules and packages resolve from. */
+/** Where a kit's sources are once installed, as its own CLI or package manager lays them out. */
+export interface KitSources {
+  /** The installed project, whose packages the kit's modules import. */
   root: string
-  /** The module, under `root`, whose default export draws the page: `(marks) => element`. */
-  page: string
   /** The kit's stylesheet, compiled with Tailwind for the classes the page uses. */
   stylesheet: string
+  /** Each of the kit's modules the page draws with, by name, as files under `root`. */
+  modules: Record<string, string>
+  /** Import aliases the kit's modules use, such as a project's `@`, as folders. */
+  aliases: Record<string, string>
+  /** What installed them, such as `shadcn@4.23.1`, which the document records. */
+  installer: string
+}
+
+/** The kit's modules as the page receives them: each module's exports, by module name. */
+export type KitModules = Readonly<Record<string, Readonly<Record<string, unknown>>>>
+
+/** A UI kit the runner draws: its components rendered to a page, styled, and imported. */
+export interface KitDefinition {
+  /** The document's name. */
+  name: string
+  /** The module whose default export draws the page: `(marks, modules) => element`. */
+  page: string
   /** The ways the page is styled, each a mode of the kit's variables, as its themes switch. */
   modes: readonly ReadHTMLMode[]
+  /** Installs the kit's sources, or finds them installed. */
+  sources: () => Promise<KitSources>
 }
 
 export function createKitMarks(attributes: {
@@ -85,4 +102,24 @@ export function createKitMarks(attributes: {
       return props
     }
   }
+}
+
+/** The props the page gives a kit component: its children, classes, and anything it takes. */
+export interface KitComponentProps {
+  children?: ReactNode
+  className?: string
+  [prop: string]: unknown
+}
+
+/** A component the page draws with: the export `name` of the kit's module `module`. */
+export function kitComponent(
+  modules: KitModules,
+  module: string,
+  name: string
+): ComponentType<KitComponentProps> {
+  const component = modules[module]?.[name]
+  // React components are functions, or objects such as `forwardRef` and `memo` return.
+  if (typeof component !== 'function' && (typeof component !== 'object' || component === null))
+    throw new Error(`The kit's ${module} has no component ${name}`)
+  return component as ComponentType<KitComponentProps>
 }
