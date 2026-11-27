@@ -94,3 +94,17 @@ describe('a vector with several filled regions exported to SVG', () => {
     ])
   })
 })
+
+describe('a zero-weight stroke', () => {
+  test('is left out, as Figma leaves it out, since it draws nothing', () => {
+    const svg = svgOf((graph, pageId) => [
+      graph.createNode('RECTANGLE', pageId, {
+        width: 10,
+        height: 10,
+        fills: [solid(0, 0, 1, 1, 1)],
+        strokes: [{ ...BLACK_STROKE, weight: 0 }]
+      }).id
+    ])
+    expect(rects(svg)).toEqual(['<rect width="10" height="10" fill="#0000FF"/>'])
+  })
+})

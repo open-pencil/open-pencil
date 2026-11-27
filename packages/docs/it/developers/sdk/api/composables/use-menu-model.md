@@ -12,4 +12,4 @@ Etichette, scorciatoie, stato disabilitato ed esecuzione provengono da una fonte
 ## Vedi anche
 
 - [useEditorCommands](./use-editor-commands)
-- [Menu contestuale](/user-guide/context-menu)
+- [Menu contestuale](/user-guide/selection-and-manipulation)

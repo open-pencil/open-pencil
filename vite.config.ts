@@ -35,9 +35,9 @@ const automationRoute = localAutomationRoute(host)
 
 export default defineConfig(async ({ command, mode }) => {
   // `--mode cloud` builds what a Cloud server serves on its own address: the editor and the
-  // server's own pages (`cloud.html`).
+  // server's own pages (`pages/cloud.html`).
   const cloudSite = mode === 'cloud'
-  // `--mode metrics` builds only the metrics dashboard (`metrics.html`) for the feedback Worker,
+  // `--mode metrics` builds only the metrics dashboard (`pages/metrics.html`) for the feedback Worker,
   // which serves it under /admin behind Cloudflare Access.
   const metrics = mode === 'metrics'
   const env = loadEnv(mode, __dirname, 'VITE_')
@@ -112,17 +112,17 @@ export default defineConfig(async ({ command, mode }) => {
         // a Cloud server adds its own pages beside the editor, and the metrics dashboard builds
         // alone.
         input: metrics
-          ? { metrics: resolve(__dirname, 'metrics.html') }
+          ? { metrics: resolve(__dirname, 'pages/metrics.html') }
           : cloudSite
             ? {
                 main: resolve(__dirname, 'index.html'),
-                cloud: resolve(__dirname, 'cloud.html'),
-                presenter: resolve(__dirname, 'presenter.html')
+                cloud: resolve(__dirname, 'pages/cloud.html'),
+                presenter: resolve(__dirname, 'pages/presenter.html')
               }
             : {
                 main: resolve(__dirname, 'index.html'),
-                updater: resolve(__dirname, 'updater.html'),
-                presenter: resolve(__dirname, 'presenter.html')
+                updater: resolve(__dirname, 'pages/updater.html'),
+                presenter: resolve(__dirname, 'pages/presenter.html')
               },
         output: { chunkFileNames }
       }
