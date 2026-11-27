@@ -9,7 +9,6 @@ import { ZOOM_MIN } from '#core/constants'
 
 import plusDarkerSource from './plus-darker.sksl?raw'
 import plusLighterSource from './plus-lighter.sksl?raw'
-import softLightSource from './soft-light.sksl?raw'
 
 type LinearBlendMode = 'LINEAR_BURN' | 'LINEAR_DODGE'
 
@@ -19,14 +18,8 @@ const LINEAR_BLENDERS: Record<LinearBlendMode, SkslProgram<NoUniforms>> = {
   LINEAR_DODGE: defineBlender('plus lighter blender', plusLighterSource)
 }
 
-const SOFT_LIGHT_BLENDER = defineBlender('soft light blender', softLightSource)
-
 function isLinearBlendMode(mode?: BlendMode): mode is LinearBlendMode {
   return mode === 'LINEAR_BURN' || mode === 'LINEAR_DODGE'
-}
-
-function drawsFigmaSoftLight(r: SkiaRenderer, mode?: BlendMode): boolean {
-  return mode === 'SOFT_LIGHT' && !r.builtInBlendModesOnly
 }
 
 export function figmaBlendModeToSkia(
@@ -74,15 +67,7 @@ export function setPaintBlendMode(r: SkiaRenderer, paint: Paint, mode?: BlendMod
     paint.setBlender(compiledBlender(r.ck, r.shaders, LINEAR_BLENDERS[mode]))
     return
   }
-  if (drawsFigmaSoftLight(r, mode)) {
-    paint.setBlender(compiledBlender(r.ck, r.shaders, SOFT_LIGHT_BLENDER))
-    return
-  }
   paint.setBlendMode(figmaBlendModeToSkia(r.ck, mode))
-}
-
-function usesRuntimeBlender(r: SkiaRenderer, mode?: BlendMode): boolean {
-  return isLinearBlendMode(mode) || drawsFigmaSoftLight(r, mode)
 }
 
 const SMALLEST_REPLAY_SCALE = ZOOM_MIN
@@ -124,7 +109,7 @@ export function saveBlendedLayer(
 ): void {
   setPaintBlendMode(r, paint, mode)
   canvas.save()
-  if (bounds && usesRuntimeBlender(r, mode)) {
+  if (bounds && isLinearBlendMode(mode)) {
     clipToLayerBounds(r, canvas, bounds)
   }
   canvas.saveLayer(paint, bounds)

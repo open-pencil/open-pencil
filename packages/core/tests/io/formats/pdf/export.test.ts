@@ -220,7 +220,6 @@ test('writes soft light into the PDF even after the canvas recorded the layer in
     expect(renderer.nodePictures.size).toBeGreaterThan(0)
     const result = await exportPDFDocument(graph, specs, { renderer })
     expect(pdfObjects(expectDefined(result, 'PDF').data)).toMatch(/\/BM\s*\/SoftLight/)
-    expect(renderer.builtInBlendModesOnly).toBe(false)
   } finally {
     renderer.destroy()
   }

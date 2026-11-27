@@ -37,7 +37,7 @@ export function drawShapeThroughNodePicture(
   node: SceneNode,
   draw: (target: Canvas) => void
 ): void {
-  if (r.builtInBlendModesOnly || samplesImagesForExport(r, node)) {
+  if (samplesImagesForExport(r, node)) {
     draw(canvas)
     return
   }
