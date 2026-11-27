@@ -1101,7 +1101,6 @@
         "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
-        "@open-pencil/std": "workspace:*",
         "@tailwindcss/node": "4.3.3",
         "@tailwindcss/oxide": "4.3.3",
         "css-tree": "^3.2.1",

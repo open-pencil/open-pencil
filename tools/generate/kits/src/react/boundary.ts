@@ -1,6 +1,7 @@
+/**
+ * Runs inside the kit's module graph, as `mark.ts` does, so it imports nothing but React.
+ */
 import { Component, createElement, type ReactNode } from 'react'
-
-import { errorMessage } from '@open-pencil/std/errors'
 
 interface BoundaryProps {
   /** What the boundary holds, named in the message it draws when that fails to render. */
@@ -21,7 +22,7 @@ export class RenderBoundary extends Component<BoundaryProps, BoundaryState> {
   override state: BoundaryState = { failed: null }
 
   static getDerivedStateFromError(error: unknown): BoundaryState {
-    return { failed: errorMessage(error) }
+    return { failed: String(error) }
   }
 
   override render(): ReactNode {
