@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react'
 
 import type { ReadHTMLMode } from '@open-pencil/core/io/formats/html/import'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 /** An interaction state a variant is drawn in, as the behaviour's states name them. */
 export type KitState = 'Default' | 'Hover' | 'Pressed' | 'Focus' | 'Disabled'
@@ -49,10 +50,7 @@ export function variantName(properties: Readonly<Record<string, string>>): strin
 }
 
 /** The size of each cell of a set laid out in rows, in pixels. */
-export interface KitCell {
-  width: number
-  height: number
-}
+export type KitCell = Size
 
 /** The props a kit component takes to be drawn as one variant of a set. */
 export type VariantProps = Record<string, string | boolean>

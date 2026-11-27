@@ -2,7 +2,6 @@ import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { $ } from 'bun'
 import * as v from 'valibot'
 import { parse as parseYAML } from 'yaml'
 
@@ -50,6 +49,18 @@ async function fetchDoc(name: string): Promise<KitDoc> {
   return parsed.output
 }
 
+/** Runs the pinned shadcn CLI in `cwd`, answering yes to what it asks. */
+async function shadcn(cwd: string, args: string[]): Promise<void> {
+  const name = args[0] === 'init' ? ['-n', 'app'] : []
+  const child = Bun.spawn(['bunx', SHADCN_CLI, ...args, ...name, '-y'], {
+    cwd,
+    stdout: 'ignore',
+    stderr: 'pipe'
+  })
+  if ((await child.exited) !== 0)
+    throw new Error(`shadcn ${args[0]} failed: ${await new Response(child.stderr).text()}`)
+}
+
 /**
  * Sets up a project as a shadcn/ui user does, with its CLI: Radix primitives, the nova style,
  * the neutral theme, and lucide icons, then the kit's components and their examples from the
@@ -59,12 +70,10 @@ async function install(cache: string): Promise<void> {
   await mkdir(dirname(cache), { recursive: true })
   const parent = await mkdtemp(`${cache}.`)
   try {
-    await $`bunx ${SHADCN_CLI} init -t vite -b radix -p nova --no-monorepo -n app -y`
-      .cwd(parent)
-      .quiet()
+    await shadcn(parent, ['init', '-t', 'vite', '-b', 'radix', '-p', 'nova', '--no-monorepo'])
     const app = join(parent, 'app')
     const items = [...SHADCN_COMPONENTS, ...SHADCN_COMPONENTS.map(exampleModule)]
-    await $`bunx ${SHADCN_CLI} add ${items} -y --overwrite`.cwd(app).quiet()
+    await shadcn(app, ['add', ...items, '--overwrite'])
     const docs = Object.fromEntries(
       await Promise.all(SHADCN_COMPONENTS.map(async (name) => [name, await fetchDoc(name)]))
     )
