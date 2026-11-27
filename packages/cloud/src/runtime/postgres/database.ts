@@ -2,12 +2,7 @@ import { createCloudDatabase } from '#cloud/server'
 import { PostgresDialect } from 'kysely'
 import { Pool, type PoolConfig } from 'pg'
 
-/**
- * How long a query serving a request may run before PostgreSQL cancels it. Rate limits and
- * sessions live in PostgreSQL, so one stuck query would otherwise hold its connection, and every
- * request waiting for one, indefinitely.
- */
-export const POSTGRES_STATEMENT_TIMEOUT_MS = 30_000
+import { POSTGRES_CONNECTION_TIMEOUT_MS, POSTGRES_STATEMENT_TIMEOUT_MS } from './timeouts'
 
 export type PostgresCloudDatabaseOptions = {
   connectionString: string
@@ -29,6 +24,7 @@ export function createPostgresCloudDatabase(options: PostgresCloudDatabaseOption
   return createCloudDatabase({
     dialect: new PostgresDialect({
       pool: new Pool({
+        connectionTimeoutMillis: POSTGRES_CONNECTION_TIMEOUT_MS,
         ...options.pool,
         ...(statementTimeoutMs === null ? {} : { statement_timeout: statementTimeoutMs }),
         connectionString: options.connectionString

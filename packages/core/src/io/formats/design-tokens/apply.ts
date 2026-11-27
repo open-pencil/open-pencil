@@ -15,6 +15,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import { copyEffects } from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
+import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { effectBindingTarget } from '@open-pencil/scene-graph/variables'
 import { randomHex } from '@open-pencil/std/random'
 
@@ -199,6 +200,15 @@ function styleConsumers(graph: SceneGraph, style: SceneNode, kind: PlannedStyle[
   )
 }
 
+function tokenWritesLiteral(style: PlannedStyle, field: string): boolean {
+  if (Object.hasOwn(style.bindings, field)) {
+    return false
+  }
+  return style.kind === 'EFFECT'
+    ? effectBindingTarget(field) !== null
+    : Object.hasOwn(style.fields, field)
+}
+
 function applyStyles(
   target: TokenImportTarget,
   plan: TokenImportPlan,
@@ -209,16 +219,12 @@ function applyStyles(
     const node = existing ?? target.addStyle(style, { ...style.fields, name: style.name })
     const own = existing && changedFields(existing, style.fields)
     if (own) target.updateNode(node.id, own)
-    // An effect field the token now writes as a literal lets its variable go.
-    if (existing && style.kind === 'EFFECT') {
-      for (const field of Object.keys(node.boundVariables))
-        if (effectBindingTarget(field) && !Object.hasOwn(style.bindings, field))
+    if (existing) {
+      for (const field of Object.keys(node.boundVariables)) {
+        if (tokenWritesLiteral(style, field)) {
           target.unbindVariable(node.id, field)
-    }
-    for (const [field, alias] of Object.entries(style.bindings)) {
-      const variableId = aliasId(alias, created)
-      if (variableId && node.boundVariables[field] !== variableId)
-        target.bindVariable(node.id, field, variableId)
+        }
+      }
     }
     if (own && node.source.id) {
       const patch = consumerPatch(node, style.kind)
@@ -227,6 +233,12 @@ function applyStyles(
         // The style reference always goes along, or changing styled fields would detach it.
         if (changes)
           target.updateNode(consumer.id, { ...changes, ...pick(patch, [refKeyOf(style.kind)]) })
+      }
+    }
+    for (const [field, alias] of Object.entries(style.bindings)) {
+      const variableId = aliasId(alias, created)
+      if (variableId && node.boundVariables[field] !== variableId) {
+        target.bindVariable(node.id, field, variableId)
       }
     }
     return node.id
@@ -254,9 +266,15 @@ export function applyTokenImport(
 /** A style node: hidden from the layer list, found by its style id, as `.fig` styles are. */
 export function styleNodeProps(
   style: PlannedStyle,
-  fields: Partial<SceneNode>
+  fields: Partial<SceneNode>,
+  styleId: string
 ): Partial<SceneNode> {
-  return { ...fields, sharedStyleType: style.kind, internalOnly: true }
+  return {
+    ...fields,
+    sharedStyleType: style.kind,
+    internalOnly: true,
+    source: { ...createDefaultSourceMetadata(), id: styleId }
+  }
 }
 
 export function styleNodeType(style: PlannedStyle) {
@@ -306,9 +324,11 @@ function graphTokenImportTarget(
         else Object.assign(variable, { [key]: structuredClone(value) })
     },
     addStyle: (style, fields) => {
-      const node = graph.createNode(styleNodeType(style), pageId, styleNodeProps(style, fields))
-      node.source.id = `style:${randomHex(12)}`
-      return node
+      return graph.createNode(
+        styleNodeType(style),
+        pageId,
+        styleNodeProps(style, fields, `style:${randomHex(12)}`)
+      )
     },
     updateNode: (nodeId, changes) => graph.updateNode(nodeId, changes),
     bindVariable: (nodeId, field, variableId) => graph.bindVariable(nodeId, field, variableId),
@@ -318,8 +338,8 @@ function graphTokenImportTarget(
 
 /**
  * Imports straight into a graph, for scripts, tools, and the CLI working on a document without
- * an editor; the layers bound to variables whose values changed are resolved and laid out
- * afterwards.
+ * an editor; the layers bound to variables whose values changed, and the styles it touched with
+ * the layers using them, are resolved and laid out afterwards.
  */
 export function importTokensIntoGraph(
   graph: SceneGraph,
@@ -329,5 +349,8 @@ export function importTokensIntoGraph(
   const changed = new Set<string>()
   const result = applyTokenImport(graphTokenImportTarget(graph, pageId, changed), plan)
   if (changed.size > 0) reconcileVariableLayouts(graph, { variables: changed })
+  if (result.styleNodeIds.length > 0) {
+    reconcileVariableLayouts(graph, { subtrees: result.styleNodeIds })
+  }
   return result
 }

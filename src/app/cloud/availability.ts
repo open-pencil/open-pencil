@@ -22,7 +22,7 @@ const preview = IS_BROWSER ? useLocalStorage('open-pencil:cloud-preview', false)
 
 /**
  * Whether the official server is open to this editor, being previewed here, or serving this
- * editor itself; until then Settings offers its waitlist.
+ * editor itself; until then Settings offers only self-hosted servers.
  */
 export const cloudOfficialListed = computed(
   () =>

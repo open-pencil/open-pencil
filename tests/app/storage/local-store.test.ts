@@ -105,3 +105,32 @@ describe('local canvas store (IndexedDB)', () => {
     expect((await store.getMeta(id))?.revision).toBe(2)
   })
 })
+
+describe.each([
+  ['memory', createMemoryLocalCanvasStore],
+  ['IndexedDB', createIdbLocalCanvasStore]
+] as const)('local canvas covers (%s)', (_kind, createStore) => {
+  test('keeps the cover a write drew for its revision until a write without one', async () => {
+    const store = createStore()
+    const write = (coverBytes?: Uint8Array) =>
+      store.writeCanvas({
+        id: 'covered',
+        providerId: 'openpencil-cloud',
+        name: 'Covered',
+        figBytes: new Uint8Array([1]),
+        coverBytes
+      })
+
+    const first = await write(new Uint8Array([7, 7]))
+    expect([...expectDefined(await store.readCover('covered', first.revision))]).toEqual([7, 7])
+    // Another revision's file never goes up with this cover.
+    expect(await store.readCover('covered', first.revision + 1)).toBeNull()
+    // A later file without a cover must not go up with the earlier file's.
+    const second = await write()
+    expect(await store.readCover('covered', second.revision)).toBeNull()
+
+    const third = await write(new Uint8Array([8]))
+    await store.remove('covered')
+    expect(await store.readCover('covered', third.revision)).toBeNull()
+  })
+})

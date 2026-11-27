@@ -16,6 +16,8 @@
   "createInstance": "إنشاء نسخة",
   "detachInstance": "فصل النسخة",
   "detachIcon": "فصل الأيقونة",
+  "setAsThumbnail": "تعيين كصورة مصغّرة",
+  "restoreDefaultThumbnail": "استعادة الصورة المصغّرة الافتراضية",
   "goToMainComponent": "الانتقال إلى المكوّن الرئيسي",
   "addAutoLayout": "إضافة تخطيط تلقائي",
   "useAsMask": "استخدام كقناع",

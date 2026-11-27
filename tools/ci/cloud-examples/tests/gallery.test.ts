@@ -21,7 +21,7 @@ const download = (url: string) => ({ url, method: 'GET' as const, headers: {}, e
  */
 function fakeCloud() {
   const documents: DocumentSummary[] = []
-  const stored = new Map<string, { url: string; checksum: string }>()
+  const stored = new Map<string, { url: string; checksum: string; cover: string | null }>()
   const objects = new Map<string, Uint8Array>()
   const versions = new Map<string, DocumentVersion[]>()
   const pending = new Map<string, string>()
@@ -66,7 +66,8 @@ function fakeCloud() {
         checksum: file.checksum,
         contentType: 'application/octet-stream',
         download: download(file.url),
-        images: []
+        images: [],
+        cover: file.cover
       }
     },
     async listDocumentVersions(documentId) {
@@ -116,7 +117,11 @@ function fakeCloud() {
       const document = summary(documentId)
       document.currentRevisionId = crypto.randomUUID()
       document.version++
-      stored.set(documentId, { url: `https://store.example/${uploadId}`, checksum: input.checksum })
+      stored.set(documentId, {
+        url: `https://store.example/${uploadId}`,
+        checksum: input.checksum,
+        cover: input.cover ?? null
+      })
       return { ...document }
     }
   }
@@ -132,7 +137,8 @@ function fakeCloud() {
     name: string,
     bytes: Uint8Array,
     release?: { name: string; description: string },
-    description = 'An example.'
+    description = 'An example.',
+    cover: Uint8Array | null = null
   ) =>
     publishExample({
       cloud,
@@ -140,6 +146,7 @@ function fakeCloud() {
       name,
       description,
       bytes,
+      cover,
       release,
       objectFetch
     })
@@ -163,6 +170,18 @@ describe('publishing a gallery example', () => {
     expect(await server.publish('Tour', file('first'))).toMatchObject({ uploaded: false })
     expect(await server.publish('Tour', file('second'))).toMatchObject({ uploaded: true })
     expect(server.calls).toEqual(['create', 'upload', 'describe', 'upload'])
+  })
+
+  test('saves the file again when only its cover changed', async () => {
+    const server = fakeCloud()
+    const cover = (label: string) => strToU8(label)
+    await server.publish('Tour', file('first'), undefined, 'A tour.', cover('old'))
+    expect(
+      await server.publish('Tour', file('first'), undefined, 'A tour.', cover('old'))
+    ).toMatchObject({ uploaded: false })
+    expect(
+      await server.publish('Tour', file('first'), undefined, 'A tour.', cover('new'))
+    ).toMatchObject({ uploaded: true })
   })
 
   test('sets the description only when it differs from the one stored', async () => {

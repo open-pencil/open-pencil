@@ -1,162 +1,123 @@
 ---
+pageClass: guide
 title: AI Chat
-description: Built-in AI assistant with 90+ tools for creating and modifying designs.
+description: Ask the AI to make and change designs, undo what it did, get reviews, and teach it with skills.
 ---
 
 # AI Chat
 
-Press <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) to open the AI assistant. Describe what you want — it creates shapes, sets styles, manages layout, works with components, and analyzes your design.
+Describe what you want, and the AI makes it on the canvas: a screen, a component, a change to every button on the page. Press <Keys mac="⌘ J" other="Ctrl J" /> to open the chat, or click the **AI** tab next to **Design**.
 
-## Setup
+## Set Up the AI
 
-The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Antigravity CLI, Gemini CLI, Cursor, Grok Build, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → Models → Run guided setup**. To configure models by hand:
+The first time, guided setup asks what you'd like the AI to help with and what you already use:
 
-1. Open the AI chat panel (<kbd>⌘</kbd><kbd>J</kbd>)
-2. Open the model picker under the message field and choose **Manage models and roles…**
-3. Add a model and configure its provider, model ID, credentials, and capabilities
-4. Save the model and assign it to **Design agent**
+- a [coding agent](./coding-agents) you have, such as Claude Code or Codex, in the desktop app;
+- an account with an AI provider, such as OpenRouter, Anthropic, OpenAI, or Google, or your ChatGPT plan;
+- a model running on your computer or your company's server;
+- your [OpenPencil Cloud](/cloud/ai) account.
 
-You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. A model assigned to **Fast tasks** names each conversation after its first reply, and, when it is an API model whose context window its catalog gives, writes compaction summaries; while Fast tasks is **Same as Design** or **None**, conversations keep their first message as the title and the Design model writes the summaries. A model assigned to **Review** writes the [design reviews](#design-reviews) you ask for; while Review is **Same as Design**, the Design model writes them. Models using the same provider connection reuse its stored credential.
+[Models and Providers](./models-and-providers) lists what each one needs. To run setup again, open **Settings → Models → Run guided setup**.
 
-The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/review`, `/compact`, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
+The AI uses a model for each kind of work, which you can change in the model menu under the message field, under **Manage models and roles…**:
 
-## Step limit
+| Role | Does |
+| ---- | ---- |
+| **Design agent** | The chat itself. |
+| **Vision** | Reads the images you attach. |
+| **Review** | Writes [design reviews](#ask-for-a-review). Uses the Design agent unless you choose another. |
+| **Fast tasks** | Names conversations, and, when it's an API model, writes summaries of long ones; otherwise the Design agent writes them. Pi doesn't name conversations. Without a model that does, a conversation takes its first message as its name. |
 
-In **Settings → Models → Chat**, set **Maximum steps per message** to a whole number from 1 to 1,000. The default is 50. Press Enter or leave the field to save a valid value; invalid drafts do not replace the saved preference. Higher limits allow longer tool-driven tasks but can increase latency and provider cost.
+## Ask for a Design
 
-The built-in AI captures this limit when each message starts. Stopping, remaining-step warnings, and the **Continue** action use that same budget. Changing it does not interrupt an ongoing request; the next message or continuation uses the new limit. A step is one model iteration and can include multiple tool calls. ACP and Pi agents manage their own limits.
+Type what you want and press <Keys mac="Enter" other="Enter" />. The AI sees which layers are selected, so select what you mean before asking to change it.
 
-## Tool access
+<GuideImage name="ai-chat/reply" alt="The AI chat beside the canvas: a request for a trip card, the edit the AI made, its answer, and the new card on the canvas" />
 
-Open **Settings → Tool access** to choose which tools direct AI model connections can use. Search by name or description, expand read-only or side-effect groups, and toggle individual tools or an entire group. Group switches affect all tools in that group, not only search results. **Restore defaults** restores the default tool set: the core editing and inspection tools, the library tools (`list_components`, `list_libraries`, `insert_library_component`), comments, variables, `lint` and `lint_fix`, `export_image`, `list_pages`, and `create_page`. Extended tools such as `convert_to_components` can be enabled individually.
+- Type **@** to name a layer, a page, or a skill. Named layers show as chips; click one to find the layer on the canvas. The pointer button names the selected layers.
+- Attach images, such as a sketch or a site you like, with the image button. This needs a Vision model.
+- Each edit the AI makes shows in its reply. Click one to see what it did.
 
-Preferences are saved locally and apply to the next message, including in an existing conversation. They do not change an already-running request. Enabling many tools increases the schemas sent to the model.
+Some things to try:
 
-The **Local MCP** segment has independent settings for clients connected to OpenPencil's MCP server, including ACP and Pi agents. Restart the server and reconnect stdio clients after changing those settings. Remote MCP connections, WebMCP access, and Pi's shell/filesystem permissions remain separate.
+- "Make a card with a title, a description, and a blue button."
+- "Make all buttons on this page use the same corner radius."
+- "Turn this frame's background into a gradient from blue to purple."
+- "Make this component a switch I can try in preview."
 
-Tool toggles control which tools are offered, not which operations scripts may perform. An enabled `eval` or other script-capable tool can perform design operations whose dedicated tools are disabled; these switches are not a sandbox.
+With a model that reads images, the AI checks its work by looking at a picture of what it made, so it can fix what it got wrong.
 
-## Skills
+## While the AI Works
 
-Skills are folders with a `SKILL.md` in the [Agent Skills](https://agentskills.io/specification) format: instructions for a kind of work, with optional reference files. The built-in AI sees each enabled skill's name and description and loads its instructions when a request matches. It can read the skill's files, but scripts in a skill do not run.
+- Keep working: the AI stays on the page where the message started. The chat says where it's working, with **Go to page** to get back.
+- To watch it, turn on **Follow agents**, the target button at the top of the chat. Your view follows the AI, also to another page. Clicking, scrolling, or <Keys mac="Esc" other="Esc" /> stops following.
+- Type another message and press <Keys mac="Enter" other="Enter" /> to send it once the current step is done, so the AI can change course. <Keys mac="⌥ Enter" other="Alt Enter" /> waits until it's done with everything. Waiting messages show dimmed below the reply.
+- **Stop** ends the reply. An edit already being made finishes; the next message tells the AI what changed.
 
-Open **Settings → Skills** to see where skills come from:
+**Maximum steps per message**, under **Chat** in **Settings → Models**, limits how long one reply of the built-in AI can work, 50 steps unless you change it. Coding agents set their own limits. When a reply reaches it, **Continue** goes on.
 
-- **Uploaded**: upload a ZIP of a skill's folder or a single `SKILL.md`. Uploads stay in OpenPencil and work in the browser too.
-- **Next to this document** (desktop): `.agents/skills` and `.claude/skills` folders from the open document's folder up to its repository. They stay off until you choose **Trust folder**, because a skill gives the AI instructions it follows.
-- **Shared agent skills** and **Claude Code skills** (desktop): `~/.agents/skills` and `~/.claude/skills`, where other coding agents install skills. Most of those are coding workflows, so these folders start off; the review step of the AI setup lists their skills for you to pick the ones that help with design.
+## Undo What the AI Did
 
-Uploads are on as soon as you add them, and any folder or skill can be switched on or off. The page lists them as Tool access lists tools: each source is a group with its own switch, and each skill has a switch beside it. Open a skill to read its instructions, see its files, or check warnings about how it departs from the specification. When two skills share a name, the first in that order is used.
+Each edit the AI makes is one step of <Keys mac="⌘ Z" other="Ctrl Z" />, and the chat marks undone edits.
 
-To run a skill yourself, type `/` at the start of a message and pick it, which starts the message with `/skill:name`. Pi gets the enabled skills as its own. ACP agents such as Claude Code and Codex load their own skills.
+- **Revert changes** under a reply undoes all of its edits, and **Restore changes** brings them back.
+- **Revert and regenerate** undoes them and asks again.
 
-## Saved Conversations
+Your next message tells the AI what you undid, so it doesn't build on edits that are gone.
 
-Use **Conversation history** to return to a saved chat, start a **New chat**, or rename or delete a conversation. History and attachment previews are stored locally; **All chats** lets you browse transcripts from other documents.
+## Ask for a Review
 
-A conversation belonging to another document is read-only until you open that document. A saved agent transcript is not a guarantee that its external agent session can resume: when resumption is unavailable, start a new chat. Local history is not cloud synchronization or a backup.
+Type **/review** to have the Review model look at the selection, or at the page when nothing is selected, as an art director would: alignment, spacing, contrast, hierarchy, and anything that looks broken.
 
-In the Chat settings beside the model overview, choose whether reasoning is **Collapsed by default**, **Expand while thinking**, or **Expanded by default**. Disclosure animations follow the app's reduced-motion preference. Expanding older reasoning does not force the conversation to scroll to the bottom.
+- Add what to look at, such as `/review typography`.
+- Attach images to compare against, such as a screenshot of a site you admire. This needs a model that reads images.
+- Under an edit the AI made, **Review this change** asks whether it made the design better.
 
-## Supported Providers
+The review shows as a card, and each finding links to its layer. **Fix these** sends the findings to the AI as your message.
 
-The chat works with OpenRouter, Anthropic, OpenAI, Google AI, DeepSeek, Z.ai, MiniMax, your ChatGPT plan, any OpenAI- or Anthropic-compatible server, and your [OpenPencil Cloud](/cloud/ai) account. [Models and Providers](./models-and-providers) lists each provider's models and how to connect it, what works in the browser, and how to choose a model.
+## Teach the AI With Skills
 
-**ChatGPT** uses your ChatGPT plan instead of an API key, through the same backend and sign-in as OpenAI's Codex CLI. Signing in opens the browser and returns to the desktop app on `localhost:1455`, the only address OpenAI accepts for it, so close a running `codex login` first. The sign-in is stored like a key and refreshes itself; the model list comes from your account. The browser app does not offer it.
+A skill is a set of instructions for a kind of work, such as your team's brand rules, in the [Agent Skills](https://agentskills.io/specification) format: a folder with a `SKILL.md` and any files it refers to. The AI reads a skill when a request needs it. To use one yourself, type **/** and pick it.
 
-## External MCP connections
+Add skills in **Settings → Skills**:
 
-Desktop ACP agents can also use trusted remote [Model Context Protocol](https://modelcontextprotocol.io/) servers. In **Settings → MCP**, under MCP connections, add a named Streamable HTTP endpoint, optionally save a bearer token, and enable the connection. OpenPencil stores the token in the configured credential backend rather than ordinary settings and resolves it only when starting the ACP session.
+- **Upload** a ZIP of a skill's folder, or a single `SKILL.md`.
+- In the desktop app, skills in `.agents/skills` and `.claude/skills` folders next to the open file are found too. They stay off until you choose **Trust folder**, since a skill gives the AI instructions.
+- Skills other coding agents installed, in `~/.agents/skills` and `~/.claude/skills`, are listed off. Turn on the ones that help with design.
 
-Remote servers must use HTTPS. Loopback HTTP endpoints are accepted for local development. Review and trust a server before enabling it: its tools may read external data or perform actions with the credentials you provide. OpenPencil's built-in design MCP server remains attached automatically and does not need to be added here.
+Coding agents such as Claude Code load their own skills.
 
-## What It Can Do
+## Long Conversations
 
-The configurable tool catalog covers these categories; the tools offered to a model depend on your Tool access settings:
+The AI reads only so much of a conversation at once. The meter at the top of the chat shows how full that is; click it for details.
 
-- **Create** — frames, shapes, text, components, pages. Renders JSX for complex layouts.
-- **Style** — fills, strokes, effects, opacity, corner radius, blend modes.
-- **Layout** — auto-layout, grid, alignment, spacing, sizing.
-- **Components** — create components, instances, component sets, and slots. Manage overrides. Give components Reka UI behaviours so they work in preview.
-- **Variables** — create/edit variables, collections, modes. Bind to fills.
-- **Query** — find nodes, XPath selectors, read properties, list pages, fonts, selection.
-- **Inspect** — `get_jsx` for JSX roundtrip view, `diff_nodes` for structural diffs, `diff_pixels` for pixel diffs, `describe` for semantic role and design issue detection.
-- **Analyze** — color palette, typography audit, spacing consistency, cluster detection.
-- **Export** — PNG, SVG, JSX with Tailwind classes. Vision-based verification via `export_image`.
-- **Vector** — boolean operations, path manipulation.
+When the conversation is nearly full, the AI compacts it: it writes a summary that stands in for the older messages, which you can still read. **Compact automatically**, under **Chat** in **Settings → Models**, does this when needed. Type **/compact** to do it now, with what to keep after it, such as `/compact keep the color decisions`.
 
-## Visual Verification
+**Conversation history**, at the top left of the chat, opens your earlier conversations, saved on this computer. **New chat** starts over.
 
-The assistant can verify its work visually. With `export_image`, on by default, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss. `diff_pixels`, enabled by default, compares an edited node with a reference copy and returns the changed pixels and region, so the assistant can confirm an edit stayed within its target.
+## Choose What the AI Can Do
 
-## Design reviews
+**Settings → Tool access** lists the tools the AI can use, such as changing layers, exporting, or running scripts. Turn tools or whole groups off to keep the AI from using them. The change applies from the next message. A script tool can still do what the turned-off tools do, so these switches aren't a sandbox.
 
-`/review` asks the Review model to review the selection, or the current page when nothing is selected, as an art director would: alignment, spacing, contrast, hierarchy, and anything that looks broken. Text after it says what to focus on, such as `/review typography`, and images attached to it are references the design is compared against, such as a screenshot of a site you admire. The model sees the layers rendered when its profile has image input, together with their structure and the design lint's findings; an API model can also ask once to see a few layers closer before it settles its findings. A model without image input reviews from the structure and lint findings alone, and cannot take references.
+The **Local MCP** tab sets the tools for [coding agents and other MCP clients](../developers/mcp-server).
 
-Each AI edit's change preview also offers **Review this change**, which asks the Review model whether that edit improved the design: what got better, what got worse, and what was lost, judged from the images of the changed region before and after it and the layers' JSX, or from the JSX alone for a model without image input or an edit kept without images. The review appears in the conversation as a card, with each finding linking to its layer. No model reads it on its own: **Fix these** sends its findings to the Design model as your message. `/review` asks the Review model whichever model or agent holds the chat, so an ACP agent's own `/review` is not offered. Pi cannot review.
-
-## Prompts
-
-**Settings → Prompts** holds the instructions OpenPencil gives its models, for you to change:
+## Change the AI's Instructions
 
 ::: v-pre
 
-- **Design agent**: your own instructions for the chat, added after OpenPencil's, or, with **Replace OpenPencil's**, in their place. **Start from OpenPencil's** puts OpenPencil's instructions in the field to edit. The design JSX reference always follows, since the model needs it to write layers; without OpenPencil's instructions it may use its tools poorly. A change applies to chats started afterwards.
-- **Review**, **Chat titles**, and **Compaction summaries**: the prompts for design reviews, conversation names, and the summaries that compact a conversation. They are [Knap](https://knap.md) templates: `{{ focus }}` puts a value in, and `{% if sees_images %}…{% endif %}` includes text only when it applies. Each lists the variables it can use, underlines what stops it rendering and variables it does not have, and previews how it reads with sample values. A prompt with errors is not used until they are fixed; OpenPencil's is used meanwhile.
+**Settings → Prompts** holds what OpenPencil tells the AI:
+
+- **Design agent**: your instructions for the chat, added after OpenPencil's. **Replace OpenPencil's** uses yours instead; without OpenPencil's, the AI may use its tools poorly.
+- **Review**, **Chat titles**, and **Compaction summaries**: the prompts for those tasks. They're [Knap](https://knap.md) templates, where `{{ focus }}` puts in a value. The editor marks mistakes and previews the result.
 
 :::
 
-**Reset to default** brings back OpenPencil's prompt. A prompt left as OpenPencil's follows OpenPencil's updates.
+**Reset to default** brings OpenPencil's back.
 
-## Context and compaction
+## Connect Other Tools {#external-mcp-connections}
 
-A model reads a limited amount of conversation at once, its context window. With a model the chat calls itself, the header shows how full the window is; click it for the token count, when the conversation compacts, and the Cloud credits left. When the window is nearly full, a bar over the message field offers to compact.
+In the desktop app, coding agents can use other [MCP](https://modelcontextprotocol.io/) servers too, such as your issue tracker. In **Settings → MCP**, under **MCP connections**, add the server's address and, if it needs one, its token, and turn the connection on: agents don't get connections that are off. Only add servers you trust: their tools act with the access you give them.
 
-Compacting asks the conversation's model for a summary, which then stands for everything before it: later requests send the summary and what followed, while the transcript keeps every message, with a divider where the summary opens. **Compact automatically** in **Settings → Chat**, on by default, compacts before a message would leave too little room for the reply, and between the steps of a long reply whose tool calls fill the window, where the divider then appears inside the reply. `/compact` compacts at once, and instructions after it say what the summary should keep. A compaction that fails changes nothing and offers Retry; a request that is already too long for the model offers **Compact and retry**. Pi keeps its own context: `/compact` asks Pi to compact it, and a divider appears once Pi confirms. Pi reports no summary of it, so the divider has none to open. When Pi compacts on its own during a reply, the divider appears inside the reply with Pi's summary. ACP agents compact their own context too, and an ACP agent's own `/compact` reaches it as written.
+## Get Notified
 
-Hover a reply to see the tokens it used; **Settings → Chat → Token usage** shows them always or never.
-
-## Messages while the assistant works
-
-You can keep typing while a reply runs. **Enter** sends the message as soon as the current step's tool calls finish, so the built-in AI can change course without being stopped; **Alt+Enter** waits until it has finished all work. Waiting messages show dimmed below the reply, with a button to remove each. **Escape** stops the reply and sends what is waiting at once, and **Up** on the first line takes waiting messages back to edit. ACP agents and Pi take a waiting message once their turn ends.
-
-## Stopping a reply
-
-**Stop** ends a reply at once. A tool call already running finishes, and its edit counts as part of the reply; calls still waiting for their turn change nothing. The reply is marked _Stopped_, its reasoning and any unfinished calls stop showing as running, and your next message tells the assistant whether those calls changed the document.
-
-## Undoing the assistant's edits
-
-Each tool call that changes the document is one step in Edit → Undo. Undoing it with <kbd>⌘</kbd><kbd>Z</kbd> marks the call _Undone_ in the chat. A reply with only some edits undone says how many; one with all of them undone is dimmed and marked _Changes reverted_. Redo removes the marks. The marks are saved with the conversation.
-
-**Revert changes** on a reply undoes its edits while nothing has been edited since, and **Restore changes** brings undone edits back while Redo still can. **Regenerate** and editing your last message undo the replaced reply's edits first when they can.
-
-Your next message tells the assistant which of its edits you undid or redid, so it does not build on edits that are gone. If you undo the assistant's edits while it is still working, it hears about it with its next tool call.
-
-## Following the assistant
-
-With **Follow agents** on, the crosshair button at the top of the AI panel, your view follows the assistant while it works, including to another page when it edits layers there. Following ends when the reply finishes, is stopped, or fails. Clicking, scrolling, zooming, switching pages, or Escape stops following yourself.
-
-## Notifications
-
-When an agent asks for permission and you have not answered for a few seconds, OpenPencil sends a system notification, so you can work in another app while it runs. **Settings → Notifications** also turns on notifications when a reply finishes or fails. They are sent only while OpenPencil is in the background or shows another document, and clicking one opens that document's chat. In the browser, click **Allow notifications** there first; the desktop app follows your system's notification settings.
-
-## Example Prompts
-
-- "Create a card with a title, description, and a blue button"
-- "Make all buttons on this page use the same border radius"
-- "What fonts are used in this file?"
-- "Change the background of the selected frame to a gradient from blue to purple"
-- "Export the selected frame as SVG"
-- "Find all text nodes with font size less than 12"
-- "Describe the selected component — what role does it look like?"
-- "Show me the JSX for this frame"
-- "Make this component a switch that I can try in preview"
-
-## Tips
-
-- Select nodes before asking — the assistant knows what's selected.
-- Be specific about colors, sizes, and positions for precise results.
-- The assistant can modify multiple nodes in one message.
-- You can browse other pages while a reply runs: the assistant keeps working on the page where the message started, and its previews show when you return. While you're away, the chat says which page it is working on, with **Go to page** to return.
-- Undo anything you don't like with Edit → Undo or **Revert changes**; the chat and the assistant both see it.
-- All layout is recomputed automatically after each tool execution.
+When the AI asks for permission and you don't answer within a few seconds, OpenPencil sends a notification, so you can work in another app meanwhile. **Settings → Notifications** can also notify you when a reply finishes. In the browser, click **Allow notifications** there first.

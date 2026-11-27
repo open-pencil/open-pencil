@@ -48,6 +48,27 @@ interface LocalCanvasDatabase extends DBSchema {
   }
 }
 
+/**
+ * Covers a save drew, in a database of their own so the canvas database keeps the version the
+ * stable release opens. Each names the local revision it was drawn for.
+ */
+const localCanvasCoverDatabase = defineAppDatabase<LocalCanvasCoverDatabase>({
+  name: APP_DATABASE_NAMES.localCanvasCovers,
+  version: 1,
+  callbacks: {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('cover')) database.createObjectStore('cover')
+    }
+  }
+})
+
+interface LocalCanvasCoverDatabase extends DBSchema {
+  cover: {
+    key: string
+    value: { revision: number; bytes: StoredBinary }
+  }
+}
+
 function connectDatabase(): AppDatabase<LocalCanvasDatabase> {
   return connectAppDatabase(localCanvasDatabase)
 }
@@ -55,6 +76,7 @@ function connectDatabase(): AppDatabase<LocalCanvasDatabase> {
 /** IndexedDB-backed local canvas store (meta + fig/thumb blobs). */
 export function createIdbLocalCanvasStore(): LocalCanvasStore {
   const database = connectDatabase()
+  const covers = connectAppDatabase(localCanvasCoverDatabase)
 
   async function readBinary(storeName: 'fig' | 'thumb', id: string): Promise<Uint8Array | null> {
     return readStoredBinary(await (await database.open()).get(storeName, id))
@@ -75,6 +97,11 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
 
     async readThumb(id: string) {
       return readBinary('thumb', id)
+    },
+
+    async readCover(id: string, revision: number) {
+      const cover = await (await covers.open()).get('cover', id)
+      return cover?.revision === revision ? readStoredBinary(cover.bytes) : null
     },
 
     async writeCanvas(input: LocalCanvasWriteInput) {
@@ -102,6 +129,22 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       const meta = buildWriteMeta(input, existing, hasThumb)
       await metaStore.put(meta)
       await transaction.done
+      // The cover of this revision, or none: an earlier one no longer matches the file. A save
+      // that lost the race to a newer one leaves the newer cover in place.
+      const coverTransaction = (await covers.open()).transaction('cover', 'readwrite')
+      const coverStore = coverTransaction.objectStore('cover')
+      const stored = await coverStore.get(input.id)
+      if (!stored || stored.revision <= meta.revision) {
+        if (input.coverBytes?.byteLength) {
+          await coverStore.put(
+            { revision: meta.revision, bytes: storeBinary(input.coverBytes) },
+            input.id
+          )
+        } else {
+          await coverStore.delete(input.id)
+        }
+      }
+      await coverTransaction.done
       return meta
     },
 
@@ -189,6 +232,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
         transaction.objectStore('thumb').delete(id)
       ])
       await transaction.done
+      await (await covers.open()).delete('cover', id)
       return true
     },
 
@@ -200,6 +244,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
         transaction.objectStore('thumb').clear()
       ])
       await transaction.done
+      await (await covers.open()).clear('cover')
     }
   }
 }

@@ -1,3 +1,5 @@
+import { pick } from 'es-toolkit/object'
+
 import { cloneVectorNetwork, copyDerivedGlyphs, scaleGeometryPaths } from '../copy'
 import { scaledTextLength } from '../text/lengths'
 import { TEXT_PARAGRAPH_SPACING_FIELDS } from '../text/paragraphs'
@@ -10,6 +12,7 @@ import {
   type SceneNode,
   type Stroke,
   type StyleRun,
+  type TextLength,
   type TextParagraphStyle
 } from '../types'
 
@@ -54,6 +57,45 @@ function scaledFills(fills: readonly Fill[], scale: number): Fill[] {
       ? { x: fill.noiseSize.x * scale, y: fill.noiseSize.y * scale }
       : undefined
   }))
+}
+
+const TEXT_STYLE_LENGTH_FIELDS = [
+  'fontSize',
+  'lineHeight',
+  'letterSpacing',
+  'paragraphSpacing',
+  'paragraphIndent',
+  'listSpacing'
+] as const satisfies readonly (keyof SceneNode)[]
+
+const TEXT_STYLE_LENGTHS: ReadonlySet<string> = new Set(TEXT_STYLE_LENGTH_FIELDS)
+
+export function isTextStyleLength(field: string): boolean {
+  return TEXT_STYLE_LENGTHS.has(field)
+}
+
+function isTextLength(value: unknown): value is TextLength {
+  return typeof value === 'object' && value !== null && 'unit' in value && 'value' in value
+}
+
+function lengthAtScale(value: unknown, scale: number): unknown {
+  if (typeof value === 'number') {
+    return value * scale
+  }
+  return isTextLength(value) ? scaledTextLength(value, scale) : value
+}
+
+export function scaledTextStyleLengths<Values extends object>(
+  values: Values,
+  scale: number
+): Values {
+  const scaled = { ...values }
+  for (const [field, value] of Object.entries(values)) {
+    if (isTextStyleLength(field)) {
+      Object.assign(scaled, { [field]: lengthAtScale(value, scale) })
+    }
+  }
+  return scaled
 }
 
 function scaledStyleRuns(styleRuns: readonly StyleRun[], scale: number): StyleRun[] {
@@ -162,15 +204,10 @@ export function scaleNodeChanges(
     topRightRadius: node.topRightRadius * scale,
     bottomRightRadius: node.bottomRightRadius * scale,
     bottomLeftRadius: node.bottomLeftRadius * scale,
-    fontSize: node.fontSize * scale,
-    letterSpacing: scaledTextLength(node.letterSpacing, scale),
-    lineHeight: node.lineHeight && scaledTextLength(node.lineHeight, scale),
+    ...scaledTextStyleLengths(pick(node, TEXT_STYLE_LENGTH_FIELDS), scale),
     textDecorationThickness: scaledOptional(node.textDecorationThickness, scale),
     textUnderlineOffset: scaledOptional(node.textUnderlineOffset, scale),
     styleRuns: scaledStyleRuns(node.styleRuns, scale),
-    listSpacing: node.listSpacing * scale,
-    paragraphSpacing: node.paragraphSpacing * scale,
-    paragraphIndent: node.paragraphIndent * scale,
     textParagraphs: scaledParagraphStyles(node.textParagraphs, scale),
     derivedTextHeight: scaledOptional(node.derivedTextHeight, scale),
     itemSpacing: node.itemSpacing * scale,

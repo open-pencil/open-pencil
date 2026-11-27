@@ -49,6 +49,15 @@ export function borderWidths(node: SceneNode): Record<BorderSide, number> {
   }
 }
 
+/**
+ * Whether preview draws a layer's stroke as box shadows, which take no room, rather than as a
+ * border: a solid stroke can be, a dashed one cannot. An image keeps a border, since it would
+ * cover an inset shadow; an image has no children, so this alone answers for a parent.
+ */
+export function strokeDrawsAsShadows(node: SceneNode): boolean {
+  return node.strokes.at(0)?.visible === true && node.dashPattern.length === 0
+}
+
 export function strokeColorToCSS(
   stroke: Stroke | undefined,
   profile: ColorProfile
@@ -194,11 +203,18 @@ export function letterSpacingToCSS(length: TextLength): string {
 export function letterSpacingRoomCSS(
   length: TextLength,
   spacing: string,
-  width: string | undefined
+  widths: Partial<Pick<DesignStyleDeclaration, 'width' | 'min-width' | 'max-width'>>
 ): DesignStyleDeclaration {
   const literal = spacing === letterSpacingToCSS(length)
+  // Its width and the limits on it each grow by the spacing, so none cuts into the room.
+  const grown = Object.fromEntries(
+    (['width', 'min-width', 'max-width'] as const).flatMap((property) => {
+      const value = widths[property]
+      return value === undefined ? [] : [[property, `calc(${value} + ${spacing})`]]
+    })
+  )
   return {
-    ...(width !== undefined && { width: `calc(${width} + ${spacing})` }),
+    ...grown,
     'margin-right': literal
       ? letterSpacingToCSS({ ...length, value: -length.value })
       : `calc(-1 * ${spacing})`
@@ -297,4 +313,12 @@ export function gradientToCSS(
     return `conic-gradient(from ${from}deg at ${at}${interpolation(profile)}, ${gradientStopsCSS(fill, profile)})`
   }
   return undefined
+}
+
+/** Two CSS lengths added: in pixels where both are, else in `calc()`. */
+export function sumLengths(a: string, b: string): string {
+  const pixels = /^-?[\d.]+px$/
+  return pixels.test(a) && pixels.test(b)
+    ? `${Number.parseFloat(a) + Number.parseFloat(b)}px`
+    : `calc(${a} + ${b})`
 }
