@@ -8,7 +8,7 @@ describe('boxes out of the flow inside text', () => {
       body { margin: 0 }
       .card { position: relative; width: 160px; padding: 10px; font: 16px/20px sans-serif }
       h3 { margin: 0 }
-      .card a::before { content: ""; position: absolute; inset: 0 }
+      .card a::before { content: ""; position: absolute; inset: 0; background: #eee }
     </style>
     <div class="card"><h3><a href="/custom-domains">About custom domains and GitHub Pages</a></h3></div>`)
     const layers = graph.flattenTree(graph.getPages()[0].id).map(({ node }) => node)

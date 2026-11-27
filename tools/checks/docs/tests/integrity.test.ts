@@ -125,6 +125,21 @@ describe('checkDocsIntegrity', () => {
     expect(check(docsRoot).errors).toEqual([])
   })
 
+  test('rejects a plain redirect after a wildcard, which Cloudflare would count as dynamic', async () => {
+    const docsRoot = await fixture()
+    await write(join(docsRoot, 'page.md'))
+    await write(join(docsRoot, 'next/page.md'))
+    await writeFile(
+      join(docsRoot, 'public/_redirects'),
+      '/before /page 301\n/old/* /next/:splat 301\n/after /page 301\n',
+      'utf8'
+    )
+
+    expect(check(docsRoot).errors).toEqual([
+      "Redirect '/after' follows the wildcard rule '/old/*'; put wildcard rules last."
+    ])
+  })
+
   test('reports missing Markdown and sidebar targets', async () => {
     const docsRoot = await fixture()
     await write(join(docsRoot, 'index.md'), '[Missing](./missing)')

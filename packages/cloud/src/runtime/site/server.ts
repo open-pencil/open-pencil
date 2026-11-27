@@ -29,7 +29,7 @@ export type SiteFile = {
 /** Reads the built site's file at a URL path, or null when there is none. */
 export type SiteFiles = (path: string, request: Request) => Promise<SiteFile | null>
 
-const PORTAL_PAGE = '/cloud.html'
+const PORTAL_PAGE = '/pages/cloud.html'
 const EDITOR_PAGE = '/index.html'
 
 /**
@@ -121,7 +121,7 @@ function cacheControl(path: string): string {
 }
 
 /**
- * A Cloud server as every runtime serves it: the portal's `cloud.html` at portal pages, the API
+ * A Cloud server as every runtime serves it: the portal's `pages/cloud.html` at portal pages, the API
  * everywhere else, and, where the API has nothing, the site's files, or the editor's
  * `index.html` for any other page, whose router knows the editor's own addresses.
  */

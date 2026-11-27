@@ -11,7 +11,7 @@ const VERSION_ID = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d'
 const portal =
   '<!doctype html><html><head><title>OpenPencil Cloud</title></head><body><div id="app"></div></body></html>'
 const site: SiteFiles = async (path) =>
-  path === '/cloud.html'
+  path === '/pages/cloud.html'
     ? { body: Uint8Array.from(new TextEncoder().encode(portal)), type: 'text/html' }
     : null
 

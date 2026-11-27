@@ -15,6 +15,9 @@ Some pages show the shortcuts for your keyboard, which you can change at the end
 ## Get Started
 
 - [Getting Started](/getting-started) — open OpenPencil, find your way around, and make a first design
+- [Build a Responsive Card](./responsive-card) — a first project, step by step: a card that adapts to any width
+- [Coming from Figma](./coming-from-figma) — bring your Figma files and layers, and what works differently
+- [Coming from pen.dev](./coming-from-pen-dev) — open `.pen` files and keep working with your AI agent
 - [Canvas Navigation](./canvas-navigation) — pan, zoom, and measure
 - [Selection & Manipulation](./selection-and-manipulation) — select, move, resize, rotate, and align layers
 - [Layers & Pages](./layers-and-pages) — find, group, hide, and lock layers, and split a file into pages
@@ -60,4 +63,3 @@ Some pages show the shortcuts for your keyboard, which you can change at the end
 
 - [Keyboard Shortcuts](/reference/keyboard-shortcuts) — every shortcut, for Mac and for Windows and Linux
 - [Figma Feature Matrix](/reference/figma-compatibility) — which Figma features OpenPencil supports
-- [Context Menu](./context-menu) — what each right-click action does

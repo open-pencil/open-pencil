@@ -416,7 +416,7 @@ itself.
 
 The server shows its own pages on its public address: a welcome page, sign-in and sign-up, email
 verification, password reset, two-step sign-in, desktop sign-in approval, account pages (profile,
-sign-in and security, and sessions), and the administration console. They are a separate Vite entry, `cloud.html`, in the app project, so they
+sign-in and security, and sessions), and the administration console. They are a separate Vite entry, `pages/cloud.html`, in the app project, so they
 reuse the editor's components and theme without loading the editor. `bun run build:cloud` writes
 them to `dist-cloud/` beside the editor itself, which every Cloud server serves at its root. The
 editor never embeds these pages; when it needs them, for a social provider or a second sign-in
@@ -425,7 +425,7 @@ code. A verification link started in the editor lands on `/auth/verified`, which
 back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
-`cloud.html` at and below them with a fixed content security policy that runs only the site's own
+`pages/cloud.html` at and below them with a fixed content security policy that runs only the site's own
 scripts and Turnstile, and with `frame-ancestors 'none'`, so the approval page cannot be framed.
 The pages carry no inline script for it to allow: a build loads the boot splash's script from its
 own file. The desktop approval page never shows the code it

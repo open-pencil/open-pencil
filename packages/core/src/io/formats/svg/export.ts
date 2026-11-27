@@ -7,6 +7,7 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
+import { drawsStroke } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'
@@ -30,8 +31,7 @@ import {
   makePolygonPoints,
   roundedPolygonPath,
   boxOutlinePath,
-  arcPath,
-  shapeWithTextOutlinePath
+  arcPath
 } from './paths'
 
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
@@ -58,7 +58,8 @@ import { renderMaskedChildren } from './masks'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
-import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
+import { shapeWithTextDetailElements, shapeWithTextElements } from './shape-with-text'
+import { alignedStroke, alignedStrokeElement } from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
 
@@ -164,7 +165,7 @@ function nodeShapeElements(
 
     case 'LINE': {
       // Where the canvas strokes it: to one side of the line, with its caps inside its length.
-      const stroke = node.strokes.find((item) => item.visible)
+      const stroke = node.strokes.find((item) => drawsStroke(node, item))
       const {
         network,
         from: start,
@@ -225,22 +226,6 @@ function boxOutlineElement(
   // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
   const radius = round(Math.min(node.cornerRadius, node.width / 2, node.height / 2))
   return svg('rect', { width, height, rx: radius, ry: radius, ...attrs })
-}
-
-/**
- * A FigJam shape's outline, and its inner lines, such as a database's front rim, stroked as the
- * canvas strokes them: at the stroke's own weight, ending where the outline does.
- */
-function shapeWithTextElements(
-  node: SceneNode,
-  common: Record<string, string | number | undefined>,
-  strokeAttrs: Record<string, string | number | undefined>,
-  ctx: SVGExportContext
-): SVGNode[] {
-  return [
-    svg('path', { d: shapeWithTextOutlinePath(node), ...common }),
-    ...shapeWithTextDetailElements(node, strokeAttrs, ctx)
-  ]
 }
 
 // --- Main recursive renderer ---
@@ -424,7 +409,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
-  const visibleStrokes = node.strokes.filter((s) => s.visible)
+  const visibleStrokes = node.strokes.filter((stroke) => drawsStroke(node, stroke))
   const tint = ctx.tint?.(node) ?? []
   const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
   const fill = exportedFill(ownFill, node, ctx)

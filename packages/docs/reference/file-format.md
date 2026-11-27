@@ -71,7 +71,7 @@ Export writes the message chunk with Zstd at a level set per document, stored as
 | Format | Open / Read | Save / Write | Export |
 |--------|-------------|--------------|--------|
 | `.fig` (Figma) | ✅ | ✅ | ✅ |
-| `.pen` (Pencil) | ✅ | — | — |
+| `.pen` (pen.dev) | ✅ | — | — |
 | `.png` | — | — | ✅ |
 | `.jpg` | — | — | ✅ |
 | `.webp` | — | — | ✅ |

@@ -29,9 +29,11 @@ import { isComponentSetRecord } from '../node-change/convert'
 import {
   assetIdsByKey,
   createTextStyleLookup,
+  referencedStyle,
   type TextStyleLookup
 } from '../node-change/style/lookup'
 import { applyFillStyleRef, applyStyleRefsToFields } from '../node-change/style/refs'
+import { mergeVariableConsumptionMaps } from '../node-change/variable/bindings'
 import {
   createBindingNormalizer,
   resolveDocumentBindingReferences,
@@ -48,12 +50,13 @@ import {
   linkedPropertyCopies
 } from './property-inheritance'
 import { savedSlotContent } from './slot-content'
-import { vectorStyleTable } from './style-dependencies'
+import { STYLE_REFERENCE_FIELDS, vectorStyleTable } from './style-dependencies'
 import { createDocumentVariables, type DocumentVariables } from './variables'
 
 /** Indexed source document. Resources remain separate from scene occurrences. */
 export function createDocumentReader(source: readonly NodeChange[], pageIds?: ReadonlySet<string>) {
-  return createScopedReader(wholeRecords(source), pageIds)
+  const records = wholeRecords(source)
+  return createScopedReader(records, pageIds, liveStyleIds(records.records))
 }
 
 /**
@@ -71,6 +74,7 @@ export const RECORD_HEADER_FIELDS = [
   'key',
   'version',
   'styleType',
+  'isSoftDeleted',
   'overrideKey',
   // A variant's copies of its set's properties are read for every variant a page links, which
   // would otherwise keep each variant's whole record decoded for the session.
@@ -81,16 +85,28 @@ export const RECORD_HEADER_FIELDS = [
 /** Parse into exclusively owned records; callers never receive the mutable source index. */
 export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: ReadonlySet<string>) {
   const parsed = parseFigBuffer(bytes, undefined, { NodeChange: RECORD_HEADER_FIELDS })
+  const records = archiveRecords(parsed.nodeChanges)
   return {
     figKiwiVersion: parsed.figKiwiVersion,
     figSchemaDeflated: parsed.figSchemaDeflated,
     kind: parsed.kind,
-    reader: createScopedReader(archiveRecords(parsed.nodeChanges), pageIds),
+    reader: createScopedReader(records, pageIds, liveStyleIds(records.records)),
     blobs: parsed.blobs,
     images: parsed.images,
     /** The archive's record headers, which carry the identities patching numbers from. */
     records: parsed.nodeChanges
   }
+}
+
+/**
+ * The styles a file lists as its own: every style record it has not deleted. They live on Figma's
+ * internal canvas, which no page loads, so they open with the document whether or not a layer
+ * uses them yet.
+ */
+function liveStyleIds(records: readonly NodeChange[]): string[] {
+  return records.flatMap((record) =>
+    record.styleType && !record.isSoftDeleted && record.guid ? [guidToString(record.guid)] : []
+  )
 }
 
 /** Whole records, prepared, by the record or header that stands for them. */
@@ -135,7 +151,33 @@ function resolveStyleFields(
   applyStyleRefsToFields(styles, node, assets)
   paintTextRangesFromFillStyles(styles, node, assets)
   for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
+  for (const record of [
+    node,
+    ...(node.textData?.styleOverrideTable ?? []),
+    ...vectorStyleTable(node)
+  ])
+    detachDeletedStyles(styles, record, assets)
   for (const override of symbolOverridesOf(node)) resolveStyleFields(styles, override, assets)
+}
+
+/**
+ * A layer whose style Figma deleted shows detached, as Figma shows it: it keeps the values the
+ * style gave it, and a text the variables its style bound, without the reference. The archive
+ * keeps the reference for a layer left as is.
+ */
+function detachDeletedStyles(
+  styles: Parameters<typeof applyStyleRefsToFields>[0],
+  record: NodeChange,
+  assets: ReadonlyMap<string, string>
+): void {
+  for (const field of STYLE_REFERENCE_FIELDS) {
+    const style = referencedStyle(styles, record[field], assets)
+    if (!style?.isSoftDeleted) continue
+    // Paints and effects carry their variables in the values they copied; text fields do not.
+    if (field === 'styleIdForText')
+      Object.assign(record, mergeVariableConsumptionMaps(record, style))
+    record[field] = undefined
+  }
 }
 
 function paintTextRangesFromFillStyles(

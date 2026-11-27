@@ -9,7 +9,7 @@ on:
       # app's src/ (views, components, theme, styles, and the build target in
       # src/app/shell/support) and this package, so any change there redeploys it.
       - src/**
-      - metrics.html
+      - pages/metrics.html
       - package.json
       - bun.lock
       - vite.config.ts
