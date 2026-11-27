@@ -1,7 +1,7 @@
 import { type CalendarDate, parseDate } from '@internationalized/date'
 import * as v from 'valibot'
 
-/** Where official OpenPencil builds send pings, usage stats, and waitlist sign-ups. */
+/** Where official OpenPencil builds send pings, usage stats, and reports. */
 export const FEEDBACK_ORIGIN = 'https://feedback.openpencil.dev'
 
 export const PLATFORMS = ['macos', 'windows', 'linux', 'ios', 'android', 'unknown'] as const
@@ -229,21 +229,6 @@ export const usageBatchSchema = v.strictObject({
 })
 export type UsageBatch = v.InferOutput<typeof usageBatchSchema>
 
-/** The public Turnstile site key for the website's waitlist form; the secret lives on the Worker. */
-export const TURNSTILE_SITE_KEY = '0x4AAAAAAFUZEGj-sE8C_2zT'
-
-/** The `data-action` the waitlist form gives its widget; tokens issued for anything else are refused. */
-export const WAITLIST_TURNSTILE_ACTION = 'waitlist'
-
-/** A Cloud waitlist sign-up from the website form. */
-export const waitlistSignupSchema = v.strictObject({
-  email: v.pipe(v.string(), v.trim(), v.maxLength(254), v.email()),
-  /** What the person would use Cloud for, if they say. */
-  note: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(500))),
-  turnstileToken: v.pipe(v.string(), v.minLength(1), v.maxLength(2048))
-})
-export type WaitlistSignup = v.InferOutput<typeof waitlistSignupSchema>
-
 /** The longest range one request covers; a year and a bit leaves room for "all time" for now. */
 export const MAX_METRICS_RANGE_DAYS = 400
 
@@ -331,22 +316,23 @@ export const metricsSnapshotSchema = v.object({
   earliest: v.nullable(isoDaySchema),
   start: isoDaySchema,
   end: isoDaySchema,
-  /** Installs that pinged each day, by desktop and web. */
+  /** Checked installs each day, new and returning, by desktop and web; replayed pings are left out. */
   dailyActive: v.array(v.object({ day: isoDaySchema, desktop: countSchema, web: countSchema })),
   /**
-   * Each day's pings from versions that send a step: new installs, returning installs the steps
-   * before can account for, and pings they cannot, which replay a saved state. Older versions'
-   * pings are in `dailyActive` only.
+   * Each day's pings: from versions that send a step, new installs, returning installs the steps
+   * before can account for, and pings they cannot, which replay a saved state; `unchecked` from
+   * versions that send none, which nothing can tell from a replay.
    */
   installs: v.array(
     v.object({
       day: isoDaySchema,
       new: countSchema,
       returning: countSchema,
-      replayed: countSchema
+      replayed: countSchema,
+      unchecked: countSchema
     })
   ),
-  /** Pings in the range by OS, desktop and web. */
+  /** Pings in the range from versions that send a step, replayed ones included, by OS, desktop and web. */
   platforms: v.array(v.object({ os: v.string(), desktop: countSchema, web: countSchema })),
   /**
    * Pings by network since network counting began: every network's pings in the range, and the
@@ -358,15 +344,30 @@ export const metricsSnapshotSchema = v.object({
       v.object({ asn: countSchema, name: v.string(), desktop: countSchema, web: countSchema })
     )
   }),
-  /** Pings each day on the newest stable version and on everything else. */
+  /**
+   * Pings each day from versions that send a step, on the newest stable version and on the rest,
+   * and every ping from versions that send none.
+   */
   versions: v.object({
     latest: v.nullable(v.string()),
-    daily: v.array(v.object({ day: isoDaySchema, latest: countSchema, other: countSchema }))
+    daily: v.array(
+      v.object({
+        day: isoDaySchema,
+        latest: countSchema,
+        other: countSchema,
+        unchecked: countSchema
+      })
+    )
   }),
   /** The first day each stable version sent a ping, within the range. */
   releases: v.array(v.object({ day: isoDaySchema, version: v.string() })),
-  /** Cloudflare visits each finished day to the website and to the web app; today is not recorded yet. */
-  visits: v.array(v.object({ day: isoDaySchema, site: countSchema, app: countSchema })),
+  /**
+   * Cloudflare visits each finished day to the website, the web app's old address, and the Cloud
+   * site it moved to; today is not recorded yet.
+   */
+  visits: v.array(
+    v.object({ day: isoDaySchema, site: countSchema, app: countSchema, cloud: countSchema })
+  ),
   website: v.object({ pages: v.array(rankedCountSchema), countries: v.array(rankedCountSchema) }),
   github: v.object({
     stars: v.object({ total: v.nullable(countSchema), daily: v.array(dailyGrowthSchema) }),
@@ -386,7 +387,8 @@ export const metricsSnapshotSchema = v.object({
         clones: countSchema
       })
     ),
-    referrers: v.array(rankedCountSchema),
+    /** GitHub's referrers over the 14 days up to `day`, the range's last snapshot of them. */
+    referrers: v.object({ day: v.nullable(isoDaySchema), top: v.array(rankedCountSchema) }),
     /** Issues and pull requests per finished day, by the team and by everyone else; empty until the first sync. */
     activity: v.object({
       issues: v.array(issueDaySchema),
@@ -396,22 +398,49 @@ export const metricsSnapshotSchema = v.object({
           mergedTeam: countSchema,
           mergedCommunity: countSchema
         })
+      ),
+      /**
+       * People with a merged pull request by the end of each finished day, and those whose first
+       * merged that day; empty until the mirror knows its authors.
+       */
+      contributors: v.array(
+        v.object({
+          day: isoDaySchema,
+          team: countSchema,
+          community: countSchema,
+          newTeam: countSchema,
+          newCommunity: countSchema
+        })
       )
     })
   }),
-  waitlist: v.object({
-    total: countSchema,
-    confirmed: countSchema,
-    added: countSchema,
-    /** Newest first, by email domain only. */
-    recent: v.array(
-      v.object({
-        domain: v.string(),
-        signedUpAt: v.pipe(v.string(), v.isoTimestamp()),
-        confirmed: v.boolean()
-      })
-    )
-  }),
+  /**
+   * OpenPencil Cloud's counts per finished day, and its totals at the end of the range's last
+   * snapshot; `null` before the first snapshot recorded any.
+   */
+  cloud: v.nullable(
+    v.object({
+      days: v.array(
+        v.object({
+          day: isoDaySchema,
+          signUps: countSchema,
+          /** Accounts that signed in or saved a revision; editing in a shared room alone is not seen. */
+          activeAccounts: countSchema,
+          documentsCreated: countSchema,
+          revisions: countSchema
+        })
+      ),
+      totals: v.nullable(
+        v.object({
+          day: isoDaySchema,
+          accounts: countSchema,
+          documents: countSchema,
+          workspaces: countSchema,
+          storageBytes: countSchema
+        })
+      )
+    })
+  ),
   usage: v.nullable(metricsUsageSchema)
 })
 export type MetricsSnapshot = v.InferOutput<typeof metricsSnapshotSchema>

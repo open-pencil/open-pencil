@@ -143,12 +143,5 @@
   "commentSomeone": "Qualcuno",
   "openComment": "Apri il commento",
   "commentSettings": "Ricevi queste email in base alle impostazioni delle notifiche. Cambiale nelle {link}.",
-  "commentSettingsLink": "impostazioni del tuo account",
-  "waitlistSubject": "Conferma il tuo posto nella lista d’attesa di OpenPencil Cloud",
-  "waitlistHeading": "Conferma la tua email",
-  "waitlistPreview": "Un clic per entrare nella lista d’attesa di OpenPencil Cloud.",
-  "waitlist": "Grazie per l’interesse verso OpenPencil Cloud. Conferma questo indirizzo per entrare nella lista d’attesa: ti scriveremo una sola volta, quando Cloud sarà pronto per te.",
-  "waitlistAction": "Entra nella lista d’attesa",
-  "waitlistNote": "Non ti sei iscritto? Ignora questa email e l’indirizzo verrà eliminato tra sette giorni, oppure {link}.",
-  "waitlistLeave": "rimuovilo subito"
+  "commentSettingsLink": "impostazioni del tuo account"
 }

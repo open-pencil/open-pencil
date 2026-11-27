@@ -2,6 +2,7 @@ import { isEqual } from 'es-toolkit'
 import { unzipSync } from 'fflate'
 
 import {
+  cloudChecksum,
   prepareCloudDocument,
   saveCloudDocument,
   type CloudAPIClient,
@@ -94,18 +95,19 @@ export function sameImages(
 }
 
 /**
- * Whether the document's current revision holds what `prepared` does: the same images and the same
- * entries in the stored file. Splitting writes new timestamps into the archive, so its checksum
- * changes on every run and only the contents tell an unchanged file.
+ * Whether the document's current revision holds what `prepared` does: the same images, the same
+ * cover, and the same entries in the stored file. Splitting writes new timestamps into the archive,
+ * so its checksum changes on every run and only the contents tell an unchanged file.
  */
 async function storedMatches(
   cloud: GalleryClient,
   documentId: string,
   prepared: PreparedCloudDocument,
+  cover: string | null,
   objectFetch: CloudObjectFetch
 ): Promise<boolean> {
   const stored = await cloud.getDocument(documentId)
-  if (!sameImages(stored.images, prepared.images)) return false
+  if (!sameImages(stored.images, prepared.images) || stored.cover !== cover) return false
   if (stored.checksum === prepared.checksum) return true
   const response = await objectFetch(stored.download.url, {
     method: stored.download.method,
@@ -117,7 +119,7 @@ async function storedMatches(
 
 /**
  * Publishes one example to the gallery workspace as the editor saves a document: created on its
- * first run, a new revision only when the file changed, its description set when it differs, and,
+ * first run, a new revision only when the file or its cover changed, its description set when it differs, and,
  * for a release, its current state named after it once. Running it again with the same file,
  * description, and release changes nothing.
  */
@@ -127,6 +129,8 @@ export async function publishExample(input: {
   name: string
   description: string
   bytes: Uint8Array
+  /** The cover the editor would draw for the file (`exampleCover`); null for none. */
+  cover: Uint8Array | null
   release?: GalleryRelease
   objectFetch: CloudObjectFetch
 }): Promise<ExampleOutcome> {
@@ -135,9 +139,10 @@ export async function publishExample(input: {
   const existing = await exampleDocument(cloud, workspaceId, name)
   const document = existing ?? (await cloud.createDocument(workspaceId, { name, kind }))
   const prepared = await prepareCloudDocument(input.bytes)
+  const cover = input.cover ? await cloudChecksum(input.cover) : null
   const uploaded =
     !document.currentRevisionId ||
-    !(await storedMatches(cloud, document.id, prepared, input.objectFetch))
+    !(await storedMatches(cloud, document.id, prepared, cover, input.objectFetch))
   if (uploaded) {
     await saveCloudDocument({
       cloud,
@@ -146,6 +151,7 @@ export async function publishExample(input: {
       name,
       kind,
       baseRevision: document.currentRevisionId,
+      cover: input.cover,
       objectFetch: input.objectFetch
     })
   }

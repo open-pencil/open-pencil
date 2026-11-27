@@ -15,11 +15,11 @@ export type RoomState = {
   /** The encoded size of what the room holds, which only a compaction shrinks. */
   readonly bytes: number
   /**
-   * Whether `update` is a V2 update the relay can read, and whether it adds structures or only
-   * deletes. The relay reads the whole update once, so one cut short is turned away here rather
-   * than failing every merge after it.
+   * Whether `update` is a V2 update the relay can read, whether it adds structures, and whether it
+   * deletes any. The relay reads the whole update once, so one cut short is turned away here
+   * rather than failing every merge after it.
    */
-  read(update: Uint8Array): { adds: boolean } | null
+  read(update: Uint8Array): { adds: boolean; deletes: boolean } | null
   /**
    * Whether a delete-only update deletes only what the room holds, measured on the merged room:
    * such an update may join a room at its limit, while deletions of what the room never received
@@ -37,7 +37,8 @@ export type RoomState = {
   /**
    * Takes an editor's whole document in place of the room's when it is smaller, adding whatever the
    * room holds that the editor's copy lacks, deletions included, so nothing the room has is lost.
-   * Whether the room took it.
+   * Whether the room took it. A copy no smaller than the room is turned away unread, since what
+   * the room adds to it only grows it.
    */
   compactWith(document: Uint8Array): boolean
 }
@@ -57,14 +58,27 @@ export function createRoomState(initial: Uint8Array): RoomState {
   let base = initial
   let recent: Uint8Array[] = []
   let bytes = initial.byteLength
+  /** The state vector of `base`, read once for each merge: every editor joining asks for it. */
+  let held: Uint8Array | null = null
+
+  function replace(next: Uint8Array) {
+    base = next
+    bytes = next.byteLength
+    held = null
+  }
 
   function encode(): Uint8Array {
     if (recent.length > 0) {
-      base = Y.mergeUpdatesV2([base, ...recent])
+      replace(Y.mergeUpdatesV2([base, ...recent]))
       recent = []
-      bytes = base.byteLength
     }
     return base
+  }
+
+  function stateVector(): Uint8Array {
+    const current = encode()
+    held ??= Y.encodeStateVectorFromUpdateV2(current)
+    return held
   }
 
   return {
@@ -74,9 +88,16 @@ export function createRoomState(initial: Uint8Array): RoomState {
     read(update) {
       try {
         const { from, to } = Y.parseUpdateMetaV2(update)
-        // Reading an update's structures stops short of its deletions, which a conversion reads.
-        Y.convertUpdateFormatV2ToV1(update)
-        return { adds: [...to].some(([client, clock]) => from.get(client) !== clock) }
+        // Reading an update's structures stops short of its deletions. Cutting every structure
+        // away reads the whole update and leaves only its deletions: as a V1 update, two zero
+        // counts when it has none.
+        const deletions = Y.convertUpdateFormatV2ToV1(
+          Y.diffUpdateV2(update, Y.encodeStateVector(to))
+        )
+        return {
+          adds: [...to].some(([client, clock]) => from.get(client) !== clock),
+          deletes: deletions.byteLength > 2
+        }
       } catch {
         return null
       }
@@ -84,10 +105,10 @@ export function createRoomState(initial: Uint8Array): RoomState {
     deletesOnlyHeld(update) {
       // A state vector counts each client's updates from its first without a gap, so it names
       // only what the room holds.
-      const held = Y.decodeStateVector(Y.encodeStateVectorFromUpdateV2(encode()))
+      const clocks = Y.decodeStateVector(stateVector())
       const { ds } = Y.decodeUpdateV2(update)
       return [...ds.clients].every(([client, deletions]) =>
-        deletions.every((deletion) => deletion.clock + deletion.len <= (held.get(client) ?? 0))
+        deletions.every((deletion) => deletion.clock + deletion.len <= (clocks.get(client) ?? 0))
       )
     },
     add(update) {
@@ -95,15 +116,15 @@ export function createRoomState(initial: Uint8Array): RoomState {
       bytes += update.byteLength
     },
     encode,
-    stateVector: () => Y.encodeStateVectorFromUpdateV2(encode()),
+    stateVector,
     syncReply: (stateVector) => encodeSyncReplyFromUpdate(encode(), stateVector),
     compactWith(document) {
       const current = encode()
+      if (document.byteLength >= current.byteLength) return false
       const missing = Y.diffUpdateV2(current, Y.encodeStateVectorFromUpdateV2(document))
       const next = Y.mergeUpdatesV2([document, missing])
       if (next.byteLength >= current.byteLength) return false
-      base = next
-      bytes = next.byteLength
+      replace(next)
       return true
     }
   }

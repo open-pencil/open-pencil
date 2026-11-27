@@ -20,6 +20,7 @@ import {
   resolveFill,
   solidFillOpacity,
   svgStrokeAttrs,
+  type GradientBox,
   type SVGExportContext
 } from './defs'
 import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
@@ -367,11 +368,12 @@ const CURRENT_COLOR = 'currentColor'
 function exportedFill(
   fill: Fill | undefined,
   node: SceneNode,
-  ctx: SVGExportContext
+  ctx: SVGExportContext,
+  box?: GradientBox
 ): { color: string | null; opacity: number | undefined } {
   if (!fill) return { color: null, opacity: undefined }
   return {
-    color: resolveFill(fill, node, ctx),
+    color: resolveFill(fill, node, ctx, box),
     opacity: solidFillOpacity(fill, ctx.colors)
   }
 }
@@ -410,10 +412,12 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
+    // A text's gradient spans its layer, as the canvas draws it, not just its characters' box.
     const fill = exportedFill(
       node.fills.find((f) => f.visible),
       node,
-      ctx
+      ctx,
+      'layer'
     )
     const text = renderTextNode(node, fill.color, ctx, fill.opacity)
     return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))

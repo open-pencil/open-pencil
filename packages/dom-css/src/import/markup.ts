@@ -1,6 +1,6 @@
-import { joinAdjacentText } from '#dom-css/import/adjacent-text'
+import { parseStyleAttribute } from '#dom-css/import/attributes/style'
 import { INLINE_TAGS } from '#dom-css/import/flow'
-import { parseStyleAttribute } from '#dom-css/import/style-attribute'
+import { joinAdjacentText } from '#dom-css/import/text/adjacent'
 import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
 import { html, parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
 

@@ -39,7 +39,9 @@ export function renderPagesToPDF(
   const builtInBlendModesOnly = renderer.builtInBlendModesOnly
   renderer.builtInBlendModesOnly = true
   try {
-    const pages = specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
+    const pages = renderer.withoutTextEdit(() =>
+      specs.flatMap((spec) => drawPage(doc, renderer, graph, spec) ?? [])
+    )
     if (pages.length === 0) {
       doc.abort()
       return null

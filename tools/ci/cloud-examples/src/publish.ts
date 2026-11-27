@@ -2,6 +2,7 @@ import { parseArgs } from 'node:util'
 
 import { createCloudAPIClient, discoverCloud } from '@open-pencil/cloud/client'
 
+import { exampleCover } from './cover'
 import { EXAMPLES } from './examples'
 import { describeOutcome, publishExample } from './gallery'
 
@@ -33,12 +34,14 @@ if (import.meta.main) {
     ? { name: values.version, description: values.description ?? '' }
     : undefined
   for (const example of EXAMPLES) {
+    const bytes = await example.build()
     const outcome = await publishExample({
       cloud,
       workspaceId: values.workspace,
       name: example.name,
       description: example.description,
-      bytes: await example.build(),
+      bytes,
+      cover: await exampleCover(bytes),
       release,
       objectFetch: (input, init) => fetch(input, init)
     })

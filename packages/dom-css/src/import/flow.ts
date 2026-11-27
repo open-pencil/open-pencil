@@ -58,6 +58,7 @@ const CENTERED_TAGS = new Set(['button'])
 /** What a run of text takes from its element: the properties CSS inherits, and decoration. */
 const TEXT_PROPERTIES = [
   'color',
+  'direction',
   'font-family',
   'font-size',
   'font-style',
@@ -119,15 +120,58 @@ const LEGACY_TEXT_ALIGN: Partial<Record<string, 'left' | 'center' | 'right'>> = 
 }
 
 /** The element's `text-align`, lowercase, with a legacy value read as the side it aligns to. */
-export function textAlignOf(style: DesignStyleDeclaration): string | undefined {
+function textAlignOf(style: DesignStyleDeclaration): string | undefined {
   const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
   return align === undefined ? undefined : (LEGACY_TEXT_ALIGN[align] ?? align)
 }
 
-function textAlignAxis(style: DesignStyleDeclaration) {
+/** Whether the element reads right to left. */
+export function isRightToLeft(style: DesignStyleDeclaration): boolean {
+  return pickStyle(style, 'direction')?.trim().toLowerCase() === 'rtl'
+}
+
+/**
+ * The side `text-align` puts lines against, with `start` and `end` read in the element's
+ * direction; `justify` for justified lines.
+ */
+function textAlignSide(
+  style: DesignStyleDeclaration
+): 'left' | 'center' | 'right' | 'justify' | undefined {
   const align = textAlignOf(style)
-  if (align === 'center') return 'CENTER'
-  return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
+  switch (align) {
+    case 'left':
+    case 'center':
+    case 'right':
+    case 'justify':
+      return align
+    case 'start':
+      return isRightToLeft(style) ? 'right' : 'left'
+    case 'end':
+      return isRightToLeft(style) ? 'left' : 'right'
+    default:
+      return undefined
+  }
+}
+
+/** The alignment of a text layer by the side `text-align` puts its lines against. */
+const TEXT_LAYER_ALIGN = {
+  left: 'LEFT',
+  center: 'CENTER',
+  right: 'RIGHT',
+  justify: 'JUSTIFIED'
+} as const satisfies Record<string, SceneNode['textAlignHorizontal']>
+
+export function textLayerAlign(
+  style: DesignStyleDeclaration
+): SceneNode['textAlignHorizontal'] | undefined {
+  const side = textAlignSide(style)
+  return side && TEXT_LAYER_ALIGN[side]
+}
+
+function textAlignAxis(style: DesignStyleDeclaration) {
+  const side = textAlignSide(style)
+  if (side === 'center') return 'CENTER'
+  return side === 'right' ? 'MAX' : 'MIN'
 }
 
 /** Where a block can go across its container besides its start. */
@@ -384,11 +428,29 @@ export function applyFlowSizing(
   if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
 }
 
+/** Whether a style places its box by its own position rather than in the lines. */
+function placesOutOfFlow(style: DesignStyleDeclaration): boolean {
+  const position = pickStyle(style, 'position')?.trim()
+  return position === 'absolute' || position === 'fixed'
+}
+
 /** Whether a box is out of the flow, placed by its own position rather than in the lines. */
 function isOutOfFlow(node: DesignNode): boolean {
-  if (node.type !== 'element') return false
-  const position = pickStyle(mergedStyle(node), 'position')?.trim()
-  return position === 'absolute' || position === 'fixed'
+  return node.type === 'element' && placesOutOfFlow(mergedStyle(node))
+}
+
+/**
+ * Whether a box shows nothing and takes no room in any mode: out of the flow, at zero opacity,
+ * which hides all it holds. A page keeps such a box for what it does rather than for how it looks.
+ */
+export function isUnseen(element: DesignElement): boolean {
+  const styles = [mergedStyle(element), ...(element.modes ?? []).map((mode) => mode.computedStyle)]
+  return styles.every(
+    (style) =>
+      style !== undefined &&
+      placesOutOfFlow(style) &&
+      parseCSSNumber(pickStyle(style, 'opacity')) === 0
+  )
 }
 
 /**
@@ -436,4 +498,8 @@ export function hiddenPart(element: DesignElement): 'all' | 'own' | 'none' {
       (child) => child.type === 'element' && (!hidesByVisibility(child) || showsAgain(child))
     )
   return showsAgain(element) ? 'own' : 'all'
+}
+
+export function hasContent(element: DesignElement): boolean {
+  return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
 }

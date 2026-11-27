@@ -12,6 +12,7 @@ import {
 } from '@open-pencil/scene-graph'
 import {
   FACE_KEYS,
+  isTextStyleField,
   rangeFontStyle,
   SHARED_TEXT_STYLE_FIELDS,
   styleDetachmentChanges
@@ -177,6 +178,26 @@ function detachedStyles(
   )
 }
 
+/**
+ * Characters that start using a text style let go of their own bindings of its fields, paragraph
+ * fields included, as in Figma.
+ */
+function withoutBindingsStyleTakesOver(
+  node: SceneNode,
+  before: CharacterStyleOverride,
+  after: CharacterStyleOverride
+): CharacterStyleOverride {
+  const own = after.boundVariables
+  const styleId = after.textStyleId
+  const previousStyleId = before.textStyleId === undefined ? node.textStyleId : before.textStyleId
+  const tookStyle = Boolean(styleId) && styleId !== previousStyleId
+  if (!own || !tookStyle) {
+    return after
+  }
+  const kept = omitBy(own, (_value, field) => isTextStyleField(field))
+  return isEmptyObject(kept) ? omit(after, ['boundVariables']) : { ...after, boundVariables: kept }
+}
+
 /** Style runs with `patch` over `text[start, end)`, as Figma restyles a range. */
 export function styleRunsWithPatch(
   node: SceneNode,
@@ -205,7 +226,8 @@ export function styleRunsWithPatchOver(
         style = patches.get(fontSize) ?? sized(fontSize)
         patches.set(fontSize, style)
       }
-      chars[index] = { ...chars[index], ...style, ...detachedStyles(node, chars[index], style) }
+      const restyled = { ...chars[index], ...style, ...detachedStyles(node, chars[index], style) }
+      chars[index] = withoutBindingsStyleTakesOver(node, chars[index], restyled)
     }
   }
   // A newline takes the style of the character before it, as in Figma: a range that ends a

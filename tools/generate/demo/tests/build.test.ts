@@ -2,8 +2,16 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { buildDemoGraph, withMeasuringRenderer } from '#demo/build'
 import { CHAPTERS, sectionName } from '#demo/document/chapters/names'
+import { COLLECTION_NAMES } from '#demo/document/theme'
+import {
+  RECORDED_TURN_JSX,
+  RECORDED_TURN_PARENT,
+  RECORDED_TURN_RESULT
+} from '#demo/landing/recorded-turn'
 
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, readFigFile, populateAllFigPages } from '@open-pencil/core/io/formats/fig'
+import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { missingBindings, readBehaviour } from '@open-pencil/scene-graph/behaviours'
 import { readShaderPaints } from '@open-pencil/scene-graph/shaders'
@@ -109,5 +117,28 @@ describe('the demo document', () => {
     const shaders = [...graph.getAllNodes()].flatMap((node) => readShaderPaints(node))
     expect(shaders.length).toBeGreaterThanOrEqual(5)
     for (const shader of shaders) expect(shader.preset.components.length).toBeGreaterThan(0)
+  })
+
+  test("renders the docs landing's recorded AI turn with the Theme's variables", async () => {
+    const render = ALL_TOOLS.find((tool) => tool.name === 'render')
+    const parent = [...graph.getAllNodes()].find((node) => node.name === RECORDED_TURN_PARENT)
+    if (!render || !parent) throw new Error('Expected the render tool and the hero frame')
+    const figma = new FigmaAPI(graph)
+    await render.execute(figma, { parent_id: parent.id, jsx: RECORDED_TURN_JSX })
+
+    const card = graph.getChildren(parent.id).find((node) => node.name === RECORDED_TURN_RESULT)
+    if (!card) throw new Error('Expected the turn to add its card to the hero')
+    const collections = new Set<string>()
+    const visit = (node: SceneNode) => {
+      for (const id of Object.values(node.boundVariables)) {
+        const variable = graph.variables.get(id)
+        const collection = variable && graph.variableCollections.get(variable.collectionId)
+        collections.add(collection?.name ?? `unknown ${id}`)
+      }
+      for (const child of graph.getChildren(node.id)) visit(child)
+    }
+    visit(card)
+    expect([...collections]).toEqual([COLLECTION_NAMES.theme])
+    graph.deleteNode(card.id)
   })
 })

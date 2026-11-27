@@ -421,6 +421,31 @@ describe('Variables', () => {
     )
   })
 
+  test('a text style binds its face and paragraph fields, which a layer does not', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Type')
+    const weight = graph.createVariable('Weight', 'FLOAT', collection.id, 700)
+    const face = graph.createVariable('Face', 'STRING', collection.id, 'Bold')
+    const style = graph.createNode('TEXT', pageId(graph), { sharedStyleType: 'TEXT' })
+    const text = graph.createNode('TEXT', pageId(graph))
+
+    graph.bindVariable(style.id, 'fontWeight', weight.id)
+    graph.bindVariable(style.id, 'fontStyle', face.id)
+    graph.bindVariable(style.id, 'paragraphSpacing', weight.id)
+
+    expect(Object.keys(style.boundVariables)).toEqual([
+      'fontWeight',
+      'fontStyle',
+      'paragraphSpacing'
+    ])
+    expect(() => graph.bindVariable(style.id, 'fontStyle', weight.id)).toThrow(
+      'Cannot bind FLOAT variable to text style field "fontStyle"'
+    )
+    expect(() => graph.bindVariable(text.id, 'fontWeight', weight.id)).toThrow(
+      'Unknown binding field "fontWeight"'
+    )
+  })
+
   test('removing variable cleans up bindings', () => {
     const graph = new SceneGraph()
     graph.addCollection({

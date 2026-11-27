@@ -6,6 +6,7 @@ import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout
 import { fontManager, prepareGraphFonts } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { setDocumentThumbnail } from '@open-pencil/scene-graph/thumbnail'
 
 import { createTipComponent } from './document/callout'
 import { arrangeChapters, type ChapterContext } from './document/chapters/chapter'
@@ -81,7 +82,7 @@ export function buildDemoGraph(renderer: SkiaRenderer): Promise<SceneGraph> {
     // Main components first, so the chapters before them can place instances.
     const parts = await createControlsChapter(context)
     const player = await createSlotsChapter(context, parts)
-    await createHelloChapter(context, player)
+    const hello = await createHelloChapter(context, player)
     await createModesChapter(context, player)
     await createShadersChapter(context)
     await createCodeChapter(context, player)
@@ -91,6 +92,9 @@ export function buildDemoGraph(renderer: SkiaRenderer): Promise<SceneGraph> {
       graph,
       graph.getChildren(page.id).filter((node) => node.type === 'SECTION')
     )
+
+    // The first chapter is the file's thumbnail, rather than all eight stacked into a strip.
+    setDocumentThumbnail(graph, hello.section.id)
 
     await prepareGraphFonts(graph, [page.id])
     computeAllLayouts(graph, page.id)

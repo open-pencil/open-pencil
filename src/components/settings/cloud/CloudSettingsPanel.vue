@@ -28,7 +28,7 @@ import { cloudServers } from './ui'
  */
 const { servers, listed = true } = defineProps<{
   servers: CloudServerEntry[]
-  /** Whether the hosted service takes sign-ins yet; until then the `hosted` slot stands in. */
+  /** Whether the hosted service takes sign-ins from this editor; until then only self-hosted is offered. */
   listed?: boolean
 }>()
 const emit = defineEmits<{
@@ -77,8 +77,7 @@ const title = (server: CloudServerEntry) =>
       <!-- A campaign's note, such as what OpenPencil Cloud offers, for an install signed out. -->
       <slot name="campaign" />
       <div v-if="!servers.length" :class="ui.choices()">
-        <slot v-if="!listed" name="hosted" />
-        <AppActionRow v-else @click="emit('connect', 'official')">
+        <AppActionRow v-if="listed" @click="emit('connect', 'official')">
           <template #leading>
             <span :class="ui.choiceIcon()"><icon-lucide-cloud class="size-4" /></span>
           </template>

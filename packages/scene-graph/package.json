@@ -381,6 +381,12 @@
       "import": "./dist/text/picture.js",
       "default": "./dist/text/picture.js"
     },
+    "./thumbnail": {
+      "types": "./dist/thumbnail.d.ts",
+      "bun": "./src/thumbnail.ts",
+      "import": "./dist/thumbnail.js",
+      "default": "./dist/thumbnail.js"
+    },
     "./transfer": {
       "types": "./dist/transfer/index.d.ts",
       "bun": "./src/transfer/index.ts",
@@ -432,6 +438,7 @@
   "dependencies": {
     "@noble/hashes": "^2.4.0",
     "@open-pencil/std": "workspace:*",
+    "bidi-js": "^1.1.0",
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
     "image-size": "^2.0.4",

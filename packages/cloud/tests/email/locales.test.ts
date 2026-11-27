@@ -6,7 +6,6 @@ import {
   EMAIL_SAMPLE_URL,
   EMAIL_SAMPLES,
   renderTransactionalEmail,
-  renderWaitlistConfirmation,
   type TransactionalEmailContent
 } from '#cloud/email'
 
@@ -41,15 +40,6 @@ describe('localised email', () => {
     )
     expect(rendered.html).toContain('dir="rtl"')
     expect(rendered.subject).toContain('⁨Homepage⁩')
-  })
-
-  test('the waitlist link sits inside its sentence', async () => {
-    const rendered = await renderWaitlistConfirmation(
-      { confirmURL: EMAIL_SAMPLE_URL, leaveURL: 'https://openpencil.dev/leave' },
-      'fr'
-    )
-    expect(rendered.html).toContain('href="https://openpencil.dev/leave"')
-    expect(rendered.text).not.toContain('{link}')
   })
 })
 
