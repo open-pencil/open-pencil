@@ -19,7 +19,7 @@ OpenPencil reads `.pen` files but doesn't write them. The first time you save, i
 - Frames, shapes, and paths, with their fills, strokes, and effects.
 - Text, and layout: rows, columns, gaps, and padding.
 - Components and their instances, with the changes made to each instance.
-- Themes, as one collection of [variables](./variables) whose modes are the combinations of your theme's options.
+- Themes, as collections of [variables](./variables). Theme options that your variables combine, such as color mode and density, share a collection whose modes are their combinations; an option on its own gets a collection of its own.
 - Icons and images.
 
 Some things don't come along yet:
