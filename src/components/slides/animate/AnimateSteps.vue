@@ -57,6 +57,8 @@ function toggle(id: string) {
 
 const reorder = useFlatReorderDrag({
   items: () => steps,
+  // A step drags by its row; the settings it opens under it take their own drags.
+  handle: '[data-slot="content"]',
   onMove: (id, index) => store.moveLayerAnimation(id, index)
 })
 function setupRow(element: Element | ComponentPublicInstance | null, id: string) {
