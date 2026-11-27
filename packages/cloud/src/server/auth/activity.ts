@@ -6,6 +6,7 @@ import {
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { dateString } from '#cloud/server/sharing/contracts'
+import { recordActiveAccount } from '#cloud/server/usage/activity'
 import type { BetterAuthPlugin } from 'better-auth'
 import { createAuthMiddleware, isAPIError } from 'better-auth/api'
 import type { Kysely } from 'kysely'
@@ -118,6 +119,7 @@ export function createSignInActivity(
           createdAt: signedInAt
         })
         .execute()
+      await recordActiveAccount(database, session.userId, signedInAt)
       if (!email || !earlier || known || !ipAddress) return
       await email.sendNewSignIn({
         email: user.email,

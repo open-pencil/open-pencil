@@ -22,6 +22,7 @@ import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { recordSave } from '#cloud/server/usage/activity'
 import type { Kysely, Transaction } from 'kysely'
 
 import { announceVersions, keepRevision } from './checkpoint'
@@ -366,6 +367,7 @@ export function createDocumentVersionService(
             createdBy: userId
           })
           .execute()
+        await recordSave(transaction, userId)
         await copyRevisionImages(transaction, version.revisionId, revisionId)
         await transaction
           .updateTable('document')
@@ -452,6 +454,7 @@ export function createDocumentVersionService(
             createdBy: userId
           })
           .execute()
+        await recordSave(transaction, userId)
         await copyRevisionImages(transaction, version.revisionId, revisionId)
         await transaction
           .updateTable('document')

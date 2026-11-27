@@ -12,6 +12,7 @@ import {
   DatabaseEntitlementSource,
   parseCloudServerConfig
 } from '#cloud/server'
+import { recordActiveAccount, recordSave } from '#cloud/server/usage/activity'
 import * as v from 'valibot'
 
 const SERVICE_TOKEN = 'billing-service-token-with-at-least-32-characters'
@@ -275,51 +276,13 @@ describe('internal usage API', () => {
           }
         ])
         .execute()
-      const objectId = crypto.randomUUID()
-      await database
-        .insertInto('storageObject')
-        .values({
-          id: objectId,
-          objectKey: 'k',
-          checksum: 'c',
-          byteSize: 10,
-          contentType: 'application/octet-stream'
-        })
-        .execute()
-      const revision = (createdBy: string, createdAt: string) => ({
-        id: crypto.randomUUID(),
-        documentId,
-        parentRevisionId: null,
-        storageObjectId: objectId,
-        createdBy,
-        createdAt
-      })
-      await database
-        .insertInto('documentRevision')
-        .values([
-          revision(early, '2026-11-01T11:00:00.000Z'),
-          revision(early, '2026-11-01T12:00:00.000Z'),
-          revision(late, '2026-11-03T23:59:59.000Z')
-        ])
-        .execute()
+      // Saves and sign-ins are counted as they happen; cleanup may have deleted their rows since.
+      await recordSave(database, early, new Date('2026-11-01T11:00:00.000Z'))
+      await recordSave(database, early, new Date('2026-11-01T12:00:00.000Z'))
+      await recordSave(database, late, new Date('2026-11-03T23:59:59.000Z'))
       // Early signs in on the day they also save: still one active account that day.
-      await database
-        .insertInto('signIn')
-        .values([
-          {
-            id: crypto.randomUUID(),
-            userId: early,
-            method: 'password',
-            createdAt: '2026-11-01T09:00:00.000Z'
-          },
-          {
-            id: crypto.randomUUID(),
-            userId: late,
-            method: 'password',
-            createdAt: '2026-11-01T09:00:00.000Z'
-          }
-        ])
-        .execute()
+      await recordActiveAccount(database, early, new Date('2026-11-01T09:00:00.000Z'))
+      await recordActiveAccount(database, late, new Date('2026-11-01T09:00:00.000Z'))
       await database
         .insertInto('workspaceStorageUsage')
         .values({ workspaceId, committedBytes: 1234 })
@@ -357,6 +320,8 @@ describe('internal usage API', () => {
         'start=2026-02-30&end=2026-03-01',
         'start=2025-01-01&end=2026-11-01',
         'start=yesterday&end=2026-11-01',
+        // The calendar's last day has no next midnight to count up to.
+        'start=9999-12-31&end=9999-12-31',
         'end=2026-11-01'
       ]) {
         const response = await usage(context, query)

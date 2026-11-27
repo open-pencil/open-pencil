@@ -36,9 +36,18 @@ const isoDaySchema = v.pipe(
   v.check((day) => calendarDay(day) !== undefined, 'Expected a calendar day')
 )
 
-/** A span of whole UTC days, both ends included. */
+/** The calendar's last day, whose end has no next midnight to bound a query with. */
+const LAST_DAY = '9999-12-31'
+
+/** A span of whole UTC days, both ends included, ending before the calendar's last day. */
 export const usageRangeSchema = v.pipe(
-  v.object({ start: isoDaySchema, end: isoDaySchema }),
+  v.object({
+    start: isoDaySchema,
+    end: v.pipe(
+      isoDaySchema,
+      v.check((day) => day < LAST_DAY, 'Expected a day before the calendar’s last')
+    )
+  }),
   v.check(({ start, end }) => {
     const [from, to] = [calendarDay(start), calendarDay(end)]
     if (!from || !to) return false
@@ -56,7 +65,7 @@ export const usageDaySchema = v.object({
   signUps: countSchema,
   /** Accounts that signed in or saved a document revision that day, each once. */
   activeAccounts: countSchema,
-  /** Documents created that day, those deleted since included. */
+  /** Documents created that day and still kept, in Trash or not; those deleted forever drop out. */
   documentsCreated: countSchema,
   /** Document revisions saved that day. */
   revisions: countSchema

@@ -23,6 +23,7 @@ import { announceVersions, recordCheckpoint } from '#cloud/server/documents/vers
 import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import { storageLimitReached } from '#cloud/server/policy/storage'
 import { StorageQuotaExceededError, type StorageQuotaService } from '#cloud/server/quota'
+import { recordSave } from '#cloud/server/usage/activity'
 import { isUndefined, limitAsync, omitBy, uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
@@ -144,6 +145,7 @@ export function createDocumentUploads(
         createdBy: userId
       })
       .execute()
+    await recordSave(transaction, userId)
     const attached = await images.attachInTransaction(transaction, {
       workspaceId: upload.workspaceId,
       revisionId,

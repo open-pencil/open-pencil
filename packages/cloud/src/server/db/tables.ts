@@ -531,6 +531,9 @@ export interface CloudDatabase {
   passkey: PasskeyTable
   mfaAssurance: MFAAssuranceTable
   signIn: SignInTable
+  /** Saves per UTC day, and accounts active on each, counted as they happen; see migration 022. */
+  dailyRevisionCount: { day: string; count: Generated<number> }
+  dailyActiveAccount: { day: string; userId: string }
   verification: VerificationTable
   userPicture: UserPictureTable
   user: AuthUserTable

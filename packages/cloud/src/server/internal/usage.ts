@@ -10,14 +10,14 @@ export type DailyUsage = v.InferOutput<typeof dailyUsageSchema>
 
 type DayCount = { day: string; count: number | string | bigint }
 
+const DAY_MS = 24 * 60 * 60 * 1000
 const midnight = (day: string) => toZoned(parseDate(day), 'UTC').toDate()
 
-/** Every day of the range, oldest first, as ISO dates. */
+/** Every day of the range, oldest first, as ISO dates; counted out, as adding a day saturates at year 9999. */
 function eachDay({ start, end }: UsageRange): string[] {
-  const days: string[] = []
-  for (let day = parseDate(start); day.compare(parseDate(end)) <= 0; day = day.add({ days: 1 }))
-    days.push(day.toString())
-  return days
+  const first = parseDate(start)
+  const span = parseDate(end).compare(first)
+  return Array.from({ length: span + 1 }, (_, index) => first.add({ days: index }).toString())
 }
 
 const byDay = (rows: DayCount[]) => new Map(rows.map((row) => [row.day, Number(row.count)]))
@@ -26,17 +26,20 @@ const byDay = (rows: DayCount[]) => new Map(rows.map((row) => [row.day, Number(r
  * The deployment's use per UTC day of `range`, and its totals now, as counts alone: no account,
  * document, or workspace leaves in any other form.
  *
- * An account is active on a day it signed in or saved a revision of a document. Edits in a
- * collaboration room are logged as the room's own updates, which name no account, and reach a
- * revision only when someone saves one, so a day spent only editing in a room counts the
- * account through its sign-in alone.
+ * Saves and active accounts come from counters kept as they happen (`#cloud/server/usage`), since
+ * cleanup deletes old revisions and sign-ins; sign-ups and documents count the rows still kept, so
+ * deleted accounts and documents deleted forever drop out. An account is active on a day it signed
+ * in or saved a revision. Edits in a collaboration room are logged as the room's own updates,
+ * which name no account, so a day spent only editing in a room counts the account through its
+ * sign-in alone.
  */
 export async function dailyUsage(
   database: Kysely<CloudDatabase>,
   range: UsageRange
 ): Promise<DailyUsage> {
   const from = midnight(range.start)
-  const until = midnight(parseDate(range.end).add({ days: 1 }).toString())
+  // The moment after the end day, without calendar addition, which saturates at year 9999.
+  const until = new Date(midnight(range.end).getTime() + DAY_MS)
 
   const [signUps, documents, revisions, active, totals, storage] = await Promise.all([
     database
@@ -54,39 +57,17 @@ export async function dailyUsage(
       .groupBy('day')
       .execute(),
     database
-      .selectFrom('documentRevision')
-      .select([
-        utcDayOf('documentRevision.createdAt').as('day'),
-        (eb) => eb.fn.countAll().as('count')
-      ])
-      .where('documentRevision.createdAt', '>=', from)
-      .where('documentRevision.createdAt', '<', until)
-      .groupBy('day')
+      .selectFrom('dailyRevisionCount')
+      .select(['day', 'count'])
+      .where('day', '>=', range.start)
+      .where('day', '<=', range.end)
       .execute(),
     database
-      .selectFrom(
-        database
-          .selectFrom('signIn')
-          .select((eb) => [
-            utcDayOf('signIn.createdAt').as('day'),
-            eb.cast<string>('signIn.userId', 'text').as('account')
-          ])
-          .where('signIn.createdAt', '>=', from)
-          .where('signIn.createdAt', '<', until)
-          .union(
-            database
-              .selectFrom('documentRevision')
-              .select([
-                utcDayOf('documentRevision.createdAt').as('day'),
-                'documentRevision.createdBy as account'
-              ])
-              .where('documentRevision.createdAt', '>=', from)
-              .where('documentRevision.createdAt', '<', until)
-          )
-          .as('activity')
-      )
-      .select(['activity.day', (eb) => eb.fn.count('activity.account').distinct().as('count')])
-      .groupBy('activity.day')
+      .selectFrom('dailyActiveAccount')
+      .select(['day', (eb) => eb.fn.countAll().as('count')])
+      .where('day', '>=', range.start)
+      .where('day', '<=', range.end)
+      .groupBy('day')
       .execute(),
     database
       .selectNoFrom((eb) => [

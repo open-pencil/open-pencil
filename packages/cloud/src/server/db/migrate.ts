@@ -22,6 +22,7 @@ import * as enrollmentSource from './migrations/018_enrollment_source'
 import * as oauth from './migrations/019_oauth'
 import * as documentDescription from './migrations/020_document_description'
 import * as slides from './migrations/021_slides'
+import * as dailyActivity from './migrations/022_daily_activity'
 import type { CloudDatabase } from './tables'
 
 /**
@@ -53,7 +54,8 @@ const migrations: Record<string, CloudMigration> = {
   '018_enrollment_source': enrollmentSource,
   '019_oauth': oauth,
   '020_document_description': documentDescription,
-  '021_slides': slides
+  '021_slides': slides,
+  '022_daily_activity': dailyActivity
 }
 
 /** Cloud's migrations, in order. */
