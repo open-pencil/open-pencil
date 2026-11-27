@@ -154,6 +154,31 @@ export function deckDriver(page: () => Page) {
       )
     },
 
+    /** A slide's build in play order: each animated layer's name, style, and trigger. */
+    async animations(slideId: string): Promise<{ name: string; style: string; trigger: string }[]> {
+      return page().evaluate((slideId) => {
+        const graph = window.openPencil?.getStore?.().graph
+        if (!graph) throw new Error('OpenPencil store not initialized')
+        const found: { name: string; style: string; trigger: string; order: number }[] = []
+        const visit = (id: string) => {
+          for (const child of graph.getChildren(id)) {
+            if (child.animation)
+              found.push({
+                name: child.name,
+                style: child.animation.style,
+                trigger: child.animation.trigger,
+                order: child.animation.order
+              })
+            visit(child.id)
+          }
+        }
+        visit(slideId)
+        return found
+          .sort((a, b) => a.order - b.order)
+          .map(({ name, style, trigger }) => ({ name, style, trigger }))
+      }, slideId)
+    },
+
     /** Moves a layer onto a slide at `x`, `y`. */
     async placeOnSlide(layerId: string, slideId: string, x: number, y: number) {
       await page().evaluate(

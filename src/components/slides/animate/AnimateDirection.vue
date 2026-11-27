@@ -7,8 +7,12 @@ import { useMessages } from '@open-pencil/vue/i18n'
 import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
-/** Which way a transition moves the slides, as four arrows, as Figma's panel shows it. */
-const { direction } = defineProps<{ direction: MotionDirection }>()
+/** Which way a transition or an animation moves, as four arrows, as Figma's panel shows it. */
+const { direction, name } = defineProps<{
+  direction: MotionDirection
+  /** The control's `data-property`, which tests and agents find it by. */
+  name: string
+}>()
 const emit = defineEmits<{ update: [direction: MotionDirection] }>()
 const messages = useMessages('slides')
 
@@ -37,7 +41,7 @@ const model = computed({
       v-model="model"
       :options="options"
       :label="messages.direction"
-      data-property="animate-transition-direction"
+      :data-property="name"
     >
       <template #option="{ option }">
         <icon-lucide-arrow-left
