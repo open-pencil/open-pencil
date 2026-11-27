@@ -1,28 +1,8 @@
-import { listen } from '@tauri-apps/api/event'
-import { platform } from '@tauri-apps/plugin-os'
-import { tryOnScopeDispose, useEventListener } from '@vueuse/core'
+import { useEventListener } from '@vueuse/core'
 
-import { IS_TAURI } from '@/constants'
-
-import type { HorizontalScroller } from './history-swipe'
 import { startsHistorySwipe } from './history-swipe'
-
-type PinchWheel = Pick<WheelEvent, 'clientX' | 'clientY' | 'deltaY'>
-
-function useLinuxPinchWheel(): void {
-  if (!IS_TAURI || platform() !== 'linux') return
-
-  const subscription = listen<PinchWheel>('canvas-pinch-wheel', ({ payload }) => {
-    // Hit-test like a wheel event so the canvas under the pointer (including its overlays)
-    // handles the zoom, without sending pinches over a panel to the active canvas.
-    document
-      .elementFromPoint(payload.clientX, payload.clientY)
-      ?.dispatchEvent(
-        new WheelEvent('wheel', { ...payload, ctrlKey: true, bubbles: true, cancelable: true })
-      )
-  })
-  tryOnScopeDispose(() => void subscription.then((unlisten) => unlisten()))
-}
+import type { HorizontalScroller } from './history-swipe'
+import { useShellPinchGestures } from './pinch'
 
 function* scrollersUnder(event: WheelEvent): Generator<HorizontalScroller> {
   for (const target of event.composedPath()) {
@@ -40,11 +20,11 @@ function* scrollersUnder(event: WheelEvent): Generator<HorizontalScroller> {
 
 /**
  * Keeps the editor's wheel gestures in the editor: Ctrl or Cmd with the wheel zooms the
- * canvas rather than the page, and a sideways trackpad swipe never goes back or forward in
- * the browser's history.
+ * canvas rather than the page, a sideways trackpad swipe never goes back or forward in the
+ * browser's history, and a Linux desktop touchpad pinch zooms the canvas, not the whole page.
  */
 export function useEditorWheelGuard(): void {
-  useLinuxPinchWheel()
+  useShellPinchGestures()
   useEventListener(
     document,
     'wheel',
