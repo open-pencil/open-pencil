@@ -9,11 +9,11 @@ import { fetchMetricsSnapshot } from '@/app/metrics/load'
 import { presetRange } from '@/app/metrics/range'
 import MetricsView from '@/views/metrics/MetricsView.vue'
 
-// Entry for the team's metrics dashboard (`metrics.html`). Only the feedback Worker serves it,
+// Entry for the team's metrics dashboard (`pages/metrics.html`). Only the feedback Worker serves it,
 // under /admin behind Cloudflare Access; the editor never loads it.
 async function start(): Promise<void> {
   const initialRange = presetRange('7d', utcToday().toString())
-  // The splash in metrics.html covers the first request; the page mounts with its answer.
+  // The splash in the page covers the first request; the page mounts with its answer.
   const initialSnapshot = await fetchMetricsSnapshot(initialRange).catch((error: unknown) => {
     console.warn('Metrics could not load', error)
     return undefined

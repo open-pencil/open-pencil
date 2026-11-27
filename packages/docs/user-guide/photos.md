@@ -1,4 +1,5 @@
 ---
+pageClass: guide
 title: Photos
 description: Fill a layer with a free stock photo from Unsplash or Pexels in OpenPencil.
 ---
@@ -9,7 +10,7 @@ OpenPencil searches the free photo libraries of [Unsplash](https://unsplash.com)
 
 Searching and using photos needs a network connection to the service you search.
 
-## Filling a Layer with a Photo
+## Fill a Layer With a Photo
 
 Draw the frame or shape the photo should fill, then:
 

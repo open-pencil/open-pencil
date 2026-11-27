@@ -4,7 +4,7 @@ import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import type { CloudErrorContext } from '#cloud/server'
 
 const files: Record<string, string> = {
-  '/cloud.html': '<!doctype html><title>Portal</title>',
+  '/pages/cloud.html': '<!doctype html><title>Portal</title>',
   '/index.html': '<!doctype html><title>Editor</title>',
   '/assets/cloud-abc.js': 'export {}',
   '/favicon.svg': '<svg/>'

@@ -1,15 +1,17 @@
 import type { DesignElement, DesignElementMode } from '#dom-css/types'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode, Variable } from '@open-pencil/scene-graph'
 import { parseCSSNumber, parseCSSShadows, splitCSSLayers } from '@open-pencil/scene-graph/css'
 import { ICON_PAINTS, type IconPaint } from '@open-pencil/scene-graph/icons'
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { effectBindingField } from '@open-pencil/scene-graph/variables'
 
 import { drawsBorder, firstStrokeProperty, ringOf } from '../box'
 import { anyCSSColor, mergedStyle } from '../css-values'
 import { maskSVG } from '../pictures'
 import { colorPart, referencedProperty } from './expression'
+import { cssFormula } from './formula'
 import { ThemeVariables, type HTMLTheme, type ModeColor } from './theme'
 
 /** The element each layer was built from; its text layers come from the element that holds them. */
@@ -45,8 +47,8 @@ interface NumberSlot {
 
 const slot = (field: string, ...properties: string[]): NumberSlot => ({ field, properties })
 
-/** Where a layer's numbers come from. */
-function numberSlots(node: SceneNode): NumberSlot[] {
+/** Where a layer's numbers come from; a size only where the layer keeps one of its own. */
+function numberSlots(graph: SceneGraph, node: SceneNode): NumberSlot[] {
   if (node.type === 'TEXT') {
     return [
       slot('fontSize', 'font-size'),
@@ -60,6 +62,8 @@ function numberSlots(node: SceneNode): NumberSlot[] {
     ? CORNERS.map(([field, property]) => slot(field, property))
     : [slot('cornerRadius', ...CORNERS.map(([, property]) => property))]
   const slots = [slot('opacity', 'opacity'), ...corners]
+  if (layoutSizing(graph, node, 'HORIZONTAL') === 'FIXED') slots.push(slot('width', 'width'))
+  if (layoutSizing(graph, node, 'VERTICAL') === 'FIXED') slots.push(slot('height', 'height'))
   if (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL') return slots
   const horizontal = node.layoutMode === 'HORIZONTAL'
   slots.push(
@@ -140,25 +144,45 @@ class Binder {
     if (paint?.type === 'SOLID') this.#bindColor(node, `${list}/0/color`, colors)
   }
 
-  /** Binds numbers a single property gives, where its variable holds the layer's in every mode. */
+  /**
+   * Binds numbers a single property gives, where its variable, or a formula over variables that
+   * its `calc()` is, holds the layer's number in every mode.
+   */
   #bindNumbers(node: SceneNode, element: DesignElement): void {
-    for (const { field, properties } of numberSlots(node)) {
+    const modes = inModes(element, this.#theme.modes.length) ?? []
+    for (const { field, properties } of numberSlots(this.#graph, node)) {
       const [property = ''] = properties
-      const modes = inModes(element, this.#theme.modes.length) ?? []
-      const names = modes.flatMap((other) =>
-        properties.map((each) => referencedProperty(other.references[each]))
-      )
-      const variable = this.#variables.named(names.at(0) ?? null)
-      if (variable?.type !== 'FLOAT' || names.some((name) => name !== names[0])) continue
+      const written = modes.flatMap((other) => properties.map((each) => other.references[each]))
+      const [text] = written
+      // `var(--x)` and `var(--x, 0)` name the same variable.
+      const key = (each: string | undefined) => (each && referencedProperty(each)) ?? each
+      if (!text || written.some((each) => key(each) !== key(text))) continue
       const others = modes.slice(1).map((other) => parseCSSNumber(other.computedStyle[property]))
-      const expected = [numberIn(node, field), ...others]
+      const variable = this.#numberVariable(text, field, [numberIn(node, field), ...others])
+      if (variable) this.#graph.bindVariable(node.id, field, variable.id)
+    }
+  }
+
+  /** The variable a written number is, when it gives `expected` in every mode. */
+  #numberVariable(
+    text: string,
+    field: string,
+    expected: readonly (number | null)[]
+  ): Variable | undefined {
+    const matches = (values: readonly (number | undefined)[]) =>
+      values.length === expected.length &&
+      values.every((value, index) => isSameNumber(value, expected[index]))
+    const property = referencedProperty(text)
+    if (property) {
+      const variable = this.#variables.named(property)
       // A text length or a radius takes a length; a unitless line height is no length.
       const unit = field === 'opacity' ? 'number' : 'length'
-      const values = this.#variables.numbers(names[0] ?? '', unit)
-      if (expected.length !== values.length) continue
-      if (values.every((value, index) => isSameNumber(value, expected[index])))
-        this.#graph.bindVariable(node.id, field, variable.id)
+      const values = this.#variables.numbers(property, unit)
+      return variable?.type === 'FLOAT' && matches(values) ? variable : undefined
     }
+    const formula = cssFormula(text, (each) => this.#variables.numberVariable(each))
+    if (!formula || !matches(this.#variables.evaluate(formula))) return undefined
+    return this.#variables.forFormula(formula, text)
   }
 
   /**

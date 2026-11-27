@@ -1,4 +1,5 @@
 ---
+pageClass: guide
 title: Icons
 description: Search open-source icon sets and SF Symbols, insert icons, and swap, recolor, or restyle them in OpenPencil.
 ---
@@ -9,25 +10,27 @@ OpenPencil searches the open-source icon sets published through [Iconify](https:
 
 Searching and placing icons needs a network connection to the Iconify API.
 
-## Inserting an Icon
+## Insert an Icon
 
 Open the icon picker in any of these ways:
 
-- Click the **Insert icon** button at the end of the toolbar
-- Choose **Object → Insert Icon…**
-- Search for **Insert Icon** in the command palette (<kbd>⌘</kbd><kbd>K</kbd>)
+- Click **Insert icon** at the end of the toolbar.
+- Choose **Object → Insert Icon…**.
+- Search for **Insert Icon** in the command palette, <Keys mac="⌘ K" other="Ctrl K" />.
 
-Before you type, the picker shows the icons already placed in this file and the ones you picked lately. Type what you're looking for, such as `arrow` or `heart`, to search every set; each result shows a preview and the set it comes from.
+Before you type, the picker shows the icons already placed in this file and the ones you picked lately. Type what you're looking for, such as `arrow` or `heart`, to search every set. Hover over an icon to see its name and set.
 
-Pick one to place it, 24 × 24, in the middle of the view, inside the frame you're editing if you've entered one. The new icon is selected, and <kbd>⌘</kbd><kbd>Z</kbd> removes it in one step.
+Pick one to place it, 24 × 24, in the middle of the view, inside the frame you're editing if you've entered one. The new icon is selected, and <Keys mac="⌘ Z" other="Ctrl Z" /> removes it in one step.
 
-## Choosing an Icon Set
+<GuideImage name="icons/picker" alt="The icon picker searching for heart, with results from several icon sets" />
+
+## Choose an Icon Set
 
 The set button at the end of the search field (**All icon sets** at first) narrows the picker to one set. Sets are grouped by kind, such as Material or Logos; type to find one by name, such as `tabler`. Each set shows how many icons it has.
 
 With a set chosen, the picker shows the whole set, loading more as you scroll, and a search looks only in that set. Hover over an icon, or move to it with the arrow keys, to see its name, set, and license below the grid. The picker remembers the set you chose last, and **Swap icon** opens on the set of the icon you're swapping.
 
-## The Icon Section
+## Swap or Recolor an Icon
 
 Selecting a placed icon adds an **Icon** section to the Design panel.
 
@@ -40,7 +43,7 @@ Each swap, color, or option change is one undo step; dragging in the color picke
 
 An icon is a frame of vector paths, named after the icon, such as `cat`, and marked with a smiley in the layer tree. Unlike other frames on the page, it has no title on the canvas, and resizing it scales its paths. Its layers, constraints, effects, and the rest of the Design panel work as they do for any frame.
 
-## Material Symbols
+## Adjust Material Symbols
 
 Material Symbols Outlined, Rounded, and Sharp are drawn from Google's variable fonts, so their options in the Icon section are the fonts' own axes:
 
@@ -49,7 +52,7 @@ Material Symbols Outlined, Rounded, and Sharp are drawn from Google's variable f
 - **Grade**, from −50 to 200, which thickens strokes slightly without changing the icon's size, such as to balance light icons on a dark background.
 - **Optical size**, from 20 to 48. A placed icon starts at the optical size of its size, as Google recommends, so a 24 × 24 icon uses 24; set it yourself to draw a small icon with a large icon's detail or the other way round.
 
-## SF Symbols
+## Use SF Symbols {#sf-symbols}
 
 SF Symbols are Apple's icons. Apple licenses them for its own platforms only, so OpenPencil never ships them: macOS draws them, and they are offered only in the [OpenPencil app for Mac](/download) on **macOS 14 Sonoma or later**. In the browser, on Windows and Linux, and on older versions of macOS, the icon picker lists SF Symbols under Apple and says what they need instead of showing them.
 
@@ -66,7 +69,7 @@ The Icon section then offers:
 
 A document keeps the outlines of its SF Symbols, so they draw everywhere it opens. Changing or swapping one needs the Mac app again; elsewhere the Icon section says so in place of its options.
 
-## Editing an Icon's Paths
+## Edit an Icon's Paths
 
 You can edit an icon's paths like any vector. Once its points, paths, or own colors change, the Icon section says **Modified**:
 

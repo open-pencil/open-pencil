@@ -55,5 +55,6 @@ Right-click a layer and choose **Copy/Paste as**.
 - **Copy as PNG** is for chats and documents. Press <Keys mac="⇧ ⌘ C" other="Ctrl Shift C" />.
 - **Copy as SVG** is for code and vector editors.
 - **Copy as JSX** is for code.
+- **Copy as text** copies the text of a text layer.
 
 </GuideLegend>

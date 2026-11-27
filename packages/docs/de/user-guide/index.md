@@ -39,4 +39,3 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 
 ## Referenz
 
-- [Kontextmenü](./context-menu) — Zwischenablage, Gruppen, Komponenten und weitere Aktionen

@@ -77,6 +77,30 @@ describe('captured layout in the projection', () => {
     })
   })
 
+  it('gives text beside a box out of the flow the box of its lines', () => {
+    // A product name in a link whose overlay stretches over the whole card it is in.
+    const link = element(
+      'a',
+      { display: 'block', width: '64.3px', 'white-space': 'normal' },
+      { box: rect(178, 622, 64.3, 24), lines: [rect(178, 622, 64.29, 24)] },
+      [
+        element(
+          'span',
+          { display: 'block', position: 'absolute', top: '0px', left: '0px' },
+          { box: rect(98, 606, 932, 110) }
+        ),
+        { type: 'text', text: '4. Bifura' }
+      ]
+    )
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [link] })
+    const linkLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const text = graph.getChildren(linkLayer.id).find((layer) => layer.type === 'TEXT')
+
+    expect(text && boxes.get(text.id)?.lines).toBe(1)
+    // One line sizes to its words, so a font a little wider than the page's does not wrap it.
+    expect(text?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+  })
+
   it('records nothing when the layout was not captured', () => {
     const plain: DesignElement = {
       type: 'element',

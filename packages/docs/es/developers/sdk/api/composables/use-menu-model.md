@@ -12,4 +12,4 @@ Las etiquetas, los atajos, el estado desactivado y la ejecución proceden de una
 ## Véase también
 
 - [useEditorCommands](./use-editor-commands)
-- [Menú contextual](/user-guide/context-menu)
+- [Menú contextual](/user-guide/selection-and-manipulation)

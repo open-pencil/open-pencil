@@ -12,6 +12,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { DesignElement } from '../types'
 import { contentInsets } from './box'
 import { mergedStyle, pickStyle } from './css-values'
+import { isOutOfFlow } from './flow'
 
 /**
  * Where the engine that styled the document laid a layer out. For text, `box` is the box its
@@ -340,11 +341,13 @@ function textRuns(element: DesignElement): number {
 
 /**
  * The box an element's own text was laid out in. Text alone in a box takes the box its lines are
- * in. Text among the items of a flex container or a grid is an item of its own, its lines the
- * container's only ones, as the items around it lay out as blocks; text among other elements has
- * no box of its own.
+ * in, beside boxes out of the flow, such as a link's overlay stretched over its card, which take
+ * no part in its lines. Text among the items of a flex container or a grid is an item of its own,
+ * its lines the container's only ones, as the items around it lay out as blocks; text among other
+ * elements has no box of its own.
  */
 export function ownTextBox(element: DesignElement, holdsItems: boolean): CapturedBox | undefined {
-  if (element.children.every((child) => child.type === 'text')) return capturedTextBox(element)
+  const inFlow = element.children.filter((child) => !isOutOfFlow(child))
+  if (inFlow.every((child) => child.type === 'text')) return capturedTextBox(element)
   return holdsItems && textRuns(element) === 1 ? capturedLinesBox(element) : undefined
 }

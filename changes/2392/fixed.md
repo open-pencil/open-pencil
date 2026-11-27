@@ -1,0 +1,1 @@
+- HTML import clips a box that hides its overflow on one axis, keeps fully round corners at an editable radius of 9999, and no longer makes empty frames for generated content that draws nothing (#2392).
