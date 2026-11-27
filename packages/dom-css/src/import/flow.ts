@@ -17,6 +17,7 @@ import {
 } from '@open-pencil/scene-graph/layout'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
+import { paintsBox } from './box'
 import { mergedStyle, pickStyle } from './css-values'
 import { isTableRow } from './table'
 
@@ -441,16 +442,19 @@ export function isOutOfFlow(node: DesignNode): boolean {
 }
 
 /**
- * Whether a box shows nothing and takes no room in any mode: out of the flow, at zero opacity,
- * which hides all it holds. A page keeps such a box for what it does rather than for how it looks.
+ * Whether a box shows nothing and takes no room in any mode: out of the flow, and either at zero
+ * opacity, which hides all it holds, or generated content that holds nothing and paints nothing,
+ * such as a `::after` that widens what a pointer can hit. A page keeps such a box for what it does
+ * rather than for how it looks.
  */
 export function isUnseen(element: DesignElement): boolean {
+  const empty = element.tagName.startsWith('::') && element.children.length === 0
   const styles = [mergedStyle(element), ...(element.modes ?? []).map((mode) => mode.computedStyle)]
   return styles.every(
     (style) =>
       style !== undefined &&
       placesOutOfFlow(style) &&
-      parseCSSNumber(pickStyle(style, 'opacity')) === 0
+      (parseCSSNumber(pickStyle(style, 'opacity')) === 0 || (empty && !paintsBox(style)))
   )
 }
 

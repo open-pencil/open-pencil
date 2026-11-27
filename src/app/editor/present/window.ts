@@ -2,8 +2,11 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 
 import { IS_TAURI } from '@/constants'
 
-/** Separate Vite entry, so the presenter's window never boots the editor. */
-const PRESENTER_URL = 'presenter.html'
+/**
+ * Separate Vite entry, so the presenter's window never boots the editor. It is named from the
+ * site's base, so a deck opened at a nested address such as a room's still finds it.
+ */
+const PRESENTER_URL = `${import.meta.env.BASE_URL}pages/presenter.html`
 const PRESENTER_WIDTH = 1100
 const PRESENTER_HEIGHT = 720
 

@@ -1,0 +1,1 @@
+- FigJam documents draw their wavy bottom at a fixed height with rounded corners, as FigJam draws them, instead of a wave that grew with the page (#2408).

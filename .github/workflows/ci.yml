@@ -212,6 +212,10 @@ jobs:
       - name: Scan for committed secrets
         run: bun run check:secrets
 
+      # Cloud's dev tooling runs its source, which lists the tools its build generates from Core's.
+      - name: Generate Cloud's MCP tool list
+        run: bun --filter @open-pencil/core build && bun run generate:mcp-catalog
+
       - name: Test repository tooling
         run: bun run test:tools
 
@@ -353,8 +357,9 @@ jobs:
           # Quick shards read only the small fixtures; ci-heavy.yml pulls the large .fig corpora.
           lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/slots.fig,tests/fixtures/variable-override-precedence.fig,tests/fixtures/fonts/*
 
-      - name: Build shared Core test dependency
-        run: bun --filter @open-pencil/core build
+      # Cloud's integration tests run its source, which lists the tools its build generates from Core's.
+      - name: Build shared Core test dependency and Cloud's MCP tool list
+        run: bun --filter @open-pencil/core build && bun run generate:mcp-catalog
 
       - name: Run ${{ matrix.group }} unit tests
         run: bun tools/dev/unit-tests/src/run.ts "${{ matrix.group }}"

@@ -8,6 +8,7 @@ import { createCommunityObjectRoutes, type CommunityService } from '#cloud/serve
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRateLimits } from '#cloud/server/documents'
+import type { DocumentToolService } from '#cloud/server/documents/tools'
 import type { DocumentVersionService } from '#cloud/server/documents/versions'
 import type { EntitlementService } from '#cloud/server/policy'
 import type { DocumentReportService } from '#cloud/server/reports'
@@ -27,6 +28,8 @@ export type CloudAPIServices = {
   rateLimitSecret?: string
   collaboration: CollaborationTicketService
   documents: DocumentService
+  /** Design tools apps run on documents through the editor that has one open. */
+  documentTools: DocumentToolService
   versions: DocumentVersionService
   comments: CommentService
   /** The community gallery, which anyone may read. */

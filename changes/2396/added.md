@@ -1,0 +1,1 @@
+- HTML import makes components a page marks with Reka UI element names, such as `data-op-reka="Switch.Root"` and `Switch.Thumb`, behave as those controls in preview and code export, with their values bound by `data-op-behaviour` (#2396).

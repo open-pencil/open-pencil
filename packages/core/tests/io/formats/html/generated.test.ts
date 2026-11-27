@@ -32,4 +32,34 @@ describe('generated content', () => {
     expect(before).toMatchObject({ width: 1, height: 24 })
     expect(before?.fills[0]?.color).toMatchObject({ r: 0.8, g: 0.8, b: 0.8 })
   })
+
+  test('leave out generated content that holds and paints nothing', async () => {
+    const { graph } = await readHTMLDocument(`<style>
+      .target { position: relative; width: 40px; height: 20px; background: #00f }
+      .target::after { content: ""; position: absolute; inset: -8px }
+    </style>
+    <div class="target"></div>`)
+    const layers = graph.flattenTree(graph.getPages()[0].id).map(({ node }) => node)
+
+    expect(layers.map((layer) => layer.name)).not.toContain('::after')
+  })
+
+  test('keep generated content that paints in another mode', async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>
+        .target { position: relative; width: 40px; height: 20px }
+        .target::after { content: ""; position: absolute; inset: 0 }
+        .dark .target::after { background: #fff }
+      </style>
+      <div class="target"></div>`,
+      {
+        variables: {
+          modes: [{ name: 'Light' }, { name: 'Dark', rootAttributes: { class: 'dark' } }]
+        }
+      }
+    )
+    const layers = graph.flattenTree(graph.getPages()[0].id).map(({ node }) => node)
+
+    expect(layers.map((layer) => layer.name)).toContain('::after')
+  })
 })
