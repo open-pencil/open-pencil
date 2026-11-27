@@ -84,19 +84,16 @@ describe('schema fill fallback rendering', () => {
     expect(renderer.fillPaint.setColorComponents).not.toHaveBeenCalledWith(0.2, 0.3, 0.4, 0.8)
   })
 
-  test.each(['PATTERN', 'NOISE', 'CUSTOM'] as const)(
-    'renders %s fills as solid fallback',
-    (type) => {
-      const renderer = createRenderer()
-      const fill: Fill = {
-        type,
-        color: { r: 0.2, g: 0.3, b: 0.4, a: 0.8 },
-        opacity: 1,
-        visible: true
-      }
-
-      expect(applyFill(renderer, fill, node, new SceneGraph())).toBe(true)
-      expect(renderer.fillPaint.setColorComponents).toHaveBeenCalledWith(0.2, 0.3, 0.4, 0.8)
+  test.each(['PATTERN', 'NOISE'] as const)('renders %s fills as solid fallback', (type) => {
+    const renderer = createRenderer()
+    const fill: Fill = {
+      type,
+      color: { r: 0.2, g: 0.3, b: 0.4, a: 0.8 },
+      opacity: 1,
+      visible: true
     }
-  )
+
+    expect(applyFill(renderer, fill, node, new SceneGraph())).toBe(true)
+    expect(renderer.fillPaint.setColorComponents).toHaveBeenCalledWith(0.2, 0.3, 0.4, 0.8)
+  })
 })

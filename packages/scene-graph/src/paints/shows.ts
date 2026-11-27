@@ -11,3 +11,12 @@ export function paintShows(paint: Fill): boolean {
   if (paint.type === 'SOLID') return paint.color.a > 0
   return true
 }
+
+/** A Figma shader paint, which OpenPencil cannot draw: Figma keeps the program outside the file. */
+export function isFigmaShaderPaint(paint: Fill): boolean {
+  return paint.type === 'CUSTOM'
+}
+
+export function isDrawnPaint(paint: Fill): boolean {
+  return paint.visible && !isFigmaShaderPaint(paint)
+}

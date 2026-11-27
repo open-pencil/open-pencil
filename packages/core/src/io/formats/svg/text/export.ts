@@ -1,4 +1,5 @@
 import type { CharacterStyleOverride, Fill, SceneNode } from '@open-pencil/scene-graph'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -17,9 +18,9 @@ import { shownText } from '#core/text/case'
 type SVGAttrs = Record<string, string | number | undefined>
 
 /**
- * A range's own fills, which replace the layer's: the first it shows, as the layer's own fill is
+ * A range's own fills, which replace the layer's: the first it draws, as the layer's own fill is
  * written, a gradient or an image on the layer's box as the canvas draws it, and none at all when
- * they are empty or hidden.
+ * they are empty, hidden, or only shaders.
  */
 function rangeFillAttrs(
   fills: readonly Fill[],
@@ -27,7 +28,7 @@ function rangeFillAttrs(
   ctx: SVGExportContext,
   parentFillOpacity: number | undefined
 ): SVGAttrs {
-  const fill = fills.find((f) => f.visible)
+  const fill = fills.find(isDrawnPaint)
   if (!fill) return { fill: 'none' }
   // `fill-opacity` inherits, so an opaque run has to cover a translucent parent.
   const cover = parentFillOpacity !== undefined ? 1 : undefined

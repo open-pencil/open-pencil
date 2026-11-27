@@ -155,6 +155,11 @@ export type NodeType =
   | 'SLIDE'
   | 'SLIDE_ROW'
   | 'SLIDE_GRID'
+  /**
+   * A Figma shader's definition on the internal page, which a shader paint names: its library key,
+   * version and property definitions. OpenPencil keeps it for Figma and never draws it.
+   */
+  | 'CODE_COMPONENT'
 
 export type FillType =
   | 'SOLID'
@@ -199,6 +204,11 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
+export interface LibraryAssetRef {
+  key: string
+  version?: string
+}
+
 /** Figma's adjustments of an image paint, each from -1 to 1; 0 leaves the image as it is. */
 export interface ImageFilters {
   exposure?: number
@@ -240,6 +250,8 @@ export interface Fill {
   density?: number
   noiseSize?: Vector
   customEffectId?: string
+  customEffectAssetRef?: LibraryAssetRef
+  componentPropAssignments?: unknown[]
 }
 
 export type StrokeCap =

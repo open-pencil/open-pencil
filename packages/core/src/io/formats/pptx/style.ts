@@ -3,16 +3,17 @@ import type PptxGenJS from 'pptxgenjs'
 
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** Scene paint/effect/text style → PPT property mapping (no slide geometry). */
 
 export function firstVisibleFill(node: SceneNode): Fill | null {
-  return node.fills.find((f) => f.visible) ?? null
+  return node.fills.find(isDrawnPaint) ?? null
 }
 
 export function firstVisibleStroke(node: SceneNode): Stroke | null {
-  return node.strokes.find((s) => s.visible) ?? null
+  return node.strokes.find(isDrawnPaint) ?? null
 }
 
 export function isRounded(node: SceneNode): boolean {

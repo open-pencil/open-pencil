@@ -163,12 +163,7 @@ function setFillPaint(
     return applyGradientFill(r, fill, node, graph, paint)
   }
   if (drawnImageHash(fill)) return applyImageFill(r, fill, node, graph, paint)
-  if (
-    fill.type === 'SOLID' ||
-    fill.type === 'PATTERN' ||
-    fill.type === 'NOISE' ||
-    fill.type === 'CUSTOM'
-  ) {
+  if (fill.type === 'SOLID' || fill.type === 'PATTERN' || fill.type === 'NOISE') {
     const c = drawnColor(fill.color, graph)
     paint.setColorComponents(c.r, c.g, c.b, c.a)
     return true

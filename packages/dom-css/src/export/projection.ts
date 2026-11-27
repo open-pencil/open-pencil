@@ -2,7 +2,6 @@ import { compact } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { ColorProfile, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
 import { readIcon } from '@open-pencil/scene-graph/icons'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { heldHugAxes, layoutSizingInParent } from '@open-pencil/scene-graph/layout'
@@ -11,9 +10,7 @@ import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import {
-  cssColor,
   effectsToCSS,
-  fillToCSS,
   letterSpacingRoomCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
@@ -42,6 +39,7 @@ import {
   addTextLines,
   insideRightToLeftFrame,
   textCaseToCSS,
+  textColor,
   textElementContent,
   uniformLetterSpacing
 } from './text'
@@ -351,8 +349,7 @@ function styleFromTextNode(
   const style = layerBox(graph, node, parent, css, metrics !== undefined)
   addLayoutChild(style, graph, node, parent)
   addTextBox(style, node, parent, inheritsRightToLeft)
-  const color = fillToCSS(node.fills.at(0), profile)
-  style.color = color ? css('fills/0/color', color) : cssColor(BLACK, profile)
+  style.color = textColor(node, css, profile)
   style['font-family'] = node.fontFamily
   style['font-size'] = css('fontSize', px(node.fontSize))
   style['font-weight'] = String(node.fontWeight)

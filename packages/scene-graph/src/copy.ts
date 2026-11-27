@@ -40,6 +40,12 @@ export function copyFill<T extends Fill>(f: T): T {
   if (f.filters) copy.filters = { ...f.filters }
   if (f.patternSpacing) copy.patternSpacing = { ...f.patternSpacing }
   if (f.noiseSize) copy.noiseSize = { ...f.noiseSize }
+  if (f.customEffectAssetRef) {
+    copy.customEffectAssetRef = { ...f.customEffectAssetRef }
+  }
+  if (f.componentPropAssignments) {
+    copy.componentPropAssignments = structuredClone(f.componentPropAssignments)
+  }
   return copy
 }
 

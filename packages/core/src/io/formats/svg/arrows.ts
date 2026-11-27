@@ -11,6 +11,7 @@ import {
   type ArrowEndpoint
 } from '@open-pencil/scene-graph/arrow-caps'
 import { drawsStroke } from '@open-pencil/scene-graph/geometry'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { addOpenSegmentsToPath, svgPathSink } from '@open-pencil/scene-graph/paths'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -66,7 +67,7 @@ export function openPathElements(
   common: Attrs,
   segmentsOf: SegmentsOf = allSegments
 ): SVGNode[] {
-  const stroke = node.strokes.find((item) => drawsStroke(node, item))
+  const stroke = node.strokes.find((stroke) => isDrawnPaint(stroke) && drawsStroke(node, stroke))
   const d = openStrokePath(node, network, stroke, segmentsOf)
   const whole = openStrokePath(node, network, undefined, segmentsOf)
   if (d === whole) return [svg('path', { d, ...common })]
@@ -143,6 +144,6 @@ export function vectorArrowHeads(
   network: VectorNetwork,
   strokeAttrs: Attrs
 ): SVGNode[] {
-  const stroke = node.strokes.find((item) => drawsStroke(node, item))
+  const stroke = node.strokes.find((stroke) => isDrawnPaint(stroke) && drawsStroke(node, stroke))
   return arrowHeadElements(node, network, stroke, strokeAttrs)
 }

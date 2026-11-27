@@ -8,6 +8,8 @@ import {
   prepareGraphTransfer
 } from '@open-pencil/scene-graph/transfer'
 
+import { heldShaderAssets, shaderAssetKey } from './shader-definitions'
+
 /** Interpret in isolation before any destination mutation. */
 export function prepareClipboardImport(
   changes: NodeChange[],
@@ -17,7 +19,11 @@ export function prepareClipboardImport(
   offsetX = 0,
   offsetY = 0
 ) {
-  const fragment = materializeFigFragment(changes, blobs, { missingComponent: 'detach-empty' })
+  const held = heldShaderAssets(graph)
+  const fragment = materializeFigFragment(changes, blobs, {
+    missingComponent: 'detach-empty',
+    holdsShader: (asset) => held.has(shaderAssetKey(asset.key, asset.version))
+  })
   const plan = prepareGraphTransfer({
     source: fragment.graph,
     rootIds: fragment.rootIds,

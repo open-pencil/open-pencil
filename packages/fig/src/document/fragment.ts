@@ -1,5 +1,5 @@
 import type { GUID } from '@open-pencil/kiwi/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { AssetRef, NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import { isUnsupportedFigFragmentType } from '../node-classification'
@@ -8,10 +8,13 @@ import {
   type AssemblyState,
   type DocumentAssemblyOptions
 } from './materialize'
+import { withoutHeldShaderDefinitions } from './shaders'
 
 export interface FragmentOptions {
   /** Only empty instances with no saved claims may lose an unavailable component. */
   missingComponent?: 'error' | 'detach-empty'
+  /** Whether the destination already holds a shader's definition, which the fragment then leaves out. */
+  holdsShader?: (asset: AssetRef) => boolean
 }
 
 export interface FragmentMaterializationOptions extends FragmentOptions {
@@ -106,9 +109,12 @@ export function normalizeFigFragment(
   source: readonly NodeChange[],
   options: FragmentOptions = {}
 ): NodeChange[] {
-  const changes = source
+  const cloned = source
     .filter((node) => !isUnsupportedFigFragmentType(node.type))
     .map((node) => structuredClone(node))
+  const changes = options.holdsShader
+    ? withoutHeldShaderDefinitions(cloned, options.holdsShader)
+    : cloned
   const { ids, children, allocate } = indexFragment(changes)
   const documents = changes.filter((node) => node.type === 'DOCUMENT')
   if (documents.length > 1) throw new Error('Multiple fragment documents')

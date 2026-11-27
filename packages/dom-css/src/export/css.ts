@@ -9,6 +9,7 @@ import type {
 import { colorToCSS, colorToHex, colorToProfileCSS } from '@open-pencil/scene-graph/color'
 import { blurSigma } from '@open-pencil/scene-graph/geometry'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignStyleDeclaration } from '../types'
@@ -28,17 +29,30 @@ export function fillToCSS(fill: Fill | undefined, profile: ColorProfile): string
   return cssColor({ ...fill.color, a: fill.opacity }, profile)
 }
 
+export function showsOnlyShaders(fills: readonly Fill[]): boolean {
+  return !fills.some(isDrawnPaint) && fills.some((fill) => fill.visible)
+}
+
 export type BorderSide = 'top' | 'right' | 'bottom' | 'left'
 
 /**
- * The width of each side of the border a layer's first stroke projects as, zero without one. A
+ * The stroke a layer projects as its border, with its index for the bindings that name it: the
+ * first one drawn, since a hidden or shader stroke draws nothing in CSS.
+ */
+export function projectedStroke(node: SceneNode): { stroke: Stroke; index: number } | undefined {
+  const index = node.strokes.findIndex(isDrawnPaint)
+  return index === -1 ? undefined : { stroke: node.strokes[index], index }
+}
+
+/**
+ * The width of each side of the border a layer's projected stroke draws, zero without one. A
  * border insets the box its absolutely positioned children are placed in, where a stroke does not.
  */
 export function borderWidths(node: SceneNode): Record<BorderSide, number> {
-  // Only whether the first stroke projects matters here, not the profile its color is written in.
-  if (!strokeColorToCSS(node.strokes.at(0), 'srgb')) return { top: 0, right: 0, bottom: 0, left: 0 }
+  const projected = projectedStroke(node)
+  if (!projected) return { top: 0, right: 0, bottom: 0, left: 0 }
   if (!node.independentStrokeWeights) {
-    const weight = node.strokes[0]?.weight ?? 0
+    const weight = projected.stroke.weight
     return { top: weight, right: weight, bottom: weight, left: weight }
   }
   return {
@@ -55,14 +69,22 @@ export function borderWidths(node: SceneNode): Record<BorderSide, number> {
  * cover an inset shadow; an image has no children, so this alone answers for a parent.
  */
 export function strokeDrawsAsShadows(node: SceneNode): boolean {
-  return node.strokes.at(0)?.visible === true && node.dashPattern.length === 0
+  const projected = projectedStroke(node)
+  return projected !== undefined && !strokeIsDashed(projected.stroke)
+}
+
+/** Whether a stroke draws dashed; one without its own dash draws solid. */
+export function strokeIsDashed(stroke: Stroke): boolean {
+  return (stroke.dashPattern ?? []).length > 0
 }
 
 export function strokeColorToCSS(
   stroke: Stroke | undefined,
   profile: ColorProfile
 ): string | undefined {
-  if (!stroke?.visible) return undefined
+  if (!stroke || !isDrawnPaint(stroke)) {
+    return undefined
+  }
   return cssColor({ ...stroke.color, a: stroke.opacity }, profile)
 }
 

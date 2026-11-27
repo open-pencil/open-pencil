@@ -5,6 +5,7 @@ import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { isDrawnPaint } from '@open-pencil/scene-graph/paints'
 import { slideSettings } from '@open-pencil/scene-graph/slides'
 import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 
@@ -217,7 +218,7 @@ async function addSlideFramePaint(ctx: ExportCtx, root: SceneNode): Promise<void
   const bg = firstVisibleFill(root)
   const plainBackground =
     ctx.contentFillsSlide &&
-    !root.strokes.some((s) => s.visible) &&
+    !root.strokes.some(isDrawnPaint) &&
     !root.effects.some((e) => e.visible && e.type === 'INNER_SHADOW') &&
     effectiveRadius(root) === 0
   if (bg?.type === 'SOLID' && plainBackground) {
@@ -255,8 +256,13 @@ function rootRasterReason(root: SceneNode): string | null {
   const shadowReason = root.type === 'SLIDE' ? null : getShadowFallbackReason(root)
   if (shadowReason) return shadowReason
   if (hasAsymmetricCorners(root)) return 'asymmetric corners'
-  if (root.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
-  const fills = root.fills.filter((f) => f.visible)
+  if (root.strokes.filter(isDrawnPaint).length > 1) {
+    return 'multiple strokes'
+  }
+  if (drawsNonSolidStroke(root)) {
+    return 'non-solid stroke'
+  }
+  const fills = root.fills.filter(isDrawnPaint)
   if (fills.length > 1) return 'multiple fills'
   if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid frame background'
   return null
@@ -293,7 +299,9 @@ function getCommonFallbackReason(ctx: ExportCtx, node: SceneNode): string | null
   const shadowReason = getShadowFallbackReason(node)
   if (shadowReason) return shadowReason
   if (hasAsymmetricCorners(node)) return 'asymmetric corners'
-  if (node.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
+  if (node.strokes.filter(isDrawnPaint).length > 1) {
+    return 'multiple strokes'
+  }
   if (node.childIds.some((id) => graph.getNode(id)?.isMask)) return 'contains mask'
   if (clipsOverflowingContent(graph, node)) return 'clipped content'
   if (isVectorOnlyContainer(graph, node)) return 'vector graphics'
@@ -301,12 +309,14 @@ function getCommonFallbackReason(ctx: ExportCtx, node: SceneNode): string | null
 }
 
 function getTextFallbackReason(node: SceneNode): string | null {
-  const fills = node.fills.filter((fill) => fill.visible)
+  const fills = node.fills.filter(isDrawnPaint)
   if (fills.length > 1) return 'multiple text fills'
   if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid text fill'
-  if (node.strokes.some((stroke) => stroke.visible)) return 'text stroke'
+  if (node.strokes.some(isDrawnPaint)) {
+    return 'text stroke'
+  }
   for (const run of node.styleRuns) {
-    const runFills = run.style.fills?.filter((fill) => fill.visible) ?? []
+    const runFills = run.style.fills?.filter(isDrawnPaint) ?? []
     if (runFills.length > 1 || runFills.some((fill) => fill.type !== 'SOLID')) {
       return 'unsupported text run fill'
     }
@@ -314,10 +324,17 @@ function getTextFallbackReason(node: SceneNode): string | null {
   return null
 }
 
+function drawsNonSolidStroke(node: SceneNode): boolean {
+  return node.strokes.some((stroke) => isDrawnPaint(stroke) && stroke.type !== 'SOLID')
+}
+
 function getShapeFallbackReason(node: SceneNode): string | null {
-  const visibleFills = node.fills.filter((fill) => fill.visible)
+  const visibleFills = node.fills.filter(isDrawnPaint)
   if (visibleFills.some((fill) => fill.type.startsWith('GRADIENT'))) return 'gradient fill'
   if (visibleFills.length > 1) return 'multiple fills'
+  if (drawsNonSolidStroke(node)) {
+    return 'non-solid stroke'
+  }
   // Image-fill leaves become native pictures at the call site; containers
   // with an image background fall back so children stay aligned.
   if (visibleFills.some((fill) => fill.type === 'IMAGE') && node.childIds.length > 0) {
@@ -474,8 +491,8 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
   const baseFill = firstVisibleFill(node)
   return segs.map((seg) => {
     const s = seg.style ?? {}
-    // A run's own fills replace the layer's: one whose fills are empty or hidden draws nothing.
-    const fill = s.fills ? (s.fills.find((f) => f.visible) ?? null) : baseFill
+    // A run's own fills replace the layer's: one whose fills draw nothing draws nothing.
+    const fill = s.fills ? (s.fills.find(isDrawnPaint) ?? null) : baseFill
     const fontSize = s.fontSize ?? node.fontSize
     const weight = s.fontWeight ?? node.fontWeight
     const deco = s.textDecoration ?? node.textDecoration

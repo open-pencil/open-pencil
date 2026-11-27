@@ -7,6 +7,8 @@ import {
   borderWidths,
   fillToCSS,
   gradientToCSS,
+  projectedStroke,
+  strokeIsDashed,
   strokeColorToCSS,
   strokeDrawsAsShadows
 } from './css'
@@ -16,18 +18,19 @@ export type FieldCSS = (field: string, literal: string) => string
 
 const px = (value: number) => `${value}px`
 
-/** A layer's first stroke as a CSS border, its color in the document's profile. */
+/** A layer's projected stroke as a CSS border, its color in the document's profile. */
 export function addStroke(
   style: DesignStyleDeclaration,
   node: SceneNode,
   css: FieldCSS,
   profile: ColorProfile
 ): void {
-  const stroke = node.strokes.at(0)
-  const literalColor = strokeColorToCSS(stroke, profile)
-  if (!literalColor || !stroke) return
-  const color = css('strokes/0/color', literalColor)
-  const borderStyle = node.dashPattern.length > 0 ? 'dashed' : 'solid'
+  const projected = projectedStroke(node)
+  const literalColor = strokeColorToCSS(projected?.stroke, profile)
+  if (!literalColor || !projected) return
+  const { stroke, index } = projected
+  const color = css(`strokes/${index}/color`, literalColor)
+  const borderStyle = strokeIsDashed(stroke) ? 'dashed' : 'solid'
   if (!node.independentStrokeWeights) {
     style.border = `${css('strokeWeight', px(stroke.weight))} solid ${color}`
     if (borderStyle !== 'solid') style['border-style'] = borderStyle
@@ -46,7 +49,7 @@ export function addStroke(
 const INSIDE_SHARE = { INSIDE: 1, CENTER: 0.5, OUTSIDE: 0 } as const
 
 /**
- * A layer's first stroke as box shadows, as preview draws it: inside, centred on or outside the
+ * A layer's projected stroke as box shadows, as preview draws it: inside, centred on or outside the
  * edge as the canvas draws it, and taking no room. On the canvas only an inside stroke included in
  * layout takes room, and the padding gives it that. A dashed stroke has no shadow form.
  */
@@ -55,10 +58,11 @@ export function strokeShadows(
   css: FieldCSS,
   profile: ColorProfile
 ): string[] | undefined {
-  const stroke = node.strokes.at(0)
-  const literalColor = strokeColorToCSS(stroke, profile)
-  if (!literalColor || !stroke || !strokeDrawsAsShadows(node)) return undefined
-  const color = css('strokes/0/color', literalColor)
+  const projected = projectedStroke(node)
+  const literalColor = strokeColorToCSS(projected?.stroke, profile)
+  if (!literalColor || !projected || !strokeDrawsAsShadows(node)) return undefined
+  const { stroke, index } = projected
+  const color = css(`strokes/${index}/color`, literalColor)
   const inside = INSIDE_SHARE[stroke.align]
   if (!node.independentStrokeWeights) {
     const literal = px(stroke.weight)

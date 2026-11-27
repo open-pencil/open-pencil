@@ -37,6 +37,7 @@ import {
 } from '#core/io/formats/fig/export/variables'
 
 import { prepareClipboardImport } from './clipboard/fig-import'
+import { shaderDefinitionFinder } from './clipboard/shader-definitions'
 import { withFigExportRuntime } from './io/formats/fig/export/runtime'
 import { buildFontDigestMap } from './kiwi/fig/node-change/serialize'
 import { cloneSceneGraphForFigExport } from './kiwi/fig/parse/transfer'
@@ -220,7 +221,11 @@ async function writeFigmaClipboardHTML(
     const parent = component.parentId ? graph.getNode(component.parentId) : undefined
     return component.type === 'COMPONENT' && parent?.type === 'COMPONENT_SET' ? parent : component
   }
+  const shaderDefinitions = shaderDefinitionFinder(graph)
   const visitDependencies = (node: SceneNode): void => {
+    // Figma runs a shader paint from the shader's definition, which the copy brings beside it.
+    for (const definition of shaderDefinitions(node))
+      if (!selected.has(definition.id)) dependencies.set(definition.id, definition)
     if (node.type === 'INSTANCE' && node.componentId) {
       const component = graph.getNode(node.componentId)
       if (!component) throw new Error(`Missing clipboard component ${node.componentId}`)

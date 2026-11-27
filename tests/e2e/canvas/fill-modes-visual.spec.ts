@@ -6,6 +6,7 @@ import { shaderPresetKey } from '@open-pencil/scene-graph/shaders'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import type * as FigmaShaderScenes from '#tests/helpers/canvas/figma-shader-paints/scene'
 import type * as ImageAdjustmentScenes from '#tests/helpers/canvas/image-adjustments/scene'
 import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
@@ -384,6 +385,22 @@ test('a shader paint draws its saved frame, and its live frame while one plays',
   })
   await editor.canvas.waitForRender()
   await expectCanvas('shader-saved-frame')
+})
+
+test('a Figma shader paint adds no pixels to the paints beside it', async () => {
+  await showView(editor.page, { zoom: 1, panX: 0, panY: 0 })
+  const { tileProbes, backgroundProbe } = await pageScene<typeof FigmaShaderScenes>(
+    () => editor.page,
+    '/tests/helpers/canvas/figma-shader-paints/scene.ts'
+  ).build('createFigmaShaderTilesScene')
+  const [solid, underShader, shaderOnly, shaderStroke, background] = await readScenePixels(
+    editor.page,
+    [...tileProbes, backgroundProbe]
+  )
+  expect(underShader).toEqual(solid)
+  expect(shaderStroke).toEqual(solid)
+  expect(shaderOnly).toEqual(background)
+  await expectCanvas('figma-shader-paints')
 })
 
 test('image adjustments', async () => {
