@@ -80,6 +80,32 @@ describe('OpenPencil plugin data readers', () => {
     ).toEqual({})
   })
 
+  test("a text style's saved face binds by what its record names, style or weight", () => {
+    const record = (savedField: string, resolvedDataType: string) =>
+      withPluginValue(
+        OPEN_PENCIL_PLUGIN_DATA.boundVariables.key,
+        JSON.stringify({ [savedField]: 'VariableID:1:2' }),
+        {
+          styleType: 'TEXT',
+          parameterConsumptionMap: {
+            entries: [
+              {
+                variableField: 'FONT_STYLE',
+                variableData: {
+                  dataType: 'ALIAS',
+                  resolvedDataType,
+                  value: { alias: { guid: { sessionID: 1, localID: 3 } } }
+                }
+              }
+            ]
+          }
+        } as NodeChange
+      )
+
+    expect(extractBoundVariables(record('fontWeight', 'STRING'))).toEqual({ fontStyle: '1:3' })
+    expect(extractBoundVariables(record('fontStyle', 'FLOAT'))).toEqual({ fontWeight: '1:3' })
+  })
+
   test('effect aliases bind only the properties each effect has', () => {
     const alias = (localID: number, resolvedDataType: 'COLOR' | 'FLOAT') => ({
       dataType: 'ALIAS' as const,

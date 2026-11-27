@@ -113,7 +113,12 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     const binding =
       resolveVariableConsumptionEntry(entry) ??
       (nc.styleType === 'TEXT' ? resolveTextStyleConsumptionEntry(entry) : undefined)
-    if (binding) bindings[binding.field] = binding.variableId
+    // A face binds by style or by weight, so the record's FONT_STYLE replaces the other one.
+    if (binding)
+      bindings = {
+        ...omit(bindings, consumptionEntryFields(entry, nc.styleType === 'TEXT')),
+        [binding.field]: binding.variableId
+      }
     else if (entry.variableField && !referencesVariable(entry.variableData?.dataType))
       bindings = omit(bindings, consumptionEntryFields(entry, nc.styleType === 'TEXT'))
   }
