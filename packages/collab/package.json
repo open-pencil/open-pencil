@@ -35,7 +35,7 @@
     },
     "./automation": {
       "types": "./dist/automation.d.ts",
-      "bun": "./src/automation.ts",
+      "bun": "./src/automation/index.ts",
       "import": "./dist/automation.js",
       "default": "./dist/automation.js"
     }

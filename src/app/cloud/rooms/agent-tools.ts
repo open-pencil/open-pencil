@@ -9,8 +9,12 @@ import { isRecord, type UnknownRecord } from '@open-pencil/std/records'
 
 import { isToolError } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
-import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
-import { resolveAutomationTarget, stripAutomationTargetArgs } from '@/app/automation/bridge/target'
+import {
+  prepareAutomationTarget,
+  resolveAutomationTarget,
+  stripAutomationTargetArgs
+} from '@/app/automation/bridge/target'
+import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/session'
 
 /** Runs a `tool` request on the tab's document and answers what the tool returned. */
@@ -20,22 +24,18 @@ export type RunAgentTool = (
   signal: AbortSignal
 ) => Promise<unknown>
 
-let handlers: ReturnType<typeof createAutomationCommandHandlers> | null = null
+let handleTool: ReturnType<typeof createAutomationToolHandler> | null = null
 
 /**
- * Runs an app's call as the app runs a local MCP server's `tool` request, once it has found the
- * page: on the page the call names or the one on screen, showing the app as an agent at work,
+ * Runs an app's call with the tool handler a local MCP server's `tool` request runs, once the page
+ * is loaded: on the page the call names or the one on screen, showing the app as an agent at work,
  * its edits one undo step each. It works on the room's own document whatever the call names.
  */
 export const runAgentTool: RunAgentTool = async (store, request, signal) => {
-  handlers ??= createAutomationCommandHandlers(makeFigmaFromStore)
+  handleTool ??= createAutomationToolHandler(makeFigmaFromStore)
   const target = resolveAutomationTarget(store, { page_id: request.page_id })
-  const response = await handlers.handleTargetCommand(
-    target,
-    'tool',
-    stripAutomationTargetArgs(request),
-    signal
-  )
+  await prepareAutomationTarget(target, signal)
+  const response = await handleTool(target, stripAutomationTargetArgs(request), signal)
   const result = isRecord(response) ? response.result : response
   // A tool may answer with its error rather than throw it.
   if (isToolError(result)) throw new Error(errorMessage(result.error))

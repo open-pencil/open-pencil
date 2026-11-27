@@ -6,7 +6,7 @@ export default defineConfig(
   libraryConfig({
     entry: {
       index: './src/index.ts',
-      automation: './src/automation.ts'
+      automation: './src/automation/index.ts'
     }
   })
 )
