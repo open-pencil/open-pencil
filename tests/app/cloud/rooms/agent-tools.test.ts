@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  decodeAgentToolMessage,
-  encodeAgentToolMessage,
-  type AgentToolCall,
-  type AgentToolMessage
-} from '@open-pencil/cloud/contract'
 import { RELAY_SERVER_PEER, type CollabActionReceiver } from '@open-pencil/collab'
+import {
+  decodeAutomationMessage,
+  encodeAutomationMessage,
+  type AutomationMessage,
+  type AutomationRequest
+} from '@open-pencil/collab/automation'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { serveRoomAgentTools, type RunAgentTool } from '@/app/cloud/rooms/agent-tools'
@@ -17,14 +17,14 @@ const store = () => asDouble<EditorStore>({})
 
 /** A tab's tool channel, with what it sent and a way to deliver what peers send it. */
 function channel() {
-  const sent: { message: AgentToolMessage | null; target: string | undefined }[] = []
+  const sent: { message: AutomationMessage | null; target: string | undefined }[] = []
   let receiver: CollabActionReceiver | undefined
   let joined: ((peerId: string) => void) | undefined
   return {
     sent,
     action: [
       (data: Uint8Array, target?: string) => {
-        sent.push({ message: decodeAgentToolMessage(data), target })
+        sent.push({ message: decodeAutomationMessage(data), target })
       },
       (handler: CollabActionReceiver) => {
         receiver = handler
@@ -36,18 +36,23 @@ function channel() {
         joined = undefined
       }
     },
-    deliver(message: AgentToolMessage, from = RELAY_SERVER_PEER) {
-      receiver?.(encodeAgentToolMessage(message), from)
+    deliver(message: AutomationMessage, from = RELAY_SERVER_PEER) {
+      receiver?.(encodeAutomationMessage(message), from)
     },
     join(peerId: string) {
       joined?.(peerId)
     },
-    results: () => sent.flatMap(({ message }) => (message?.type === 'result' ? [message] : []))
+    results: () => sent.flatMap(({ message }) => (message?.type === 'response' ? [message] : []))
   }
 }
 
-function call(name: string): AgentToolMessage & { type: 'call' } {
-  return { type: 'call', id: crypto.randomUUID(), name, args: {}, agent }
+function call(name: string): AutomationRequest {
+  return {
+    type: 'request',
+    id: crypto.randomUUID(),
+    command: 'tool',
+    args: { name, args: {}, agent }
+  }
 }
 
 /** Resolves once the calls handed so far have run. */
@@ -67,16 +72,16 @@ describe('serving agent tools through a room', () => {
     room.join('another-tab')
     room.join(RELAY_SERVER_PEER)
     expect(room.sent).toEqual([
-      { message: { type: 'host' }, target: RELAY_SERVER_PEER },
-      { message: { type: 'host' }, target: RELAY_SERVER_PEER }
+      { message: { type: 'register' }, target: RELAY_SERVER_PEER },
+      { message: { type: 'register' }, target: RELAY_SERVER_PEER }
     ])
   })
 
   test("answers the relay's calls in the order they came, with results and failures", async () => {
     const room = channel()
     const ran: string[] = []
-    const run: RunAgentTool = async (_store, { name }: AgentToolCall) => {
-      ran.push(name)
+    const run: RunAgentTool = async (_store, { name }) => {
+      ran.push(String(name))
       if (name === 'get_node') throw new Error('Node 9:9 not found')
       return { name }
     }
@@ -88,8 +93,33 @@ describe('serving agent tools through a room', () => {
     await settled()
     expect(ran).toEqual(['render', 'get_node'])
     expect(room.results()).toEqual([
-      { type: 'result', id: first.id, ok: true, result: { name: 'render' } },
-      { type: 'result', id: second.id, ok: false, error: 'Node 9:9 not found' }
+      { type: 'response', id: first.id, ok: true, result: { name: 'render' } },
+      { type: 'response', id: second.id, ok: false, error: 'Node 9:9 not found' }
+    ])
+  })
+
+  test('runs tool requests alone, refusing what else a local MCP server may ask', async () => {
+    const room = channel()
+    const ran: string[] = []
+    serveRoomAgentTools([...room.action], {
+      store,
+      onPeerJoin: room.onPeerJoin,
+      run: async (_store, { name }) => {
+        ran.push(String(name))
+        return null
+      }
+    })
+    const request: AutomationRequest = {
+      type: 'request',
+      id: crypto.randomUUID(),
+      command: 'eval',
+      args: { code: 'figma.root' }
+    }
+    room.deliver(request)
+    await settled()
+    expect(ran).toEqual([])
+    expect(room.results()).toEqual([
+      { type: 'response', id: request.id, ok: false, error: 'Unknown command: eval' }
     ])
   })
 
@@ -100,7 +130,7 @@ describe('serving agent tools through a room', () => {
       store,
       onPeerJoin: room.onPeerJoin,
       run: async (_store, { name }) => {
-        ran.push(name)
+        ran.push(String(name))
         return null
       }
     })
@@ -118,7 +148,7 @@ describe('serving agent tools through a room', () => {
       store,
       onPeerJoin: room.onPeerJoin,
       run: async (_store, { name }, signal) => {
-        ran.push(name)
+        ran.push(String(name))
         signal.addEventListener('abort', () => {
           aborted = true
         })

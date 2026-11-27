@@ -1,60 +1,43 @@
-import {
-  decodeAgentToolMessage,
-  encodeAgentToolMessage,
-  type AgentToolCall,
-  type AgentToolMessage
-} from '@open-pencil/cloud/contract'
 import { RELAY_SERVER_PEER, type CollabAction } from '@open-pencil/collab'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
+import {
+  decodeAutomationMessage,
+  encodeAutomationMessage,
+  type AutomationMessage
+} from '@open-pencil/collab/automation'
 import { errorMessage } from '@open-pencil/std/errors'
-import { isRecord } from '@open-pencil/std/records'
+import { isRecord, type UnknownRecord } from '@open-pencil/std/records'
 
 import { isToolError } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
-import { resolveAutomationTarget } from '@/app/automation/bridge/target'
-import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
+import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
+import { resolveAutomationTarget, stripAutomationTargetArgs } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/session'
 
-/** The longest failure the relay passes on to the app. */
-const MAX_ERROR_LENGTH = 4096
-
-/** Runs one call on the tab's document and answers what the tool returned. */
+/** Runs a request on the tab's documents and answers what the command returned. */
 export type RunAgentTool = (
   store: EditorStore,
-  call: AgentToolCall,
+  command: string,
+  args: UnknownRecord,
   signal: AbortSignal
 ) => Promise<unknown>
 
-/** A tool's arguments, with the page a call named where the tool takes one itself (analyze_overlaps). */
-export function withOwnPage(
-  name: string,
-  args: Record<string, unknown>,
-  pageId: unknown
-): Record<string, unknown> {
-  const tool = ALL_TOOLS.find((each) => each.name === name)
-  return pageId !== undefined && tool && 'page_id' in tool.input.entries
-    ? { ...args, page_id: pageId }
-    : args
-}
+/** What a room's relay may ask: design tools, the way a local MCP server asks for them. */
+const TOOL_COMMANDS: ReadonlySet<string> = new Set(['tool'])
 
-let handleTool: ReturnType<typeof createAutomationToolHandler> | null = null
+let handlers: ReturnType<typeof createAutomationCommandHandlers> | null = null
 
 /**
- * Runs an app's call as a local MCP server's runs in the app: on the page the call names or the
- * one on screen, showing the app as an agent at work, its edits one undo step each.
+ * Runs an app's call as the app runs a local MCP server's `tool` request, once it has found the
+ * page: on the page the call names or the one on screen, showing the app as an agent at work,
+ * its edits one undo step each. It works on the room's own document whatever the call names.
  */
-export const runAgentTool: RunAgentTool = async (store, call, signal) => {
-  handleTool ??= createAutomationToolHandler(makeFigmaFromStore)
-  const { page_id: pageId, ...rest } = call.args
-  const target = resolveAutomationTarget(store, { page_id: pageId })
-  const args = withOwnPage(call.name, rest, pageId)
-  const response = await handleTool(
+export const runAgentTool: RunAgentTool = async (store, _command, args, signal) => {
+  handlers ??= createAutomationCommandHandlers(makeFigmaFromStore)
+  const target = resolveAutomationTarget(store, { page_id: args.page_id })
+  const response = await handlers.handleTargetCommand(
     target,
-    {
-      name: call.name,
-      args,
-      agent: { session: call.agent.session, kind: 'mcp', client: call.agent.client }
-    },
+    'tool',
+    stripAutomationTargetArgs(args),
     signal
   )
   const result = isRecord(response) ? response.result : response
@@ -76,29 +59,36 @@ export function serveRoomAgentTools(
     store: () => EditorStore
     /** Follows peers joining the room; returns the unsubscribe. */
     onPeerJoin: (handler: (peerId: string) => void) => () => void
+    /** The commands the tab runs, `tool` alone unless said otherwise; it refuses the rest. */
+    commands?: ReadonlySet<string>
     run?: RunAgentTool
   }
 ) {
   const run = options.run ?? runAgentTool
-  const answer = (message: AgentToolMessage) =>
-    send(encodeAgentToolMessage(message), RELAY_SERVER_PEER)
+  const commands = options.commands ?? TOOL_COMMANDS
+  const answer = (message: AutomationMessage) =>
+    send(encodeAutomationMessage(message), RELAY_SERVER_PEER)
   const calls = new Map<string, AbortController>()
   let turn = Promise.resolve()
   /** Aborted once the tab stops serving the room. */
   const serving = new AbortController()
 
-  async function runInTurn(id: string, call: AgentToolCall, controller: AbortController) {
+  async function runInTurn(
+    id: string,
+    command: string,
+    args: UnknownRecord,
+    controller: AbortController
+  ) {
     try {
       if (serving.signal.aborted) return
       // A call cancelled while it waited for its turn stops here, unanswered, like one cancelled
       // while it ran.
       controller.signal.throwIfAborted()
-      const result = await run(options.store(), call, controller.signal)
-      if (!controller.signal.aborted) answer({ type: 'result', id, ok: true, result })
+      const result = await run(options.store(), command, args, controller.signal)
+      if (!controller.signal.aborted) answer({ type: 'response', id, ok: true, result })
     } catch (error) {
       if (controller.signal.aborted) return
-      const reason = errorMessage(error).slice(0, MAX_ERROR_LENGTH)
-      answer({ type: 'result', id, ok: false, error: reason })
+      answer({ type: 'response', id, ok: false, error: errorMessage(error) })
     } finally {
       calls.delete(id)
     }
@@ -106,24 +96,30 @@ export function serveRoomAgentTools(
 
   receive((data, peerId) => {
     if (serving.signal.aborted || peerId !== RELAY_SERVER_PEER) return
-    const message = decodeAgentToolMessage(data)
+    const message = decodeAutomationMessage(data)
     if (message?.type === 'cancel') {
       calls.get(message.id)?.abort()
       return
     }
-    if (message?.type !== 'call') return
-    const { id, ...call } = message
+    if (message?.type !== 'request') return
+    const { id, command, args } = message
+    // The rest of what a local MCP server may ask, such as opening files or running code, stays
+    // the local server's.
+    if (!commands.has(command) || !isRecord(args)) {
+      answer({ type: 'response', id, ok: false, error: `Unknown command: ${command}` })
+      return
+    }
     const controller = new AbortController()
     calls.set(id, controller)
-    turn = turn.then(() => runInTurn(id, call, controller))
+    turn = turn.then(() => runInTurn(id, command, args, controller))
   })
 
   // Each time the tab reaches the relay, and now in case it already has; until it has, the
   // transport sends nothing, and the relay takes a repeated offer as one.
   const stopJoin = options.onPeerJoin((peerId) => {
-    if (peerId === RELAY_SERVER_PEER) answer({ type: 'host' })
+    if (peerId === RELAY_SERVER_PEER) answer({ type: 'register' })
   })
-  answer({ type: 'host' })
+  answer({ type: 'register' })
 
   return {
     stop() {

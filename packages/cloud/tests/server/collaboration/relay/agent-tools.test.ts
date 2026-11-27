@@ -10,14 +10,14 @@ import {
   type RelayTicketOptions,
   type TestRelayClient
 } from '#cloud-tests/helpers/relay'
-import {
-  decodeAgentToolMessage,
-  encodeAgentToolMessage,
-  type AgentToolMessage
-} from '#cloud/contract'
 import type { CollaborationRelay } from '#cloud/server'
 
 import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import {
+  decodeAutomationMessage,
+  encodeAutomationMessage,
+  type AutomationMessage
+} from '@open-pencil/collab/automation'
 
 const documentId = crypto.randomUUID()
 const alice = user('alice')
@@ -26,12 +26,12 @@ const call = { name: 'get_page_tree', args: {}, agent: { session: 'app:claude', 
 const join = (hub: CollaborationRelay, ticket: Partial<RelayTicketOptions> = {}) =>
   joinTestRelay(hub, documentId, { principal: alice, ...ticket })
 
-function say(client: TestRelayClient, message: AgentToolMessage, target = RELAY_SERVER_PEER) {
+function say(client: TestRelayClient, message: AutomationMessage, target = RELAY_SERVER_PEER) {
   client.send({
     type: 'message',
     namespace: COLLAB_ACTIONS.agentTools,
     target,
-    payload: encodeAgentToolMessage(message)
+    payload: encodeAutomationMessage(message)
   })
 }
 
@@ -39,20 +39,20 @@ function say(client: TestRelayClient, message: AgentToolMessage, target = RELAY_
 function heard(client: TestRelayClient) {
   return client
     .messages(COLLAB_ACTIONS.agentTools)
-    .map((frame) => decodeAgentToolMessage(frame.payload))
+    .map((frame) => decodeAutomationMessage(frame.payload))
 }
 
-/** The call the relay handed a client, once it has. */
+/** The request the relay handed a client, once it has. */
 async function nextCall(client: TestRelayClient) {
-  await until(() => heard(client).some((message) => message?.type === 'call'))
-  const found = heard(client).find((message) => message?.type === 'call')
-  if (found?.type !== 'call') throw new Error('No call arrived')
+  await until(() => heard(client).some((message) => message?.type === 'request'))
+  const found = heard(client).find((message) => message?.type === 'request')
+  if (found?.type !== 'request') throw new Error('No call arrived')
   return found
 }
 
 async function hosting(hub: CollaborationRelay, ticket: Partial<RelayTicketOptions> = {}) {
   const client = await join(hub, ticket)
-  say(client, { type: 'host' })
+  say(client, { type: 'register' })
   return client
 }
 
@@ -62,9 +62,32 @@ describe('agent tools through the relay', () => {
     const editor = await hosting(hub)
     const outcome = hub.callTool(documentId, 'alice', call)
     const handed = await nextCall(editor)
-    expect(handed).toMatchObject({ name: 'get_page_tree', agent: { client: 'Claude' } })
-    say(editor, { type: 'result', id: handed.id, ok: true, result: { pages: 1 } })
+    expect(handed).toEqual({
+      type: 'request',
+      id: handed.id,
+      command: 'tool',
+      args: {
+        name: 'get_page_tree',
+        args: {},
+        agent: { session: 'app:claude', client: 'Claude', kind: 'mcp' }
+      }
+    })
+    say(editor, { type: 'response', id: handed.id, ok: true, result: { pages: 1 } })
     expect(await outcome).toEqual({ ok: true, result: { pages: 1 } })
+    await hub.close()
+  })
+
+  test('names the page beside the tool arguments, as a local MCP server does', async () => {
+    const { relay: hub } = startTestRelay()
+    const editor = await hosting(hub)
+    const outcome = hub.callTool(documentId, 'alice', {
+      ...call,
+      args: { page_id: '0:1', depth: 2 }
+    })
+    const handed = await nextCall(editor)
+    expect(handed.args).toMatchObject({ page_id: '0:1', args: { depth: 2 } })
+    say(editor, { type: 'response', id: handed.id, ok: true, result: null })
+    await outcome
     await hub.close()
   })
 
@@ -73,7 +96,7 @@ describe('agent tools through the relay', () => {
     const editor = await hosting(hub)
     const outcome = hub.callTool(documentId, 'alice', call)
     const handed = await nextCall(editor)
-    say(editor, { type: 'result', id: handed.id, ok: false, error: 'Node not found' })
+    say(editor, { type: 'response', id: handed.id, ok: false, error: 'Node not found' })
     expect(await outcome).toEqual({ ok: false, failure: 'tool_failed', message: 'Node not found' })
     await hub.close()
   })
@@ -102,8 +125,8 @@ describe('agent tools through the relay', () => {
     const other = await hosting(hub, { principal: user('bob') })
     const outcome = hub.callTool(documentId, 'alice', call)
     const handed = await nextCall(editor)
-    say(other, { type: 'result', id: handed.id, ok: true, result: 'forged' })
-    say(editor, { type: 'result', id: handed.id, ok: true, result: 'real' })
+    say(other, { type: 'response', id: handed.id, ok: true, result: 'forged' })
+    say(editor, { type: 'response', id: handed.id, ok: true, result: 'real' })
     expect(await outcome).toEqual({ ok: true, result: 'real' })
     await hub.close()
   })
@@ -114,7 +137,7 @@ describe('agent tools through the relay', () => {
     const receiver = await join(hub)
     const peer = receiver.peerId()
     if (!peer) throw new Error('No peer')
-    say(sender, { type: 'host' }, peer)
+    say(sender, { type: 'register' }, peer)
     await until(() => sender.peerId() !== undefined)
     expect(heard(receiver)).toEqual([])
     await hub.close()
@@ -127,7 +150,7 @@ describe('agent tools through the relay', () => {
     const outcome = hub.callTool(documentId, 'alice', call)
     const handed = await nextCall(later)
     expect(heard(earlier)).toEqual([])
-    say(later, { type: 'result', id: handed.id, ok: true, result: null })
+    say(later, { type: 'response', id: handed.id, ok: true, result: null })
     await outcome
     await hub.close()
   })
@@ -163,7 +186,7 @@ describe('agent tools through the relay', () => {
     await until(() => lowered.remembered?.authorization.permission === 'view')
     const outcome = hub.callTool(documentId, 'alice', call)
     const handed = await nextCall(editor)
-    say(editor, { type: 'result', id: handed.id, ok: true, result: undefined })
+    say(editor, { type: 'response', id: handed.id, ok: true, result: undefined })
     expect(await outcome).toEqual({ ok: true, result: null })
     await hub.close()
   })
