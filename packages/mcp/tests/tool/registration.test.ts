@@ -47,7 +47,7 @@ type AppAnswer = (args: Record<string, unknown>) => unknown
  */
 async function server(
   results: Record<string, unknown>,
-  { withRoot = true }: { withRoot?: boolean } = {}
+  { withRoot = true, open = ['design'] }: { withRoot?: boolean; open?: string[] } = {}
 ) {
   const root = await mkdtemp(join(tmpdir(), 'op-mcp-root-'))
   const sent: Record<string, unknown>[] = []
@@ -60,6 +60,9 @@ async function server(
         onToolSettled,
         mcpRoot: withRoot ? root : undefined,
         sendRPC: async (body) => {
+          // A session asks which documents are open when it starts; no tool is called then.
+          if (body.command === 'list_documents')
+            return { ok: true, result: { documents: open.map((kind) => ({ kind })) } }
           const { args } = body as { args: { name: string; args: Record<string, unknown> } }
           sent.push(args.args)
           const answer = results[args.name]
@@ -100,7 +103,18 @@ async function server(
     const message: unknown = JSON.parse(json)
     return (message as { result: ToolResult }).result
   }
-  return { root, sent, call }
+  const list = async (): Promise<string[]> => {
+    const response = await connection.handleRequest(
+      request({ jsonrpc: '2.0', id: ++id, method: 'tools/list', params: {} }, sessionId)
+    )
+    const text = await response.text()
+    const json = text.startsWith('{') ? text : (text.split('data: ')[1] ?? '')
+    const message: unknown = JSON.parse(json)
+    return (message as { result: { tools: { name: string }[] } }).result.tools.map(
+      (tool) => tool.name
+    )
+  }
+  return { root, sent, call, list }
 }
 
 const zigzag = `M0 0${Array.from({ length: 64 }, (_, i) => ` L${(i + 1) * 3} ${(i % 2) * 20}`).join('')}`
@@ -252,5 +266,20 @@ describe('MCP tool file input', () => {
     })
     expect(both.content[0].text).toContain('not both')
     expect(sent).toEqual([])
+  })
+})
+
+describe('tools for a kind of document', () => {
+  test('the slide tools are listed only once a deck is open', async () => {
+    const open = ['design']
+    const { call, list } = await server({}, { open })
+    await call('list_documents', {})
+    expect(await list()).not.toContain('get_deck')
+    open.push('slides')
+    await call('list_documents', {})
+    expect(await list()).toContain('get_deck')
+    open.splice(0, open.length, 'board')
+    await call('list_documents', {})
+    expect(await list()).not.toContain('get_deck')
   })
 })

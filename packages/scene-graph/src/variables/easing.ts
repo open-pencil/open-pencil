@@ -53,10 +53,10 @@ export function easingBezier(easing: Easing): CubicBezier | undefined {
   return easing.bezier ?? PRESET_BEZIERS[easing.easing]
 }
 
-/** The spring an easing is: its own, or its preset's; curves have none. */
+/** The spring an easing is: its own, or its preset's, as a spring without numbers starts; curves have none. */
 export function easingSpring(easing: Easing): Spring | undefined {
   if (!isSpringCurve(easing.easing)) return undefined
-  return easing.spring ?? PRESET_SPRINGS[easing.easing]
+  return easing.spring ?? PRESET_SPRINGS[easing.easing] ?? springWithBounce(0)
 }
 
 /** The curves a curve's numbers name: the preset with exactly them, else a custom curve. */
@@ -227,4 +227,56 @@ export function bounceForOvershoot(overshoot: number): number {
   if (overshoot >= 1) return 1
   const log = Math.log(overshoot)
   return 1 - -log / Math.hypot(Math.PI, log)
+}
+
+/** Where a cubic bezier curve is at `progress` (0 to 1) along its time axis. */
+export function bezierPosition(bezier: CubicBezier, progress: number): number {
+  if (progress <= 0) return 0
+  if (progress >= 1) return 1
+  const axis = (a: number, b: number, t: number) =>
+    3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t
+  const slope = (a: number, b: number, t: number) =>
+    3 * (1 - t) * (1 - t) * a + 6 * (1 - t) * t * (b - a) + 3 * t * t * (1 - b)
+  // Newton's method finds the curve's parameter for this time quickly; halving keeps it safe
+  // where the curve is nearly flat in time.
+  let t = progress
+  for (let step = 0; step < 8; step++) {
+    const error = axis(bezier.x1, bezier.x2, t) - progress
+    const rate = slope(bezier.x1, bezier.x2, t)
+    if (Math.abs(error) < 1e-7) return axis(bezier.y1, bezier.y2, t)
+    if (Math.abs(rate) < 1e-6) break
+    t -= error / rate
+  }
+  let low = 0
+  let high = 1
+  t = progress
+  for (let step = 0; step < 40; step++) {
+    const x = axis(bezier.x1, bezier.x2, t)
+    if (Math.abs(x - progress) < 1e-7) break
+    if (x < progress) low = t
+    else high = t
+    t = (low + high) / 2
+  }
+  return axis(bezier.y1, bezier.y2, t)
+}
+
+/** How long an easing plays: a spring settles in its own time, as Figma's do; others take `duration`. */
+export function easingSeconds(easing: Easing, duration: number): number {
+  const spring = easingSpring(easing)
+  return spring ? springSettleTime(spring) : Math.max(0, duration)
+}
+
+/**
+ * Where an easing is `seconds` into a motion of `duration`, from 0 to 1; a spring may pass 1 on
+ * its way. `HOLD` stays at 0 until the end.
+ */
+export function easingPosition(easing: Easing, seconds: number, duration: number): number {
+  const total = easingSeconds(easing, duration)
+  if (seconds >= total) return 1
+  if (seconds <= 0) return 0
+  const spring = easingSpring(easing)
+  if (spring) return springPosition(spring, seconds)
+  const bezier = easingBezier(easing)
+  if (bezier) return bezierPosition(bezier, seconds / total)
+  return easing.easing === 'HOLD' ? 0 : seconds / total
 }

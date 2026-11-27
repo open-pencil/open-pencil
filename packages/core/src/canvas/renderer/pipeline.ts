@@ -12,6 +12,7 @@ import { resolveEditorProfile } from '#core/editor/views/profile'
 import { stagedSlide } from '#core/editor/views/stage'
 import type { EditorProfile } from '#core/editor/views/types'
 import { worldRectToScreen } from '#core/geometry'
+import { drawPresentation } from '#core/present/draw'
 import { emitNavigationTrace } from '#core/profiler'
 
 import { documentSurfaceFor, presentDocumentSurface } from './document-surface'
@@ -85,20 +86,11 @@ function showsPixelGrid(profile: EditorProfile, state: EditorState): boolean {
   return profile.editChrome && profile.pixelGrid && state.showPixelGrid !== false
 }
 
-export function renderFromEditorState(
-  r: SkiaRenderer,
-  state: EditorState,
-  graph: SceneGraph,
-  textEditor: unknown,
-  viewportWidth: number,
-  viewportHeight: number,
-  showRulers = true,
-  dpr = 1,
-  layer: RenderLayer = 'full',
-  interactive = false
-): void {
-  r.useDocumentColorSpace(graph.documentColorSpace)
-  r.recordPicturesIn(graph.documentColorSpace)
+/**
+ * Lets go of decoded images and recorded pictures when the canvas starts drawing another document,
+ * or another page of one shown with image previews.
+ */
+function syncImageMemory(r: SkiaRenderer, state: EditorState, graph: SceneGraph): void {
   const previewMode = r.images.previews.enabled && needsImagePreviews(graph)
   if (
     r.images.memoryGraph !== graph ||
@@ -117,6 +109,29 @@ export function renderFromEditorState(
     r.images.memoryPage = state.currentPageId
   }
   r.viewportImageRendering = previewMode
+}
+
+export function renderFromEditorState(
+  r: SkiaRenderer,
+  state: EditorState,
+  graph: SceneGraph,
+  textEditor: unknown,
+  viewportWidth: number,
+  viewportHeight: number,
+  showRulers = true,
+  dpr = 1,
+  layer: RenderLayer = 'full',
+  interactive = false
+): void {
+  const presentation = resolveEditorProfile(state).presentation
+  if (presentation) {
+    Object.assign(r, { dpr, viewportWidth, viewportHeight })
+    drawPresentation(r, graph, presentation())
+    return
+  }
+  r.useDocumentColorSpace(graph.documentColorSpace)
+  r.recordPicturesIn(graph.documentColorSpace)
+  syncImageMemory(r, state, graph)
   r.dpr = dpr
   r.panX = state.panX
   r.panY = state.panY

@@ -10,6 +10,7 @@ import {
   TOOL_SHORTCUTS
 } from '#core/editor/tool-registry'
 import type { Tool } from '#core/editor/types'
+import type { PlayerScene } from '#core/present/player'
 
 import {
   LAYER_EDIT_LEVELS,
@@ -100,7 +101,8 @@ const EDIT_BEHAVIOUR: ViewBehaviour = {
   editChrome: true,
   live: null,
   panels: true,
-  leaveTo: null
+  leaveTo: null,
+  presentation: null
 }
 
 /** A preview runs the design: the canvas only pans, and its controls take the pointer. */
@@ -111,12 +113,27 @@ function playBehaviour(revision: number): ViewBehaviour {
     editChrome: false,
     live: { revision },
     panels: false,
-    leaveTo: EDIT_VIEW
+    leaveTo: EDIT_VIEW,
+    presentation: null
+  }
+}
+
+/** A presentation shows the deck alone, as `scene` gives it: no tools, no chrome, no edits. */
+function presentBehaviour(scene: () => PlayerScene): ViewBehaviour {
+  return {
+    pointer: 'pan',
+    shortcuts: 'view',
+    editChrome: false,
+    live: null,
+    panels: false,
+    leaveTo: EDIT_VIEW,
+    presentation: scene
   }
 }
 
 function viewBehaviour(view: CanvasView): ViewBehaviour {
-  return view.id === 'play' ? playBehaviour(view.revision) : EDIT_BEHAVIOUR
+  if (view.id === 'play') return playBehaviour(view.revision)
+  return view.id === 'present' ? presentBehaviour(view.scene) : EDIT_BEHAVIOUR
 }
 
 /** The tools both offer; null offers every tool. */
