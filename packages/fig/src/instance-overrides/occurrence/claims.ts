@@ -7,6 +7,7 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { declareVariableBindingUnits } from '../bindings/variables'
 import { applyDerivedEntry } from '../derived-symbol-data'
 import type { PropertyLayer } from '../layers'
+import { parentResized, transformForSavedSize, type PlacementsBeforeResize } from '../resize'
 import {
   parentIdOf,
   recordMatches,
@@ -213,11 +214,14 @@ export function applyPropertyClaims(
 export function applyDerivedBounds(
   context: ClaimContext,
   owner: InstanceOccurrence,
-  source: NodeChange
+  source: NodeChange,
+  placements: PlacementsBeforeResize
 ): void {
   if (!context.options.derivedBounds) {
     return
   }
+  const sizedWithoutTransform = new Set<InstanceOccurrence>()
+  const savedTransform = new Set<InstanceOccurrence>()
   const derived = source.derivedSymbolData as DerivedSymbolOverride[] | undefined
   for (const entry of derived ?? []) {
     const path = entry.guidPath?.guids
@@ -230,5 +234,17 @@ export function applyDerivedBounds(
       continue
     }
     applyDerivedEntry(target, entry)
+    if (entry.transform) {
+      savedTransform.add(target)
+    } else if (entry.size) {
+      sizedWithoutTransform.add(target)
+    }
+  }
+  // Figma often saves a resized layer's size without its transform even when the resize moved it.
+  for (const target of sizedWithoutTransform) {
+    const placement = placements.get(target)
+    if (placement && !savedTransform.has(target) && parentResized(placement)) {
+      target.properties.transform = transformForSavedSize(target, placement)
+    }
   }
 }

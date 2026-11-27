@@ -1,0 +1,1 @@
+- Layers that fill a resized component instance from a `.fig` file no longer shift when they use Center, Right or Bottom constraints (#2376).
