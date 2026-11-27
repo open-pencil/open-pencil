@@ -17,7 +17,7 @@ import {
 } from '#cloud/server/oauth'
 import { createUserPictures, providerPictures } from '#cloud/server/pictures'
 import { apiKey } from '@better-auth/api-key'
-import { oauthProvider } from '@better-auth/oauth-provider'
+import { oauthProvider, type ClientMetadataResourceFetch } from '@better-auth/oauth-provider'
 import { passkey } from '@better-auth/passkey'
 import { APIError, betterAuth } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
@@ -65,6 +65,8 @@ export type CloudAuthRuntimeOptions = {
    * adapter turns it on.
    */
   validateSchema?: boolean
+  /** How the runtime fetches apps' client metadata documents safely (`cloudClientDiscovery`). */
+  fetchClientMetadata?: ClientMetadataResourceFetch
 }
 
 export function createBetterAuthAdapter(
@@ -114,7 +116,7 @@ export function createBetterAuthAdapter(
   })
   // Apps connected through OAuth, where the deployment accepts them (`[oauth]`).
   const appProvider = config.oauthEnabled
-    ? oauthProvider(cloudOAuthProviderOptions(config.publicURL))
+    ? oauthProvider(cloudOAuthProviderOptions(config, database, runtime.fetchClientMetadata))
     : undefined
   const joining = enrollmentOptions(
     config,

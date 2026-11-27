@@ -1,7 +1,7 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 export const UPDATER_WINDOW_LABEL = 'updater'
 /** Separate Vite entry, so the window never boots the editor. */
-export const UPDATER_WINDOW_URL = 'updater.html'
+export const UPDATER_WINDOW_URL = 'pages/updater.html'
 
 const UPDATER_WINDOW_WIDTH = 560
 const UPDATER_WINDOW_HEIGHT = 520

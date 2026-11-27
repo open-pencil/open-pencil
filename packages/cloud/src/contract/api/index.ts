@@ -2,6 +2,7 @@ import { commentsContract, sharedCommentsContract } from './comments'
 import { communityContract } from './community'
 import { documentsContract } from './documents'
 import { publicSharingContract, sharingContract } from './sharing'
+import { documentToolsContract } from './tools'
 import { versionsContract } from './versions'
 import { sessionContract, workspacesContract } from './workspaces'
 
@@ -27,6 +28,7 @@ export {
   usageRangeSchema
 } from './internal'
 export { publicSharingContract, sharingContract } from './sharing'
+export { documentToolsContract } from './tools'
 export { versionsContract } from './versions'
 export { sessionContract, workspacesContract } from './workspaces'
 export {
@@ -46,6 +48,7 @@ export {
 /** The Cloud API that signed-in clients call, as far as it is described by contract. */
 export const cloudAPIContract = {
   documents: documentsContract,
+  documentTools: documentToolsContract,
   versions: versionsContract,
   comments: commentsContract,
   sharing: sharingContract,

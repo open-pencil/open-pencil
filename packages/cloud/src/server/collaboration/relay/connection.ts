@@ -31,6 +31,8 @@ export type RelayPeer = {
   socket: RelaySocket
   authorization: RelayAuthorization
   presenceClients: Set<number>
+  /** Whether the peer's editor runs design tools apps call (`agent-tools.ts`). */
+  toolHost: boolean
 }
 
 /** A room message from an admitted peer. */

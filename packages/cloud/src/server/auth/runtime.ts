@@ -28,7 +28,10 @@ export function createCloudAuthenticationRuntime(
   config: CloudServerConfig,
   database: Kysely<CloudDatabase>,
   email: TransactionalEmailService,
-  options: Pick<CloudAuthRuntimeOptions, 'runInBackground' | 'validateSchema'> = {}
+  options: Pick<
+    CloudAuthRuntimeOptions,
+    'runInBackground' | 'validateSchema' | 'fetchClientMetadata'
+  > = {}
 ) {
   const enrollment = createEnrollmentService(database, enrollmentEmailOptions(config, email))
   const auth = createBetterAuthAdapter(config, database, enrollment, {

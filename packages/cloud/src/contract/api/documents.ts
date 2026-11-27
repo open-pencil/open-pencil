@@ -62,6 +62,10 @@ export const documentsContract = {
     .meta(at('GET', '/documents/{documentId}/access'))
     .input(v.object({ params: documentParamsSchema }))
     .output(v.object({ access: documentAccessSchema })),
+  summary: route
+    .meta(at('GET', '/documents/{documentId}/summary'))
+    .input(v.object({ params: documentParamsSchema }))
+    .output(documentResultSchema),
   download: route
     .meta(at('GET', '/documents/{documentId}'))
     .input(v.object({ params: documentParamsSchema }))
