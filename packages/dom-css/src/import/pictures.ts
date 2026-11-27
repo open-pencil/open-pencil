@@ -10,15 +10,27 @@ export type ImagePicture = { kind: 'raster'; bytes: Uint8Array } | { kind: 'svg'
 const SVG_TYPE = 'image/svg+xml'
 
 /**
- * The picture an `<img>` shows: the one its runtime loaded, or the one its `src` holds as a data
- * URL. A PNG, JPEG, GIF, WebP, or AVIF is a raster image by its header; SVG is SVG by its media
- * type, as a browser shows SVG in an image only when it is served as `image/svg+xml`. Null for an
- * element that is no image or shows nothing it can draw.
+ * The address of the picture an element shows of its own: an `<img>`'s `src`, and a `<video>`'s
+ * `poster`, which a browser shows until the video plays. Undefined for any other element.
+ */
+export function pictureSource(element: DesignElement): string | undefined {
+  const tag = element.tagName.toLowerCase()
+  if (tag === 'img') return element.attrs.src
+  if (tag === 'video') return element.attrs.poster
+  return undefined
+}
+
+/**
+ * The picture an `<img>` or a `<video>`'s poster shows: the one its runtime loaded, or the one its
+ * address holds as a data URL. A PNG, JPEG, GIF, WebP, or AVIF is a raster image by its header;
+ * SVG is SVG by its media type, as a browser shows SVG in an image only when it is served as
+ * `image/svg+xml`. Null for an element that shows no picture or nothing it can draw.
  */
 export function imagePicture(element: DesignElement): ImagePicture | null {
-  if (element.tagName.toLowerCase() !== 'img') return null
+  const source = pictureSource(element)
+  if (source === undefined) return null
   const loaded = element.image
-  const inline = loaded ? null : parseDataURL(element.attrs.src)
+  const inline = loaded ? null : parseDataURL(source)
   const bytes = loaded?.bytes ?? inline?.bytes
   if (!bytes) return null
   if (imageHeader(bytes)) return { kind: 'raster', bytes }
