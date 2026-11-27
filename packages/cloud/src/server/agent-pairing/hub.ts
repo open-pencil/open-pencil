@@ -13,7 +13,7 @@ import { send } from '#cloud/server/collaboration/relay/room'
 import * as v from 'valibot'
 
 import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
-import { DEADLINE_MS } from '@open-pencil/std/timing'
+import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
 /** What a runtime keeps with a paired tab's socket, to resume it after setting the hub aside. */
 const pairedStateSchema = v.object({
@@ -33,6 +33,12 @@ export function readPairedTabState(value: unknown): PairedTabState | null {
 export type PairingSocket = Omit<RelaySocket, 'remember'> & {
   remember?(state: PairedTabState): void
 }
+
+/**
+ * How long a call waits for a tab to offer when none has: an agent may call as soon as its sign-in
+ * opens the editor, which takes a few seconds to load.
+ */
+const EDITOR_WAIT_MS = 10 * SECOND_MS
 
 type PairedTab = {
   id: string
@@ -55,13 +61,16 @@ export type AgentPairingHubOptions = {
   authTimeoutMs?: number
   /** How long a call may take before it is cancelled. */
   toolTimeoutMs?: number
+  /** How long a call waits for a tab of its pairing to offer when none has. */
+  editorWaitMs?: number
 }
 
 /**
  * Carries a coding agent's design tool calls to the editor tab paired with it. A tab connects and
  * presents its pairing token, the relay's welcome names the hub as its one peer, the tab offers
  * to run tools, and each call goes to the tab of that pairing that offered last. Nothing is kept
- * beyond the open sockets: a pairing with no tab connected answers that nobody has it open.
+ * beyond the open sockets: a call to a pairing with no tab waits a few seconds for one to offer,
+ * then answers that nobody has it open.
  */
 export function createAgentPairingHub(options: AgentPairingHubOptions) {
   const tabs = new Set<PairedTab>()
@@ -71,11 +80,36 @@ export function createAgentPairingHub(options: AgentPairingHubOptions) {
     remember
   })
   const authTimeoutMs = options.authTimeoutMs ?? DEADLINE_MS.request
+  const editorWaitMs = options.editorWaitMs ?? EDITOR_WAIT_MS
+  /** Calls waiting for a tab of their pairing to offer, each told when one does. */
+  const waiting = new Set<{ pairing: string; offered(): void }>()
 
   function remember(tab: PairedTab) {
     // The tab that offered last comes last, where a call looks for its host.
     if (tab.toolHost && tabs.delete(tab)) tabs.add(tab)
     tab.socket.remember?.({ pairing: tab.pairing, peerId: tab.id, toolHost: tab.toolHost })
+    if (!tab.toolHost) return
+    for (const waiter of waiting) if (waiter.pairing === tab.pairing) waiter.offered()
+  }
+
+  function hostOf(pairing: string): PairedTab | undefined {
+    return [...tabs].findLast((tab) => tab.pairing === pairing && tab.toolHost)
+  }
+
+  /** The pairing's host once a tab offers, or nothing if none does in time. */
+  function offerOf(pairing: string): Promise<PairedTab | undefined> {
+    return new Promise((resolve) => {
+      const waiter = {
+        pairing,
+        offered() {
+          clearTimeout(timer)
+          waiting.delete(waiter)
+          resolve(hostOf(pairing))
+        }
+      }
+      const timer = setTimeout(() => waiter.offered(), editorWaitMs)
+      waiting.add(waiter)
+    })
   }
 
   function welcome(tab: PairedTab) {
@@ -173,10 +207,13 @@ export function createAgentPairingHub(options: AgentPairingHubOptions) {
       return open(socket, tab)
     },
 
-    /** Runs a call in the tab of `pairing` that offered to run tools last. */
-    call(pairing: string, call: AgentToolCall): Promise<AgentToolOutcome> {
-      const host = [...tabs].findLast((tab) => tab.pairing === pairing && tab.toolHost)
-      if (!host) return Promise.resolve({ ok: false, failure: 'editor_not_open' })
+    /**
+     * Runs a call in the tab of `pairing` that offered to run tools last, waiting a few seconds for
+     * one when none has.
+     */
+    async call(pairing: string, call: AgentToolCall): Promise<AgentToolOutcome> {
+      const host = hostOf(pairing) ?? (await offerOf(pairing))
+      if (!host) return { ok: false, failure: 'editor_not_open' }
       return calls.call(host, call)
     },
 
@@ -184,6 +221,7 @@ export function createAgentPairingHub(options: AgentPairingHubOptions) {
     close() {
       for (const tab of tabs) tab.socket.close(1001, 'Server shutting down')
       tabs.clear()
+      for (const waiter of waiting) waiter.offered()
     }
   }
 }

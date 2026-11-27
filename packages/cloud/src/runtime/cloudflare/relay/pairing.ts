@@ -63,10 +63,6 @@ export function createPairingSockets(host: PairingSocketHost) {
     async closed(socket: WebSocket) {
       ;(await connection(socket))?.closed()
       connections.delete(socket)
-    },
-    /** Whether any tab of the pairing is connected. */
-    get connected(): boolean {
-      return host.sockets().length > 0
     }
   }
 }

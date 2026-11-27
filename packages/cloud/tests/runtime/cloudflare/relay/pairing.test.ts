@@ -63,7 +63,6 @@ describe('paired tabs on a Durable Object', () => {
     const pairing = await agentPairingId(token)
     const tab = new HibernatedSocket({ pairing, peerId: crypto.randomUUID(), toolHost: true })
     const object = sockets([tab], pairing)
-    expect(object.connected).toBe(true)
     const outcome = (await object.open(pairing)).call(pairing, call)
     const handed = tab.frames
       .flatMap((frame) => (frame.type === 'message' ? [decodeAgentToolMessage(frame.payload)] : []))

@@ -331,7 +331,9 @@ Where `deployment.agent_pairing` is on, a tab of the server's editor can pair wi
 without an account. The tab makes an `opg_` token, connects to `/api/agent-pairing/relay` with its
 SHA-256 as `?pairing=` and presents the token in its first frame; `createAgentPairingHub` holds
 the tab's socket and nothing else, and `/mcp` turns a call with that token into the same
-`agent-tools` call the relay makes, to the tab that offered last. On Cloudflare a pairing's tabs
+`agent-tools` call the relay makes, to the tab that offered last. A call with no tab to take it
+waits up to ten seconds for one to offer, since an agent may call while the editor its sign-in
+opened is still loading, then answers that the editor is not open. On Cloudflare a pairing's tabs
 meet on the relay object named `pairing:<id>`, tagged so the object tells them from collaboration
 peers when it wakes. Pairing tokens get the design tools
 and the editor's open documents, and their calls are limited per address. A browser keeps its

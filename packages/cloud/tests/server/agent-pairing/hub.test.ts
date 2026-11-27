@@ -74,7 +74,7 @@ describe('agent pairing hub', () => {
   })
 
   test('answers that no tab has it open for a pairing nobody connected or one that left', async () => {
-    const pairing = hub()
+    const pairing = hub({ editorWaitMs: 20 })
     const id = await agentPairingId(token)
     expect(await pairing.call(id, call)).toEqual({ ok: false, failure: 'editor_not_open' })
     const tab = await pairedTab(pairing)
@@ -83,6 +83,24 @@ describe('agent pairing hub', () => {
     tab.connection.closed()
     expect(await outcome).toMatchObject({ ok: false, failure: 'tool_failed' })
     expect(await pairing.call(id, call)).toEqual({ ok: false, failure: 'editor_not_open' })
+  })
+
+  test('holds a call made before any tab offered until one does', async () => {
+    const pairing = hub()
+    const outcome = pairing.call(await agentPairingId(token), call)
+    // The editor the sign-in opened is still loading when the agent calls.
+    const tab = await pairedTab(pairing)
+    const handed = await nextCall(tab)
+    say(tab, { type: 'result', id: handed.id, ok: true, result: { page: 'Page 1' } })
+    expect(await outcome).toEqual({ ok: true, result: { page: 'Page 1' } })
+  })
+
+  test("waits only for a tab of the call's own pairing", async () => {
+    const pairing = hub({ editorWaitMs: 50 })
+    const outcome = pairing.call(await agentPairingId(token), call)
+    const other = await pairedTab(pairing, `opg_${'cd'.repeat(32)}`)
+    expect(await outcome).toEqual({ ok: false, failure: 'editor_not_open' })
+    expect(other.messages(COLLAB_ACTIONS.agentTools)).toHaveLength(0)
   })
 
   test('turns away an account token and, on a hub for one pairing, any other pairing', async () => {

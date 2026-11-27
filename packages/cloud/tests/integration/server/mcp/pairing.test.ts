@@ -26,7 +26,8 @@ const textSchema = v.object({
 let fixture: Awaited<ReturnType<typeof createAccountAuthenticationFixture>>
 const pairing = createAgentPairingHub({
   maximumMessageBytes: 1_048_576,
-  maximumAnswerBytes: 8_388_608
+  maximumAnswerBytes: 8_388_608,
+  editorWaitMs: 20
 })
 
 async function withAgent<T>(bearer: string, use: (client: Client) => Promise<T>): Promise<T> {

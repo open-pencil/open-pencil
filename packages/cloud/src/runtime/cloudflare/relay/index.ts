@@ -249,8 +249,7 @@ export function createCloudflareRelayObject(
     }
 
     async callPairedTool(pairing: string, call: AgentToolCall): Promise<AgentToolOutcome> {
-      // No tab is connected, so none can run it.
-      if (!this.#pairing.connected) return { ok: false, failure: 'editor_not_open' }
+      // With no tab connected yet, the hub waits a few seconds for one to offer.
       return (await this.#pairing.open(pairing)).call(pairing, call)
     }
 
