@@ -66,10 +66,10 @@ test('a control stays live once a layer beside it has animated away', async () =
   await control.click()
   await expect(control).toHaveAttribute('aria-checked', 'true')
   expect(await where()).toEqual({ index: 0, played: 1 })
-  // The layer that left is drawn transparent in the live island, not shown again.
+  // The layer that left keeps its place in the live island but is not shown again.
   await expect(island(editor.page, ids.islandId).locator('[data-layer="Leaving"]')).toHaveCSS(
-    'opacity',
-    '0'
+    'visibility',
+    'hidden'
   )
 })
 

@@ -25,6 +25,11 @@ export interface IslandRenderContext {
   state: IslandState
   /** Each control's transition declarations by its layer path; empty while motion is off. */
   transitions: ReadonlyMap<string, Record<string, string>>
+  /**
+   * Layers kept where they are but not shown, by ID, as a presentation holds back a layer its
+   * build has not brought on or has taken off: they take no pointer or focus.
+   */
+  hidden?: ReadonlySet<string>
 }
 
 /** How a role's wrapper changes the element it wraps. */
@@ -67,7 +72,10 @@ export function renderElement(
       ...element.inlineStyle,
       // A layer keeps its element through a state change, so its new look eases in.
       ...layerTransition(context.transitions, path),
-      ...override.style
+      ...override.style,
+      ...(element.sourceSceneNodeId && context.hidden?.has(element.sourceSceneNodeId)
+        ? { visibility: 'hidden' }
+        : {})
     }).filter(([key]) => !omitted.has(key))
   )
   const content =

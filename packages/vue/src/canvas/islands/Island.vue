@@ -29,8 +29,8 @@ const { rootId, revision, tokens, faded } = defineProps<{
   /** The document's variables as custom properties, shared by every island of the canvas. */
   tokens: CSSStyleSheet
   /**
-   * Layers drawn fully transparent where they are, as a presentation keeps a layer whose build
-   * has not brought it on, or has taken it off, without moving what is around it.
+   * Layers kept where they are but not shown, as a presentation keeps a layer whose build has
+   * not brought it on, or has taken it off, without moving what is around it.
    */
   faded?: ReadonlySet<string>
 }>()
@@ -57,8 +57,6 @@ watch(
 const projection = computed(() => {
   void editor.state.sceneVersion
   const graph = resolvePlayState(editor.graph, rootId, instanceStates(controls.value, state.value))
-  // The state's graph is a private copy, so fading a layer there leaves the document alone.
-  for (const id of faded ?? []) if (graph.getNode(id)) graph.updateNode(id, { opacity: 0 })
   const [root] = sceneNodeToDesignDocument(graph, rootId, {
     vectorElement,
     canvasMetrics: { autoLineHeight }
@@ -77,7 +75,8 @@ function Layers() {
           controls: controls.value,
           roles: roles.value,
           state: state.value,
-          transitions: transitions.value
+          transitions: transitions.value,
+          hidden: faded
         },
         root,
         ''
