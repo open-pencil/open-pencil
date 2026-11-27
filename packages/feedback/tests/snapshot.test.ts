@@ -503,6 +503,43 @@ describe('metrics snapshot', () => {
     expect([query.get('start'), query.get('end')]).toEqual(['2026-10-20', '2026-10-21'])
   })
 
+  test('a quiet first Cloud run still keeps the totals of the day that just ended', async () => {
+    answerCloud('2027-01-01')
+    await runSnapshot(service.env, service.services)
+    const recorded = await database().selectFrom('cloudUsage').selectAll().execute()
+    expect(recorded).toEqual([
+      {
+        day: '2026-10-19',
+        signUps: 0,
+        activeAccounts: 0,
+        documentsCreated: 0,
+        revisions: 0,
+        accounts: 40,
+        documents: 75,
+        workspaces: 41,
+        storageBytes: 123_456
+      }
+    ])
+  })
+
+  test('after a gap longer than one request reaches, Cloud is asked only for what it can answer', async () => {
+    const quiet = { signUps: 0, activeAccounts: 0, documentsCreated: 0, revisions: 0 }
+    await database()
+      .insertInto('cloudUsage')
+      .values({
+        day: '2025-01-01',
+        ...quiet,
+        accounts: null,
+        documents: null,
+        workspaces: null,
+        storageBytes: null
+      })
+      .execute()
+    await runSnapshot(service.env, service.services)
+    const call = service.fetchCalls.find((entry) => entry.url.startsWith(CLOUD_USAGE))
+    expect(new URL(call?.url ?? '').searchParams.get('start')).toBe('2025-09-15')
+  })
+
   test('a host added later has its visits filled from as far back as Cloudflare keeps', async () => {
     await database()
       .insertInto('siteVisits')

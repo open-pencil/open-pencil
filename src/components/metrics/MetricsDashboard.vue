@@ -215,8 +215,10 @@ const versionSeries = computed<DailySeries<keyof DailyVersions & string>[]>(() =
   { key: 'unchecked', name: 'Without steps', color: UNCHECKED_COLOR }
 ])
 const latestShare = computed(() => {
+  // Every ping counts toward the whole, unchecked ones too: they are installs not yet updated.
   const day = snapshot.versions.daily.findLast(isFull)
-  return day && day.latest + day.other ? day.latest / (day.latest + day.other) : undefined
+  const all = day ? day.latest + day.other + day.unchecked : 0
+  return day && all ? day.latest / all : undefined
 })
 
 // Pings and visits count different things, so this is a rough share, over full days only.
@@ -379,7 +381,7 @@ const sharingNote = computed(() => {
             note="Daily pings by version. Versions before 0.16.0 send no pings, and versions before 0.17.0 send no step, so their pings are counted apart."
           >
             <template v-if="latestShare !== undefined && snapshot.versions.latest" #aside>
-              {{ formatShare(latestShare) }} on {{ snapshot.versions.latest }}
+              {{ formatShare(latestShare) }} of pings on {{ snapshot.versions.latest }}
             </template>
             <DailyChart
               label="Daily pings on the latest version and on others"

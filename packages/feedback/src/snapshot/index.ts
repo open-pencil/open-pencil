@@ -151,15 +151,16 @@ async function recordActivity({ store, env, services }: Run) {
 async function recordCloud({ store, env, yesterday }: Run) {
   const recorded = await lastCloudDay(store.db)
   const oldest = yesterday.subtract({ days: CLOUD_USAGE_MAX_DAYS - 1 })
-  const start = recorded
-    ? (minDate(parseDate(recorded).add({ days: 1 }), yesterday) ?? yesterday)
-    : oldest
+  // After a long gap, the days before what one request reaches are skipped rather than asked for.
+  const next = recorded ? parseDate(recorded).add({ days: 1 }) : oldest
+  const start = maxDate(minDate(next, yesterday) ?? yesterday, oldest) ?? oldest
   const usage = await fetchCloudUsage(env.CLOUD, env.CLOUD_SERVICE_TOKEN, start, yesterday)
   const active = (day: CloudUsage['days'][number]) =>
     day.signUps + day.activeAccounts + day.documentsCreated + day.revisions > 0
-  // Before anything was recorded, the quiet days before Cloud's first are left out.
+  // Before anything was recorded, the quiet days before Cloud's first are left out; yesterday
+  // always stays, for its totals.
   const first = recorded ? 0 : usage.days.findIndex(active)
-  const days = first === -1 ? [] : usage.days.slice(first)
+  const days = first === -1 ? usage.days.slice(-1) : usage.days.slice(first)
   const last = yesterday.toString()
   const untotalled = { accounts: null, documents: null, workspaces: null, storageBytes: null }
   const rows = days.map((day) => {
