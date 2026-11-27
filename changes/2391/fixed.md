@@ -1,0 +1,1 @@
+- FigJam shapes without a line show their inner lines, such as a database's rim, as gaps in the fill, and folders and multiple documents draw as FigJam draws them (#2391).
