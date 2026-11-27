@@ -12,4 +12,4 @@ Le azioni modificano la selezione tramite l’editor e partecipano alla cronolog
 ## Vedi anche
 
 - [LayoutControlsRoot](../components/layout-controls-root)
-- [Disposizione automatica](/user-guide/auto-layout)
+- [Disposizione automatica](/it/user-guide/auto-layout)

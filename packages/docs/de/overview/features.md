@@ -29,7 +29,7 @@ Die Registerkarten Design, Code, KI und Prüfen passen sich der aktuellen Auswah
 - **Anordnung:** Einstellungen der automatischen Anordnung.
 - **Export:** Maßstab, PNG/JPG/WEBP/SVG und Vorschau.
 - **Code:** Design JSX und Tailwind JSX für die Auswahl, mit Design JSX live in beide Richtungen bearbeitbar: Der Code wird angepasst, wenn sich Ebenen ändern. Das Element an der Cursorposition umrandet seine Ebene auf der Arbeitsfläche, und Designprobleme werden an der Eigenschaft unterstrichen, die sie verursacht.
-- **Prüfen:** Live-Designprüfung für die Seite oder die Auswahl: geringer Kontrast, kleine Touch-Ziele, nicht gebundene Farben, Abstände außerhalb der Skala, mit Problemmarkierungen auf der Arbeitsfläche und Variablenbindung per Klick ([Designs prüfen](/user-guide/checking-designs)).
+- **Prüfen:** Live-Designprüfung für die Seite oder die Auswahl: geringer Kontrast, kleine Touch-Ziele, nicht gebundene Farben, Abstände außerhalb der Skala, mit Problemmarkierungen auf der Arbeitsfläche und Variablenbindung per Klick ([Designs prüfen](/de/user-guide/checking-designs)).
 
 ## Darstellung
 

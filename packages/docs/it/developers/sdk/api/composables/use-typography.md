@@ -22,4 +22,4 @@ typography.setOpticalSizeAuto(false)
 
 - [TypographyControlsRoot](../components/typography-controls-root)
 - [useFontPicker](../advanced/use-font-picker)
-- [Modificare testo](/user-guide/text-editing)
+- [Modificare testo](/it/user-guide/text-editing)

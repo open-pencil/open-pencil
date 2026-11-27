@@ -13,4 +13,4 @@ Utilisez-le pour construire une interface propre au-dessus du système d’expor
 
 ## Voir aussi
 
-- [Guide d’exportation](/user-guide/exporting)
+- [Guide d’exportation](/fr/user-guide/exporting)

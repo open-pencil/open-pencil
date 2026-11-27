@@ -12,4 +12,4 @@ Libellés, raccourcis, état désactivé et exécution proviennent d’une sourc
 ## Voir aussi
 
 - [useEditorCommands](./use-editor-commands)
-- [Menu contextuel](/user-guide/selection-and-manipulation)
+- [Menu contextuel](/fr/user-guide/selection-and-manipulation)

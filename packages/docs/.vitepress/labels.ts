@@ -32,6 +32,9 @@ export interface SidebarLabels {
   comparison: string
   privacy: string
   figmaMatrix: string
+  codingAgents: string
+  modelsAndProviders: string
+  keyboardShortcuts: string
 }
 
 export interface ProgrammableLabels {
@@ -54,6 +57,19 @@ export interface ProgrammableLabels {
   /** Heads the collapsed list of how parts of the editor work inside. */
   internals: string
   urlScheme: string
+}
+
+/** The theme's own words around a page: its outline, footer, and menus. */
+export interface PageLabels {
+  outline: string
+  previous: string
+  next: string
+  editPage: string
+  lastUpdated: string
+  returnToTop: string
+  menu: string
+  language: string
+  theme: string
 }
 
 export interface NavLabels {
@@ -234,7 +250,10 @@ export const EN: SidebarLabels = {
   techStack: 'Tech Stack',
   comparison: 'Comparison',
   privacy: 'Privacy',
-  figmaMatrix: 'Figma Feature Matrix'
+  figmaMatrix: 'Figma Feature Matrix',
+  codingAgents: 'Coding Agents',
+  modelsAndProviders: 'Models and Providers',
+  keyboardShortcuts: 'Keyboard Shortcuts'
 }
 export const DE: SidebarLabels = {
   getStarted: 'Loslegen',
@@ -269,7 +288,10 @@ export const DE: SidebarLabels = {
   techStack: 'Tech-Stack',
   comparison: 'Vergleich',
   privacy: 'Datenschutz',
-  figmaMatrix: 'Figma-Funktionsmatrix'
+  figmaMatrix: 'Figma-Funktionsmatrix',
+  codingAgents: 'Coding-Agents',
+  modelsAndProviders: 'Modelle und Anbieter',
+  keyboardShortcuts: 'Tastenkürzel'
 }
 export const IT: SidebarLabels = {
   getStarted: 'Primi passi',
@@ -304,7 +326,10 @@ export const IT: SidebarLabels = {
   techStack: 'Stack tecnologico',
   comparison: 'Confronto',
   privacy: 'Privacy',
-  figmaMatrix: 'Matrice funzionalità Figma'
+  figmaMatrix: 'Matrice funzionalità Figma',
+  codingAgents: 'Agenti di programmazione',
+  modelsAndProviders: 'Modelli e provider',
+  keyboardShortcuts: 'Scorciatoie da tastiera'
 }
 export const FR: SidebarLabels = {
   getStarted: 'Bien démarrer',
@@ -339,7 +364,10 @@ export const FR: SidebarLabels = {
   techStack: 'Stack technique',
   comparison: 'Comparaison',
   privacy: 'Confidentialité',
-  figmaMatrix: 'Matrice des fonctionnalités Figma'
+  figmaMatrix: 'Matrice des fonctionnalités Figma',
+  codingAgents: 'Agents de code',
+  modelsAndProviders: 'Modèles et fournisseurs',
+  keyboardShortcuts: 'Raccourcis clavier'
 }
 export const ES: SidebarLabels = {
   getStarted: 'Primeros pasos',
@@ -374,7 +402,10 @@ export const ES: SidebarLabels = {
   techStack: 'Stack tecnológico',
   comparison: 'Comparación',
   privacy: 'Privacidad',
-  figmaMatrix: 'Matriz de funcionalidades Figma'
+  figmaMatrix: 'Matriz de funcionalidades Figma',
+  codingAgents: 'Agentes de programación',
+  modelsAndProviders: 'Modelos y proveedores',
+  keyboardShortcuts: 'Atajos de teclado'
 }
 export const PL: SidebarLabels = {
   getStarted: 'Pierwsze kroki',
@@ -409,7 +440,10 @@ export const PL: SidebarLabels = {
   techStack: 'Stack technologiczny',
   comparison: 'Porównanie',
   privacy: 'Prywatność',
-  figmaMatrix: 'Matryca funkcji Figma'
+  figmaMatrix: 'Matryca funkcji Figma',
+  codingAgents: 'Agenci programistyczni',
+  modelsAndProviders: 'Modele i dostawcy',
+  keyboardShortcuts: 'Skróty klawiszowe'
 }
 export const RU: SidebarLabels = {
   getStarted: 'Начало работы',
@@ -444,5 +478,80 @@ export const RU: SidebarLabels = {
   techStack: 'Технологии',
   comparison: 'Сравнение',
   privacy: 'Конфиденциальность',
-  figmaMatrix: 'Матрица функций Figma'
+  figmaMatrix: 'Матрица функций Figma',
+  codingAgents: 'Агенты для программирования',
+  modelsAndProviders: 'Модели и провайдеры',
+  keyboardShortcuts: 'Горячие клавиши'
+}
+
+export const DE_PAGE: PageLabels = {
+  outline: 'Auf dieser Seite',
+  previous: 'Vorherige Seite',
+  next: 'Nächste Seite',
+  editPage: 'Diese Seite bearbeiten',
+  lastUpdated: 'Zuletzt aktualisiert',
+  returnToTop: 'Nach oben',
+  menu: 'Menü',
+  language: 'Sprache',
+  theme: 'Design wechseln'
+}
+
+export const IT_PAGE: PageLabels = {
+  outline: 'In questa pagina',
+  previous: 'Pagina precedente',
+  next: 'Pagina successiva',
+  editPage: 'Modifica questa pagina',
+  lastUpdated: 'Ultimo aggiornamento',
+  returnToTop: 'Torna su',
+  menu: 'Menu',
+  language: 'Lingua',
+  theme: 'Cambia tema'
+}
+
+export const FR_PAGE: PageLabels = {
+  outline: 'Sur cette page',
+  previous: 'Page précédente',
+  next: 'Page suivante',
+  editPage: 'Modifier cette page',
+  lastUpdated: 'Dernière mise à jour',
+  returnToTop: 'Retour en haut',
+  menu: 'Menu',
+  language: 'Langue',
+  theme: 'Changer de thème'
+}
+
+export const ES_PAGE: PageLabels = {
+  outline: 'En esta página',
+  previous: 'Página anterior',
+  next: 'Página siguiente',
+  editPage: 'Editar esta página',
+  lastUpdated: 'Última actualización',
+  returnToTop: 'Volver arriba',
+  menu: 'Menú',
+  language: 'Idioma',
+  theme: 'Cambiar tema'
+}
+
+export const PL_PAGE: PageLabels = {
+  outline: 'Na tej stronie',
+  previous: 'Poprzednia strona',
+  next: 'Następna strona',
+  editPage: 'Edytuj tę stronę',
+  lastUpdated: 'Ostatnia aktualizacja',
+  returnToTop: 'Do góry',
+  menu: 'Menu',
+  language: 'Język',
+  theme: 'Zmień motyw'
+}
+
+export const RU_PAGE: PageLabels = {
+  outline: 'На этой странице',
+  previous: 'Предыдущая страница',
+  next: 'Следующая страница',
+  editPage: 'Редактировать страницу',
+  lastUpdated: 'Обновлено',
+  returnToTop: 'Наверх',
+  menu: 'Меню',
+  language: 'Язык',
+  theme: 'Сменить тему'
 }

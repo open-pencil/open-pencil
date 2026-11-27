@@ -1,11 +1,34 @@
 <script setup lang="ts">
+import { useData } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
+import { onMounted, watch } from 'vue'
 
 import GitHubButton from './site/GitHubButton.vue'
 import OpenAppButton from './site/OpenAppButton.vue'
 import ShortcutsSetting from './site/ShortcutsSetting.vue'
 import SiteFooter from './site/SiteFooter.vue'
 import ThemeButton from './site/ThemeButton.vue'
+
+const { page, site } = useData()
+
+/*
+ * The language menu keeps the page and swaps its language, but some sections, such as Cloud,
+ * are English only. A translated address with no page goes on to the English one rather than 404,
+ * on a first load and when the menu changes pages in place.
+ */
+onMounted(() =>
+  watch(
+    () => page.value.isNotFound,
+    (missing) => {
+      if (!missing) return
+      const locale = Object.keys(site.value.locales).find(
+        (key) => key !== 'root' && location.pathname.startsWith(`/${key}/`)
+      )
+      if (locale) location.replace(location.pathname.slice(locale.length + 1) + location.hash)
+    },
+    { immediate: true }
+  )
+)
 </script>
 
 <!-- The default layout with the editor as the header's button, GitHub and the theme beside it,

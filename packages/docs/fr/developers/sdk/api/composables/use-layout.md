@@ -19,4 +19,4 @@ Les actions modifient la sélection via l’intégration de l’éditeur et part
 ## Voir aussi
 
 - [LayoutControlsRoot](../components/layout-controls-root)
-- [Disposition automatique](/user-guide/auto-layout)
+- [Disposition automatique](/fr/user-guide/auto-layout)

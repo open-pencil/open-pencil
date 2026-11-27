@@ -29,7 +29,7 @@ Le schede Design, Codice, AI e Verifica cambiano in base alla selezione.
 - **Layout:** impostazioni della disposizione automatica.
 - **Export:** scala, PNG/JPG/WEBP/SVG e anteprima.
 - **Codice:** Design JSX e Tailwind JSX per la selezione, con modifica bidirezionale in tempo reale del Design JSX che aggiorna il codice al variare dei livelli; l’elemento sotto il cursore evidenzia il proprio livello nell’area di lavoro e i problemi di design sono sottolineati sulla proprietà che li causa.
-- **Verifica:** controllo di design in tempo reale per la pagina o la selezione (contrasto basso, aree di tocco piccole, colori non collegati, spaziature fuori scala), con indicatori dei problemi nell’area di lavoro e collegamento alle variabili con un clic ([Controllare i design](/user-guide/checking-designs)).
+- **Verifica:** controllo di design in tempo reale per la pagina o la selezione (contrasto basso, aree di tocco piccole, colori non collegati, spaziature fuori scala), con indicatori dei problemi nell’area di lavoro e collegamento alle variabili con un clic ([Controllare i design](/it/user-guide/checking-designs)).
 
 ## Rendering
 

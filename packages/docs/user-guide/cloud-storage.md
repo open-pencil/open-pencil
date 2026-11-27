@@ -27,7 +27,7 @@ Endpoint examples:
 - Cloudflare R2: `https://<account-id>.r2.cloudflarestorage.com`
 - MinIO: `http://localhost:9000`, or wherever your server listens
 
-Select **Test connection** to check the endpoint, keys, and bucket before saving, then **Save**. OpenPencil addresses objects as `{endpoint}/{bucket}/{key}`, so the bucket name never goes into the endpoint.
+Select **Test connection** to check the endpoint, keys, and bucket before saving, then **Save**. OpenPencil adds the bucket to the endpoint itself, as `{endpoint}/{bucket}/{key}`, so leave the bucket name out of the endpoint.
 
 Access keys are kept in the system credential store in the desktop app. In the browser they are encrypted in browser storage, or kept only until you close the session when **Settings → General → Remember API keys on this device** is off.
 
@@ -55,7 +55,7 @@ The web app is moving from app.openpencil.dev to cloud.openpencil.dev: a rule se
 
 Open or create a document, then choose **File → Save to…**. With no Cloud workspace to choose from, the document is saved straight into the bucket; otherwise pick the bucket from the list. The tab stays bound to it: **Save** and auto-save now write to storage instead of a local file. A local `.fig` you had open keeps its last saved contents.
 
-To open stored documents, select your bucket in Home's sidebar; **File → Browse files…** opens Home where you left it. **New design** with the bucket selected creates a document in it. Home lists every document in the bucket with a preview read from the document itself, so listing a large file downloads only its embedded thumbnail.
+To open stored documents, select your bucket in Home's sidebar. **New design** with the bucket selected creates a document in it. Home lists every document in the bucket with a preview read from the document itself, so listing a large file downloads only its embedded thumbnail.
 
 ## How Saving Works
 

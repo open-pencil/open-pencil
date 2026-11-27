@@ -33,4 +33,4 @@ exportState.updateFormat(0, 'webp')
 
 ## Vedi anche
 
-- [Guida all’esportazione](/user-guide/exporting)
+- [Guida all’esportazione](/it/user-guide/exporting)

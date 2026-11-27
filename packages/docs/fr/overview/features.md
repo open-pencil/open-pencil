@@ -29,7 +29,7 @@ Les onglets Design, Code, IA et Vérifier s’adaptent à la sélection :
 - **Disposition :** réglages de la disposition automatique.
 - **Export :** échelle, PNG/JPG/WEBP/SVG et aperçu.
 - **Code :** Design JSX et Tailwind JSX pour la sélection, avec édition bidirectionnelle en direct du Design JSX qui met à jour votre code à mesure que les calques changent ; l’élément situé sous le curseur met en évidence son calque sur la zone de travail, et les problèmes de design sont soulignés sur la propriété qui les cause.
-- **Vérifier :** analyse de design en direct pour la page ou la sélection : contraste insuffisant, cibles tactiles trop petites, couleurs non liées, espacements hors échelle, avec des repères de problèmes sur la zone de travail et une liaison à une variable en un clic ([Checking Designs](/user-guide/checking-designs)).
+- **Vérifier :** analyse de design en direct pour la page ou la sélection : contraste insuffisant, cibles tactiles trop petites, couleurs non liées, espacements hors échelle, avec des repères de problèmes sur la zone de travail et une liaison à une variable en un clic ([Checking Designs](/fr/user-guide/checking-designs)).
 
 ## Rendu
 

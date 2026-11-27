@@ -34,7 +34,7 @@ Images in pasted layers are fetched from Figma, so the Figma file they come from
 - **Libraries.** Figma's team libraries don't connect to OpenPencil. To share components between files here, [publish an OpenPencil library](./component-libraries).
 - **Styles.** You can apply and detach styles, but not yet create or edit them. Use [variables](./variables) for new colors and sizes.
 - **Variable modes** are set on a frame or page under **Appearance**, where each collection always has a row.
-- **Fonts.** The desktop app uses the fonts on your computer. In the browser, Chrome and Edge do once you allow it. See [Choose a Font](./text-editing#choose-a-font).
+- **Fonts.** The desktop app uses the fonts on your computer. In the browser, Chrome and Edge can use them too once you allow it. See [Choose a Font](./text-editing#choose-a-font).
 - **Prototyping** isn't here yet. Components can [work like controls](./components#make-a-component-work-like-a-control) in preview, such as a switch that flips.
 - **Version history** is for files on [OpenPencil Cloud](/cloud/).
 

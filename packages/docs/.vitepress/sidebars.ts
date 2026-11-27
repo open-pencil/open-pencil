@@ -66,51 +66,51 @@ export const docsSidebar = (
   {
     text: labels.getStarted,
     items: [
-      { text: labels.gettingStarted, link: '/getting-started' },
-      { text: labels.responsiveCard, link: '/user-guide/responsive-card' },
-      { text: labels.comingFromFigma, link: '/user-guide/coming-from-figma' },
-      { text: labels.comingFromPenDev, link: '/user-guide/coming-from-pen-dev' },
-      { text: labels.canvasNav, link: '/user-guide/canvas-navigation' },
-      { text: labels.selection, link: '/user-guide/selection-and-manipulation' },
-      { text: labels.layers, link: '/user-guide/layers-and-pages' },
-      { text: labels.files, link: '/user-guide/files' }
+      { text: labels.gettingStarted, link: `${prefix}/getting-started` },
+      { text: labels.responsiveCard, link: `${prefix}/user-guide/responsive-card` },
+      { text: labels.comingFromFigma, link: `${prefix}/user-guide/coming-from-figma` },
+      { text: labels.comingFromPenDev, link: `${prefix}/user-guide/coming-from-pen-dev` },
+      { text: labels.canvasNav, link: `${prefix}/user-guide/canvas-navigation` },
+      { text: labels.selection, link: `${prefix}/user-guide/selection-and-manipulation` },
+      { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
+      { text: labels.files, link: `${prefix}/user-guide/files` }
     ]
   },
   {
     text: labels.draw,
     items: [
-      { text: labels.shapes, link: '/user-guide/drawing-shapes' },
-      { text: labels.pen, link: '/user-guide/pen-tool' },
-      { text: labels.vectorEditing, link: '/user-guide/vector-edit' },
-      { text: labels.text, link: '/user-guide/text-editing' },
-      { text: labels.icons, link: '/user-guide/icons' },
-      { text: labels.photos, link: '/user-guide/photos' }
+      { text: labels.shapes, link: `${prefix}/user-guide/drawing-shapes` },
+      { text: labels.pen, link: `${prefix}/user-guide/pen-tool` },
+      { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
+      { text: labels.text, link: `${prefix}/user-guide/text-editing` },
+      { text: labels.icons, link: `${prefix}/user-guide/icons` },
+      { text: labels.photos, link: `${prefix}/user-guide/photos` }
     ]
   },
   {
     text: labels.designSystem,
     items: [
-      { text: labels.autoLayout, link: '/user-guide/auto-layout' },
-      { text: labels.components, link: '/user-guide/components' },
-      { text: labels.componentLibraries, link: '/user-guide/component-libraries' },
-      { text: labels.variables, link: '/user-guide/variables' }
+      { text: labels.autoLayout, link: `${prefix}/user-guide/auto-layout` },
+      { text: labels.components, link: `${prefix}/user-guide/components` },
+      { text: labels.componentLibraries, link: `${prefix}/user-guide/component-libraries` },
+      { text: labels.variables, link: `${prefix}/user-guide/variables` }
     ]
   },
   {
     text: labels.designWithAI,
     items: [
-      { text: prog.aiChat, link: '/user-guide/ai-chat' },
-      { text: 'Coding Agents', link: '/user-guide/coding-agents' },
-      { text: 'Models and Providers', link: '/user-guide/models-and-providers' }
+      { text: prog.aiChat, link: `${prefix}/user-guide/ai-chat` },
+      { text: labels.codingAgents, link: `${prefix}/user-guide/coding-agents` },
+      { text: labels.modelsAndProviders, link: `${prefix}/user-guide/models-and-providers` }
     ]
   },
   {
     text: labels.checkAndShare,
     items: [
-      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' },
-      { text: labels.exporting, link: '/user-guide/exporting' },
-      { text: prog.collaboration, link: '/user-guide/collaboration' },
-      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
+      { text: labels.checkingDesigns, link: `${prefix}/user-guide/checking-designs` },
+      { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
+      { text: prog.collaboration, link: `${prefix}/user-guide/collaboration` },
+      { text: labels.cloudStorage, link: `${prefix}/user-guide/cloud-storage` }
     ]
   },
   {
@@ -118,13 +118,13 @@ export const docsSidebar = (
     items: [
       { text: labels.features, link: `${prefix}/overview/features` },
       { text: labels.comparison, link: `${prefix}/overview/comparison` },
-      { text: labels.privacy, link: '/overview/privacy' }
+      { text: labels.privacy, link: `${prefix}/overview/privacy` }
     ]
   },
   {
     text: referenceLabel,
     items: [
-      { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
+      { text: labels.keyboardShortcuts, link: '/reference/keyboard-shortcuts' },
       { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` }
     ]
   }
