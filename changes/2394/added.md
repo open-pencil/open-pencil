@@ -1,0 +1,1 @@
+- HTML import binds padding, gaps, fixed sizes and radii written as `calc()` over custom properties, such as Tailwind's `calc(var(--spacing) * 4)`, to formula variables that keep computing from the variables they name (#2394).
