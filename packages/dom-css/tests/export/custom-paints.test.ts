@@ -35,6 +35,27 @@ describe('Figma shader paints in HTML and Tailwind', () => {
     expect(tailwind).not.toContain('border')
   })
 
+  test('a stroke after a shader stroke writes the border', () => {
+    const solid: Stroke = { ...RED, weight: 2, align: 'INSIDE' }
+    const { html, tailwind } = exported('RECTANGLE', { strokes: [SHADER_STROKE, solid] })
+    expect(exported('RECTANGLE', { strokes: [solid] })).toEqual({ html, tailwind })
+  })
+
+  test("a border's colour binding is the one on its first drawn stroke", () => {
+    const border = (boundVariables: Record<string, string>) => {
+      const graph = designSystem()
+      const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+        width: 40,
+        height: 40,
+        strokes: [SHADER_STROKE, { ...RED, color: BLUE_500, weight: 2, align: 'INSIDE' }],
+        boundVariables
+      })
+      return JSON.stringify(sceneNodeToDesignDocument(graph, node.id, {}).children[0])
+    }
+    expect(border({ 'strokes/1/color': 'primary' })).toContain('var(--color-primary)')
+    expect(border({ 'strokes/0/color': 'primary' })).not.toContain('var(--color-primary)')
+  })
+
   test('a text takes its colour from its first drawn fill', () => {
     const { html, tailwind } = exported('TEXT', { text: 'Hi', fills: [SHADER, RED] })
     expect(html).toContain('color: #FF0000')
