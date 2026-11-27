@@ -24,14 +24,7 @@ import { createMCPAPI, MCPAPIError, type MCPAPI } from './api'
 import type { MCPCaller } from './context'
 import { registerDesignTools, registerPairedDesignTools } from './design'
 import { registerDocumentTools } from './documents'
-import { MCP_INSTRUCTIONS } from './instructions'
-
-/** What the endpoint tells an agent paired with an editor tab, which has no account behind it. */
-const PAIRED_INSTRUCTIONS = [
-  'These tools work on the documents open in the OpenPencil this connection is paired with, as the person watches. With none open, call create_document.',
-  'Read with get_page_tree, get_node, and describe; build layers from JSX with render, and change them with update_node and the set_* tools.',
-  'Designs stay on the person’s device until they save them; nothing is kept on the server.'
-].join('\n')
+import { MCP_INSTRUCTIONS, PAIRED_INSTRUCTIONS } from './instructions'
 
 /** Whom a token stands for and what it may do, or null for one the API refuses. */
 async function tokenUser(api: MCPAPI) {
