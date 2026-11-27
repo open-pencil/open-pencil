@@ -838,6 +838,10 @@ export class SkiaRenderer {
     TextRender.renderText(this, canvas, node, fill)
   }
 
+  drawTextRangeFills(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    TextRender.drawTextRangeFills(this, canvas, node, graph)
+  }
+
   applyFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
     return Fills.applyFill(this, fill, node, graph)
   }

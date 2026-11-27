@@ -1,15 +1,18 @@
-import type {
-  CommitUploadInput,
-  DocumentImageDownload,
-  DocumentImageLink,
-  ImageUploadOffer,
-  RequestImageUploadsInput
+import {
+  CLOUD_COVER_MAX_BYTES,
+  CLOUD_COVER_SIZE,
+  type CommitUploadInput,
+  type DocumentImageDownload,
+  type DocumentImageLink,
+  type ImageUploadOffer,
+  type RequestImageUploadsInput
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { StorageQuotaService } from '#cloud/server/quota'
 import { uniq, uniqBy } from 'es-toolkit'
+import { imageSize } from 'image-size'
 import type { Kysely, Transaction } from 'kysely'
 
 import { DAY_MS, MINUTE_MS } from '@open-pencil/std/timing'
@@ -21,6 +24,9 @@ type Executor = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 
 /** An image no revision has used for this long may be released; a save uploads first. */
 export const IMAGE_RELEASE_GRACE_MS = DAY_MS
+
+/** Enough of a PNG to read its size from: the signature and the header chunk. */
+const PNG_HEADER_BYTES = 33
 
 /** How long a link to download a revision or its images works. */
 export const DOWNLOAD_LIFETIME_MS = 5 * MINUTE_MS
@@ -206,6 +212,51 @@ export function createDocumentImages(
     },
 
     /**
+     * Whether the workspace image `checksum` can be a revision's cover: a PNG no larger than
+     * `CLOUD_COVER_SIZE` and `CLOUD_COVER_MAX_BYTES`, which the gallery serves to any site.
+     */
+    async isCover(workspaceId: string, checksum: string): Promise<boolean> {
+      const image = await database
+        .selectFrom('workspaceImage')
+        .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
+        .select(['storageObject.objectKey', 'storageObject.byteSize'])
+        .where('workspaceImage.workspaceId', '=', workspaceId)
+        .where('workspaceImage.checksum', '=', checksum)
+        .executeTakeFirst()
+      if (!image || Number(image.byteSize) > CLOUD_COVER_MAX_BYTES) return false
+      const header = await objects.readRange(image.objectKey, 0, PNG_HEADER_BYTES)
+      if (!header) return false
+      try {
+        const size = imageSize(header)
+        return (
+          size.type === 'png' &&
+          size.width <= CLOUD_COVER_SIZE.width &&
+          size.height <= CLOUD_COVER_SIZE.height
+        )
+      } catch {
+        return false
+      }
+    },
+
+    /**
+     * Holds the workspace image a new revision shows as its cover until the revision refers to it,
+     * as `attachInTransaction` holds its images. Whether it was there.
+     */
+    async holdCoverInTransaction(
+      transaction: Transaction<CloudDatabase>,
+      input: { workspaceId: string; checksum: string }
+    ): Promise<boolean> {
+      const held = await transaction
+        .selectFrom('workspaceImage')
+        .select('checksum')
+        .where('workspaceId', '=', input.workspaceId)
+        .where('checksum', '=', input.checksum)
+        .forShare()
+        .executeTakeFirst()
+      return held !== undefined
+    },
+
+    /**
      * Records the images a new revision uses. Each must be the workspace's already; holding them
      * until the revision refers to them keeps a release of an unused image from racing the save.
      * Whether every image was there.
@@ -325,6 +376,19 @@ export async function releaseUnusedImages(
               .select('revisionImage.name')
               .whereRef('revisionImage.workspaceId', '=', 'workspaceImage.workspaceId')
               .whereRef('revisionImage.checksum', '=', 'workspaceImage.checksum')
+          )
+        )
+      )
+      // A revision's cover is the workspace's image too, kept while a revision shows it.
+      .where((expression) =>
+        expression.not(
+          expression.exists(
+            expression
+              .selectFrom('documentRevision')
+              .innerJoin('document', 'document.id', 'documentRevision.documentId')
+              .select('documentRevision.id')
+              .whereRef('document.workspaceId', '=', 'workspaceImage.workspaceId')
+              .whereRef('documentRevision.coverChecksum', '=', 'workspaceImage.checksum')
           )
         )
       )

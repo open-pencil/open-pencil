@@ -18,6 +18,8 @@ export type PersistStorageCanvasOptions = StorageLocation & {
   name: string
   /** The `.fig`; a save hands over a Blob, which is stored without being read whole. */
   figBytes: Uint8Array | Blob
+  /** The cover the save drew, for a provider that shows one; syncing sends it with the file. */
+  coverBytes?: Uint8Array | null
 }
 
 /** The preview a `.fig` carries, read in place. */
@@ -54,6 +56,7 @@ export async function persistStorageCanvasLocally(
     name: options.name,
     figBytes: options.figBytes,
     thumbBytes: thumbnailBytes,
+    coverBytes: options.coverBytes,
     syncStatus: 'pending'
   })
   await runtime.enqueueCanvas(options.canvasId, metadata.revision)
