@@ -81,6 +81,107 @@ describe('shape-with-text geometry', () => {
     ])
   })
 
+  // Where each segment of FigJam's SVG export of a document ends, at three sizes and two radii.
+  test.each([
+    {
+      size: [200, 120, 6],
+      ends: [
+        [194, 0],
+        [6, 0],
+        [0, 6],
+        [0, 100.576],
+        [2.98772, 105.64],
+        [54.1669, 120],
+        [141.667, 89],
+        [194.642, 102.333],
+        [200, 99],
+        [200, 6]
+      ]
+    },
+    {
+      size: [400, 120, 6],
+      ends: [
+        [394, 0],
+        [6, 0],
+        [0, 6],
+        [0, 99.516],
+        [4.29046, 105.193],
+        [108.334, 120],
+        [283.334, 89],
+        [394.192, 103.51],
+        [400, 99],
+        [400, 6]
+      ]
+    },
+    {
+      size: [300, 400, 6],
+      ends: [
+        [294, 0],
+        [6, 0],
+        [0, 6],
+        [0, 379.914],
+        [3.82115, 385.407],
+        [81.2504, 400],
+        [212.5, 369],
+        [294.324, 383.081],
+        [300, 379],
+        [300, 6]
+      ]
+    },
+    {
+      size: [200, 120, 20],
+      ends: [
+        [180, 0],
+        [20, 0],
+        [0, 20],
+        [0, 92.586],
+        [10.1786, 109.145],
+        [54.1669, 120],
+        [141.667, 89],
+        [181.703, 96.9647],
+        [200, 85],
+        [200, 20]
+      ]
+    },
+    {
+      size: [200, 120, 0],
+      ends: [
+        [200, 0],
+        [0, 0],
+        [0, 104],
+        [54.1669, 120],
+        [141.667, 89],
+        [200, 105]
+      ]
+    }
+  ])(
+    'a document of $size draws FigJam’s wave, its height fixed, its corners rounded',
+    ({ size, ends }) => {
+      const [w, h, radius] = size
+      const { outline } = shapeWithTextGeometry('DOCUMENT_SINGLE', w, h, radius)
+      const drawn = outline.flatMap((command) => (command.type === 'Z' ? [] : [command]))
+      for (const [x, y] of ends) {
+        expect(drawn.some((end) => Math.hypot(end.x - x, end.y - y) < 0.05)).toBe(true)
+      }
+    }
+  )
+
+  test('a document whose corners are larger than its sides allow stays inside its box', () => {
+    for (const [w, h] of [
+      [200, 80],
+      [80, 80],
+      [400, 60]
+    ]) {
+      const { outline } = shapeWithTextGeometry('DOCUMENT_SINGLE', w, h, 40)
+      for (const point of points(outline)) {
+        expect(point.x).toBeGreaterThanOrEqual(-1e-9)
+        expect(point.x).toBeLessThanOrEqual(w + 1e-9)
+        expect(point.y).toBeGreaterThanOrEqual(-1e-9)
+        expect(point.y).toBeLessThanOrEqual(h + 1e-9)
+      }
+    }
+  })
+
   test('the fill is cut along the lines only of a shape with inner lines and no stroke drawing', () => {
     const stroke = (opacity: number, weight = 4): Stroke => ({
       type: 'SOLID',
