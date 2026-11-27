@@ -24,7 +24,7 @@ import {
   prepareGraphFonts,
   type DocumentFontStatus
 } from '@open-pencil/core/text'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
 import type { RequestedPage } from '#cli/app/target'
@@ -91,8 +91,11 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
 
 let textMeasurer: Promise<SkiaRenderer> | null = null
 
-/** Text the measurer met before its fonts were prepared, which keeps its size until they are. */
-const unmeasuredText = new Set<SceneNode>()
+/**
+ * Text the measurer met before its fonts were prepared, which keeps its size until they are, by
+ * layer id as the editor's pending text layout keeps it: layout measures some text as a copy.
+ */
+const unmeasuredText = new Set<string>()
 
 /**
  * Measure text with CanvasKit and the fonts it loads, as the app does, instead of the estimate
@@ -105,7 +108,13 @@ export function measureTextHeadlessly(): Promise<SkiaRenderer> {
     const renderer = await headlessRenderer()
     installTextMeasurer((node, maxWidth) => {
       const size = renderer.measureTextNode(node, maxWidth)
-      if (!size && node.type === 'TEXT' && node.text) unmeasuredText.add(node)
+      // Text measured in a stand-in for a face not loaded yet is measured again in it too.
+      if (
+        size
+          ? renderer.nodeFontReadiness(node) === 'substituted'
+          : node.type === 'TEXT' && node.text
+      )
+        unmeasuredText.add(node.id)
       return size
     })
     // Bounds take a text by its ink, as the app's do, for exports and absoluteRenderBounds.
@@ -142,11 +151,9 @@ async function layOutInDocumentFonts(
   const renderer = await measureTextHeadlessly()
   const status = await prepareGraphFonts(graph, pageIds)
   renderer.syncFontGeneration()
-  const texts = [...unmeasuredText].filter((node) => graph.getNode(node.id) === node)
-  for (const node of texts) unmeasuredText.delete(node)
-  graph.applyDerivedLayoutDuring(() => {
-    for (const node of texts) layOutPreparedText(graph, node.id)
-  })
+  const texts = [...unmeasuredText].filter((id) => graph.getNode(id))
+  for (const id of texts) unmeasuredText.delete(id)
+  graph.applyDerivedLayoutDuring(() => layOutPreparedText(graph, texts))
   return status
 }
 

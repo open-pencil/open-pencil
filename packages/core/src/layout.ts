@@ -1,4 +1,4 @@
-import { once } from 'es-toolkit'
+import { once, uniq } from 'es-toolkit'
 
 import { generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text/direction'
@@ -107,19 +107,55 @@ export function computeLayoutsAround(graph: SceneGraph, id: string): void {
  * Lays text out again once its fonts are prepared, since text whose fonts were not keeps the size
  * it had. Layout measures text only in auto layout, so text that sizes itself is measured here,
  * unless it keeps the glyphs its file saved, whose size is the file's; then the frames around it
- * and the sticky note, shape, or connector it names are laid out.
+ * and the sticky note, shape, or connector it names are laid out, by `layOutAround` when given.
+ * Without it, each frame is laid out once however many of the texts it holds, and an imported
+ * instance keeps its saved layout, as a document's own layout leaves it.
  */
 export function layOutPreparedText(
   graph: SceneGraph,
-  id: string,
-  layOutAround: (id: string) => void = (nodeId) => computeLayoutsAround(graph, nodeId)
+  ids: Iterable<string>,
+  layOutAround?: (id: string) => void
 ): void {
-  const node = graph.getNode(id)
-  if (!node) return
-  if (!node.derivedTextGlyphs?.length) sizeAutoResizingText(graph, id)
-  layOutAround(id)
-  const owner = generatedFrameOwner(graph, node)
-  if (owner) layOutAround(owner.id)
+  const scopes: string[] = []
+  for (const id of ids) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    if (!node.derivedTextGlyphs?.length) sizeAutoResizingText(graph, id)
+    scopes.push(id)
+    const owner = generatedFrameOwner(graph, node)
+    if (owner) scopes.push(owner.id)
+    if (layOutAround) for (const scope of scopes.splice(0)) layOutAround(scope)
+  }
+  if (scopes.length > 0) graph.withLayoutMutations(() => layOutScopesOnce(graph, uniq(scopes)))
+}
+
+/** Lays out each scope's layers, then each auto layout around them once, the deepest first. */
+function layOutScopesOnce(graph: SceneGraph, scopes: readonly string[]): void {
+  const depths = new Map<string, number>()
+  for (const id of scopes) {
+    computeAllLayouts(graph, id)
+    const chain: SceneNode[] = []
+    for (let node = graph.getNode(id); node?.parentId;) {
+      const parent = graph.getNode(node.parentId)
+      // An imported instance keeps the layout its file saved, so nothing above it moves either.
+      if (!parent || preservesImportedInstanceLayout(parent)) break
+      chain.push(parent)
+      node = parent
+    }
+    for (const parent of chain) {
+      if (parent.layoutMode !== 'NONE' && !depths.has(parent.id))
+        depths.set(parent.id, depthOf(graph, parent))
+    }
+  }
+  const frames = [...depths].sort(([, a], [, b]) => b - a).map(([id]) => id)
+  for (const id of frames) computeLayout(graph, id)
+}
+
+function depthOf(graph: SceneGraph, node: SceneNode): number {
+  let depth = 0
+  for (let parentId = node.parentId; parentId; parentId = graph.getNode(parentId)?.parentId ?? null)
+    depth++
+  return depth
 }
 
 export function computeSubtreeLayouts(

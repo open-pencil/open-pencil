@@ -109,7 +109,7 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     for (const [id, isDerived] of batch) {
       if (graph.getNode(id)) (isDerived ? derived : edited).push(id)
     }
-    const relayout = (id: string) => layOutPreparedText(graph, id, ctx.runLayoutForNode)
+    const relayout = (id: string) => layOutPreparedText(graph, [id], ctx.runLayoutForNode)
     layingOut = new Set(batch.keys())
     try {
       if (derived.length > 0) graph.applyDerivedLayoutDuring(() => derived.forEach(relayout))

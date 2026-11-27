@@ -93,7 +93,7 @@ export function createLayoutRunner(getGraph: () => SceneGraph) {
         (id) => id && !created.has(id) && graph.getNode(id)
       )
     const connectors = [
-      ...connectorsAffectedBy(graph, impact.changedNodeIds),
+      ...connectorsAffectedBy(graph, impact.layoutNodeIds),
       ...[...created].flatMap((id) => {
         const node = graph.getNode(id)
         return node?.type === 'CONNECTOR' && joinsExisting(node) ? [node] : []
