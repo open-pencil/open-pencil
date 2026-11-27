@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, jest, test } from 'bun:test'
+import { once } from 'node:events'
 import { createServer, type Socket } from 'node:net'
 
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
@@ -12,12 +13,14 @@ async function silentServer() {
     sockets.add(socket)
     socket.on('close', () => sockets.delete(socket))
   })
+  const accepted = once(server, 'connection')
   await new Promise<void>((resolve) => {
     server.listen(0, '127.0.0.1', resolve)
   })
   const address = server.address()
   if (!address || typeof address === 'string') throw new Error('The server has no port')
   return {
+    accepted,
     url: `postgresql://openpencil:openpencil@127.0.0.1:${address.port}/openpencil`,
     close() {
       for (const socket of sockets) socket.destroy()
@@ -36,16 +39,18 @@ describe('createPostgresCloudDatabase', () => {
     jest.useFakeTimers()
     const database = createPostgresCloudDatabase({ connectionString: server.url })
     try {
-      const query = sql`select 1`.execute(database).then(
-        () => 'answered',
-        () => 'failed'
+      const outcome = sql`select 1`.execute(database).then(
+        () => 'answered' as const,
+        (error: unknown) => error
       )
-      // Let the socket connect before the clock moves.
-      await new Promise((resolve) => {
-        setImmediate(resolve)
-      })
-      jest.advanceTimersByTime(POSTGRES_CONNECTION_TIMEOUT_MS)
-      expect(await query).toBe('failed')
+      await server.accepted
+      jest.advanceTimersByTime(POSTGRES_CONNECTION_TIMEOUT_MS - 1)
+      // A settled query wins the race, since it comes first.
+      expect(await Promise.race([outcome, Promise.resolve('pending')])).toBe('pending')
+      jest.advanceTimersByTime(1)
+      const error = await outcome
+      expect(error).toBeInstanceOf(Error)
+      expect(String(error)).toMatch(/timeout/i)
     } finally {
       jest.useRealTimers()
       await database.destroy()
