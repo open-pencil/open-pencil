@@ -473,7 +473,9 @@ export type TextBindableField = (typeof TEXT_BINDABLE_FIELDS)[number]
 export type TextBoundVariables = Partial<Record<TextBindableField, string>>
 
 /** Variable IDs a character run holds: text fields plus per-range fill colours (`fills/<i>/color`). */
-export type TextRunBoundVariables = Partial<Record<TextBindableField | `fills/${number}/color`, string>>
+export type TextRunBoundVariables = Partial<
+  Record<TextBindableField | `fills/${number}/color`, string>
+>
 
 /**
  * A line height or letter spacing as Figma keeps it: pixels, or a percent of the font size that

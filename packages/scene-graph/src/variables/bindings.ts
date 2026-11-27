@@ -8,7 +8,14 @@ import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
 import { isTextStyleLength, scaledTextStyleLengths } from '../scaling/node'
 import { pixelLength } from '../text/lengths'
-import type { CharacterStyleOverride, Effect, Fill, SceneNode, StyleRun, TextLength } from '../types'
+import type {
+  CharacterStyleOverride,
+  Effect,
+  Fill,
+  SceneNode,
+  StyleRun,
+  TextLength
+} from '../types'
 import {
   effectBindableProperties,
   effectBindingTarget,
@@ -165,11 +172,11 @@ export function resolvedValueBindings(graph: SceneGraph, node: SceneNode): Parti
   return updates
 }
 
-type RunHolder = Pick<SceneNode, 'id' | 'styleRuns' | 'componentScale'>
+type RunHolder = Pick<SceneNode, 'id' | 'fills' | 'styleRuns' | 'componentScale'>
 
 function resolvedRunPaintColors(
   graph: SceneGraph,
-  node: SceneNode,
+  node: Pick<SceneNode, 'id' | 'fills'>,
   style: CharacterStyleOverride,
   bound: Readonly<Partial<Record<string, string>>>
 ): CharacterStyleOverride {

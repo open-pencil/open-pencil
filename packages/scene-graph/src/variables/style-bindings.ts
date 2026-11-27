@@ -67,7 +67,16 @@ export function layerBindingsInEffect(
 }
 
 function runBindingsInEffect(run: StyleRun, styles: TextStyleLookup): VariableBindings {
-  const own = run.style.boundVariables ?? NO_BINDINGS
+  const raw = run.style.boundVariables
+  if (!raw) {
+    return NO_BINDINGS
+  }
+  const own: Record<string, string> = {}
+  for (const [field, variableId] of Object.entries(raw)) {
+    if (variableId !== undefined) {
+      own[field] = variableId
+    }
+  }
   return ownBindingsInEffect(own, run.style.textStyleId, styles)
 }
 
