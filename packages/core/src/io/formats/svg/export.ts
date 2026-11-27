@@ -165,7 +165,7 @@ function nodeShapeElements(
 
     case 'LINE': {
       // Where the canvas strokes it: to one side of the line, with its caps inside its length.
-      const stroke = node.strokes.find((item) => item.visible)
+      const stroke = node.strokes.find((item) => drawsStroke(node, item))
       const {
         network,
         from: start,
