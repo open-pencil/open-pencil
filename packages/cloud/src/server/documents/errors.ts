@@ -6,6 +6,10 @@ export class DocumentNotFoundError extends Error {
 export class DocumentForbiddenError extends Error {
   override readonly name = 'DocumentForbiddenError'
 }
+/** A tool for some kinds of document only, such as the slide tools for decks, met another kind. */
+export class DocumentKindMismatchError extends Error {
+  override readonly name = 'DocumentKindMismatchError'
+}
 /** A save named a base revision the document has moved on from. */
 export class DocumentConflictError extends Error {
   override readonly name = 'DocumentConflictError'

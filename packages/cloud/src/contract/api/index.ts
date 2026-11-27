@@ -19,7 +19,14 @@ export { commentsContract, sharedCommentsContract } from './comments'
 export { communityContract } from './community'
 export { documentsContract } from './documents'
 export { billingContract, servicesContract } from './services'
-export { internalContract, setAccountEntitlementsSchema } from './internal'
+export {
+  dailyUsageSchema,
+  internalContract,
+  MAX_USAGE_RANGE_DAYS,
+  setAccountEntitlementsSchema,
+  usageDaySchema,
+  usageRangeSchema
+} from './internal'
 export { publicSharingContract, sharingContract } from './sharing'
 export { documentToolsContract } from './tools'
 export { versionsContract } from './versions'

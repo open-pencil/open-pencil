@@ -90,7 +90,8 @@ export function createDocumentService(
         'storageObject.objectKey',
         'storageObject.byteSize',
         'storageObject.checksum',
-        'storageObject.contentType'
+        'storageObject.contentType',
+        'documentRevision.coverChecksum'
       ])
       .where('documentRevision.id', '=', document.currentRevisionId)
       .where('documentRevision.documentId', '=', documentId)
@@ -104,7 +105,8 @@ export function createDocumentService(
       checksum: revision.checksum,
       contentType: revision.contentType,
       download: await objects.createDownload({ key: revision.objectKey, expiresAt }),
-      images: await revisionImageDownloads(database, objects, revision.revisionId, expiresAt)
+      images: await revisionImageDownloads(database, objects, revision.revisionId, expiresAt),
+      cover: revision.coverChecksum
     }
   }
 

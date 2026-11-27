@@ -11,6 +11,7 @@ import type {
   TransactionalEmailPayloadByKind
 } from '#cloud/email'
 import type * as OAuth from '#cloud/server/oauth/tables'
+import type { UsageTables } from '#cloud/server/usage/tables'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -211,6 +212,8 @@ export interface DocumentRevisionTable {
   documentId: string
   parentRevisionId: string | null
   storageObjectId: string
+  /** The workspace image drawn as the revision's cover, or null for none; see migration 022. */
+  coverChecksum: Generated<string | null>
   createdBy: string
   createdAt: TimestampColumn
 }
@@ -524,7 +527,7 @@ export interface InvitationSendTable {
   sentAt: TimestampColumn
 }
 
-export interface CloudDatabase {
+export interface CloudDatabase extends UsageTables {
   account: Account
   session: Session
   twoFactor: TwoFactorTable

@@ -181,6 +181,8 @@ const rawCloudServerConfigSchema = v.object({
   billingEndpoint: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /** The bearer token that reads the internal API's daily usage counts and nothing else. */
+  usageReportToken: v.optional(v.pipe(v.string(), v.minLength(32))),
   /** Whether people may connect apps through OAuth, with this server as their authorization server. */
   oauthEnabled: v.optional(v.boolean(), false),
   /**
@@ -314,6 +316,10 @@ function validateServiceConfig(config: CloudServerConfig): void {
   }
   if (config.billingEndpoint && !config.internalServiceToken) {
     throw new CloudConfigError('Billing needs the internal API to set the plans it sells')
+  }
+  // The service token reaches every internal route, so a usage token equal to it would too.
+  if (config.usageReportToken && config.usageReportToken === config.internalServiceToken) {
+    throw new CloudConfigError('The usage report token must differ from the internal API token')
   }
   if (config.internalServiceToken && config.staticEntitlements) {
     throw new CloudConfigError(

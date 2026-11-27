@@ -28,9 +28,8 @@ export function createDesignTokenActions(
     const node = ctx.graph.createNode(
       styleNodeType(style),
       ctx.state.currentPageId,
-      styleNodeProps(style, fields)
+      styleNodeProps(style, fields, crypto.randomUUID())
     )
-    node.source.id = crypto.randomUUID()
     const snapshot = structuredClone(node)
     const parentId = node.parentId
     ctx.undo.push({

@@ -246,6 +246,32 @@ describe('MCP endpoint', () => {
     })
   })
 
+  test('runs a tool for decks on a deck only, refusing another document before any editor', async () => {
+    await withClient(appToken, async (client) => {
+      const create = async (kind: string) =>
+        json(
+          await client.callTool({ name: 'create_document', arguments: { name: kind, kind } }),
+          documentSchema
+        ).document.id
+      const design = await create('design')
+      const deck = await create('slides')
+      calls.length = 0
+      answer = { ok: true, result: { slides: [] } }
+
+      const refused = await client.callTool({
+        name: 'get_deck',
+        arguments: { document_id: design }
+      })
+      expect(refused.isError).toBe(true)
+      expect(text(refused)).toContain('list_documents')
+      expect(calls).toEqual([])
+
+      const outlined = await client.callTool({ name: 'get_deck', arguments: { document_id: deck } })
+      expect(json(outlined, v.unknown())).toEqual({ slides: [] })
+      expect(calls.map((call) => call.documentId)).toEqual([deck])
+    })
+  })
+
   test("never reaches documents outside the app's workspace", async () => {
     const outside = await oauth.send(`/api/workspaces/${other}/documents`, {
       body: { name: 'Private' },

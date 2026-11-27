@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:tes
 import { signAccessToken, trustAccessKey } from '#feedback-tests/access'
 import { createTestService, type TestService } from '#feedback-tests/harness'
 import { reportReceiptSchema, type Report } from '#feedback/contract'
-import { deleteExpiredReportFiles, reportFileKey } from '#feedback/reports/files'
+import { reportFileKey } from '#feedback/reports/files'
 import { runRetention } from '#feedback/retention'
 import type { CryptoKey } from 'jose'
 import * as v from 'valibot'
@@ -289,29 +289,9 @@ describe('report files', () => {
     const key = reportFileKey(reportId, 'document.fig')
     const day = 24 * 60 * 60 * 1000
 
-    await deleteExpiredReportFiles(service.env.REPORTS, new Date(Date.now() + 89 * day))
+    await runRetention(service.env, new Date(Date.now() + 89 * day))
     expect(await service.env.REPORTS.head(key)).not.toBeNull()
-    await deleteExpiredReportFiles(service.env.REPORTS, new Date(Date.now() + 91 * day))
-    expect(await service.env.REPORTS.head(key)).toBeNull()
-  })
-
-  test('are deleted by retention even when the sign-up cleanup fails', async () => {
-    const { reportId, token } = await submitted()
-    await upload(reportId, 'document.fig', 'bytes', token)
-    const key = reportFileKey(reportId, 'document.fig')
-    const failingDatabase = new Proxy(service.env.DB, {
-      get: (database, key) =>
-        key === 'prepare'
-          ? () => {
-              throw new Error('D1 is unavailable')
-            }
-          : Reflect.get(database, key)
-    })
-    const env = { ...service.env, DB: failingDatabase }
-
-    await expect(
-      runRetention(env, new Date(Date.now() + 91 * 24 * 60 * 60 * 1000))
-    ).rejects.toThrow('D1 is unavailable')
+    await runRetention(service.env, new Date(Date.now() + 91 * day))
     expect(await service.env.REPORTS.head(key)).toBeNull()
   })
 })

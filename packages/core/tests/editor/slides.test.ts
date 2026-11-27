@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import {
   createSlide,
   createSlideRow,
@@ -217,6 +218,17 @@ test('a deck opens on its first slide, and a design on the whole page', () => {
   const fresh = open({ graph: createDocumentGraph('slides', 'light') })
   expect(names(fresh)).toEqual(['1'])
   expect(fresh.state.focusedSlideId).toBe(expectDefined(slides(fresh)[0]?.[0]))
+})
+
+test('a deck read from a file opens on its first slide once its page has its layers', async () => {
+  const deck = open()
+  deck.replaceGraph(createDocumentGraph('slides', 'light'))
+  const bytes = await exportFigFile(deck.graph)
+  const editor = open()
+  editor.replaceGraph(await parseFigFile(bytes.slice().buffer, { populate: 'none' }))
+  expect(editor.state.focusedSlideId).toBeNull()
+  await editor.switchPage(editor.state.currentPageId)
+  expect(editor.state.focusedSlideId).toBe(expectDefined(slides(editor)[0]?.[0]))
 })
 
 test('a drop on the grid lands beside the nearest slide, or between sections as a new one', () => {

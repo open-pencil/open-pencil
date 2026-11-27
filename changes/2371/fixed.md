@@ -1,0 +1,1 @@
+- A text range's own gradient, image, or stacked fills now draw on the canvas as in Figma, once and in place of the layer's fills, with gradients spanning the layer (#2371).

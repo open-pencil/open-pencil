@@ -21,7 +21,7 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
   expect(configurableAITools.map((tool) => tool.name)).toEqual(
     ALL_TOOLS.filter((tool) => isToolExposed(tool, 'ai')).map((tool) => tool.name)
   )
-  const defaults = enabledAIToolDefinitions({}).map((tool) => tool.name)
+  const defaults = enabledAIToolDefinitions({}, 'design').map((tool) => tool.name)
   for (const tool of CORE_TOOLS) {
     if (isToolExposed(tool, 'ai')) expect(defaults).toContain(tool.name)
   }
@@ -52,14 +52,14 @@ test('AI catalog includes exposed extended tools while preserving compact defaul
   expect(defaults).not.toContain('switch_page')
   expect(defaults).not.toContain('convert_to_components')
   expect(
-    enabledAIToolDefinitions({ convert_to_components: true }).map((tool) => tool.name)
+    enabledAIToolDefinitions({ convert_to_components: true }, 'design').map((tool) => tool.name)
   ).toContain('convert_to_components')
   expect(
-    enabledAIToolDefinitions({ list_components: false }).map((tool) => tool.name)
+    enabledAIToolDefinitions({ list_components: false }, 'design').map((tool) => tool.name)
   ).not.toContain('list_components')
-  expect(enabledAIToolDefinitions({ unknown_tool: true }).map((tool) => tool.name)).not.toContain(
-    'unknown_tool'
-  )
+  expect(
+    enabledAIToolDefinitions({ unknown_tool: true }, 'design').map((tool) => tool.name)
+  ).not.toContain('unknown_tool')
 })
 
 test('each kind of agent keeps its own permissions through bulk changes and reset', () => {
@@ -84,5 +84,13 @@ test('each kind of agent keeps its own permissions through bulk changes and rese
 test('disabling all AI tools is preserved and does not change MCP access', () => {
   const access = useToolAccessSettings('ai')
   access.disabled.value = configurableAITools.map((tool) => tool.name)
-  expect(enabledAIToolDefinitions(aiToolOverrides.value)).toEqual([])
+  expect(enabledAIToolDefinitions(aiToolOverrides.value, 'design')).toEqual([])
+})
+
+test('the slide tools are offered on a deck only, and on by default there', () => {
+  const names = (kind: 'design' | 'board' | 'slides') =>
+    enabledAIToolDefinitions({}, kind).map((tool) => tool.name)
+  expect(names('slides')).toContain('get_deck')
+  expect(names('design')).not.toContain('get_deck')
+  expect(names('board')).not.toContain('get_deck')
 })

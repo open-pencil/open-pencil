@@ -19,12 +19,14 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+import AnimatePanel from './slides/animate/AnimatePanel.vue'
 
 const propertiesTabs = tv(propertiesTabsTheme)
 
 const { activeTab } = useAIChat()
 const panels = useMessages('panels')
 const checkMessages = useMessages('design-check')
+const slideMessages = useMessages('slides')
 const store = useEditorStore()
 
 const tabStyles = propertiesTabs()
@@ -35,9 +37,12 @@ const history = computed(() => isVersionHistoryOpen(store))
 
 /** Whether the document has design lint: a board has none, as FigJam has none. */
 const lints = computed(() => resolveEditorProfile(store.state).lint)
-// A board opened on the Lint tab shows Design instead.
+/** Whether the document is a deck, whose slides and layers animate. */
+const animates = computed(() => resolveEditorProfile(store.state).filmstrip)
+// A board opened on the Lint tab, or a design on the Animate tab, shows Design instead.
 watchEffect(() => {
   if (!lints.value && activeTab.value === 'lint') activeTab.value = 'design'
+  if (!animates.value && activeTab.value === 'animate') activeTab.value = 'design'
 })
 
 /** Errors and warnings on the current page; suggestions do not earn an indicator. */
@@ -69,6 +74,15 @@ const problemCount = computed(() => {
           :class="tabStyles.trigger()"
         >
           {{ panels.design }}
+        </TabsTrigger>
+        <TabsTrigger
+          v-if="animates"
+          value="animate"
+          data-test-id="properties-tab-animate"
+          :class="tabStyles.trigger()"
+        >
+          <icon-lucide-wand-sparkles :class="tabStyles.icon()" aria-hidden="true" />
+          <span :class="tabStyles.label()">{{ slideMessages.animate }}</span>
         </TabsTrigger>
         <TabsTrigger value="code" data-test-id="properties-tab-code" :class="tabStyles.trigger()">
           <icon-lucide-code :class="tabStyles.icon()" aria-hidden="true" />
@@ -107,6 +121,15 @@ const problemCount = computed(() => {
         :hidden="activeTab !== 'design'"
       >
         <DesignPanel />
+      </TabsContent>
+
+      <TabsContent
+        v-if="animates"
+        value="animate"
+        class="flex min-h-0 flex-1 flex-col"
+        :hidden="activeTab !== 'animate'"
+      >
+        <AnimatePanel v-if="activeTab === 'animate'" />
       </TabsContent>
 
       <TabsContent

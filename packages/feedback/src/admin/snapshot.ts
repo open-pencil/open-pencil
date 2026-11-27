@@ -2,7 +2,7 @@ import type { DailyGrowth, MetricsQuery, MetricsSnapshot, RankedCount } from '#f
 import { eachDay, utcDayOf, utcDayOfTimestamp } from '#feedback/days'
 import { createFeedbackDatabase, type FeedbackDatabase } from '#feedback/db'
 import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
-import { minDate, parseDate, toZoned } from '@internationalized/date'
+import { type CalendarDate, minDate, parseDate, toZoned } from '@internationalized/date'
 import { countBy, groupBy, maxBy, omit, partition, sumBy } from 'es-toolkit'
 import type { Kysely } from 'kysely'
 
@@ -11,8 +11,6 @@ import { fetchUsage } from './posthog'
 
 /** How many entries a ranking keeps. */
 const TOP = 10
-/** How many recent sign-ups the waitlist list shows. */
-const RECENT_SIGNUPS = 50
 /** The kinds of release file that are installers rather than updates or update checks. */
 const INSTALLER_KINDS = new Set(['macos-installer', 'windows-installer', 'linux-installer'])
 
@@ -46,33 +44,52 @@ function dailyGrowth(days: string[], totals: Map<string, number>): DailyGrowth[]
 const ranking = (rows: { name: string; value: number | string | bigint | null }[]): RankedCount[] =>
   rows.map((row) => ({ name: row.name, value: Number(row.value ?? 0) }))
 
-async function pings(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: string[]) {
+/**
+ * Pings in the range. Only versions that send their step can be checked, so the daily installs
+ * are what the counting laws allow of theirs, per app, and every other ping is `unchecked`;
+ * platforms and versions count checked pings, replayed ones included, as they carry no step.
+ */
+async function pings(
+  db: Kysely<FeedbackDatabase>,
+  range: MetricsQuery,
+  days: string[],
+  end: CalendarDate
+) {
   const inRange = db
     .selectFrom('usagePings')
     .where('day', '>=', range.start)
     .where('day', '<=', range.end)
-  const [byApp, byPlatform, byVersion, versions] = await Promise.all([
+  const [byDay, byPlatform, byVersion, versions, counted] = await Promise.all([
     inRange
-      .select(['day', 'app', (eb) => eb.fn.sum<number>('count').as('pings')])
-      .groupBy(['day', 'app'])
+      .select(['day', 'stepped', (eb) => eb.fn.sum<number>('count').as('pings')])
+      .groupBy(['day', 'stepped'])
       .execute(),
     inRange
       .select(['platform', 'app', (eb) => eb.fn.sum<number>('count').as('pings')])
+      .where('stepped', '=', 1)
       .groupBy(['platform', 'app'])
       .execute(),
     inRange
-      .select(['day', 'version', (eb) => eb.fn.sum<number>('count').as('pings')])
-      .groupBy(['day', 'version'])
+      .select(['day', 'version', 'stepped', (eb) => eb.fn.sum<number>('count').as('pings')])
+      .groupBy(['day', 'version', 'stepped'])
       .execute(),
     db
       .selectFrom('usagePings')
       .select(['version', (eb) => eb.fn.min<string>('day').as('firstDay')])
       .groupBy('version')
-      .execute()
+      .execute(),
+    installs(db, end, days)
   ])
   const latest = newestStable(versions.map((row) => row.version)) ?? null
-  const pingsOn = (rows: typeof byApp, day: string, app: string) =>
-    Number(rows.find((row) => row.day === day && row.app === app)?.pings ?? 0)
+  const uncheckedOn = (day: string) =>
+    sumBy(
+      byDay.filter((row) => row.day === day && row.stepped === 0),
+      (row) => Number(row.pings)
+    )
+  const installsOf = (app: string, index: number) => {
+    const day = counted.byApp[app]?.at(index)
+    return day ? day.new + day.returning : 0
+  }
   const platforms = Object.entries(groupBy(byPlatform, (row) => row.platform)).map(
     ([os, rows]) => ({
       os,
@@ -81,21 +98,26 @@ async function pings(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: st
     })
   )
   return {
-    dailyActive: days.map((day) => ({
+    dailyActive: days.map((day, index) => ({
       day,
-      desktop: pingsOn(byApp, day, 'desktop'),
-      web: pingsOn(byApp, day, 'web')
+      desktop: installsOf('desktop', index),
+      web: installsOf('web', index)
     })),
+    installs: counted.total.map((day) => ({ ...day, unchecked: uncheckedOn(day.day) })),
     platforms: platforms.toSorted((a, b) => b.desktop + b.web - (a.desktop + a.web)),
     versions: {
       latest,
       daily: days.map((day) => {
-        const onDay = byVersion.filter((row) => row.day === day)
-        const latestPings = Number(onDay.find((row) => row.version === latest)?.pings ?? 0)
+        const [checked, unchecked] = partition(
+          byVersion.filter((row) => row.day === day),
+          (row) => row.stepped === 1
+        )
+        const latestPings = Number(checked.find((row) => row.version === latest)?.pings ?? 0)
         return {
           day,
           latest: latestPings,
-          other: sumBy(onDay, (row) => Number(row.pings)) - latestPings
+          other: sumBy(checked, (row) => Number(row.pings)) - latestPings,
+          unchecked: sumBy(unchecked, (row) => Number(row.pings))
         }
       })
     },
@@ -145,7 +167,7 @@ async function site(
   range: MetricsQuery,
   days: string[]
 ) {
-  const [website, app] = env.SITE_HOSTS.split(',').map((host) => host.trim())
+  const [website, app, cloud] = env.SITE_HOSTS.split(',').map((host) => host.trim())
   const [visits, pages, countries] = await Promise.all([
     db
       .selectFrom('siteVisits')
@@ -175,7 +197,12 @@ async function site(
   const visitsOn = (day: string, host: string | undefined) =>
     visits.find((row) => row.day === day && row.host === host)?.visits ?? 0
   return {
-    visits: days.map((day) => ({ day, site: visitsOn(day, website), app: visitsOn(day, app) })),
+    visits: days.map((day) => ({
+      day,
+      site: visitsOn(day, website),
+      app: visitsOn(day, app),
+      cloud: visitsOn(day, cloud)
+    })),
     website: { pages: ranking(pages), countries: ranking(countries) }
   }
 }
@@ -264,7 +291,8 @@ async function github(
       uniqueViews: row.uniqueViews,
       clones: row.clones
     })),
-    referrers: ranking(referrers),
+    // GitHub ranks referrers over the 14 days before each snapshot; the range's last one shows.
+    referrers: { day: lastReferrerDay?.day ?? null, top: ranking(referrers) },
     activity: daily
   }
 }
@@ -329,62 +357,126 @@ function tally(items: RepoItemRow[], days: string[], from: string, until: string
   })
 }
 
+/**
+ * People with a merged pull request by the end of each finished day, and those whose first one
+ * merged that day, by the team and by everyone else. Bots have no author and never count.
+ */
+function contributors(
+  merged: { author: string | null; authorAssociation: string; mergedAt: string | null }[],
+  days: string[]
+) {
+  const firsts = Object.values(
+    groupBy(
+      merged.flatMap((pull) =>
+        pull.author && pull.mergedAt
+          ? [{ ...pull, author: pull.author, mergedAt: pull.mergedAt }]
+          : []
+      ),
+      (pull) => pull.author
+    )
+  ).flatMap((pulls) => {
+    // ISO timestamps sort in time order.
+    const first = pulls.toSorted((a, b) => a.mergedAt.localeCompare(b.mergedAt)).at(0)
+    return first
+      ? [
+          {
+            day: utcDayOfTimestamp(first.mergedAt).toString(),
+            team: TEAM_ASSOCIATIONS.has(first.authorAssociation)
+          }
+        ]
+      : []
+  })
+  if (!firsts.length) return []
+  const [team, community] = partition(firsts, (first) => first.team)
+  const newOn = (group: typeof firsts) => countBy(group, (first) => first.day)
+  const [newTeam, newCommunity] = [newOn(team), newOn(community)]
+  const start = days.at(0)
+  const before = (group: typeof firsts) =>
+    group.filter((first) => start !== undefined && first.day < start).length
+  let teamTotal = before(team)
+  let communityTotal = before(community)
+  return days.map((day) => {
+    teamTotal += newTeam[day] ?? 0
+    communityTotal += newCommunity[day] ?? 0
+    return {
+      day,
+      team: teamTotal,
+      community: communityTotal,
+      newTeam: newTeam[day] ?? 0,
+      newCommunity: newCommunity[day] ?? 0
+    }
+  })
+}
+
 async function activity(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: string[]) {
   const { from, until } = timestampRange(range)
-  const [items, synced] = await Promise.all([
+  const [items, merged, synced] = await Promise.all([
     db
       .selectFrom('repoItems')
       .select(['kind', 'authorAssociation', 'createdAt', 'closedAt', 'mergedAt'])
       .where('createdAt', '<', until)
       .where((eb) => eb.or([eb('closedAt', 'is', null), eb('closedAt', '>=', from)]))
       .execute(),
+    // Every merge up to the range's end: a contributor counts from their first.
+    db
+      .selectFrom('repoItems')
+      .select(['author', 'authorAssociation', 'mergedAt'])
+      .where('kind', '=', 'pull')
+      .where('author', 'is not', null)
+      .where('mergedAt', '<', until)
+      .execute(),
     db.selectFrom('repoItems').select('number').limit(1).executeTakeFirst()
   ])
-  if (!synced) return { issues: [], pulls: [] }
+  if (!synced) return { issues: [], pulls: [], contributors: [] }
   const [pulls, issues] = partition(items, (item) => item.kind === 'pull')
   return {
     // Issues are never merged.
     issues: tally(issues, days, from, until).map((day) =>
       omit(day, ['mergedTeam', 'mergedCommunity'])
     ),
-    pulls: tally(pulls, days, from, until)
+    pulls: tally(pulls, days, from, until),
+    contributors: contributors(merged, days)
   }
 }
 
-async function waitlist(db: Kysely<FeedbackDatabase>, range: MetricsQuery) {
-  const { from, until } = timestampRange(range)
-  const [totals, recent] = await Promise.all([
+/**
+ * Cloud's counts for each finished day of the range, and its totals as of the last day in the
+ * range that has them; `null` until the first snapshot recorded any.
+ */
+async function cloudUsage(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: string[]) {
+  const [rows, recorded] = await Promise.all([
     db
-      .selectFrom('waitlist')
-      .select((eb) => [
-        eb.fn.countAll<number>().as('total'),
-        eb.fn.count<number>('confirmedAt').as('confirmed'),
-        eb.fn
-          .countAll<number>()
-          .filterWhere('createdAt', '>=', from)
-          .filterWhere('createdAt', '<', until)
-          .as('added')
-      ])
-      .executeTakeFirst(),
-    db
-      .selectFrom('waitlist')
-      .select(['email', 'createdAt', 'confirmedAt'])
-      .where('createdAt', '>=', from)
-      .where('createdAt', '<', until)
-      .orderBy('createdAt', 'desc')
-      .limit(RECENT_SIGNUPS)
-      .execute()
+      .selectFrom('cloudUsage')
+      .selectAll()
+      .where('day', '>=', range.start)
+      .where('day', '<=', range.end)
+      .orderBy('day')
+      .execute(),
+    db.selectFrom('cloudUsage').select('day').limit(1).executeTakeFirst()
   ])
+  if (!recorded) return null
+  const byDay = new Map(rows.map((row) => [row.day, row]))
+  const withTotals = rows.findLast((row) => row.accounts !== null)
   return {
-    total: Number(totals?.total ?? 0),
-    confirmed: Number(totals?.confirmed ?? 0),
-    added: Number(totals?.added ?? 0),
-    // Only the domain leaves the database; the address itself never reaches the dashboard.
-    recent: recent.map((row) => ({
-      domain: row.email.slice(row.email.lastIndexOf('@') + 1).toLowerCase(),
-      signedUpAt: row.createdAt,
-      confirmed: row.confirmedAt !== null
-    }))
+    days: days.map((day) => {
+      const row = byDay.get(day)
+      return {
+        day,
+        signUps: row?.signUps ?? 0,
+        activeAccounts: row?.activeAccounts ?? 0,
+        documentsCreated: row?.documentsCreated ?? 0,
+        revisions: row?.revisions ?? 0
+      }
+    }),
+    totals: withTotals
+      ? {
+          day: withTotals.day,
+          accounts: withTotals.accounts ?? 0,
+          documents: withTotals.documents ?? 0,
+          workspaces: withTotals.workspaces ?? 0,
+          storageBytes: withTotals.storageBytes ?? 0
+        }
+      : null
   }
 }
 
@@ -405,8 +497,8 @@ async function firstDay(db: Kysely<FeedbackDatabase>): Promise<string | null> {
 }
 
 /**
- * The dashboard's data for a range of UTC days: pings, snapshots, and the waitlist from D1, and
- * usage from PostHog. PostHog failing leaves `usage` empty rather than failing the whole page.
+ * The dashboard's data for a range of UTC days: pings and snapshots, Cloud's included, from D1,
+ * and usage from PostHog. PostHog failing leaves `usage` empty rather than failing the whole page.
  */
 export async function buildSnapshot(
   env: FeedbackBindings,
@@ -421,31 +513,28 @@ export async function buildSnapshot(
   // Visits and the issue mirror are recorded once a day has ended, so today never has any.
   const finished = days.filter((day) => parseDate(day).compare(today) < 0)
   const db = createFeedbackDatabase(env.DB)
-  const [earliest, pinged, byStep, byNetwork, visited, repository, signups, usage] =
-    await Promise.all([
-      firstDay(db),
-      pings(db, range, days),
-      installs(db, end, days),
-      networks(db, range),
-      site(db, env, range, finished),
-      github(db, range, days, finished),
-      waitlist(db, range),
-      fetchUsage(env, services, range).catch((error: unknown) => {
-        console.warn('PostHog usage unavailable', { error: String(error) })
-        return null
-      })
-    ])
+  const [earliest, pinged, byNetwork, visited, repository, cloud, usage] = await Promise.all([
+    firstDay(db),
+    pings(db, range, days, end),
+    networks(db, range),
+    site(db, env, range, finished),
+    github(db, range, days, finished),
+    cloudUsage(db, range, finished),
+    fetchUsage(env, services, range).catch((error: unknown) => {
+      console.warn('PostHog usage unavailable', { error: String(error) })
+      return null
+    })
+  ])
   return {
     asOf: now.toISOString(),
     today: today.toString(),
     earliest,
     ...range,
     ...pinged,
-    installs: byStep,
     networks: byNetwork,
     ...visited,
     github: repository,
-    waitlist: signups,
+    cloud,
     usage
   }
 }

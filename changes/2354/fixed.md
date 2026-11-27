@@ -1,1 +1,1 @@
-- Large Cloud documents keep their live room working, instead of having it reset every time an editor rejoins (#2354).
+- Large Cloud documents keep their live room working, instead of having it reset every time an editor rejoins or closed as overloaded while it grows (#2354, #2369).

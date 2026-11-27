@@ -96,3 +96,18 @@ export async function addSwitchBehaviour(page: Page) {
   await page.getByRole('option', { name: 'State' }).click()
   await expect(section.getByText('Ready', { exact: true })).toBeVisible()
 }
+
+/** Makes a Switch set a switch through the store, its value bound to State, without the panel. */
+export async function setSwitchBehaviour(page: Page, setId: string) {
+  await page.evaluate((setId) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.setBehaviour(setId, {
+      kind: 'switch',
+      booleans: { value: { propertyId: 'state', on: 'On', off: 'Off' } },
+      texts: {},
+      numbers: {},
+      parts: {}
+    })
+  }, setId)
+}

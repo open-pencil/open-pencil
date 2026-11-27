@@ -52,6 +52,7 @@ export function loadPageTransaction(
       for (const [id, entries] of graph.instanceIndex)
         if (!entries.size) graph.instanceIndex.delete(id)
       graph.clearAbsPosCache()
+      graph.sharedStyleIndex.invalidate()
       throw error
     }
   })

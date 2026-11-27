@@ -114,6 +114,9 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
     billingEndpoint: config.billing?.endpoint,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
+      : undefined,
+    usageReportToken: config.usage_report
+      ? requiredSecret(environment, config.usage_report.token)
       : undefined
   }
 }

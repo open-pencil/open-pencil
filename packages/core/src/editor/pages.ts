@@ -210,6 +210,7 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     if (previousPageId !== prepared.pageId) {
       ctx.emitEditorEvent('page:changed', prepared.pageId, previousPageId)
     }
+    ctx.emitEditorEvent('page:shown', prepared.pageId)
     ctx.requestRender()
     return true
   }
