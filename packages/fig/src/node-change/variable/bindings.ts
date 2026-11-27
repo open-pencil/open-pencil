@@ -1,4 +1,5 @@
 import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
+import { uniqBy } from 'es-toolkit/array'
 import { invert } from 'es-toolkit/object'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
@@ -57,6 +58,8 @@ export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
  * Kiwi's field for each binding a text style's record holds beyond a layer's. Figma writes a face
  * bound by weight as FONT_STYLE too, to a number variable, which tells the two apart.
  */
+const FACE_FIELDS: ReadonlySet<string> = new Set(['fontStyle', 'fontWeight'])
+
 const TEXT_STYLE_BINDING_FIELDS: Readonly<Record<string, string>> = {
   fontStyle: 'FONT_STYLE',
   fontWeight: 'FONT_STYLE',
@@ -71,6 +74,22 @@ function textStyleBindingField(entry: VariableConsumptionEntry): string | undefi
   if (entry.variableField === 'PARAGRAPH_SPACING') return 'paragraphSpacing'
   if (entry.variableField === 'PARAGRAPH_INDENT') return 'paragraphIndent'
   return undefined
+}
+
+/**
+ * The scene fields a record's entry speaks for: a layer's field, and for a text style the face
+ * and paragraph fields too. FONT_STYLE stands for the face whether bound by style or by weight.
+ */
+export function consumptionEntryFields(
+  entry: VariableConsumptionEntry,
+  textStyle: boolean
+): string[] {
+  const field = entry.variableField && VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]
+  if (field) return [field]
+  if (!textStyle) return []
+  if (entry.variableField === 'FONT_STYLE') return ['fontStyle', 'fontWeight']
+  const styleField = textStyleBindingField(entry)
+  return styleField ? [styleField] : []
 }
 
 /** A text style record's binding that a layer's table does not read, by variable ID. */
@@ -295,16 +314,22 @@ export function exportedVariableConsumptionEntries(
   graph: SceneGraph,
   ids?: Map<string, GUID>
 ): VariableConsumptionEntry[] {
+  const textStyle = node.sharedStyleType === 'TEXT'
   const fields = new Set(Object.keys(node.boundVariables))
+  // A field the saved record binds and the layer no longer does gets an entry that clears it.
   for (const entry of variableConsumptionEntries(effectiveFigmaRawNodeFields(node))) {
     if (!referencesVariable(entry.variableData?.dataType)) continue
-    const field = entry.variableField && VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]
-    if (field) fields.add(field)
+    for (const field of consumptionEntryFields(entry, textStyle)) fields.add(field)
   }
-  return [...fields].flatMap((field) => {
-    const styleField =
-      node.sharedStyleType === 'TEXT' ? TEXT_STYLE_BINDING_FIELDS[field] : undefined
-    if (styleField) return [consumptionEntry(styleField, node.boundVariables[field], graph, ids)]
+  const entries = [...fields].flatMap((field) => {
+    const styleField = textStyle ? TEXT_STYLE_BINDING_FIELDS[field] : undefined
+    if (styleField) {
+      // One FONT_STYLE entry holds the face, bound by weight or by style.
+      const bound = FACE_FIELDS.has(field)
+        ? node.boundVariables['fontWeight' in node.boundVariables ? 'fontWeight' : 'fontStyle']
+        : node.boundVariables[field]
+      return [consumptionEntry(styleField, bound, graph, ids)]
+    }
     const multiplier =
       (node.variableBindingScales[field] ?? 1) /
       (field === 'opacity' ? OPACITY_UNIT_PER_PERCENT : 1)
@@ -318,6 +343,7 @@ export function exportedVariableConsumptionEntries(
     )
     return entry ? [entry] : []
   })
+  return uniqBy(entries, (entry) => entry.variableField)
 }
 
 export interface ResolvedVariableConsumption {

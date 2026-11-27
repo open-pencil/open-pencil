@@ -24,10 +24,10 @@ import { effectBindingTarget, paintBindingTarget } from '@open-pencil/scene-grap
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import {
+  consumptionEntryFields,
   resolveTextStyleConsumptionEntry,
   resolveVariableConsumptionEntry,
   variableConsumptionEntries,
-  VARIABLE_BINDING_FIELDS_INVERSE,
   referencesVariable
 } from './variable/bindings'
 import { effectBindingsFromKiwi } from './variable/effects'
@@ -114,10 +114,8 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
       resolveVariableConsumptionEntry(entry) ??
       (nc.styleType === 'TEXT' ? resolveTextStyleConsumptionEntry(entry) : undefined)
     if (binding) bindings[binding.field] = binding.variableId
-    else if (entry.variableField && !referencesVariable(entry.variableData?.dataType)) {
-      const field = VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]
-      if (field) bindings = omit(bindings, [field])
-    }
+    else if (entry.variableField && !referencesVariable(entry.variableData?.dataType))
+      bindings = omit(bindings, consumptionEntryFields(entry, nc.styleType === 'TEXT'))
   }
   nc.fillPaints?.forEach((paint, i) => {
     const variableGuid = paint.colorVar?.value?.alias?.guid
