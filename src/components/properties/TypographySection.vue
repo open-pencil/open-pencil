@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 
 import type { TextCase } from '@open-pencil/scene-graph'
 import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
@@ -13,7 +13,6 @@ import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
-import DecorationSettings from '@/components/properties/typography/DecorationSettings.vue'
 import FontAxisField from '@/components/properties/typography/FontAxisField.vue'
 import FontFeaturesPopover from '@/components/properties/typography/FontFeaturesPopover.vue'
 import LetterSpacingField from '@/components/properties/typography/LetterSpacingField.vue'
@@ -29,6 +28,11 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+
+// Shown only while a decoration is on, and it carries the colour picker: loaded when first needed.
+const DecorationSettings = defineAsyncComponent(
+  () => import('@/components/properties/typography/DecorationSettings.vue')
+)
 
 const panels = useMessages('panels')
 const typography = useMessages('panels/typography')
