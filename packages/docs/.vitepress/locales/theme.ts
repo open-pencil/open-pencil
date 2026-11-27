@@ -21,9 +21,6 @@ export const localeThemeConfig = (
   sidebarMenuLabel: page.menu,
   langMenuLabel: page.language,
   darkModeSwitchLabel: page.theme,
-  // Not every canonical page has a maintained translation. Locale switches return
-  // to the locale home instead of inventing a corresponding URL that may 404.
-  i18nRouting: false,
   nav: [
     { text: nav.docs, link: `${prefix}/getting-started`, activeMatch: sectionMatch(prefix).docs },
     {
