@@ -312,6 +312,8 @@
         "@cloudflare/workers-types": "^5.20261011.1",
         "@electric-sql/pglite": "0.4.1",
         "@modelcontextprotocol/client": "^2.0.0",
+        "@open-pencil/mcp": "workspace:*",
+        "@open-pencil/mcp-catalog-tools": "workspace:*",
         "@open-pencil/test-support": "workspace:*",
         "@types/bun": "^1.3.14",
         "@types/nodemailer": "^8.0.1",
@@ -1112,6 +1114,10 @@
     },
     "tools/generate/mcp-catalog": {
       "name": "@open-pencil/mcp-catalog-tools",
+      "version": "0.0.0",
+      "bin": {
+        "mcp-catalog": "./src/generate.ts",
+      },
       "dependencies": {
         "@open-pencil/core": "workspace:*",
         "@open-pencil/mcp": "workspace:*",

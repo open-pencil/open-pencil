@@ -314,9 +314,8 @@ The MCP endpoint at `/mcp` serves where `[oauth]` is on. It is stateless and hol
 answers a request without a valid token with a challenge naming its own protected resource
 metadata, and turns each tool call into a request to the document API with the caller's token, so
 every scope, workspace, and rate limit applies there unchanged. Its document tools are plain API
-calls. Its design tools are Core's, listed from `server/mcp/design-tools.json`, which
-`bun run generate:mcp-catalog` writes from Core and `check:mcp-catalog` keeps current, since the
-server holds no Core.
+calls. Its design tools are Core's, listed from `server/mcp/design-tools.json`, which the
+package's build writes from Core's tools before bundling, since the server holds no Core.
 
 The server has no editor to run them in, so `POST /api/documents/:id/tools/{read,write}` hands each
 call to the document's relay (`callDocumentTool`). A signed-in editor tab offers to run tools on the

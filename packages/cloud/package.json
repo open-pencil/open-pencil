@@ -108,7 +108,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "bunx tsdown --config tsdown.config.ts",
+    "build": "mcp-catalog && bunx tsdown --config tsdown.config.ts",
     "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
     "start": "node dist-standalone/server.mjs",
     "dev": "bun --preload @open-pencil/test-support/vue/sfc --watch src/runtime/node/main.ts",
@@ -187,6 +187,8 @@
     "@cloudflare/workers-types": "^5.20261011.1",
     "@electric-sql/pglite": "0.4.1",
     "@modelcontextprotocol/client": "^2.0.0",
+    "@open-pencil/mcp": "workspace:*",
+    "@open-pencil/mcp-catalog-tools": "workspace:*",
     "@open-pencil/test-support": "workspace:*",
     "@types/bun": "^1.3.14",
     "@types/nodemailer": "^8.0.1",
