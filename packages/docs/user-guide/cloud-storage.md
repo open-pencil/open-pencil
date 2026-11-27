@@ -55,7 +55,7 @@ The web app is moving from app.openpencil.dev to cloud.openpencil.dev: a rule se
 
 Open or create a document, then choose **File → Save to…**. With no Cloud workspace to choose from, the document is saved straight into the bucket; otherwise pick the bucket from the list. The tab stays bound to it: **Save** and auto-save now write to storage instead of a local file. A local `.fig` you had open keeps its last saved contents.
 
-To open stored documents, select your bucket in Home's sidebar; **File → Browse files…** opens Home where you left it. **New design** with the bucket selected creates a document in it. Home lists every document in the bucket with a preview read from the document itself, so listing a large file downloads only its embedded thumbnail.
+To open stored documents, select your bucket in Home's sidebar. **New design** with the bucket selected creates a document in it. Home lists every document in the bucket with a preview read from the document itself, so listing a large file downloads only its embedded thumbnail.
 
 ## How Saving Works
 

@@ -52,6 +52,6 @@ Smaller files take longer to save. **Fast** saves the way Figma does, and Figma 
 
 ## Recover Unsaved Work
 
-OpenPencil keeps a copy of documents you never saved to a file, even after you close their tabs. When it has one, Home offers **Recover unsaved work**: choose **Restore** to open the document, or **Discard** to delete the copy.
+OpenPencil keeps a copy of documents you never saved to a file, even after you close their tabs. Home lists them under **Unsaved work**: open one to keep working on it, or choose **Discard** to delete the copy.
 
 The copies stay on this computer, in this browser or app, and don't replace saving. To stop keeping them, turn off **Automatically preserve unsaved work** in **Settings → General → Recovery**.

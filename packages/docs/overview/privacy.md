@@ -78,7 +78,7 @@ Accepted events go to [PostHog](https://posthog.com), a product analytics servic
 
 ## Error and problem reports
 
-When OpenPencil's own code throws an unexpected error, an official build adds **Report…** to the error notice; errors from browser extensions or without a stack trace get none. If OpenPencil closed unexpectedly after an error, or the desktop app hit an internal error, the next launch offers the same, once. **File → Report a problem…** is always there. Both open a form, and nothing is sent until you choose **Send report**. **What will be sent** shows the exact report before it goes. It has:
+When OpenPencil's own code throws an unexpected error, an official build adds **Report…** to the error notice; errors from browser extensions or without a stack trace get none. If OpenPencil closed unexpectedly after an error, or the desktop app hit an internal error, the next launch offers the same, once. **Help → Report a Problem…** is always there. Both open a form, and nothing is sent until you choose **Send report**. **What will be sent** shows the exact report before it goes. It has:
 
 - For an error: its type and message, scrubbed of keys, tokens, email addresses, and your user name in folder paths, and where in OpenPencil's code it happened. Errors from AI providers, which can quote your prompts, are sent without a message.
 - What you write, and an email address if you give one so we can reply.
@@ -100,7 +100,7 @@ Reports go to `feedback.openpencil.dev`, which passes them to PostHog's error tr
 
 ## Other network requests
 
-OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on startup unless you turn that off in **Settings → General**. **Check for Updates** in the menu still checks. Everything else below connects only when you use that feature, and only to the service named.
+OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on startup unless you turn that off in **Settings → General**. **Help → Check for Updates…** still checks. Everything else below connects only when you use that feature, and only to the service named.
 
 | Feature                 | Where it connects                                                                                                                                                                                                                                           |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
