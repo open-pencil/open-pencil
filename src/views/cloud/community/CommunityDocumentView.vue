@@ -62,6 +62,9 @@ const kindLabel = computed(
       slides: files.value.createSlides
     })[document.value?.kind ?? 'design']
 )
+const hasDetails = computed(
+  () => Boolean(document.value?.description) || (document.value?.versions.length ?? 0) > 0
+)
 const pageURL = computed(() =>
   document.value ? new URL(cloudCommunityPagePath(document.value.id), origin).href : ''
 )
@@ -134,8 +137,15 @@ useHead({ title: () => document.value?.name ?? communityMessages.value.community
       </div>
 
       <div class="@container/details mt-10 border-t border-border pt-8">
-        <div class="grid gap-10 @3xl/details:grid-cols-[minmax(0,1fr)_16rem]">
-          <div class="flex min-w-0 flex-col gap-8">
+        <div
+          :class="[
+            'grid gap-10',
+            hasDetails
+              ? '@3xl/details:grid-cols-[minmax(0,1fr)_16rem]'
+              : '@3xl/details:grid-cols-[16rem]'
+          ]"
+        >
+          <div v-if="hasDetails" class="flex min-w-0 flex-col gap-8">
             <p v-if="document.description" class="max-w-2xl text-sm/relaxed text-pretty">
               {{ document.description }}
             </p>
