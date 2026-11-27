@@ -39,6 +39,25 @@ test('a text whose only fill is a Figma shader exports no visible glyphs', () =>
   expect(svg).toMatch(/<text [^>]*fill="none"/)
 })
 
+test('a text range writes its first drawn fill, past a shader, and no fill when it has only shaders', () => {
+  const ranged = (fills: Fill[]) =>
+    svgOf(
+      (graph, pageId) => [
+        graph.createNode('TEXT', pageId, {
+          text: 'Hi there',
+          width: 80,
+          height: 20,
+          fills: [solid(1, 0, 0, 1, 1)],
+          styleRuns: [{ start: 3, length: 5, style: { fills } }]
+        }).id
+      ],
+      { colorSpace: 'srgb' }
+    )
+  const blue = solid(0, 0, 1, 1, 1)
+  expect(ranged([SHADER, blue])).toBe(ranged([blue]))
+  expect(ranged([SHADER])).toMatch(/<tspan [^>]*fill="none"[^>]*>there<\/tspan>/)
+})
+
 test('a text whose first drawn fill SVG cannot write keeps its glyphs in the default fill', () => {
   const noise: Fill = { ...solid(1, 0, 0, 1, 1), type: 'NOISE' }
   const svg = svgOf((graph, pageId) => [
