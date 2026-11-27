@@ -1,0 +1,1 @@
+- Preview keeps grid rows and columns that hug their cells at their size in a larger grid, as the canvas does, instead of stretching them (#2378).

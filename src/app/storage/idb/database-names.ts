@@ -4,6 +4,7 @@ export const APP_DATABASE_NAMES = {
   credentials: 'open-pencil-credentials',
   libraries: 'open-pencil-libraries',
   localCanvas: 'open-pencil-cloud-local',
+  localCanvasCovers: 'open-pencil-cloud-local-covers',
   outbox: 'open-pencil-cloud-outbox',
   recovery: 'open-pencil-recovery',
   diagnostics: 'open-pencil-diagnostics',
