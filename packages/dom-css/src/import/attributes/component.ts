@@ -6,6 +6,11 @@ import type { DesignElement } from '#dom-css/types'
  * properties, such as `Size=Small, State=Hover`. In a component, `text`, `visible`, and `slot`
  * name the property that sets an element's text, shows it, or takes its content.
  *
+ * `reka` names the Reka UI element an element is, as Design JSX writes it: a component marked
+ * `Switch.Root` behaves as a switch, and a box inside it marked `Switch.Thumb` is its thumb.
+ * `behaviour`, beside a root, binds the control's values to the component's properties by name,
+ * as the `set_behaviour` tool takes them without the kind: `{"values":{"value":"State"}}`.
+ *
  * Outside its component, an element marked `instance` with a component's or set's name is an
  * instance of it, of the variant whose properties `variant` names, such as `Checked=On`.
  */
@@ -15,6 +20,8 @@ export const COMPONENT_ATTRIBUTES = {
   text: 'data-op-text',
   visible: 'data-op-visible',
   slot: 'data-op-slot',
+  reka: 'data-op-reka',
+  behaviour: 'data-op-behaviour',
   instance: 'data-op-instance',
   variant: 'data-op-variant'
 } as const

@@ -393,6 +393,22 @@ function loadedFirst(
   return async (url, signal) => answered.get(url) ?? fetch(url, signal)
 }
 
+/**
+ * A `<video>`'s poster, which a browser shows until the video plays, by its address resolved
+ * against the page's. The engine lays videos out without loading it, so it is read as a
+ * background picture is.
+ */
+function posterOf(
+  element: DesignElement,
+  baseURL: string | undefined
+): [DesignElement, string] | undefined {
+  const { poster } = element.attrs
+  if (element.tagName.toLowerCase() !== 'video' || !poster || !URL.canParse(poster, baseURL)) {
+    return undefined
+  }
+  return [element, new URL(poster, baseURL).href]
+}
+
 /** What an `<img>` loaded, by its `src` resolved against the page's address. */
 function imageOf(
   element: DesignElement,
@@ -449,7 +465,11 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       const backgrounds = [...pairs.map(([element]) => element), ...generated].filter(
         (element) => backgroundImageURLs(element).length > 0
       )
-      await attachImages([], loadedFirst(answered, options.fetch), backgrounds)
+      const posters = pairs.flatMap(([element]) => {
+        const poster = posterOf(element, options.baseURL)
+        return poster ? [poster] : []
+      })
+      await attachImages(posters, loadedFirst(answered, options.fetch), backgrounds)
       styled.background = canvasBackground(capture)
       styled.canvas = canvasElement(capture)
       styled.customProperties = capture.variables

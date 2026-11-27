@@ -19,6 +19,7 @@ import { createSlotProperty, slotOwner } from '@open-pencil/scene-graph/slots'
 import { componentFromNode } from '#core/figma-api/components'
 import { combineComponentsAsVariants } from '#core/figma-api/variants'
 
+import { applyMarkedBehaviours } from './behaviours'
 import { createMarkedInstances } from './instances'
 
 interface Marked {
@@ -161,7 +162,8 @@ function requireLayers(sources: LayerSources, page: DesignDocument): void {
 /**
  * Makes components, component sets, and component properties of the layers whose elements the
  * page marks with `COMPONENT_ATTRIBUTES`. A property several variants mark is one property of
- * their set, with the first variant's value as its default.
+ * their set, with the first variant's value as its default. Components marked with a Reka UI
+ * root then behave as that control; see `applyMarkedBehaviours`.
  */
 export function createMarkedComponents(
   graph: SceneGraph,
@@ -198,5 +200,6 @@ export function createMarkedComponents(
   for (const { node, name } of marked(graph, sources, COMPONENT_ATTRIBUTES.slot)) {
     bindSlot(graph, node, name)
   }
+  applyMarkedBehaviours(graph, sources)
   createMarkedInstances(graph, sources)
 }

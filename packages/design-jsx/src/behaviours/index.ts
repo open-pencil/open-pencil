@@ -10,7 +10,7 @@ import {
   type BehaviourSpec
 } from '@open-pencil/scene-graph/behaviours'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
-import { createSlotProperty } from '@open-pencil/scene-graph/slots'
+import { createSlotProperty, slotOwner } from '@open-pencil/scene-graph/slots'
 
 import { node, type TreeNode } from '../tree'
 
@@ -164,7 +164,19 @@ export function createScope(kind: BehaviourKind, ownerId: string): RekaScope {
 
 /** Make a rendered part frame its part's slot, with the id the part has in this component. */
 export function bindPart(graph: SceneGraph, scope: RekaScope, frame: SceneNode, partId: string) {
-  const id = scope.slots.get(partId) ?? createComponentPropertyId()
+  const known = scope.slots.get(partId)
+  // Each variant of a set draws the part in the one slot property the set defines.
+  const owner = slotOwner(graph, frame)
+  if (known && owner?.componentPropertyDefinitions.some(({ id }) => id === known)) {
+    graph.updateNode(frame.id, {
+      componentPropertyReferences: [
+        ...frame.componentPropertyReferences,
+        { propertyId: known, field: 'SLOT_CONTENT' }
+      ]
+    })
+    return
+  }
+  const id = known ?? createComponentPropertyId()
   if (!createSlotProperty(graph, frame.id, id))
     throw new Error(`<${partId}> must be inside a main component`)
   scope.slots.set(partId, id)
@@ -254,12 +266,20 @@ export function finishRoot(
   scope: RekaScope,
   props: Record<string, unknown>
 ): void {
-  const owner = graph.getNode(scope.ownerId)
-  if (!owner) return
   const spec = rootSpec(scope.kind, props)
   // `transition={{ duration: 0.2, easing: 'ease-out' }}`, either one a `{ variable }` by name.
   if (props.transition !== undefined)
     spec.transition = v.parse(behaviourSpecSchema.entries.transition, props.transition)
+  finishBehaviour(graph, scope, spec)
+}
+
+/**
+ * Store the behaviour `spec` describes on the scope's owner, with the slots and texts its parts
+ * made, as a root's props or a page's marks give it.
+ */
+export function finishBehaviour(graph: SceneGraph, scope: RekaScope, spec: BehaviourSpec): void {
+  const owner = graph.getNode(scope.ownerId)
+  if (!owner) return
   const behaviour = behaviourFromSpec(graph, owner, spec)
   behaviour.parts = { ...behaviour.parts, ...Object.fromEntries(scope.slots) }
   behaviour.texts = {

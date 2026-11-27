@@ -6,7 +6,7 @@ import { computeImageHash, imageHeader } from '@open-pencil/scene-graph/images'
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { borderWidths, contentInsets, type ContentInsets } from './box'
 import { pickStyle } from './css-values'
-import { imagePicture } from './pictures'
+import { imagePicture, pictureSource, showsPicture } from './pictures'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -17,15 +17,18 @@ function imageScaleModeFromObjectFit(value: string | undefined): ImageScaleMode 
   return null
 }
 
-/** Fills an `<img>` with the picture it shows, or keeps its address when nothing could draw it. */
+/**
+ * Fills an `<img>`, or a `<video>` with a poster, with the picture it shows, or keeps its address
+ * when nothing could draw it.
+ */
 export function applyImageFill(
   graph: SceneGraph,
   node: SceneNode,
   element: DesignElement,
   style: DesignStyleDeclaration
 ): void {
-  if (element.tagName.toLowerCase() !== 'img') return
-  const source = element.attrs.src
+  if (!showsPicture(element)) return
+  const source = pictureSource(element)
   const picture = imagePicture(element)
   // A picture nothing could draw keeps its address, which exporting the layer writes back.
   if (picture?.kind !== 'raster') {

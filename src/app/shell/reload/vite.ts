@@ -11,7 +11,7 @@ export function announceViteReloads(): void {
   const announce = () => announceReload({ asks: pageAsksBeforeLeaving() })
   /* eslint-disable typescript-eslint/no-misused-promises -- Vite awaits custom event listeners. */
   hot.on('vite:beforeFullReload', async ({ path }) => {
-    // Vite announces an edit to another HTML page, such as `updater.html`, to every page but
+    // Vite announces an edit to another HTML page, such as `pages/updater.html`, to every page but
     // reloads only that one; the editor is always `index.html`, so it keeps running.
     if (path?.endsWith('.html') && path !== '/index.html') return
     await announce()
