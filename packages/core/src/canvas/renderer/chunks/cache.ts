@@ -4,7 +4,7 @@ import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
-import { subtreeBounds } from './build'
+import { MAX_CHUNK_NODES, subtreeBounds } from './build'
 import type { RenderChunk } from './index'
 import { recordRenderChunk } from './record'
 
@@ -64,8 +64,13 @@ export class RenderChunkPictureCache {
     this.entries.delete(chunk.id)
     renderer.images.previewsDrawn = false
     const recorded = recordRenderChunk(renderer, graph, chunk)
-    if (chunk.kind === 'subtree') this.drawnLayers.set(chunk.id, layerBounds(graph, chunk.nodeId))
-    else this.drawnLayers.delete(chunk.id)
+    // A chunk is split past this many layers unless it draws as one, as under opacity or a mask;
+    // recording every layer of a larger one would cost more than redrawing it whole.
+    if (chunk.kind === 'subtree' && chunk.nodeCount <= MAX_CHUNK_NODES) {
+      this.drawnLayers.set(chunk.id, layerBounds(graph, chunk.nodeId))
+    } else {
+      this.drawnLayers.delete(chunk.id)
+    }
     this.entries.set(chunk.id, {
       picture: recorded.picture,
       fontGeneration: renderer.fontGeneration,

@@ -318,6 +318,50 @@ describe('tile page content changes', () => {
     }
   })
 
+  test('a mask hidden directly redraws the whole frame, as it no longer clips', () => {
+    const { graph, surface, renderer, near } = frameScene()
+    graph.updateNode(near.id, { isMask: true })
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+
+      graph.updateNode(near.id, { visible: false })
+      controller.invalidateNode(near.id, graph)
+      const hidden = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(hidden)).toBe(6)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('a frame drawn as one past the split size redraws whole, without recording its layers', () => {
+    const { graph, surface, renderer, holder, near } = frameScene({ opacity: 0.9 })
+    for (let index = 0; index < 40; index++) {
+      graph.createNode('RECTANGLE', holder.id, {
+        x: 300 + (index % 10) * 20,
+        y: 300 + Math.floor(index / 10) * 20,
+        width: 10,
+        height: 10,
+        fills: color(0.5, 0.5, 0.5)
+      })
+    }
+    const controller = stillController()
+    try {
+      renderUntilSettled(controller, { renderer, graph })
+
+      graph.updateNode(near.id, { fills: color(1, 0, 0) })
+      controller.invalidateNode(near.id, graph)
+      const changed = controller.renderFrame(renderer, surface.getCanvas(), graph, 2, 0)
+
+      expect(tilesRendered(changed)).toBe(6)
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
   test('a font arrival redraws only the text that waited for it', () => {
     const { graph, surface, renderer, pageId } = createGridScene(ck)
     const text = graph.createNode('TEXT', pageId, { x: 20, y: 20, width: 100, height: 30 })
