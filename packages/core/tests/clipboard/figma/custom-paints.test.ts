@@ -28,7 +28,7 @@ const SHADER: Paint = {
   componentPropAssignments: ASSIGNMENTS
 }
 
-function figmaCopy(withDefinition = false): string {
+function figmaCopy(withDefinition = false, shader: Paint = SHADER): string {
   const records = [
     { guid: guid(0, 0), type: 'DOCUMENT', phase: 'CREATED', name: 'Document' },
     {
@@ -45,7 +45,7 @@ function figmaCopy(withDefinition = false): string {
       name: 'Plate',
       size: { x: 20, y: 20 },
       parentIndex: { guid: guid(1, 0), position: '!' },
-      fillPaints: [SHADER]
+      fillPaints: [shader]
     },
     ...(withDefinition ? shaderDefinitionRecords(guid(0, 0), guid(3, 0), guid(4)) : [])
   ] as NodeChange[]
@@ -119,4 +119,24 @@ test("saving a pasted shader paint as .fig writes the shader's definition once",
     writtenShaderDefinitions(shaderDefinitionRecords(guid(0, 0), guid(3, 0), guid(4)))
   )
   expect(definitionsIn(await parseFigFile(bytes, { populate: 'all' }))).toHaveLength(1)
+})
+
+test('a second paste names the held definition by its key where the paint named it by GUID', async () => {
+  const byGuid: Paint = { ...SHADER, customEffectId: { guid: guid(4) } }
+  const { graph } = await pasted(figmaCopy(true, byGuid))
+  const { plate } = await pasted(figmaCopy(true, byGuid), graph)
+  expect(definitionsIn(graph)).toHaveLength(1)
+  expect(plate.fills[0]).toMatchObject({ customEffectAssetRef: SHADER_ASSET })
+  const { nodes } = await copied(graph, plate)
+  expect(writtenShaderDefinitions(nodes)).toHaveLength(1)
+})
+
+test("copying a text whose range has a shader paint brings the shader's definition", async () => {
+  const { graph, plate } = await pasted(figmaCopy(true))
+  const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+    text: 'Hi there',
+    styleRuns: [{ start: 3, length: 5, style: { fills: [plate.fills[0]] } }]
+  })
+  const { nodes } = await copied(graph, text)
+  expect(writtenShaderDefinitions(nodes)).toHaveLength(1)
 })

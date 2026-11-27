@@ -71,7 +71,15 @@ function record(localID: number, type: string, parent?: number, fields = {}): No
   } as NodeChange
 }
 
-function archiveOf(shader: Paint, withDefinition = false): ArrayBuffer {
+function archiveOf(
+  shader: Paint,
+  withDefinition = false,
+  layer: NodeChange = record(10, 'RECTANGLE', 1, {
+    name: 'Plate',
+    size: { x: 40, y: 20 },
+    fillPaints: [SOLID, shader]
+  })
+): ArrayBuffer {
   const kiwi = getCompiledSchema().encodeMessage({
     type: 'NODE_CHANGES',
     sessionID: 0,
@@ -79,11 +87,7 @@ function archiveOf(shader: Paint, withDefinition = false): ArrayBuffer {
     nodeChanges: [
       record(0, 'DOCUMENT'),
       record(1, 'CANVAS', 0),
-      record(10, 'RECTANGLE', 1, {
-        name: 'Plate',
-        size: { x: 40, y: 20 },
-        fillPaints: [SOLID, shader]
-      }),
+      layer,
       ...(withDefinition ? shaderDefinitionRecords(guid(0), guid(2), guid(20)) : [])
     ]
   })
@@ -208,6 +212,23 @@ describe('Figma shader paints through a .fig archive', () => {
     )
     const saved = await savedStrokes(graph)
     expect(saved.map((paint) => paint.type)).toEqual(['SOLID', 'SOLID'])
+  })
+
+  test("opening a text whose range has a shader paint brings the shader's definition", async () => {
+    const text = record(10, 'TEXT', 1, {
+      name: 'Plate',
+      size: { x: 40, y: 20 },
+      fillPaints: [SOLID],
+      textData: {
+        characters: 'Hi there',
+        characterStyleIDs: [0, 0, 0, 1, 1, 1, 1, 1],
+        styleOverrideTable: [{ styleID: 1, fillPaints: [LIBRARY_SHADER] }]
+      }
+    })
+    const graph = await parseFigFile(archiveOf(LIBRARY_SHADER, true, text), { populate: 'all' })
+    expect([...graph.nodes.values()].filter((node) => node.type === 'CODE_COMPONENT')).toHaveLength(
+      1
+    )
   })
 
   test("opening a shader paint brings the shader's definition onto the internal page", async () => {

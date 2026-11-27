@@ -5,7 +5,7 @@ import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source
 import { isComponentSetRecord } from '../node-change/convert'
 import { componentDependencies, slotContentDependencies } from './component/dependencies'
 import { createResourceResolver } from './resource-reference'
-import { shaderDependencies } from './shader-dependencies'
+import { shaderDependencies } from './shaders'
 import { styleDependencies } from './style-dependencies'
 
 export interface SceneDependencyClosure {

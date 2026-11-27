@@ -42,10 +42,18 @@ export function heldShaderAssets(graph: SceneGraph): Set<string> {
   return held
 }
 
-/** The shaders a layer's shader fills, strokes, and kept Figma effects name. */
+/**
+ * The shaders a layer names: in its fills and strokes, its text ranges' and vector regions' fills,
+ * and its kept Figma effects.
+ */
 function shaderReferences(node: SceneNode): ShaderReference[] {
   const references: ShaderReference[] = []
-  for (const paint of [...node.fills, ...node.strokes]) {
+  for (const paint of [
+    ...node.fills,
+    ...node.strokes,
+    ...node.styleRuns.flatMap((run) => run.style.fills ?? []),
+    ...(node.vectorNetwork?.regions.flatMap((region) => region.fills ?? []) ?? [])
+  ]) {
     if (!isFigmaShaderPaint(paint)) continue
     if (paint.customEffectAssetRef) references.push(paint.customEffectAssetRef)
     else if (paint.customEffectId) references.push({ id: paint.customEffectId })
