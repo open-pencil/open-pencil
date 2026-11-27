@@ -8,8 +8,10 @@
 
 use std::collections::{HashMap, HashSet};
 
+use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
+use super::jsonrpc::{self, Id};
 use super::program::Agent;
 
 /// OpenPencil's MCP server name; `OPEN_PENCIL_MCP_SERVER` in `packages/core`.
@@ -66,7 +68,7 @@ fn session_meta() -> Value {
 #[derive(Clone, Debug, PartialEq)]
 pub struct PermissionAsk {
     /// The request's JSON-RPC id, which the answer carries back to the agent.
-    pub id: Value,
+    pub id: Id,
     pub session_id: String,
     /// The session's turn when the agent asked; a question from a turn stopped since is
     /// answered cancelled (`AcpGate::turn`).
@@ -81,7 +83,7 @@ pub struct ModeChange {
     /// The editor's request, sent on once confirmed.
     pub line: String,
     /// Its JSON-RPC id, which a refusal answers.
-    pub id: Option<Value>,
+    pub id: Option<Id>,
     pub mode: String,
     pub session_id: String,
     /// The session's turn when the editor asked; a change from a turn stopped since is refused.
@@ -124,14 +126,14 @@ pub struct AcpGate {
     /// ACP makes a call's id unique within its session only.
     own_calls: HashSet<(String, String)>,
     /// Permission requests the app holds, by id, so the editor cannot answer them.
-    held: HashSet<String>,
+    held: HashSet<Id>,
     /// Refuses whatever the person would be asked, for a connection in which nothing may run.
     refuses_tools: bool,
     /// The editor's session openers waiting for an answer, by id, with the session they name.
-    opening: HashMap<String, Option<String>>,
+    opening: HashMap<Id, Option<String>>,
     /// The app's own requests to the agent waiting for an answer, with the opener's id and the
     /// answer the editor gets once the agent took the request.
-    own_requests: HashMap<String, Option<(Value, String)>>,
+    own_requests: HashMap<Id, Option<(Id, String)>>,
     next_request: u64,
     /// How many turns of each session the editor stopped.
     turns: HashMap<String, u64>,
@@ -156,67 +158,46 @@ impl AcpGate {
         let Ok(Value::Object(mut message)) = serde_json::from_str::<Value>(&line) else {
             return FromAgent::Forward(line);
         };
-        if message.get("method").is_none() {
-            let id = message.get("id").map(Value::to_string).unwrap_or_default();
-            if let Some(held) = self.own_requests.remove(&id) {
-                let Some((opener, answer)) = held else {
-                    return FromAgent::Drop;
-                };
-                // The session opens only once it asks: if the agent would not switch, the
-                // editor's request fails rather than show a mode the session is not in.
-                return FromAgent::Forward(if message.contains_key("result") {
-                    answer
-                } else {
-                    error_response(&opener, "The session could not start in a mode that asks.")
-                });
-            }
-            if let Some(named) = self.opening.remove(&id) {
-                let opener = message.get("id").cloned().unwrap_or(Value::Null);
-                if let Some(Value::Object(result)) = message.get_mut("result") {
-                    let session = result
-                        .get("sessionId")
-                        .and_then(Value::as_str)
-                        .map(str::to_owned)
-                        .or(named);
-                    if let Some((request_id, to_agent)) =
-                        session.and_then(|s| self.ask_from_the_start(result, &s))
-                    {
-                        let answer = Value::Object(message).to_string();
-                        self.own_requests.insert(request_id, Some((opener, answer)));
-                        return FromAgent::Send(to_agent);
-                    }
-                }
-            }
-            return FromAgent::Forward(line);
-        }
-        match message.get("method").and_then(Value::as_str) {
-            Some("session/update") => {
-                if let Some(params) = message.get("params") {
-                    if let Some(update) = params.get("update") {
-                        self.note_update(str_at(params, "sessionId"), update);
-                    }
+        let id = Id::of(&message);
+        let Some(method) = message.get("method").and_then(Value::as_str) else {
+            return match id {
+                Some(id) => self.agent_answered(id, message, line),
+                None => FromAgent::Forward(line),
+            };
+        };
+        match method {
+            "session/update" => {
+                let update = read::<SessionUpdate>(message.get("params"));
+                let call = read::<ToolCallReport>(Some(&update.update));
+                if matches!(
+                    call.session_update.as_str(),
+                    "tool_call" | "tool_call_update"
+                ) && is_own_tool_call(&update.update)
+                {
+                    self.own_calls
+                        .insert((update.session_id, call.tool_call_id));
                 }
                 FromAgent::Forward(line)
             }
-            Some("session/request_permission") => {
-                let Some(id) = message.get("id").cloned() else {
+            "session/request_permission" => {
+                let Some(id) = id else {
                     return FromAgent::Forward(line);
                 };
-                let params = message.get("params").cloned().unwrap_or(Value::Null);
-                if let Some(option) = self.own_call_answer(&params) {
+                let params = message.remove("params").unwrap_or(Value::Null);
+                let request = read::<PermissionRequest>(Some(&params));
+                if let Some(option) = self.own_call_answer(&request) {
                     return FromAgent::Answer(selected(&id, &option));
                 }
                 if self.refuses_tools {
-                    return FromAgent::Answer(match reject_option(&params) {
+                    return FromAgent::Answer(match request.reject_option() {
                         Some(option) => selected(&id, &option),
                         None => self.answer(&id, None),
                     });
                 }
-                self.held.insert(id.to_string());
-                let session_id = str_at(&params, "sessionId").to_owned();
+                self.held.insert(id.clone());
                 FromAgent::Ask(PermissionAsk {
-                    turn: self.turn(&session_id),
-                    session_id,
+                    turn: self.turn(&request.session_id),
+                    session_id: request.session_id,
                     id,
                     params,
                 })
@@ -225,30 +206,71 @@ impl AcpGate {
         }
     }
 
+    /// The agent's answer to a request: the app's own, or one that opened a session, which may
+    /// first need moving to a mode that asks.
+    fn agent_answered(
+        &mut self,
+        id: Id,
+        mut message: Map<String, Value>,
+        line: String,
+    ) -> FromAgent {
+        if let Some(held) = self.own_requests.remove(&id) {
+            let Some((opener, answer)) = held else {
+                return FromAgent::Drop;
+            };
+            // The session opens only once it asks: if the agent would not switch, the editor's
+            // request fails rather than show a mode the session is not in.
+            return FromAgent::Forward(if message.contains_key("result") {
+                answer
+            } else {
+                jsonrpc::failure(
+                    &opener,
+                    "The session could not start in a mode that asks.",
+                    None,
+                )
+            });
+        }
+        let Some(named) = self.opening.remove(&id) else {
+            return FromAgent::Forward(line);
+        };
+        let Some(Value::Object(result)) = message.get_mut("result") else {
+            return FromAgent::Forward(line);
+        };
+        let session = result
+            .get("sessionId")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+            .or(named);
+        let Some((request_id, to_agent)) =
+            session.and_then(|session| self.ask_from_the_start(result, &session))
+        else {
+            return FromAgent::Forward(line);
+        };
+        let answer = Value::Object(message).to_string();
+        self.own_requests.insert(request_id, Some((id, answer)));
+        FromAgent::Send(to_agent)
+    }
+
     pub fn editor_wrote(&mut self, line: String) -> FromEditor {
         let Ok(Value::Object(mut message)) = serde_json::from_str::<Value>(&line) else {
             return FromEditor::Refuse(None);
         };
-        let id = message.get("id").cloned();
+        let id = Id::of(&message);
         let Some(method) = message
             .get("method")
             .and_then(Value::as_str)
             .map(str::to_owned)
         else {
             // An answer to one of the agent's requests: never to one the app holds.
-            let held = id
-                .as_ref()
-                .is_some_and(|id| self.held.contains(&id.to_string()));
-            return if held {
-                FromEditor::Refuse(None)
-            } else {
-                FromEditor::Forward(line)
+            return match id {
+                Some(id) if self.held.contains(&id) => FromEditor::Refuse(None),
+                _ => FromEditor::Forward(line),
             };
         };
         // The agent's answer to such a request would pass for the answer to the app's own.
         if id
             .as_ref()
-            .and_then(Value::as_str)
+            .and_then(Id::as_str)
             .is_some_and(|id| id.starts_with(OWN_REQUEST_PREFIX))
         {
             return refuse(
@@ -274,38 +296,35 @@ impl AcpGate {
                 .and_then(Value::as_str)
                 .map(str::to_owned);
             if let Some(id) = &id {
-                self.opening.insert(id.to_string(), named);
+                self.opening.insert(id.clone(), named);
             }
             return FromEditor::Forward(Value::Object(message).to_string());
         }
-        let params = message.get("params").cloned().unwrap_or(Value::Null);
+        let params = read::<SessionRequest>(message.get("params"));
         match method.as_str() {
             "session/set_mode" | "session/set_config_option" => {
                 let mode = params
-                    .get(if method == "session/set_mode" {
-                        "modeId"
-                    } else {
-                        "value"
-                    })
-                    .and_then(Value::as_str)
+                    .mode_id
+                    .as_deref()
+                    .or(params.value.as_str())
                     .unwrap_or_default();
-                if never_asks(self.agent, mode) {
-                    let session_id = str_at(&params, "sessionId").to_owned();
-                    FromEditor::Confirm(ModeChange {
-                        line,
-                        id,
-                        mode: mode.to_owned(),
-                        turn: self.turn(&session_id),
-                        session_id,
-                    })
-                } else {
-                    FromEditor::Forward(line)
+                if !never_asks(self.agent, mode) {
+                    return FromEditor::Forward(line);
                 }
+                FromEditor::Confirm(ModeChange {
+                    mode: mode.to_owned(),
+                    turn: self.turn(&params.session_id),
+                    session_id: params.session_id,
+                    line,
+                    id,
+                })
             }
             "session/cancel" => {
-                let session_id = str_at(&params, "sessionId").to_owned();
-                *self.turns.entry(session_id.clone()).or_default() += 1;
-                FromEditor::Cancel { session_id, line }
+                *self.turns.entry(params.session_id.clone()).or_default() += 1;
+                FromEditor::Cancel {
+                    session_id: params.session_id,
+                    line,
+                }
             }
             _ => FromEditor::Forward(line),
         }
@@ -318,16 +337,11 @@ impl AcpGate {
     }
 
     /// The answer to a held request, which the app writes to the agent.
-    pub fn answer(&mut self, id: &Value, option: Option<&str>) -> String {
-        self.held.remove(&id.to_string());
+    pub fn answer(&mut self, id: &Id, option: Option<&str>) -> String {
+        self.held.remove(id);
         match option {
             Some(option) => selected(id, option),
-            None => json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": { "outcome": { "outcome": "cancelled" } }
-            })
-            .to_string(),
+            None => jsonrpc::success(id, json!({ "outcome": { "outcome": "cancelled" } })),
         }
     }
 
@@ -338,7 +352,7 @@ impl AcpGate {
         &mut self,
         result: &mut Map<String, Value>,
         session: &str,
-    ) -> Option<(String, String)> {
+    ) -> Option<(Id, String)> {
         let safe = asking_mode(self.agent)?;
         let agent = self.agent;
         let mut request = None;
@@ -372,11 +386,10 @@ impl AcpGate {
             }
         }
         let (method, params) = request?;
-        let id = format!("{OWN_REQUEST_PREFIX}{}", self.next_request);
+        let id = Id::string(format!("{OWN_REQUEST_PREFIX}{}", self.next_request));
         self.next_request += 1;
-        let request =
-            json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }).to_string();
-        Some((Value::String(id).to_string(), request))
+        let request = jsonrpc::request(&id, method, params);
+        Some((id, request))
     }
 
     fn pin_session(&self, params: &mut Map<String, Value>) -> Result<(), String> {
@@ -400,84 +413,107 @@ impl AcpGate {
         Ok(())
     }
 
-    fn note_update(&mut self, session: &str, update: &Value) {
-        let kind = str_at(update, "sessionUpdate");
-        if kind != "tool_call" && kind != "tool_call_update" {
-            return;
-        }
-        if is_own_tool_call(update) {
-            self.own_calls
-                .insert((session.to_owned(), str_at(update, "toolCallId").to_owned()));
-        }
-    }
-
     /// The option that allows a call to OpenPencil's tools once, which leaves the agent's saved
     /// permissions alone. A request carries only the call's id, so the updates that name the
     /// call's server are noted first.
-    fn own_call_answer(&self, params: &Value) -> Option<String> {
-        let call = params.get("toolCall")?;
-        let key = (
-            str_at(params, "sessionId").to_owned(),
-            str_at(call, "toolCallId").to_owned(),
-        );
-        if !self.own_calls.contains(&key) && !is_own_tool_call(call) {
+    fn own_call_answer(&self, request: &PermissionRequest) -> Option<String> {
+        let call = read::<ToolCallReport>(Some(&request.tool_call));
+        let key = (request.session_id.clone(), call.tool_call_id);
+        if !self.own_calls.contains(&key) && !is_own_tool_call(&request.tool_call) {
             return None;
         }
-        params
-            .get("options")?
-            .as_array()?
-            .iter()
-            .find(|option| str_at(option, "kind") == "allow_once")
-            .map(|option| str_at(option, "optionId").to_owned())
+        request.option(|kind| kind == "allow_once")
     }
+}
+
+/// Reads the parts of a message the gate checks. What does not read as the type reads as its
+/// default, so a malformed message is held or refused, never let through unchecked.
+fn read<T: for<'de> Deserialize<'de> + Default>(value: Option<&Value>) -> T {
+    value
+        .and_then(|value| T::deserialize(value).ok())
+        .unwrap_or_default()
+}
+
+/// What `session/request_permission` carries.
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct PermissionRequest {
+    session_id: String,
+    tool_call: Value,
+    options: Vec<PermissionOption>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PermissionOption {
+    option_id: String,
+    #[serde(default)]
+    kind: String,
+}
+
+impl PermissionRequest {
+    fn option(&self, kind: impl Fn(&str) -> bool) -> Option<String> {
+        self.options
+            .iter()
+            .find(|option| kind(&option.kind))
+            .map(|option| option.option_id.clone())
+    }
+
+    fn reject_option(&self) -> Option<String> {
+        self.option(|kind| kind.starts_with("reject"))
+    }
+}
+
+/// `session/update`'s parameters.
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct SessionUpdate {
+    session_id: String,
+    update: Value,
+}
+
+/// A tool call as an update or a permission request names it.
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct ToolCallReport {
+    session_update: String,
+    tool_call_id: String,
+}
+
+/// The editor's requests about a session: a mode change names the mode as `modeId`, a config
+/// option change as `value`.
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct SessionRequest {
+    session_id: String,
+    mode_id: Option<String>,
+    value: Value,
 }
 
 /// The request's first refusing option, which a question nobody answers gets.
 pub fn reject_option(params: &Value) -> Option<String> {
-    params
-        .get("options")?
-        .as_array()?
-        .iter()
-        .find(|option| str_at(option, "kind").starts_with("reject"))
-        .map(|option| str_at(option, "optionId").to_owned())
+    read::<PermissionRequest>(Some(params)).reject_option()
 }
 
-fn refuse(id: Option<Value>, reason: &str) -> FromEditor {
-    FromEditor::Refuse(id.map(|id| error_response(&id, reason)))
+fn refuse(id: Option<Id>, reason: &str) -> FromEditor {
+    FromEditor::Refuse(id.map(|id| jsonrpc::failure(&id, reason, None)))
 }
 
 /// The error a mode change gets when the person keeps the agent asking, which the chat tells
 /// apart from a failure (`isModeRefusal` in `src/app/ai/agents/acp/options.ts`).
-pub fn mode_refused(id: &Value) -> String {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "error": {
-            "code": -32602,
-            "message": "The mode was not allowed.",
-            "data": { "openpencil": "mode-refused" }
-        }
-    })
-    .to_string()
+pub fn mode_refused(id: &Id) -> String {
+    jsonrpc::failure(
+        id,
+        "The mode was not allowed.",
+        Some(json!({ "openpencil": "mode-refused" })),
+    )
 }
 
-/// A JSON-RPC error answering the editor's request `id`.
-pub fn error_response(id: &Value, reason: &str) -> String {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "error": { "code": -32602, "message": reason }
-    })
-    .to_string()
-}
-
-fn selected(id: &Value, option: &str) -> String {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "result": { "outcome": { "outcome": "selected", "optionId": option } }
-    })
-    .to_string()
+fn selected(id: &Id, option: &str) -> String {
+    jsonrpc::success(
+        id,
+        json!({ "outcome": { "outcome": "selected", "optionId": option } }),
+    )
 }
 
 /// Whether a list of options holds one whose `key` is `value`, in it or in a group of it.
@@ -531,6 +567,10 @@ fn is_own_tool_call(call: &Value) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn id(value: Value) -> Id {
+        serde_json::from_value(value).unwrap()
+    }
 
     fn gate(agent: Agent) -> AcpGate {
         AcpGate::new(agent, "/data/agent-workspace".to_owned(), false)
@@ -596,7 +636,7 @@ mod tests {
         let FromAgent::Ask(ask) = gate.agent_wrote(permission(8, call)) else {
             panic!("the person decides")
         };
-        assert_eq!(ask.id, json!(8));
+        assert_eq!(ask.id, id(json!(8)));
         assert_eq!(ask.session_id, "s1");
         // The editor cannot answer a request the app holds, guessed id or not.
         let forged = json!({ "jsonrpc": "2.0", "id": 8, "result": { "outcome": { "outcome": "selected", "optionId": "always" } } });
@@ -687,7 +727,7 @@ mod tests {
             panic!("the person confirms full access")
         };
         assert_eq!(change.mode, "agent-full-access");
-        assert_eq!(change.id, Some(json!(3)));
+        assert_eq!(change.id, Some(id(json!(3))));
         assert_eq!((change.session_id.as_str(), change.turn), ("s1", 0));
         // A change asked after a Stop carries the turn that follows it.
         let cancel = json!({ "jsonrpc": "2.0", "method": "session/cancel", "params": { "sessionId": "s1" } });

@@ -3,7 +3,9 @@
 //! writes, never a Stop or another program.
 
 use std::sync::mpsc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+
+use parking_lot::Mutex;
 
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::oneshot;
@@ -67,17 +69,12 @@ impl Input {
 
     /// Takes the program's handle to kill it, unless a write blocked on it holds the handle.
     pub fn take(&self) -> Option<CommandChild> {
-        match self.child.try_lock() {
-            Ok(mut child) => child.take(),
-            Err(_) => None,
-        }
+        self.child.try_lock().and_then(|mut child| child.take())
     }
 }
 
 fn write_to(child: &Mutex<Option<CommandChild>>, bytes: &[u8]) -> Result<(), String> {
-    let mut child = child
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut child = child.lock();
     child
         .as_mut()
         .ok_or_else(|| STOPPED.to_owned())?

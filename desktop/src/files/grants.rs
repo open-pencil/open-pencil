@@ -3,9 +3,8 @@
 //! permission window when an agent asked. Those grants are kept in the app's data folder and
 //! given again at the next launch, so recent files and open tabs still open.
 
+use parking_lot::Mutex;
 use std::path::{Component, Path, PathBuf};
-use std::sync::Mutex;
-
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_fs::FsExt;
 
@@ -51,10 +50,7 @@ pub fn restore<R: Runtime>(app: &AppHandle<R>) {
             scope.allow_file(path)
         };
     }
-    *app.state::<FileGrants>()
-        .paths
-        .lock()
-        .unwrap_or_else(|p| p.into_inner()) = saved;
+    *app.state::<FileGrants>().paths.lock() = saved;
 
     let handle = app.clone();
     scope.listen(move |event| {
@@ -67,7 +63,7 @@ pub fn restore<R: Runtime>(app: &AppHandle<R>) {
             return;
         }
         let grants = handle.state::<FileGrants>();
-        let mut paths = grants.paths.lock().unwrap_or_else(|p| p.into_inner());
+        let mut paths = grants.paths.lock();
         paths.retain(|kept| kept != &path);
         paths.insert(0, path);
         paths.truncate(MAX_GRANTS);
@@ -115,10 +111,7 @@ pub fn allow_save_partial<R: Runtime>(
     let mut bytes = [0u8; 4];
     getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
     let mut name = path.as_os_str().to_owned();
-    name.push(format!(
-        ".{}{SAVING_SUFFIX}",
-        bytes.iter().map(|b| format!("{b:02x}")).collect::<String>()
-    ));
+    name.push(format!(".{}{SAVING_SUFFIX}", hex::encode(bytes)));
     let partial = PathBuf::from(name);
     app.fs_scope()
         .allow_file(&partial)

@@ -57,11 +57,7 @@ impl McpTokens {
 fn random_hex() -> Result<String, String> {
     let mut bytes = [0u8; 32];
     getrandom::fill(&mut bytes).map_err(|e| format!("Could not make an MCP token: {e}"))?;
-    Ok(hex(&bytes))
-}
-
-fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+    Ok(hex::encode(bytes))
 }
 
 /// The token an MCP client connects with: an HMAC-SHA-256 of the context, keyed with the
@@ -70,7 +66,7 @@ fn client_token(server: &str) -> String {
     let mut mac =
         Hmac::<Sha256>::new_from_slice(server.as_bytes()).expect("HMAC takes a key of any length");
     mac.update(CLIENT_TOKEN_CONTEXT);
-    hex(&mac.finalize().into_bytes())
+    hex::encode(mac.finalize().into_bytes())
 }
 
 /// Whether a tool reads a file or writes one.
@@ -93,24 +89,31 @@ pub struct ConsentRequest {
     pub client: Option<String>,
 }
 
+/// A line the server writes to the app, besides its log.
 #[derive(Deserialize)]
-struct Line {
-    #[serde(rename = "type")]
-    kind: String,
+#[serde(tag = "type", rename_all = "lowercase")]
+enum ServerLine {
+    Consent(ConsentRequest),
+}
+
+/// The app's answer to a question, as the server reads it.
+#[derive(Serialize)]
+#[serde(tag = "type", rename = "consent")]
+struct ConsentAnswer {
+    id: u64,
+    allowed: bool,
 }
 
 /// The server's question in a line it wrote, if the line is one.
 pub fn consent_request(line: &str) -> Option<ConsentRequest> {
-    let kind: Line = serde_json::from_str(line).ok()?;
-    if kind.kind != "consent" {
-        return None;
+    match serde_json::from_str(line).ok()? {
+        ServerLine::Consent(request) => Some(request),
     }
-    serde_json::from_str(line).ok()
 }
 
 /// The answer line the server reads.
 pub fn consent_answer(id: u64, allowed: bool) -> String {
-    serde_json::json!({ "type": "consent", "id": id, "allowed": allowed }).to_string()
+    serde_json::to_string(&ConsentAnswer { id, allowed }).expect("an answer serializes")
 }
 
 /// Whether allowing `tool` lets the editor open or save the file itself.
@@ -152,7 +155,7 @@ mod tests {
         assert_eq!(consent_request(r#"{"type":"other","id":1}"#), None);
         assert_eq!(
             consent_answer(3, true),
-            r#"{"allowed":true,"id":3,"type":"consent"}"#
+            r#"{"type":"consent","id":3,"allowed":true}"#
         );
         assert!(editor_opens("save_document") && !editor_opens("export_image"));
     }

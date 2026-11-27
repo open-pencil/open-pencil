@@ -8,15 +8,16 @@
 mod acp;
 mod harness;
 mod input;
+mod jsonrpc;
 mod lines;
 mod mcp;
 pub mod permission;
 pub mod program;
 
+use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::Serialize;
@@ -106,10 +107,8 @@ struct McpRun {
 }
 
 impl HostProcesses {
-    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<u32, Running>> {
-        self.running
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    fn lock(&self) -> parking_lot::MutexGuard<'_, HashMap<u32, Running>> {
+        self.running.lock()
     }
 
     /// Stops every program, as when the app quits; a reload keeps the MCP server, which the
@@ -182,10 +181,8 @@ pub fn agent_workspace_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, St
 }
 
 impl HostProcesses {
-    fn mcp_lock(&self) -> std::sync::MutexGuard<'_, Option<McpRun>> {
-        self.mcp
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    fn mcp_lock(&self) -> parking_lot::MutexGuard<'_, Option<McpRun>> {
+        self.mcp.lock()
     }
 
     fn mcp_id(&self) -> Option<u32> {

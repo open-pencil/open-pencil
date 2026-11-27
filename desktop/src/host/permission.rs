@@ -2,8 +2,8 @@
 //! window, under a label no other window can take, and only that window can answer: the editor
 //! hears that an agent is waiting, never the question's handle.
 
+use parking_lot::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -137,10 +137,8 @@ impl Permissions {
             .collect()
     }
 
-    fn lock(&self) -> std::sync::MutexGuard<'_, Vec<Pending>> {
-        self.pending
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    fn lock(&self) -> parking_lot::MutexGuard<'_, Vec<Pending>> {
+        self.pending.lock()
     }
 }
 
@@ -152,14 +150,15 @@ fn show<R: Runtime>(app: &AppHandle<R>) {
         let _ = window.set_focus();
         return;
     }
-    let built = WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::App("pages/permission.html".into()))
-        .title("OpenPencil")
-        .inner_size(440.0, 420.0)
-        .min_inner_size(360.0, 260.0)
-        .always_on_top(true)
-        .center()
-        .focused(true)
-        .build();
+    let built =
+        WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::App("pages/permission.html".into()))
+            .title("OpenPencil")
+            .inner_size(440.0, 420.0)
+            .min_inner_size(360.0, 260.0)
+            .always_on_top(true)
+            .center()
+            .focused(true)
+            .build();
     match built {
         Ok(window) => {
             let app = app.clone();
