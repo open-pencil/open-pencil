@@ -26,7 +26,7 @@ import {
   reusableTabStore,
   showImportedGraph
 } from '@/app/tabs/open/show'
-import { getTabsSnapshot, switchTab, type Tab } from '@/app/tabs/state'
+import { emptyDocumentGraph, getTabsSnapshot, switchTab, type Tab } from '@/app/tabs/state'
 
 /**
  * Whether this device's copy can open in place of downloading: it has unsent changes or a
@@ -91,6 +91,19 @@ async function showStorageDocument(
   load: EditorPreparationHandle,
   given?: Uint8Array
 ): Promise<void> {
+  // A document an app created through the API holds nothing yet: it opens empty, as a document
+  // made here starts, and its first save gives it its first revision.
+  // A copy this device still holds, such as one whose first upload failed, comes before that.
+  const local = getLocalCanvasStore()
+  if (!given && document.revision === null && !(await local.getMeta(document.id))?.hasFig) {
+    await showImportedGraph(
+      store,
+      emptyDocumentGraph(document.kind ?? 'design'),
+      () => store.setStorageDocumentSource(binding, document.name),
+      load
+    )
+    return
+  }
   const bytes = given ?? (await readStorageDocument(binding, document, load))
   const file = figFile(bytes, document.name)
   load.update({ phase: 'decoding', detail: document.name })

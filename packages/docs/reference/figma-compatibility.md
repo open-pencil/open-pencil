@@ -6,7 +6,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
 :::
 
-**Coverage:** 128 of 156 Figma feature items addressed — 112 ✅ fully supported, 16 🟡 partial, 28 🔲 not yet. Last updated: 2026-10-27.
+**Coverage:** 130 of 156 Figma feature items addressed — 115 ✅ fully supported, 15 🟡 partial, 26 🔲 not yet. Last updated: 2026-11-27.
 
 ## Interface & Navigation
 
@@ -22,7 +22,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Canvas guides | ✅ | Drag guides from rulers onto the canvas or frames; select, move, duplicate, delete, and undo; saved in `.fig` |
 | Actions menu / command palette | ✅ | <kbd>⌘</kbd><kbd>K</kbd> opens a searchable palette of editor and app actions |
 | Context menu | ✅ | Right-click with clipboard, z-order, grouping, component, visibility, lock, move-to-page actions |
-| Keyboard shortcuts | 🟡 | Tools, editing, booleans, flatten, masks, components, align, z-order, navigation, text formatting; no Scale (<kbd>K</kbd>), Arrow, or zoom tool |
+| Keyboard shortcuts | 🟡 | Tools, editing, booleans, flatten, masks, components, align, z-order, navigation, text formatting, and the Scale tool (<kbd>K</kbd>); no Arrow or zoom tool |
 | Find and replace | 🔲 | Text search/replace across document |
 | Layer outlines view | 🔲 | Wireframe view of all layers |
 | Custom file thumbnails | 🔲 | Saved files preview their first page, as Figma's do without a Cover page; no thumbnail picker |
@@ -44,14 +44,14 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Select layers | ✅ | Click, shift-click, marquee selection |
 | Alignment & position | ✅ | Position, rotation, dimensions in properties panel |
 | Copy & paste objects | ✅ | Standard clipboard + Figma Kiwi binary format; Copy as text/SVG/PNG/JSX |
-| Scale layers proportionally | 🟡 | Shift-resize and the aspect ratio lock keep proportions; no Scale tool (<kbd>K</kbd>) that scales strokes, effects, and text |
+| Scale layers proportionally | ✅ | Shift-resize and the aspect ratio lock keep proportions; the Scale tool (<kbd>K</kbd>) and the panel's scale factor scale strokes, effects, and text too |
 | Lock & unlock layers | ✅ | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> toggles lock; locked nodes can't be selected/moved from canvas |
 | Toggle layer visibility | ✅ | Eye icon in layers panel + <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> keyboard shortcut |
 | Rename layers | ✅ | Double-click inline rename in layers panel; <kbd>Enter</kbd>/<kbd>Escape</kbd>/blur to commit |
 | Bring to front / Send to back | ✅ | ] and [ keyboard shortcuts; also in context menu |
 | Move to page | ✅ | Move selected nodes between pages via context menu |
 | Constraints (responsive resize) | ✅ | Left, right, center, stretch, and scale on each axis in the Constraints section; applied when the parent resizes, in instances too |
-| Smart selection (distribute/align) | 🟡 | Align and distribute from the panel and Arrange menu; no smart selection spacing handles or Tidy up |
+| Smart selection (distribute/align) | 🟡 | Align, distribute, and Tidy up from the panel and Arrange menu; no smart selection spacing handles |
 | Layout guides (columns, rows, grid) | ✅ | Grids, columns, and rows on frames with count, type, margin, gutter, and color; grid styles; several frames at once |
 | Measure distances between layers | ✅ | Hold <kbd>⌥</kbd> and hover to show distances from the selection |
 | Edit objects in bulk | ✅ | Multi-selection properties panel: edit position, size, appearance, fill, stroke, effects across multiple nodes; shared values display normally, differing values show "Mixed" |
@@ -111,7 +111,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Pattern fills | 🟡 | Imported Figma pattern fills render and round-trip; no picker to create or edit them |
 | Blend modes | ✅ | Layer, fill, and effect blend modes, with pass-through for groups and frames |
 | Add images & videos | 🟡 | Drop or paste PNG, JPEG, GIF, WebP, AVIF, and SVG onto the canvas; no video |
-| Image property adjustment | 🔲 | Exposure, contrast, saturation, etc. |
+| Image property adjustment | ✅ | Exposure, contrast, saturation, temperature, tint, highlights, and shadows in the image fill picker |
 | Crop an image | 🟡 | The Crop mode in the image fill picker keeps a crop; no on-canvas crop handles |
 | Eyedropper tool | ✅ | <kbd>I</kbd> or the color picker button; samples the rendered canvas with a loupe of the pixels under the pointer, <kbd>Alt</kbd> targets the stroke |
 | Mixed selection color editing | ✅ | Selection colors changes a color everywhere across a multi-selection |

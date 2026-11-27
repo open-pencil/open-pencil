@@ -246,6 +246,7 @@ async function handleMockCommand(
         {
           id: 'doc-1',
           name: 'Mock document',
+          kind: graph.documentKind,
           active: true,
           current_page_id: currentPage?.id ?? '',
           current_page_name: currentPage?.name ?? '',

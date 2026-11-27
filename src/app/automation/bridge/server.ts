@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { automationMessageTextSchema, type AutomationMessage } from '@open-pencil/collab/automation'
 import { errorMessage } from '@open-pencil/std/errors'
 import { randomHex } from '@open-pencil/std/random'
 /**
@@ -16,24 +17,6 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import type { AutomationFiles } from '@/app/automation/bridge/file-handlers'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-
-/**
- * Requests from the MCP bridge, and its cancellation of one it stopped waiting for; other
- * message types (such as the register prompt) are ignored.
- */
-const automationMessageSchema = v.pipe(
-  v.string(),
-  v.parseJson(),
-  v.variant('type', [
-    v.object({
-      type: v.literal('request'),
-      id: v.pipe(v.string(), v.nonEmpty()),
-      command: v.string(),
-      args: v.optional(v.unknown())
-    }),
-    v.object({ type: v.literal('cancel'), id: v.pipe(v.string(), v.nonEmpty()) })
-  ])
-)
 
 /**
  * The connections each MCP session's calls came over, across bridges: restarting MCP opens a new
@@ -95,12 +78,14 @@ export function connectAutomation(
 
     socket.onopen = () => {
       console.debug('[Automation] WebSocket connected to MCP server')
-      socket.send(JSON.stringify({ type: 'register', token }))
+      socket.send(JSON.stringify({ type: 'register', token } satisfies AutomationMessage))
     }
 
     socket.onmessage = async (event) => {
       try {
-        const parsed = v.safeParse(automationMessageSchema, event.data)
+        // Requests from the MCP bridge, and its cancellation of one it stopped waiting for; the
+        // register prompt needs no answer, since the app registers once it connects.
+        const parsed = v.safeParse(automationMessageTextSchema, event.data)
         if (!parsed.success) {
           if (parsed.issues.some((issue) => issue.type === 'parse_json'))
             console.warn('Failed to parse WebSocket message:', v.summarize(parsed.issues))
@@ -115,6 +100,7 @@ export function connectAutomation(
           }
           return
         }
+        if (msg.type !== 'request') return
         const session = isRecord(msg.args) ? readAgentSession(msg.args.agent) : null
         if (session) {
           const sockets = sessionSockets.get(session.session) ?? new Set<WebSocket>()
@@ -135,14 +121,13 @@ export function connectAutomation(
           socket.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
         } catch (e) {
           if (socket.readyState !== WebSocket.OPEN) return
-          socket.send(
-            JSON.stringify({
-              type: 'response',
-              id: msg.id,
-              ok: false,
-              error: errorMessage(e)
-            })
-          )
+          const failed: AutomationMessage = {
+            type: 'response',
+            id: msg.id,
+            ok: false,
+            error: errorMessage(e)
+          }
+          socket.send(JSON.stringify(failed))
         } finally {
           if (running.get(msg.id) === call) running.delete(msg.id)
         }

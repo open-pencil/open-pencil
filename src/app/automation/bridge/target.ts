@@ -37,6 +37,17 @@ export function targetToResult(target: AutomationTarget): AutomationTargetResult
 
 export type TargetResponse = Record<string, unknown> & { target: AutomationTargetResult }
 
+/** Loads the target's page if it was never shown, so a command can read and change it. */
+export async function prepareAutomationTarget(
+  target: AutomationTarget,
+  signal?: AbortSignal
+): Promise<void> {
+  if (!(await target.store.preparePageNodes(target.pageId))) {
+    throw new Error(`Page "${target.pageId}" was closed before it finished loading`)
+  }
+  signal?.throwIfAborted()
+}
+
 export function responseWithTarget(body: unknown, target: AutomationTarget): TargetResponse {
   const targetResult = targetToResult(target)
   if (isRecord(body)) {
@@ -83,6 +94,7 @@ export function listAutomationDocuments(activeStore: EditorStore): AutomationDoc
     return {
       id: tab.id,
       name: tab.store.state.documentName,
+      kind: tab.store.state.documentKind,
       ...(path ? { path } : {}),
       active: tab.id === activeTab?.id,
       current_page_id: tab.store.state.currentPageId,

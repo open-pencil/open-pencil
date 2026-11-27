@@ -14,7 +14,7 @@ SPDX-License-Identifier = "MIT"
 [[annotations]]
 path = [
   "packages/cloud/**",
-  "cloud.html",
+  "pages/cloud.html",
   "src/cloud/**",
   "src/app/cloud-portal/**",
   "src/components/cloud-portal/**",

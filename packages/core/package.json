@@ -165,6 +165,11 @@
       "import": "./dist/constants.js",
       "default": "./dist/constants.js"
     },
+    "./present": {
+      "types": "./dist/present/index.d.ts",
+      "import": "./dist/present/index.js",
+      "default": "./dist/present/index.js"
+    },
     "./xpath": {
       "types": "./dist/xpath.d.ts",
       "import": "./dist/xpath.js",

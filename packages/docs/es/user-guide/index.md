@@ -17,10 +17,10 @@ OpenPencil es un editor de diseño local y de código abierto, compatible con Fi
 
 ## Dibujar
 
-- [Dibujar formas](./drawing-shapes) — rectángulos, elipses, líneas, marcos, secciones, polígonos y estrellas
-- [Pluma](./pen-tool) — dibujar rutas vectoriales y curvas de Bézier
-- [Editar vectores](./vector-edit) — modificar puntos, tiradores y segmentos
-- [Editar texto](./text-editing) — crear, seleccionar y dar formato al texto
+- [Dibujar formas](/user-guide/drawing-shapes) — rectángulos, elipses, líneas, marcos, secciones, polígonos y estrellas
+- [Pluma](/user-guide/pen-tool) — dibujar rutas vectoriales y curvas de Bézier
+- [Editar vectores](/user-guide/vector-edit) — modificar puntos, tiradores y segmentos
+- [Editar texto](/user-guide/text-editing) — crear, seleccionar y dar formato al texto
 
 ## Crear un sistema de diseño
 
@@ -35,4 +35,3 @@ OpenPencil es un editor de diseño local y de código abierto, compatible con Fi
 
 ## Referencia
 
-- [Menú contextual](./context-menu) — portapapeles, grupos, componentes y otras acciones

@@ -12,7 +12,11 @@ import {
   traceSmoothRect
 } from '@open-pencil/scene-graph/paths'
 import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
-import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
+import {
+  SHAPE_WITH_TEXT_LINE_GAP,
+  shapeWithTextCutsFill,
+  shapeWithTextGeometry
+} from '@open-pencil/scene-graph/shape-with-text'
 
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
@@ -210,6 +214,24 @@ export function makeShapeWithTextDetailsPath(r: SkiaRenderer, node: SceneNode): 
   if (node.type !== 'SHAPE_WITH_TEXT') return null
   const { details } = shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height)
   return details.length > 0 ? outlinePath(r, details) : null
+}
+
+/**
+ * The band a shape with text cuts out of its fill when no stroke draws its lines, as FigJam does:
+ * its outline and inner lines stroked at `SHAPE_WITH_TEXT_LINE_GAP`. Null when it cuts nothing.
+ */
+export function makeShapeWithTextFillCut(r: SkiaRenderer, node: SceneNode): Path | null {
+  if (node.type !== 'SHAPE_WITH_TEXT' || !shapeWithTextCutsFill(node)) return null
+  const { outline, details } = shapeWithTextGeometry(
+    node.shapeWithTextType,
+    node.width,
+    node.height,
+    node.cornerRadius
+  )
+  const lines = outlinePath(r, [...outline, ...details])
+  const band = lines.makeStroked({ width: SHAPE_WITH_TEXT_LINE_GAP })
+  lines.delete()
+  return band
 }
 
 /** Skia's rounded rectangle for `node`, its corners fitted to its box as Figma draws them. */

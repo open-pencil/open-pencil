@@ -1,5 +1,8 @@
 import type { SceneNode } from './types'
 
+/** The radius a pill takes: round at the ends at any size a layer reaches. */
+export const PILL_RADIUS = 9999
+
 /** A rectangle's corner radii, clockwise from the top left. */
 export type CornerRadii = [
   topLeft: number,

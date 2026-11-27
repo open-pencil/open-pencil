@@ -20,6 +20,7 @@ export type StyleSource = Pick<
   NodeChange,
   | 'type'
   | 'styleType'
+  | 'isSoftDeleted'
   | 'fillPaints'
   | 'effects'
   | 'layoutGrids'

@@ -54,6 +54,7 @@ import {
   switchPage
 } from '#core/tools/read'
 import type { ToolDef } from '#core/tools/schema'
+import { createSlides, getDeck, moveSlides, setAnimations, setSlides } from '#core/tools/slides'
 import { getStatuses, setStatus } from '#core/tools/statuses'
 import {
   arrangeNodes,
@@ -114,6 +115,12 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   resolveComment,
   getStatuses,
   setStatus,
+  // Slides
+  getDeck,
+  createSlides,
+  moveSlides,
+  setSlides,
+  setAnimations,
   getFontStatus,
   listAvailableFonts,
   // Create (advanced)

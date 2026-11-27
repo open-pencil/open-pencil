@@ -21,10 +21,10 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 
 ## Rysowanie
 
-- [Kształty](./drawing-shapes) — prostokąty, elipsy, linie, ramki, sekcje, wielokąty i gwiazdy
-- [Narzędzie Pióro](./pen-tool) — tworzenie ścieżek wektorowych z krzywymi Béziera
-- [Edycja wektorów](./vector-edit) — zmiana punktów, uchwytów i segmentów
-- [Tekst](./text-editing) — tworzenie i edytowanie tekstu z formatowaniem
+- [Kształty](/user-guide/drawing-shapes) — prostokąty, elipsy, linie, ramki, sekcje, wielokąty i gwiazdy
+- [Narzędzie Pióro](/user-guide/pen-tool) — tworzenie ścieżek wektorowych z krzywymi Béziera
+- [Edycja wektorów](/user-guide/vector-edit) — zmiana punktów, uchwytów i segmentów
+- [Tekst](/user-guide/text-editing) — tworzenie i edytowanie tekstu z formatowaniem
 
 ## Budowanie systemu projektowego
 
@@ -39,4 +39,3 @@ W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Comm
 
 ## Referencja
 
-- [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje

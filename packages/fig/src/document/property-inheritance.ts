@@ -2,7 +2,7 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
-import { parentIdOf } from '../instance-overrides/source-index'
+import { idOf, parentIdOf } from '../instance-overrides/source-index'
 
 interface LinkedPropertyDefinition {
   id?: GUID
@@ -43,6 +43,11 @@ export function linkedPropertyCopies(node: NodeChange): Map<string, string> {
   return copies
 }
 
+/** The error for a record whose parent chain leads back to it. */
+export function cyclicHierarchy(record: NodeChange): Error {
+  return new Error(`Cyclic source hierarchy at ${idOf(record) ?? 'a record without an ID'}`)
+}
+
 /** Resolve definition inheritance only within the source node's ancestry. */
 export function inheritComponentPropertyDefinitions(
   changes: readonly NodeChange[],
@@ -53,13 +58,13 @@ export function inheritComponentPropertyDefinitions(
   const complete = new Set<NodeChange>()
   const resolve = (node: NodeChange): void => {
     if (complete.has(node)) return
-    if (pending.has(node)) throw new Error('Cyclic component-property ancestry')
+    if (pending.has(node)) throw cyclicHierarchy(node)
     pending.add(node)
     const ancestors: NodeChange[] = []
     let parent = sources.get(parentIdOf(node) ?? '')
     const visited = new Set<NodeChange>([node])
     while (parent) {
-      if (visited.has(parent)) throw new Error('Cyclic component-property ancestry')
+      if (visited.has(parent)) throw cyclicHierarchy(parent)
       visited.add(parent)
       resolve(parent)
       ancestors.push(parent)

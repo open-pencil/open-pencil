@@ -67,6 +67,9 @@ export const docsSidebar = (
     text: labels.getStarted,
     items: [
       { text: labels.gettingStarted, link: '/getting-started' },
+      { text: labels.responsiveCard, link: '/user-guide/responsive-card' },
+      { text: labels.comingFromFigma, link: '/user-guide/coming-from-figma' },
+      { text: labels.comingFromPenDev, link: '/user-guide/coming-from-pen-dev' },
       { text: labels.canvasNav, link: '/user-guide/canvas-navigation' },
       { text: labels.selection, link: '/user-guide/selection-and-manipulation' },
       { text: labels.layers, link: '/user-guide/layers-and-pages' },
@@ -76,10 +79,10 @@ export const docsSidebar = (
   {
     text: labels.draw,
     items: [
-      { text: labels.shapes, link: `${prefix}/user-guide/drawing-shapes` },
-      { text: labels.pen, link: `${prefix}/user-guide/pen-tool` },
-      { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
-      { text: labels.text, link: `${prefix}/user-guide/text-editing` },
+      { text: labels.shapes, link: '/user-guide/drawing-shapes' },
+      { text: labels.pen, link: '/user-guide/pen-tool' },
+      { text: labels.vectorEditing, link: '/user-guide/vector-edit' },
+      { text: labels.text, link: '/user-guide/text-editing' },
       { text: labels.icons, link: '/user-guide/icons' },
       { text: labels.photos, link: '/user-guide/photos' }
     ]
@@ -96,7 +99,7 @@ export const docsSidebar = (
   {
     text: labels.designWithAI,
     items: [
-      { text: prog.aiChat, link: `${prefix}/user-guide/ai-chat` },
+      { text: prog.aiChat, link: '/user-guide/ai-chat' },
       { text: 'Coding Agents', link: '/user-guide/coding-agents' },
       { text: 'Models and Providers', link: '/user-guide/models-and-providers' }
     ]
@@ -106,7 +109,7 @@ export const docsSidebar = (
     items: [
       { text: labels.checkingDesigns, link: '/user-guide/checking-designs' },
       { text: labels.exporting, link: '/user-guide/exporting' },
-      { text: prog.collaboration, link: `${prefix}/user-guide/collaboration` },
+      { text: prog.collaboration, link: '/user-guide/collaboration' },
       { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
     ]
   },
@@ -122,8 +125,7 @@ export const docsSidebar = (
     text: referenceLabel,
     items: [
       { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
-      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` },
-      { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` }
+      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` }
     ]
   }
 ]

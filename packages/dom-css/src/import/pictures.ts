@@ -10,15 +10,30 @@ export type ImagePicture = { kind: 'raster'; bytes: Uint8Array } | { kind: 'svg'
 const SVG_TYPE = 'image/svg+xml'
 
 /**
- * The picture an `<img>` shows: the one its runtime loaded, or the one its `src` holds as a data
- * URL. A PNG, JPEG, GIF, WebP, or AVIF is a raster image by its header; SVG is SVG by its media
- * type, as a browser shows SVG in an image only when it is served as `image/svg+xml`. Null for an
- * element that is no image or shows nothing it can draw.
+ * Whether an element shows a picture of its own: an `<img>`, whose runtime may load it from
+ * `srcset` alone, and a `<video>` with a `poster`, which a browser shows until the video plays.
+ */
+export function showsPicture(element: DesignElement): boolean {
+  const tag = element.tagName.toLowerCase()
+  return tag === 'img' || (tag === 'video' && Boolean(element.attrs.poster))
+}
+
+/** The address an element's own picture is written at: an `<img>`'s `src`, a `<video>`'s `poster`. */
+export function pictureSource(element: DesignElement): string | undefined {
+  return element.tagName.toLowerCase() === 'video' ? element.attrs.poster : element.attrs.src
+}
+
+/**
+ * The picture an `<img>` or a `<video>`'s poster shows: the one its runtime loaded, or the one its
+ * address holds as a data URL. A PNG, JPEG, GIF, WebP, or AVIF is a raster image by its header;
+ * SVG is SVG by its media type, as a browser shows SVG in an image only when it is served as
+ * `image/svg+xml`. Null for an element that shows no picture or nothing it can draw.
  */
 export function imagePicture(element: DesignElement): ImagePicture | null {
-  if (element.tagName.toLowerCase() !== 'img') return null
+  if (!showsPicture(element)) return null
   const loaded = element.image
-  const inline = loaded ? null : parseDataURL(element.attrs.src)
+  const source = pictureSource(element)
+  const inline = loaded || source === undefined ? null : parseDataURL(source)
   const bytes = loaded?.bytes ?? inline?.bytes
   if (!bytes) return null
   if (imageHeader(bytes)) return { kind: 'raster', bytes }
@@ -56,13 +71,14 @@ export function elementSVG(element: DesignElement): ElementSVG | null {
 }
 
 /**
- * Whether an element becomes the artwork of the SVG it draws, as inline SVG does: an image showing
- * an SVG, or an element an SVG masks that holds nothing that shows, such as an icon. A mask over
- * content keeps the content.
+ * Whether an element becomes the artwork of the SVG it draws, as inline SVG does: an image or a
+ * video's poster showing an SVG, over the sources a video holds, or an element an SVG masks that
+ * holds nothing that shows, such as an icon. A mask over content keeps the content.
  */
 export function isSVGArtwork(element: DesignElement): boolean {
+  if (imagePicture(element)?.kind === 'svg') return true
   const holdsNothing = element.children.every(
     (child) => child.type === 'text' && child.text.trim() === ''
   )
-  return holdsNothing && elementSVG(element) !== null
+  return holdsNothing && maskSVG(element) !== null
 }

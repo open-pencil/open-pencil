@@ -15,6 +15,9 @@ Some pages show the shortcuts for your keyboard, which you can change at the end
 ## Get Started
 
 - [Getting Started](/getting-started) — open OpenPencil, find your way around, and make a first design
+- [Build a Responsive Card](./responsive-card) — a first project, step by step: a card that adapts to any width
+- [Coming from Figma](./coming-from-figma) — bring your Figma files and layers, and what works differently
+- [Coming from pen.dev](./coming-from-pen-dev) — open `.pen` files and keep working with your AI agent
 - [Canvas Navigation](./canvas-navigation) — pan, zoom, and measure
 - [Selection & Manipulation](./selection-and-manipulation) — select, move, resize, rotate, and align layers
 - [Layers & Pages](./layers-and-pages) — find, group, hide, and lock layers, and split a file into pages
@@ -24,7 +27,7 @@ Some pages show the shortcuts for your keyboard, which you can change at the end
 
 - [Drawing Shapes](./drawing-shapes) — rectangles, ellipses, lines, frames, sections, polygons, and stars
 - [Pen Tool](./pen-tool) — draw paths with straight and curved segments
-- [Vector Editing](./vector-edit) — change the points and curves of a path
+- [Vector Editing](./vector-edit) — change the points and curves of a path, and combine shapes
 - [Text Editing](./text-editing) — add text and style it
 - [Icons](./icons) — insert icons from open-source sets and SF Symbols, and swap or recolor them
 - [Photos](./photos) — fill a layer with a free stock photo
@@ -60,4 +63,3 @@ Some pages show the shortcuts for your keyboard, which you can change at the end
 
 - [Keyboard Shortcuts](/reference/keyboard-shortcuts) — every shortcut, for Mac and for Windows and Linux
 - [Figma Feature Matrix](/reference/figma-compatibility) — which Figma features OpenPencil supports
-- [Context Menu](./context-menu) — what each right-click action does

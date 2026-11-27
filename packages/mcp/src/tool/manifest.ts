@@ -23,7 +23,8 @@ function coreToolDescriptor(def: ToolDef): ToolDescriptor {
     effect: coreToolEffect(def),
     availability: coreToolAvailability(def),
     capabilities: coreToolCapabilities(def),
-    enabled: true
+    enabled: true,
+    documentKinds: def.documentKinds ? [...def.documentKinds] : null
   }
 }
 

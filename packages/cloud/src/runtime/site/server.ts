@@ -29,16 +29,16 @@ export type SiteFile = {
 /** Reads the built site's file at a URL path, or null when there is none. */
 export type SiteFiles = (path: string, request: Request) => Promise<SiteFile | null>
 
-const PORTAL_PAGE = '/cloud.html'
+const PORTAL_PAGE = '/pages/cloud.html'
 const EDITOR_PAGE = '/index.html'
 
 /**
  * The headers every page of the site carries, with who may frame it. Pages run only the site's
- * own scripts and Turnstile's on the portal, so an injected script tag or one from another host
- * never runs; they carry no inline script (the boot splash loads its own file) but, with
- * `scriptNonce`, ones carrying the nonce made for that response. The editor compiles
- * design JSX and code-tool snippets with `Function` and runs WebAssembly and workers from blobs,
- * which the policy keeps; plugins and AI providers reach other hosts through `fetch`, which it
+ * own scripts, Turnstile's on the portal, and the Web Analytics beacon Cloudflare adds to every
+ * page, so an injected script tag or one from another host never runs; they carry no inline
+ * script (the boot splash loads its own file) but, with `scriptNonce`, ones carrying the nonce
+ * made for that response. The editor compiles design JSX and code-tool snippets with `Function`
+ * and runs WebAssembly and workers from blobs, which the policy keeps; plugins and AI providers reach other hosts through `fetch`, which it
  * leaves be. Another site learns only Cloud's origin, never an address such as a share link's;
  * unlike `no-referrer` or `same-origin`, a form posted to one, as billing's sign-in is, still names
  * its origin there instead of `null`. `frame-ancestors` alone says who may frame a page, as
@@ -60,6 +60,7 @@ export function pageSecurity(
         "'wasm-unsafe-eval'",
         'blob:',
         'https://challenges.cloudflare.com',
+        'https://static.cloudflareinsights.com',
         ...(scriptNonce ? [NONCE] : [])
       ],
       workerSrc: ["'self'", 'blob:'],
@@ -120,7 +121,7 @@ function cacheControl(path: string): string {
 }
 
 /**
- * A Cloud server as every runtime serves it: the portal's `cloud.html` at portal pages, the API
+ * A Cloud server as every runtime serves it: the portal's `pages/cloud.html` at portal pages, the API
  * everywhere else, and, where the API has nothing, the site's files, or the editor's
  * `index.html` for any other page, whose router knows the editor's own addresses.
  */

@@ -310,6 +310,29 @@ it, and presence updates are rewritten so others see the ticket's name and a `cl
 verified identity and permission. A peer cannot claim presence clients another peer owns. Voice is
 not carried over the relay yet; the transport reports no media.
 
+### Apps' design tools
+
+The MCP endpoint at `/mcp` serves where `[oauth]` is on. It is stateless and holds no rights of its own: it
+answers a request without a valid token with a challenge naming its own protected resource
+metadata, and turns each tool call into a request to the document API with the caller's token, so
+every scope, workspace, and rate limit applies there unchanged. Its document tools are plain API
+calls. Its design tools are Core's, listed from `server/mcp/design-tools.json`, which the
+package's build writes from Core's tools before bundling, since the server holds no Core. The
+list keeps each tool's document kinds: unlike the local server, which lists the slide tools only
+while a deck is open, a stateless endpoint cannot tell clients their list changed, so it lists every
+tool and answers `422 wrong_document_kind` before any editor sees a call on another kind.
+
+The server has no editor to run them in, so `POST /api/documents/:id/tools/{read,write}` hands each
+call to the document's relay (`callDocumentTool`). The room's `agent-tools` channel carries the
+local MCP server's own messages (`@open-pencil/collab/automation`): a signed-in editor tab registers
+to run requests each time it joins; the relay hands the newest such tab of the person whose token
+made the call a `tool` request, as a local MCP server does, waits for that tab's response alone,
+and cancels the request after 30 seconds. The tab runs it as it runs the local server's, on the
+room's own document, showing the app as an agent and making the edit the person's own; it refuses
+any other command. With nobody's tab open the call answers `409 editor_not_open`, and the
+tool gives the model the document's link to pass on. Running tools on a graph the server decodes
+itself, without an open editor, is a later step.
+
 ## Enrollment and administration
 
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a
@@ -371,7 +394,7 @@ itself.
 
 The server shows its own pages on its public address: a welcome page, sign-in and sign-up, email
 verification, password reset, two-step sign-in, desktop sign-in approval, account pages (profile,
-sign-in and security, and sessions), and the administration console. They are a separate Vite entry, `cloud.html`, in the app project, so they
+sign-in and security, and sessions), and the administration console. They are a separate Vite entry, `pages/cloud.html`, in the app project, so they
 reuse the editor's components and theme without loading the editor. `bun run build:cloud` writes
 them to `dist-cloud/` beside the editor itself, which every Cloud server serves at its root. The
 editor never embeds these pages; when it needs them, for a social provider or a second sign-in
@@ -380,7 +403,7 @@ code. A verification link started in the editor lands on `/auth/verified`, which
 back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
-`cloud.html` at and below them with a fixed content security policy that runs only the site's own
+`pages/cloud.html` at and below them with a fixed content security policy that runs only the site's own
 scripts and Turnstile, and with `frame-ancestors 'none'`, so the approval page cannot be framed.
 The pages carry no inline script for it to allow: a build loads the boot splash's script from its
 own file. The desktop approval page never shows the code it
@@ -598,7 +621,11 @@ Services that decide entitlements, such as billing, write them through the inter
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
 `PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
 private transport of their own, and read an account's seats at
-`GET /api/internal/accounts/:userId/seats`. Every write carries an
+`GET /api/internal/accounts/:userId/seats`. The operator's dashboard reads the deployment's use at
+`GET /api/internal/usage/daily?start=&end=`, with the service token or the `[usage_report]` table's
+token, which reaches nothing else: per UTC day, sign-ups, active accounts (signed in or
+saved a revision), documents created, and revisions, with today's totals, as counts only; saves and
+active accounts are counted as they happen, since cleanup deletes old revisions and sign-ins. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.

@@ -1,8 +1,10 @@
 import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { PILL_RADIUS } from '@open-pencil/scene-graph/corners'
 import {
   dimension,
   parseCSSAspectRatio,
   parseCSSNumber,
+  parseCSSShadows,
   splitCSSValue
 } from '@open-pencil/scene-graph/css'
 import type { Size } from '@open-pencil/scene-graph/primitives'
@@ -211,6 +213,23 @@ export function applyRing(node: SceneNode, shadows: Effect[], bordered: boolean)
  * Whether the element has a border on any side: a side needs a style other than `none`, its CSS
  * default, or `hidden`, whatever its width and color.
  */
+/** Whether a box draws anything of its own: a background, a border, or a shadow. */
+export function paintsBox(style: DesignStyleDeclaration): boolean {
+  return (
+    fillsFromStyle(style, 'background-color').length > 0 ||
+    (pickStyle(style, 'background-image')?.trim() ?? 'none') !== 'none' ||
+    hasBorder(style) ||
+    parseCSSShadows(pickStyle(style, 'box-shadow'), 'srgb').length > 0
+  )
+}
+
+/** Whether a box clips what it holds: any overflow but `visible` does, on either axis. */
+export function clipsOverflow(style: DesignStyleDeclaration): boolean {
+  return ['overflow', 'overflow-x', 'overflow-y'].some((property) =>
+    splitCSSValue(pickStyle(style, property) ?? 'visible').some((part) => part !== 'visible')
+  )
+}
+
 export function hasBorder(style: DesignStyleDeclaration): boolean {
   return paintedSides(style).length > 0
 }
@@ -251,7 +270,9 @@ function cornerRadiusOf(value: string | undefined, box: Size | undefined): numbe
   if (percentage?.unit === '%' && box) {
     return (percentage.number / 100) * Math.min(box.width, box.height)
   }
-  return parseCSSNumber(first)
+  const radius = parseCSSNumber(first)
+  // CSS writes a fully round corner as an infinite radius, which computes to the largest float.
+  return radius === null ? null : Math.min(radius, PILL_RADIUS)
 }
 
 /** Corner radii, a percentage of `box`, the size the element was laid out at. */

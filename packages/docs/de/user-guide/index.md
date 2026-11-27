@@ -21,10 +21,10 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 
 ## Zeichnen
 
-- [Formen zeichnen](./drawing-shapes) — Rechtecke, Ellipsen, Linien, Rahmen, Sektionen, Polygone und Sterne
-- [Zeichenstift](./pen-tool) — Vektorpfade und Bézierkurven zeichnen
-- [Vektoren bearbeiten](./vector-edit) — Ankerpunkte, Griffe und Segmente verändern
-- [Text bearbeiten](./text-editing) — Text erstellen und formatieren
+- [Formen zeichnen](/user-guide/drawing-shapes) — Rechtecke, Ellipsen, Linien, Rahmen, Sektionen, Polygone und Sterne
+- [Zeichenstift](/user-guide/pen-tool) — Vektorpfade und Bézierkurven zeichnen
+- [Vektoren bearbeiten](/user-guide/vector-edit) — Ankerpunkte, Griffe und Segmente verändern
+- [Text bearbeiten](/user-guide/text-editing) — Text erstellen und formatieren
 
 ## Designsystem aufbauen
 
@@ -39,4 +39,3 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 
 ## Referenz
 
-- [Kontextmenü](./context-menu) — Zwischenablage, Gruppen, Komponenten und weitere Aktionen

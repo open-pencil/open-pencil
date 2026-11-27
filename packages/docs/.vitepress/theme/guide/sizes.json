@@ -1,4 +1,8 @@
 {
+  "ai-chat/reply": {
+    "width": 901,
+    "height": 504
+  },
   "auto-layout/after": {
     "width": 290,
     "height": 186
@@ -51,6 +55,10 @@
     "width": 282,
     "height": 420
   },
+  "checking-designs/lint": {
+    "width": 935,
+    "height": 410
+  },
   "component-libraries/publish": {
     "width": 542,
     "height": 693
@@ -61,7 +69,7 @@
   },
   "components/behaviour": {
     "width": 284,
-    "height": 521
+    "height": 525
   },
   "components/instance": {
     "width": 284,
@@ -74,6 +82,26 @@
   "components/property": {
     "width": 286,
     "height": 278
+  },
+  "drawing-shapes/corners": {
+    "width": 346,
+    "height": 261
+  },
+  "drawing-shapes/effects": {
+    "width": 279,
+    "height": 261
+  },
+  "drawing-shapes/fill": {
+    "width": 270,
+    "height": 247
+  },
+  "drawing-shapes/star": {
+    "width": 346,
+    "height": 261
+  },
+  "drawing-shapes/tools": {
+    "width": 382,
+    "height": 239
   },
   "exporting/copy-as": {
     "width": 194,
@@ -95,9 +123,33 @@
     "width": 1056,
     "height": 700
   },
+  "icons/picker": {
+    "width": 318,
+    "height": 402
+  },
   "layers-and-pages/panel": {
     "width": 326,
     "height": 368
+  },
+  "pen-tool/done": {
+    "width": 346,
+    "height": 261
+  },
+  "pen-tool/drawing": {
+    "width": 346,
+    "height": 261
+  },
+  "responsive-card/narrow": {
+    "width": 239,
+    "height": 318
+  },
+  "responsive-card/parts": {
+    "width": 704,
+    "height": 380
+  },
+  "responsive-card/wide": {
+    "width": 394,
+    "height": 303
   },
   "selection-and-manipulation/click": {
     "width": 290,
@@ -123,6 +175,10 @@
     "width": 284,
     "height": 180
   },
+  "text-editing/typography": {
+    "width": 348,
+    "height": 462
+  },
   "variables/apply": {
     "width": 397,
     "height": 316
@@ -134,5 +190,13 @@
   "variables/mode": {
     "width": 284,
     "height": 308
+  },
+  "vector-edit/combine": {
+    "width": 640,
+    "height": 210
+  },
+  "vector-edit/points": {
+    "width": 346,
+    "height": 261
   }
 }

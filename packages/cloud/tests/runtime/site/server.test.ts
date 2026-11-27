@@ -4,7 +4,7 @@ import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import type { CloudErrorContext } from '#cloud/server'
 
 const files: Record<string, string> = {
-  '/cloud.html': '<!doctype html><title>Portal</title>',
+  '/pages/cloud.html': '<!doctype html><title>Portal</title>',
   '/index.html': '<!doctype html><title>Editor</title>',
   '/assets/cloud-abc.js': 'export {}',
   '/favicon.svg': '<svg/>'
@@ -216,7 +216,7 @@ describe('Cloud server', () => {
   test('lets only the site’s own scripts run, never frames or plugins', async () => {
     const directives = policy(await navigate('/'))
     expect(directives).toContain(
-      "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com"
+      "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com https://static.cloudflareinsights.com"
     )
     expect(directives).toContain("worker-src 'self' blob:")
     expect(directives).toContain("object-src 'none'")

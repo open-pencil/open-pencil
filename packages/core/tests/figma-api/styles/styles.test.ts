@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { createAPI } from '#core-tests/helpers/figma-api'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
@@ -405,4 +406,143 @@ test('a text style made after the style index was built reaches the texts using 
   reconcileVariableBindings(graph, { subtrees: [later.id] })
 
   expect(later.fontSize).toBe(20)
+})
+
+// Measured with TextStyle.setBoundVariable in Figma's plugin API (Figma desktop 126).
+describe('text style variable bindings', () => {
+  async function typeScale() {
+    const figma = createAPI()
+    await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })
+    await figma.loadFontAsync({ family: 'Inter', style: 'Bold' })
+    const types = figma.variables.createVariableCollection('Type scale')
+    const compact = types.modes[0].modeId
+    const roomy = types.addMode('Roomy')
+    const size = figma.variables.createVariable('Body size', types, 'FLOAT')
+    size.setValueForMode(compact, 18)
+    size.setValueForMode(roomy, 30)
+    const style = figma.createTextStyle()
+    style.fontName = { family: 'Inter', style: 'Regular' }
+    style.fontSize = 12
+    return { figma, types, roomy, size, style }
+  }
+
+  test('bind a field at its default mode value, which the texts using it follow in their mode', async () => {
+    const { figma, types, roomy, size, style } = await typeScale()
+    const frame = figma.createFrame()
+    frame.setExplicitVariableModeForCollection(types, roomy)
+    const text = figma.createText()
+    frame.appendChild(text)
+    text.characters = 'Hello'
+    await text.setTextStyleIdAsync(style.id)
+
+    style.setBoundVariable('fontSize', size)
+
+    expect(style.fontSize).toBe(18)
+    expect(style.boundVariables).toEqual({ fontSize: { type: 'VARIABLE_ALIAS', id: size.id } })
+    expect(text.fontSize).toBe(30)
+
+    style.setBoundVariable('fontSize', null)
+
+    expect([style.fontSize, text.fontSize]).toEqual([18, 18])
+    expect(style.boundVariables).toEqual({})
+  })
+
+  test('take lengths as pixels and a face by style or by weight, not both', async () => {
+    const { figma, types, size, style } = await typeScale()
+    const face = figma.variables.createVariable('Face', types, 'STRING')
+    face.setValueForMode(types.modes[0].modeId, 'Regular')
+
+    style.setBoundVariable('lineHeight', size)
+    style.setBoundVariable('fontWeight', size)
+    style.setBoundVariable('fontStyle', face)
+
+    expect(style.lineHeight).toEqual({ unit: 'PIXELS', value: 18 })
+    expect(Object.keys(style.boundVariables)).toEqual(['fontStyle', 'lineHeight'])
+  })
+
+  test('let a value set on the style replace the variable of the field it moves', async () => {
+    const { figma, types, size, style } = await typeScale()
+    const family = figma.variables.createVariable('Family', types, 'STRING')
+    family.setValueForMode(types.modes[0].modeId, 'Inter')
+    style.setBoundVariable('fontFamily', family)
+    style.setBoundVariable('fontWeight', size)
+    style.setBoundVariable('paragraphSpacing', size)
+
+    style.fontName = { family: 'Inter', style: 'Bold' }
+    expect(Object.keys(style.boundVariables)).toEqual(['fontFamily', 'paragraphSpacing'])
+
+    style.paragraphSpacing = 4
+    expect(Object.keys(style.boundVariables)).toEqual(['fontFamily'])
+  })
+
+  // Figma writes a style's face, by style or by weight, as FONT_STYLE, and its paragraph fields.
+  test('save every field a style binds with the file', async () => {
+    const { figma, types, size, style } = await typeScale()
+    const face = figma.variables.createVariable('Face', types, 'STRING')
+    face.setValueForMode(types.modes[0].modeId, 'Regular')
+    style.name = 'By style'
+    style.setBoundVariable('fontSize', size)
+    style.setBoundVariable('fontStyle', face)
+    style.setBoundVariable('paragraphSpacing', size)
+    style.setBoundVariable('paragraphIndent', size)
+    const byWeight = figma.createTextStyle()
+    byWeight.name = 'By weight'
+    byWeight.setBoundVariable('fontWeight', size)
+    for (const used of [style, byWeight]) {
+      const text = figma.createText()
+      text.characters = used.name
+      await text.setTextStyleIdAsync(used.id)
+    }
+
+    const saved = await exportFigFile(graphOf(figma))
+    const written = (name: string) =>
+      parseFigBuffer(saved.slice().buffer)
+        .nodeChanges.find((record) => record.name === name)
+        ?.parameterConsumptionMap?.entries?.map((entry) => [
+          entry.variableField,
+          entry.variableData?.resolvedDataType
+        ])
+    expect(written('By style')).toEqual([
+      ['FONT_SIZE', 'FLOAT'],
+      ['FONT_STYLE', 'STRING'],
+      ['PARAGRAPH_SPACING', 'FLOAT'],
+      ['PARAGRAPH_INDENT', 'FLOAT']
+    ])
+    expect(written('By weight')).toEqual([['FONT_STYLE', 'FLOAT']])
+
+    const reopened = await parseFigFile(saved.slice().buffer)
+    const bound = (name: string) => {
+      const found = getSharedStyles(reopened, 'text').find((entry) => entry.name === name)
+      return reopened.getNode(found?.nodeId ?? '')?.boundVariables
+    }
+
+    expect(bound('By style')).toEqual({
+      fontSize: size.id,
+      fontStyle: face.id,
+      paragraphSpacing: size.id,
+      paragraphIndent: size.id
+    })
+    expect(bound('By weight')).toEqual({ fontWeight: size.id })
+  })
+
+  test('check the field and the variable as Figma checks them', async () => {
+    const { figma, types, size, style } = await typeScale()
+    const label = figma.variables.createVariable('Label', types, 'STRING')
+    const call = (field: unknown, variable: unknown) => () =>
+      style.setBoundVariable(field as 'fontSize', variable as { id: string } | null)
+
+    expect(call('listSpacing', size)).toThrow(
+      'in setBoundVariable: Property "field" failed validation: Invalid option: expected one of ' +
+        '"fontFamily"|"fontSize"|"fontStyle"|"fontWeight"|"letterSpacing"|"lineHeight"|' +
+        '"paragraphSpacing"|"paragraphIndent"'
+    )
+    expect(call('fontSize', size.id)).toThrow('in setBoundVariable: Expected node, got string')
+    expect(call('fontSize', { id: 'VariableID:0:0' })).toThrow(
+      'in setBoundVariable: The variable with id "VariableID:0:0" does not exist'
+    )
+    expect(call('fontSize', label)).toThrow(
+      "in setBoundVariable: variable of resolved type 'STRING' cannot be bound to 'fontSize'"
+    )
+    expect(call('letterSpacing', null)).not.toThrow()
+  })
 })
