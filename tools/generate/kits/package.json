@@ -1,0 +1,40 @@
+{
+  "name": "@open-pencil/kit-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#kits/*": "./src/*.ts"
+  },
+  "exports": {
+    ".": "./src/build.ts",
+    "./shadcn": "./src/shadcn/kit.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/design-jsx": "workspace:*",
+    "@open-pencil/dom-css": "workspace:*",
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "@tailwindcss/node": "^4.3.3",
+    "@tailwindcss/oxide": "4.3.3",
+    "css-tree": "^3.2.1",
+    "happy-dom": "^20.14.6",
+    "radix-ui": "^1.7.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "valibot": "^1.5.0",
+    "vite": "8.1.4",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/css-tree": "^3.2.0",
+    "@types/node": "^25.9.9",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}

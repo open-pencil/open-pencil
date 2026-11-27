@@ -167,10 +167,11 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
     ],
     parts: []
   },
+  // Reka's and Radix's progress root is its track; a design may still draw one of its own.
   progress: {
     values: [{ id: 'value', type: 'number', required: false }],
     parts: [
-      { id: 'track', required: true },
+      { id: 'track', required: false },
       { id: 'indicator', required: true }
     ]
   },

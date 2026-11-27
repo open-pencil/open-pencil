@@ -20,6 +20,7 @@ import { componentFromNode } from '#core/figma-api/components'
 import { combineComponentsAsVariants } from '#core/figma-api/variants'
 
 import { applyMarkedBehaviours } from './behaviours'
+import { createMarkedInstances } from './instances'
 
 interface Marked {
   node: SceneNode
@@ -200,4 +201,5 @@ export function createMarkedComponents(
     bindSlot(graph, node, name)
   }
   applyMarkedBehaviours(graph, sources)
+  createMarkedInstances(graph, sources)
 }

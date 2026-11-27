@@ -1,0 +1,1 @@
+- A progress bar behaviour no longer needs a Track slot: as in Reka UI and Radix, its root can be the track (#2397).
