@@ -86,8 +86,8 @@ describe('development site files', () => {
 
   test('asks for a page the server routes there without the address query', async () => {
     asked.length = 0
-    await files('/cloud.html', new Request('https://cloud.example/account?tab=security'))
-    expect(asked.map(({ url }) => url)).toEqual(['/cloud.html'])
+    await files('/pages/cloud.html', new Request('https://cloud.example/account?tab=security'))
+    expect(asked.map(({ url }) => url)).toEqual(['/pages/cloud.html'])
   })
 
   test('answers nothing for a missing file or an unreachable server', async () => {
