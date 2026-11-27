@@ -45,6 +45,11 @@ describe('text ranges with fills of their own exported to SVG', () => {
     )
   })
 
+  test('a range whose image the file does not hold is not painted', () => {
+    const missing: Fill = { ...BLACK, type: 'IMAGE', imageHash: '0'.repeat(40) }
+    expect(svgOf(rangedText([BLACK], [missing]))).toContain('<tspan fill="none">b</tspan>')
+  })
+
   test("a text's own gradient spans its layer, not only its characters", () => {
     const svg = svgOf((graph, pageId) => [
       graph.createNode('TEXT', pageId, { text: 'Ab', width: 40, height: 20, fills: [RED_TO_BLUE] })

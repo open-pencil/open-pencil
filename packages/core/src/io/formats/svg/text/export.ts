@@ -32,8 +32,10 @@ function rangeFillAttrs(
   // `fill-opacity` inherits, so an opaque run has to cover a translucent parent.
   const cover = parentFillOpacity !== undefined ? 1 : undefined
   if (fill.type !== 'SOLID') {
+    // A paint with nothing to draw, such as an image the file does not hold, draws nothing, as on
+    // the canvas, rather than letting the layer's fill through.
     const paint = resolveFill(fill, node, ctx, 'layer')
-    if (!paint) return {}
+    if (!paint) return { fill: 'none' }
     const opacity = round(fill.opacity)
     return { fill: paint, 'fill-opacity': opacity < 1 ? opacity : cover }
   }
