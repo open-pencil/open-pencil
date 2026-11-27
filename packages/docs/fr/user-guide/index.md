@@ -35,4 +35,3 @@ OpenPencil est un éditeur de design local et open source, compatible avec Figma
 
 ## Référence
 
-- [Menu contextuel](./context-menu) — presse-papiers, groupes, composants et autres actions 

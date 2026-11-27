@@ -1,59 +1,51 @@
 ---
+pageClass: guide
 title: Collaboration
-description: Real-time collaborative editing via P2P WebRTC — no server, no account.
+description: Edit a file together in real time, talk in a voice call, and follow people and their AI agents. No account needed.
 ---
 
 # Collaboration
 
-Edit designs together in real time. Peers connect directly — no server relays your data, no account required.
+Share a file, and everyone with the link edits it with you at the same time. You see each other's cursors and selections, and the AI agents each of you runs. People connect to each other directly, without an account.
 
-## Sharing a Room
+For files that live on a server, with sign-in, sharing, and version history, use [OpenPencil Cloud](/cloud/).
 
-1. Click the share button in the top-right corner
-2. Click **Share this file** — the link (`cloud.openpencil.dev/rooms/<room-id>`) is copied
-3. Send it to your collaborators
+## Share a File
 
-Only Share puts a document into a room: the tab you share from becomes the room's tab and stays tied to its file. Anyone with the link can join.
+1. Click **Share** at the top right.
+2. Click **Share this file**. A link to the file's room is copied.
+3. Send the link to the people you want to work with.
 
-## Joining a Room
+Anyone with the link can join. The link is hard to guess, so only people you send it to can find the room.
 
-Open the link, or paste it (or just the room ID) into **Join** in the share panel or **Join room…** on Home. The room opens in a tab of its own, so the documents you already have open are never changed. On a computer, a browser also offers **Open in desktop app**, which opens the room in OpenPencil through an `openpencil://join` link.
+## Join a Shared File
 
-You join right away under a generated name such as *Teal Fox*; set your own in the share panel or in Settings, and it is used in every room.
+Open the link. Or paste the link, or just the room's ID, into **Join** in the Share panel, or into **Join room…** on Home. The file opens in a new tab, so the files you already have open don't change. In the browser on a computer, **Open in desktop app** opens it in the app.
 
-Rooms are not stored on a server: the file lives on the devices of the people who have been in the room, so a room tab opens its document only while one of them is online. Until then it says it is waiting, explains why, and opens the file as soon as someone who has it joins. A room you have been in before opens from this device's copy right away and syncs your changes when others return.
+You join under a made-up name, such as *Teal Fox*. Change it in the Share panel or in Settings, and it's used in every room.
 
-**Leave room** in the share panel ends your part in the room. A tab that shared its document goes back to being that document; a tab that joined keeps the room's file as a local unsaved copy you can save. Each room tab keeps its own connection, so you can be in several rooms at once.
+## Where the File Lives
 
-## What Syncs
+There's no server that keeps the file: it lives on the computers of the people who have been in the room. So a room opens only while one of them is online. Until then, the tab says it's waiting, and the file opens as soon as someone who has it joins. A room you've been in before opens from your own copy right away, and your changes sync when others come back.
 
-- **Document changes** — every edit (shapes, text, properties, layout) syncs instantly
-- **Cursors** — see where each collaborator is pointing, with their name and color
-- **Selections** — highlighted selections are visible to everyone
-- **Agents** — the built-in AI chat, ACP and Pi harness chats, and every connected MCP client appear as cursors at the layers they read or edit, each outlined label showing a sparkle and a callsign such as *Fern*. While the chat streams JSX, its cursor moves through the elements as they appear and outlines them. In a room, the cursor and outline have the color of the person running the agent, so you can tell whose agent it is; outside a room, each of your agents has a color of its own. When a coding agent such as Claude Code hands work to subagents, each one that touches the canvas shows as its own agent, with its own cursor and callsign, and leaves when it finishes. Only its name, kind, model, status, page, position, and edited layers are shared, never prompts or replies.
+Edits from different people merge, also when two people move or reorder layers at once. Everyone needs a recent version of OpenPencil to be in the same room.
 
-## Follow Mode
+**Leave room**, in the Share panel, ends your part in the room. The file stays open as a copy you can save.
 
-Click a collaborator's avatar in the top bar to follow their viewport. Your canvas pans and zooms to match their view, and a frame in their color with a “Following …” bar shows whom you follow. Click the avatar again, press <kbd>Esc</kbd>, or click, scroll, zoom, or switch pages yourself to stop.
+## Talk in a Voice Call
 
-Your own agents, the AI chat and MCP clients such as Claude Code or Cursor, are followed automatically while they work, so what they edit stays in view. Turn this off with the crosshair button at the top of the AI panel. If you stop following an agent while it works, it is left alone until it finishes and followed again on its next run.
+In a room, **Start voice call** at the top of the window starts a call, and the others see **Join voice call**. Its menu mutes you and chooses the microphone and speakers. The browser or your system asks once for access to the microphone.
 
-An avatar counts the agents that person runs. Hover over it to see each agent, what it is doing, and on which page, and click **Follow** next to an agent to keep the page and layers it is editing in view; following continues between its replies and stops when it leaves. The button after the avatars lists everyone in the room with their agents, and works from the keyboard. Your own avatar lists your agents — click one to rename it — and has **Leave room**.
+## Follow Someone
 
-The share panel lists everyone in the room with the agents they run, what each agent is doing, and on which page. Follow an agent the same way to keep the page and layers it is editing in view; following continues between its replies and stops when it leaves. Double-click one of your own agents to rename it.
+Click a person's avatar at the top of the window to see what they see. Your view follows theirs, framed in their color. Click the avatar again, press <Keys mac="Esc" other="Esc" />, or move around yourself to stop.
 
-## How It Works
+## See What AI Agents Are Doing
 
-Peers connect directly via WebRTC — your design data goes straight from browser to browser, never through a central server. The document state uses a CRDT (conflict-free replicated data type), so concurrent edits merge automatically without conflicts.
+Each AI agent shows as a cursor on the layers it reads and edits, with a name such as *Fern*. In a room, an agent's cursor has the color of the person running it.
 
-Moving and reordering layers merges too. Each layer remembers every parent it has been moved into and its position among its siblings, and every peer works out the same layer tree from that history ([Evan Wallace's tree CRDT](https://madebyevan.com/algos/crdt-mutable-tree-hierarchy/)). Moves, reorders, and new layers from different people all apply; if two people move the same layer at once, one move wins on every peer. When moves made at the same time would put two layers inside each other, the later move is undone, and a layer whose new parent was deleted meanwhile returns to where it was.
+- A person's avatar counts the agents they run. Hover over it to see what each one is doing and where, and click **Follow** to keep its work in view.
+- Your own agents are followed while they work. Turn that off with the target button at the top of the AI chat.
+- Click one of your agents in your own avatar's list to rename it.
 
-Everyone in a room needs a version of OpenPencil that records the layer tree the same way; versions that record it differently do not see each other's rooms.
-
-The room persists locally — if you refresh the page, you rejoin it automatically with the same state.
-
-## Tips
-
-- Works in the browser and the desktop app
-- Room IDs are cryptographically random — only people with the link can join
-- Stale cursors are cleaned up automatically when someone disconnects
+Only an agent's name, model, what it's doing, and where it's working are shared, never your messages or its replies.
