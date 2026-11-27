@@ -32,6 +32,8 @@ describe('controls a page marks with Reka UI elements', () => {
     })
     if (!behaviour) throw new Error('No behaviour')
     expect(missingBindings(graph, set, behaviour)).toEqual([])
+    // Every variant draws its thumb in the one slot the set defines.
+    expect(set.componentPropertyDefinitions.map(({ name }) => name)).toEqual(['State', 'Thumb'])
 
     // Preview finds the thumb in an instance, as it does for a switch built in the editor.
     const on = graph.getChildren(set.id).find(({ name }) => name === 'State=On')
