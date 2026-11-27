@@ -8,5 +8,8 @@ export const SHADCN_KIT: KitDefinition = {
   name: 'shadcn/ui',
   page: join(import.meta.dir, 'page.tsx'),
   modes: [{ name: 'Light' }, { name: 'Dark', rootAttributes: { class: 'dark' } }],
-  sources: shadcnSources
+  sources: shadcnSources,
+  // shadcn's examples sit in its docs site's wrapper, which fills a screen; here they take the
+  // room they need.
+  css: '[data-slot="example-wrapper"] { min-height: 0; }'
 }

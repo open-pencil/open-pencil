@@ -24,10 +24,11 @@ import { markedRadixPlugin } from './radix'
 /** The packages the page, the kit, and the mount must share one copy of. */
 const REACT = ['react', 'react-dom'] as const
 
-/** What the worker is asked to render: the page module and the kit's installed sources. */
+/** What the worker is asked to render: the page module, the kit's sources, and what it is. */
 export interface RenderRequest {
   page: string
   sources: KitSources
+  about: KitAbout
 }
 
 /** What the worker posts back: the page's markup, or why it could not render it. */
@@ -55,7 +56,7 @@ async function shareReact(project: string): Promise<void> {
   }
 }
 
-async function render({ page, sources }: RenderRequest): Promise<string> {
+async function render({ page, sources, about }: RenderRequest): Promise<string> {
   await shareReact(sources.root)
   const server = await createServer({
     root: import.meta.dir,
@@ -79,7 +80,6 @@ async function render({ page, sources }: RenderRequest): Promise<string> {
     }
     const drawn = await server.ssrLoadModule(page)
     if (!isKitPage(drawn)) throw new Error(`${page} draws no page`)
-    const about: KitAbout = { installer: sources.installer, docs: sources.docs }
     const marks = createKitMarks(COMPONENT_ATTRIBUTES)
     return await mountedMarkup(drawn.default(marks, modules, about))
   } finally {

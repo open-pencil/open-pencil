@@ -7,9 +7,11 @@ import { Scanner } from '@tailwindcss/oxide'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
-import { PAGE_PREFIX, type KitDefinition, type KitSources } from './kit'
+import { MODE_PREFIX, PAGE_PREFIX, type KitAbout, type KitDefinition, type KitSources } from './kit'
 import type { RenderReply, RenderRequest } from './react/worker'
+import { kitTheme } from './theme'
 
 export type { KitDefinition } from './kit'
 
@@ -17,14 +19,18 @@ export type { KitDefinition } from './kit'
  * Renders the kit's page from its own components as a browser shows it once mounted, in a worker
  * whose realm holds the browser's globals and ends with the render.
  */
-export async function renderKitPage(kit: KitDefinition, sources: KitSources): Promise<string> {
+export async function renderKitPage(
+  kit: KitDefinition,
+  sources: KitSources,
+  about: KitAbout
+): Promise<string> {
   const worker = new Worker(new URL('react/worker.ts', import.meta.url))
   try {
     const reply = await new Promise<RenderReply>((resolve, reject) => {
       worker.onmessage = (event: MessageEvent<RenderReply>) => resolve(event.data)
       worker.onerror = (event) => reject(new Error(event.message))
       // A worker takes no target origin; an empty transfer list is its second argument.
-      const request: RenderRequest = { page: kit.page, sources }
+      const request: RenderRequest = { page: kit.page, sources, about }
       worker.postMessage(request, { transfer: [] })
     })
     if ('error' in reply) throw new Error(`Could not render ${kit.name}: ${reply.error}`)
@@ -35,9 +41,14 @@ export async function renderKitPage(kit: KitDefinition, sources: KitSources): Pr
 }
 
 /** The kit's stylesheet compiled for the classes the page uses, as Tailwind builds it for a site. */
-export async function compileKitStylesheet(sources: KitSources, html: string): Promise<string> {
+export async function compileKitStylesheet(
+  kit: KitDefinition,
+  sources: KitSources,
+  html: string
+): Promise<string> {
   const candidates = new Scanner({}).scanFiles([{ content: html, extension: 'html' }])
-  const compiler = await compile(await Bun.file(sources.stylesheet).text(), {
+  const stylesheet = await Bun.file(sources.stylesheet).text()
+  const compiler = await compile(`${stylesheet}\n${kit.css ?? ''}`, {
     base: dirname(sources.stylesheet),
     // The kit is built once, so nothing watches the files the stylesheet reads.
     onDependency: () => undefined,
@@ -52,8 +63,10 @@ export async function compileKitStylesheet(sources: KitSources, html: string): P
  */
 export async function buildKitGraph(kit: KitDefinition): Promise<SceneGraph> {
   const sources = await kit.sources()
-  const html = await renderKitPage(kit, sources)
-  const cssText = await compileKitStylesheet(sources, html)
+  const theme = kitTheme(await Bun.file(sources.stylesheet).text())
+  const about: KitAbout = { installer: sources.installer, docs: sources.docs, theme }
+  const html = await renderKitPage(kit, sources, about)
+  const cssText = await compileKitStylesheet(kit, sources, html)
   const { graph } = await readHTMLDocument(html, {
     cssText,
     // The stylesheet's URLs, such as its fonts', are relative to it.
@@ -61,8 +74,34 @@ export async function buildKitGraph(kit: KitDefinition): Promise<SceneGraph> {
     components: true,
     variables: { collection: kit.name, modes: kit.modes }
   })
+  showModes(graph, kit.name)
   splitPages(graph)
   return graph
+}
+
+/**
+ * Makes each layer the page marked as shown in a mode of the kit's variables show it, and names
+ * it after the mode. Its layers are bound to the variables, so they draw as the mode does.
+ */
+function showModes(graph: SceneGraph, collectionName: string): void {
+  const collection = [...graph.variableCollections.values()].find(
+    ({ name }) => name === collectionName
+  )
+  if (!collection) return
+  const shown: string[] = []
+  for (const node of graph.getAllNodes()) {
+    if (!node.name.startsWith(MODE_PREFIX)) continue
+    const name = node.name.slice(MODE_PREFIX.length)
+    const mode = collection.modes.find((each) => each.name === name)
+    if (!mode) throw new Error(`The kit has no mode ${name}`)
+    graph.updateNode(node.id, {
+      name,
+      variableModes: { ...node.variableModes, [collection.id]: mode.modeId }
+    })
+    shown.push(node.id)
+  }
+  // The layers keep the values they were imported with until their bindings resolve again.
+  reconcileVariableBindings(graph, { subtrees: shown })
 }
 
 /**

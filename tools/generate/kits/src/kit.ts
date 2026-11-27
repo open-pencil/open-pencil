@@ -25,6 +25,9 @@ export interface KitBehaviour {
  */
 export const PAGE_PREFIX = 'page:'
 
+/** The id that marks an element as shown in another mode of the kit's variables, likewise. */
+export const MODE_PREFIX = 'mode:'
+
 /** The size of each cell of a set laid out in rows, in pixels. */
 export interface KitCell {
   width: number
@@ -47,6 +50,8 @@ export interface SetProps {
 export interface KitMarks {
   /** Props for an element that becomes a page of the document of its own, named `name`. */
   page: (name: string) => { id: string }
+  /** Props for an element whose layer shows the mode `name` of the kit's variables. */
+  mode: (name: string) => { id: string }
   /**
    * Props for the element that holds a component set's variants, named `name`: in rows of
    * `columns` cells of one `cell` size when given, so labels beside them line up, else wrapping.
@@ -85,8 +90,17 @@ export interface KitDoc {
   links: Record<string, string>
 }
 
-/** What the page is told about the kit beside its modules: what installed it, and its docs. */
-export type KitAbout = Pick<KitSources, 'installer' | 'docs'>
+/**
+ * What the page is told about the kit beside its modules: what installed it, its docs, and the
+ * custom properties its theme declares on the root, with the colors among them.
+ */
+export type KitAbout = Pick<KitSources, 'installer' | 'docs'> & { theme: KitTheme }
+
+/** The custom properties a kit's theme declares on its root, by what they hold. */
+export interface KitTheme {
+  /** The ones that hold a color, which the page can show as swatches. */
+  colors: string[]
+}
 
 /** The kit's modules as the page receives them: each module's exports, by module name. */
 export type KitModules = Readonly<Record<string, Readonly<Record<string, unknown>>>>
@@ -101,6 +115,8 @@ export interface KitDefinition {
   modes: readonly ReadHTMLMode[]
   /** Installs the kit's sources, or finds them installed. */
   sources: () => Promise<KitSources>
+  /** CSS for the page around the kit's components, after the kit's own stylesheet. */
+  css?: string
 }
 
 export function createKitMarks(attributes: {
@@ -110,6 +126,7 @@ export function createKitMarks(attributes: {
 }): KitMarks {
   return {
     page: (name) => ({ id: `${PAGE_PREFIX}${name}` }),
+    mode: (name) => ({ id: `${MODE_PREFIX}${name}` }),
     set: (name, { columns, cell } = {}): SetProps => ({
       [attributes.set]: name,
       style:

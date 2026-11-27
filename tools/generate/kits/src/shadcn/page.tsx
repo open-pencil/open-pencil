@@ -49,6 +49,10 @@ const rowsOf = (...properties: (readonly string[])[]): string[] =>
     ['']
   )
 
+/** shadcn's prop values as the variants' values read: `sm` is Small, `ghost` is Ghost. */
+const NAMES: Record<string, string> = { sm: 'Small', lg: 'Large' }
+const named = (value: string) => NAMES[value] ?? `${value[0].toUpperCase()}${value.slice(1)}`
+
 const BUTTON_STYLES = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link']
 const BUTTON_SIZES = ['default', 'sm', 'lg']
 const TOGGLE_STYLES = ['default', 'outline']
@@ -58,7 +62,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
   button: (ui, { variant }) => {
     const Button = ui('Button')
     return {
-      rows: rowsOf(BUTTON_STYLES, BUTTON_SIZES),
+      rows: rowsOf(BUTTON_STYLES.map(named), BUTTON_SIZES.map(named)),
       cell: { width: 112, height: 48 },
       variants: BUTTON_STYLES.flatMap((style) =>
         BUTTON_SIZES.flatMap((size) =>
@@ -67,7 +71,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
               key={`${style}${size}${state}`}
               variant={style}
               size={size}
-              {...variant({ Variant: style, Size: size, State: state }, { state })}
+              {...variant({ Variant: named(style), Size: named(size), State: state }, { state })}
             >
               Button
             </Button>
@@ -80,7 +84,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const Badge = ui('Badge')
     return {
       variants: ['default', 'secondary', 'destructive', 'outline'].map((style) => (
-        <Badge key={style} variant={style} {...variant({ Variant: style })}>
+        <Badge key={style} variant={style} {...variant({ Variant: named(style) })}>
           Badge
         </Badge>
       ))
@@ -121,7 +125,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
   toggle: (ui, { variant }) => {
     const Toggle = ui('Toggle')
     return {
-      rows: rowsOf(TOGGLE_STYLES, OFF_ON),
+      rows: rowsOf(TOGGLE_STYLES.map(named), OFF_ON),
       cell: { width: 96, height: 48 },
       variants: TOGGLE_STYLES.flatMap((style) =>
         OFF_ON.flatMap((value) =>
@@ -131,7 +135,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
               variant={style}
               defaultPressed={value === 'On'}
               {...variant(
-                { Variant: style, Pressed: value, State: state },
+                { Variant: named(style), Pressed: value, State: state },
                 { state, behaviour: checked('Pressed') }
               )}
             >
@@ -242,7 +246,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const AvatarFallback = ui('AvatarFallback')
     return {
       variants: ['sm', 'default', 'lg'].map((size) => (
-        <Avatar key={size} size={size} {...variant({ Size: size })}>
+        <Avatar key={size} size={size} {...variant({ Size: named(size) })}>
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
       ))
@@ -254,7 +258,7 @@ const SETS: Record<string, (ui: UI, marks: KitMarks) => SetDrawing> = {
     const AlertDescription = ui('AlertDescription')
     return {
       variants: ['default', 'destructive'].map((style) => (
-        <Alert key={style} variant={style} className="w-96" {...variant({ Variant: style })}>
+        <Alert key={style} variant={style} className="w-96" {...variant({ Variant: named(style) })}>
           <AlertTitle>Heads up!</AlertTitle>
           <AlertDescription>You can add components to your app.</AlertDescription>
         </Alert>
@@ -305,6 +309,30 @@ const ORDER = [
 
 /** What the documentation's links are called on the page. */
 const LINK_LABELS: Record<string, string> = { doc: 'Radix docs', api: 'API reference' }
+
+/** Tailwind's radius scale, which the theme's radius sets. */
+const RADII = ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl']
+/** Steps of Tailwind's spacing scale, each a multiple of the theme's spacing. */
+const SPACING = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
+/** Tailwind's type scale. */
+const TYPE_SIZES = ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl']
+
+/** A swatch of each of the theme's colors, named after its custom property. */
+function Swatches({ colors }: { colors: string[] }) {
+  return (
+    <div className="grid grid-cols-6 gap-4">
+      {colors.map((color) => (
+        <div key={color} className="flex flex-col gap-2">
+          <div
+            className="h-16 rounded-lg border border-border"
+            style={{ background: `var(${color})` }}
+          />
+          <span className="text-xs text-muted-foreground">{color.slice(2)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 /** How wide the labels of a set's rows are. */
 const ROW_LABEL_WIDTH = 160
@@ -394,9 +422,70 @@ export default function page(marks: KitMarks, modules: KitModules, about: KitAbo
             <Examples />
           </RenderBoundary>
         </Section>
+        <Section title="Examples in dark">
+          <div {...marks.mode('Dark')}>
+            <RenderBoundary name={`The ${doc.title} examples`}>
+              <Examples />
+            </RenderBoundary>
+          </div>
+        </Section>
       </section>
     )
   })
+  const foundations = (
+    <section
+      {...marks.page('Foundations')}
+      className="flex w-[1280px] flex-col gap-12 bg-background p-16 text-foreground"
+    >
+      <header className="flex max-w-2xl flex-col gap-3">
+        <h1 className="text-4xl font-semibold tracking-tight">Foundations</h1>
+        <p className="text-lg text-muted-foreground">
+          The theme's variables, in light and dark: its colors, its radius scale, its spacing, and
+          its type.
+        </p>
+      </header>
+      <Section title="Colors">
+        <Swatches colors={about.theme.colors} />
+      </Section>
+      <Section title="Colors in dark">
+        <div {...marks.mode('Dark')}>
+          <Swatches colors={about.theme.colors} />
+        </div>
+      </Section>
+      <Section title="Radius">
+        <div className="flex flex-wrap gap-6">
+          {RADII.map((radius) => (
+            <div key={radius} className="flex flex-col items-center gap-2">
+              <div className={`size-20 border border-border bg-muted rounded-${radius}`} />
+              <span className="text-xs text-muted-foreground">{radius}</span>
+            </div>
+          ))}
+        </div>
+      </Section>
+      <Section title="Spacing">
+        <div className="flex flex-col gap-2">
+          {SPACING.map((step) => (
+            <div key={step} className="flex items-center gap-4">
+              <span className="w-8 text-xs text-muted-foreground">{step}</span>
+              <div
+                className="h-3 rounded-sm bg-primary"
+                style={{ width: `calc(var(--spacing) * ${step})` }}
+              />
+            </div>
+          ))}
+        </div>
+      </Section>
+      <Section title="Type">
+        <div className="flex flex-col gap-3">
+          {TYPE_SIZES.map((size) => (
+            <p key={size} className={`text-${size}`}>
+              {size} · The quick brown fox jumps over the lazy dog
+            </p>
+          ))}
+        </div>
+      </Section>
+    </section>
+  )
   const cover = (
     <section
       {...marks.page('Cover')}
@@ -422,6 +511,7 @@ export default function page(marks: KitMarks, modules: KitModules, about: KitAbo
     <TooltipProvider>
       <div className="flex flex-col font-sans">
         {cover}
+        {foundations}
         {pages}
       </div>
     </TooltipProvider>

@@ -53,8 +53,8 @@ describe('the shadcn/ui kit', () => {
 
   test('puts each component on a page of its own, after a cover', () => {
     const pages = graph.getPages().map(({ name }) => name)
-    expect(pages.slice(0, 4)).toEqual(['Cover', 'Button', 'Badge', 'Input'])
-    expect(pages).toHaveLength(17)
+    expect(pages.slice(0, 4)).toEqual(['Cover', 'Foundations', 'Button', 'Badge'])
+    expect(pages).toHaveLength(18)
     const switchPage = graph.getPages().find(({ name }) => name === 'Switch')
     const texts = switchPage
       ? graph
@@ -66,6 +66,15 @@ describe('the shadcn/ui kit', () => {
       'A control that allows the user to toggle between checked and not checked.'
     )
     expect(texts).toContain('Airplane Mode')
+  })
+
+  test('shows the dark copies of the examples in the Dark mode', () => {
+    const [collection] = graph.variableCollections.values()
+    const dark = collection.modes.find(({ name }) => name === 'Dark')
+    if (!dark) throw new Error('No Dark mode')
+    const shown = [...graph.getAllNodes()].filter((node) => node.name === 'Dark')
+    expect(shown.length).toBeGreaterThan(16)
+    for (const node of shown) expect(node.variableModes[collection.id]).toBe(dark.modeId)
   })
 
   test('imports the light and dark themes as modes', () => {
