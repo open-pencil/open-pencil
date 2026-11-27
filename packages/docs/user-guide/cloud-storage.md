@@ -27,7 +27,7 @@ Endpoint examples:
 - Cloudflare R2: `https://<account-id>.r2.cloudflarestorage.com`
 - MinIO: `http://localhost:9000`, or wherever your server listens
 
-Select **Test connection** to check the endpoint, keys, and bucket before saving, then **Save**. OpenPencil addresses objects as `{endpoint}/{bucket}/{key}`, so the bucket name never goes into the endpoint.
+Select **Test connection** to check the endpoint, keys, and bucket before saving, then **Save**. OpenPencil adds the bucket to the endpoint itself, as `{endpoint}/{bucket}/{key}`, so leave the bucket name out of the endpoint.
 
 Access keys are kept in the system credential store in the desktop app. In the browser they are encrypted in browser storage, or kept only until you close the session when **Settings → General → Remember API keys on this device** is off.
 
