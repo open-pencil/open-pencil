@@ -103,6 +103,41 @@ describe('the HTML engine', () => {
     expect(style(capture.nodes, 'fade')?.opacity).toBe('0.5')
   })
 
+  test("captures a text field's value, or its placeholder as its ::placeholder styles it", async () => {
+    const engine = await loadHTMLEngine()
+    const capture = await engine.layout(
+      `<style>
+        :root { --muted: #0000ff }
+        .field { font: 16px/20px sans-serif; color: #ff0000; padding: 4px; border: 0 }
+        .field::placeholder { color: var(--muted) }
+      </style>
+      <input id="empty" class="field" placeholder="Email">
+      <input id="filled" class="field" value="sam@example.com">
+      <input id="secret" class="field" type="password" value="abc">
+      <textarea id="message" class="field" rows="3" placeholder="Message"></textarea>`,
+      { viewport: VIEWPORT, references: true }
+    )
+    const { nodes } = capture
+    const field = (id: string) => {
+      const index = nodes.findIndex((node) => node.attrs?.id === id)
+      const block = nodes.find((node) => node.parent === index)
+      const text = nodes.find((node) => node.parent === nodes.indexOf(block ?? nodes[0]))
+      return { block, text: text?.text }
+    }
+    const empty = field('empty')
+    expect(empty).toMatchObject({ block: { tag: '::placeholder' }, text: 'Email' })
+    expect(empty.block?.style?.color).toBe('rgb(0, 0, 255)')
+    expect(empty.block?.style?.display).toBe('block')
+    expect(empty.block?.references?.color).toBe('var(--muted)')
+    const filled = field('filled')
+    expect(filled).toMatchObject({ block: { tag: '::value' }, text: 'sam@example.com' })
+    // The value is in the field's own text style, without its box.
+    expect(filled.block?.style?.color).toBe('rgb(255, 0, 0)')
+    expect(filled.block?.style?.['padding-top']).toBeUndefined()
+    expect(field('secret').text).toBe('•••')
+    expect(field('message')).toMatchObject({ block: { tag: '::placeholder' }, text: 'Message' })
+  })
+
   test('applies the stylesheets and images the host fetches', async () => {
     const engine = await loadHTMLEngine()
     // The engine sets no line without a font, inline images included.

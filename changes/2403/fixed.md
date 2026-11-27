@@ -1,0 +1,1 @@
+- HTML import draws a text field's value, or its placeholder in the color the page's `::placeholder` gives it, instead of an empty box (#2403).

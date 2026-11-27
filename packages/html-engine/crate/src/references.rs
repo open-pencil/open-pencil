@@ -388,14 +388,28 @@ pub fn of(
     let Some(styles) = node.primary_styles() else {
         return (Value::Object(Map::new()), scope.clone());
     };
-    let won = winners(&styles, guard);
+    of_style(doc, node, &styles, root, scope, guard, properties)
+}
+
+/// As `of`, for a style of the element other than its own, such as a lazily cascaded
+/// pseudo-element's, whose rules are matched and whose inherited values come from the element.
+pub fn of_style(
+    doc: &BaseDocument,
+    node: &Node,
+    styles: &ComputedValues,
+    root: &Root,
+    scope: &Scope,
+    guard: &SharedRwLockReadGuard,
+    properties: &[&str],
+) -> (Value, Scope) {
+    let won = winners(styles, guard);
     let expander = Expander {
         doc,
         node: node.id,
         root,
         is_root: node.id == root.node,
         budget: Cell::new(EXPANSIONS),
-        styles: &styles,
+        styles,
         won: &won,
         inherited: &scope.custom,
     };
@@ -500,7 +514,7 @@ const CURRENT_BY_DEFAULT: &[LonghandId] = &[
     LonghandId::TextDecorationColor,
 ];
 
-fn longhand(property: &str) -> Option<LonghandId> {
+pub fn longhand(property: &str) -> Option<LonghandId> {
     use style::properties::PropertyId;
     let id = PropertyId::parse_enabled_for_all_content(property).ok()?;
     id.longhand_id()
