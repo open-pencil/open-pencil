@@ -24,7 +24,7 @@ Some pages show the shortcuts for your keyboard, which you can change at the end
 
 - [Drawing Shapes](./drawing-shapes) — rectangles, ellipses, lines, frames, sections, polygons, and stars
 - [Pen Tool](./pen-tool) — draw paths with straight and curved segments
-- [Vector Editing](./vector-edit) — change the points and curves of a path
+- [Vector Editing](./vector-edit) — change the points and curves of a path, and combine shapes
 - [Text Editing](./text-editing) — add text and style it
 - [Icons](./icons) — insert icons from open-source sets and SF Symbols, and swap or recolor them
 - [Photos](./photos) — fill a layer with a free stock photo
