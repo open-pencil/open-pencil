@@ -228,6 +228,38 @@ describe('variables from custom properties', () => {
     expect(bound(graph, named(graph, 'corners'), 'topLeftRadius')).toBe('radius')
   })
 
+  test('bind a calc() over number variables to one variable that computes it', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div id="row" style="display:flex;box-sizing:border-box;padding:calc(var(--spacing) * 4);gap:calc(var(--spacing) * 2 + 1px);width:calc(var(--spacing) * 20);height:40px"></div>
+       <div id="other" style="display:flex;padding:calc(var(--spacing) * 4)"></div>`,
+      { cssText: ':root { --spacing: 4px } .dark { --spacing: 5px }', variables: VARIABLES }
+    )
+    const row = named(graph, 'row')
+    expect(bound(graph, row, 'paddingTop')).toBe('spacing * 4')
+    expect(bound(graph, row, 'itemSpacing')).toBe('spacing * 2 + 1')
+    expect(bound(graph, row, 'width')).toBe('spacing * 20')
+    expect(named(graph, 'other').boundVariables.paddingTop).toBe(row.boundVariables.paddingTop)
+    // The variable stays a formula, so changing spacing changes it in every mode.
+    const id = row.boundVariables.paddingTop ?? ''
+    const [collection] = graph.variableCollections.values()
+    const resolved = () => collection.modes.map(({ modeId }) => graph.resolveVariable(id, modeId))
+    expect(resolved()).toEqual([16, 20])
+    const spacing = [...graph.variables.values()].find(({ name }) => name === 'spacing')
+    if (!spacing) throw new Error('No variable spacing')
+    spacing.valuesByMode[collection.defaultModeId] = 6
+    expect(resolved()).toEqual([24, 20])
+  })
+
+  test('leave a calc() unbound where a variable cannot compute it', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="width:200px"><div id="part" style="width:calc(var(--spacing) * 4 + 10%);height:calc(var(--spacing) * 4 + 1rem)"></div></div>`,
+      { cssText: ':root { --spacing: 4px }', variables: VARIABLES }
+    )
+    const part = named(graph, 'part')
+    expect(part.width).toBe(36)
+    expect(part.boundVariables).toEqual({})
+  })
+
   test('bind generated content, and the window of a framed page, in every mode', async () => {
     const { graph } = await readHTMLDocument('<div class="tag"></div>', {
       cssText:

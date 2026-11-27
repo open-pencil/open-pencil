@@ -1,9 +1,19 @@
 import type { DesignCustomProperty } from '#dom-css/types'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, Variable, VariableValue } from '@open-pencil/scene-graph'
+import type {
+  SceneGraph,
+  Variable,
+  VariableFormulaOperation,
+  VariableValue
+} from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import {
+  evaluateVariableFormula,
+  printFormula,
+  VariableFormulaError
+} from '@open-pencil/scene-graph/variables'
 
 import { anyCSSColor } from '../css-values'
 import { expressionLabel, propertyName, referencedProperty } from './expression'
@@ -78,6 +88,7 @@ export class ThemeVariables {
   readonly #modes: readonly ThemeMode[]
   readonly #byProperty = new Map<string, Variable>()
   readonly #combined = new Map<string, Variable>()
+  readonly #formulas = new Map<string, Variable>()
 
   constructor(graph: SceneGraph, theme: HTMLTheme) {
     this.#graph = graph
@@ -145,13 +156,63 @@ export class ThemeVariables {
 
   #unusedName(label: string, numbered = false): string {
     const taken = new Set(
-      [...this.#byProperty.values(), ...this.#combined.values()].map(({ name }) => name)
+      [...this.#byProperty.values(), ...this.#combined.values(), ...this.#formulas.values()].map(
+        ({ name }) => name
+      )
     )
     // A color no property names is numbered from one, as `Color 1`; a named one from its second.
     let index = numbered ? 1 : 2
     let name = numbered ? `${label} ${index++}` : label
     while (taken.has(name)) name = `${label} ${index++}`
     return name
+  }
+
+  /** The number variable a custom property is, which a formula can compute with. */
+  numberVariable(property: string): string | undefined {
+    const variable = this.named(property)
+    return variable?.type === 'FLOAT' ? variable.id : undefined
+  }
+
+  /** What a formula over these variables gives in each mode, or undefined where it gives none. */
+  evaluate(formula: VariableFormulaOperation): (number | undefined)[] {
+    return this.#modeIds.map((modeId) => {
+      try {
+        const value = evaluateVariableFormula(formula, (id) =>
+          this.#graph.resolveVariable(id, modeId)
+        )
+        return typeof value === 'number' ? value : undefined
+      } catch (error) {
+        if (error instanceof VariableFormulaError) return undefined
+        throw error
+      }
+    })
+  }
+
+  /**
+   * The variable that computes a formula in every mode, named as the formula reads, such as
+   * `spacing * 4`; `css` is how the page wrote it.
+   */
+  forFormula(formula: VariableFormulaOperation, css: string): Variable {
+    const key = JSON.stringify(formula)
+    const known = this.#formulas.get(key)
+    if (known) return known
+    const label = printFormula(formula, (id) => this.#graph.variables.get(id)?.name ?? id)
+    const variable = this.#graph.createVariable(
+      this.#unusedName(label),
+      'FLOAT',
+      this.#collectionId
+    )
+    variable.codeSyntax = { WEB: css }
+    this.#formulas.set(key, variable)
+    this.#setValues(
+      variable,
+      this.#modeIds.map(() => ({
+        expression: 'FORMULA',
+        type: 'FLOAT',
+        value: structuredClone(formula)
+      }))
+    )
+    return variable
   }
 
   /** Whether a variable is a color in a mode, which one that is no color there is not. */
