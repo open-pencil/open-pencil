@@ -1,8 +1,11 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import {
+  changeStaysWithinLayer,
   nodeRequiresAtomicChunk,
   RenderChunkIndex,
+  type RenderChunk,
   type RenderChunkPictureCache
 } from '#core/canvas/renderer/chunks'
 
@@ -67,10 +70,31 @@ export class TilePageContent {
       this.invalidateStructure(nodeId, node.parentId)
       return
     }
+    const drawn = graph && node ? this.drawnLayerBounds(graph, node, chunks) : undefined
     this.pendingInvalidations.push({
       nodeId,
-      previousBounds: chunks.map(({ minX, minY, maxX, maxY }) => ({ minX, minY, maxX, maxY }))
+      previousBounds:
+        drawn ?? chunks.map(({ minX, minY, maxX, maxY }) => ({ minX, minY, maxX, maxY })),
+      layerOnly: drawn !== undefined
     })
+  }
+
+  /**
+   * Where the tiles show `node`, when it lies inside one subtree chunk whose picture recorded it
+   * and its change draws only where it does: its bounds, or none when it drew nothing. Undefined
+   * otherwise, and the whole chunk is drawn again.
+   */
+  private drawnLayerBounds(
+    graph: SceneGraph,
+    node: SceneNode,
+    chunks: readonly RenderChunk[]
+  ): VisualBounds[] | undefined {
+    const chunk = chunks.length === 1 ? chunks.at(0) : undefined
+    if (chunk?.kind !== 'subtree') return undefined
+    if (!changeStaysWithinLayer(graph, node, chunk.nodeId)) return undefined
+    const drawn = this.pictureCache.drawnBounds(chunk.id, node.id)
+    if (drawn === undefined) return undefined
+    return drawn ? [drawn] : []
   }
 
   /** Records that `nodeId` was added, removed, or moved under another parent. */
