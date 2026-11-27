@@ -1,6 +1,7 @@
 import { escapeRegExp } from 'es-toolkit/string'
 
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { defaultNodeName } from '@open-pencil/scene-graph/node-defaults'
 
 export interface RenameSelectionOptions {
   match: string
@@ -11,11 +12,6 @@ export interface RenameSelectionOptions {
 export interface RenameSelectionPreview {
   names: ReadonlyMap<string, string>
   error: 'invalid-pattern' | null
-}
-
-export function defaultNodeName(type: NodeType): string {
-  const words = type.toLowerCase().replaceAll('_', ' ')
-  return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
 /** The page a node is on, or the node itself when it is a page. */

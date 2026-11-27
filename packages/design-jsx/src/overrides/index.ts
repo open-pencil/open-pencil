@@ -585,7 +585,8 @@ export function propsToOverrides(
   const layer = readLayerProps(normalizeStyleProps(props))
   const o: Partial<SceneNode> = {}
 
-  if (layer.name) o.name = layer.name
+  // A named text keeps its name rather than following its text, as a renamed one does.
+  if (layer.name) Object.assign(o, { name: layer.name }, isText ? { autoRename: false } : {})
 
   const { w, h } = applySizeOverrides(layer, o, parentLayout)
   applyVisualOverrides(layer, o, profile)

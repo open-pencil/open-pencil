@@ -3,8 +3,8 @@ import {
   generatedFrameOwner,
   generatedFrameText
 } from '@open-pencil/scene-graph/generated'
+import { defaultNodeName } from '@open-pencil/scene-graph/node-defaults'
 
-import { defaultNodeName } from '#core/editor/structure/rename'
 import type { EditorContext } from '#core/editor/types'
 
 /**

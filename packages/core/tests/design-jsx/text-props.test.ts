@@ -6,6 +6,34 @@ import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 import { getNodeOrThrow, childIdAt } from '@open-pencil/test-support/assert'
 import { makeSceneGraph } from '@open-pencil/test-support/scene'
 describe('text props round-trip', () => {
+  it('a text without a name is named by its text, and export leaves the name to it', async () => {
+    const g = makeSceneGraph()
+    const [result] = await renderJSX(g, '<Text color="#000">Get started</Text>')
+    expect(getNodeOrThrow(g, result.id).name).toBe('Get started')
+    expect(sceneNodeToJSX(result.id, g)).not.toContain('name=')
+  })
+
+  it('a layer with its default name is written without one', async () => {
+    const g = makeSceneGraph()
+    const [result] = await renderJSX(
+      g,
+      '<Frame><Ellipse w={4} h={4} /><Frame name="Row" /></Frame>'
+    )
+    const jsx = sceneNodeToJSX(result.id, g)
+    expect(jsx).not.toContain('name="Frame"')
+    expect(jsx).not.toContain('name="Ellipse"')
+    expect(jsx).toContain('name="Row"')
+  })
+
+  it('a named text keeps its name, and export writes it', async () => {
+    const g = makeSceneGraph()
+    const [result] = await renderJSX(g, '<Text name="CTA" color="#000">Get started</Text>')
+    const n = getNodeOrThrow(g, result.id)
+    g.updateNode(n.id, { text: 'Sign up' })
+    expect([n.name, n.autoRename]).toEqual(['CTA', false])
+    expect(sceneNodeToJSX(n.id, g)).toContain('name="CTA"')
+  })
+
   it('lineHeight renders and exports', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" lineHeight={24}>Hello</Text>')

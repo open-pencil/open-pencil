@@ -53,6 +53,23 @@ describe('layer state undo', () => {
     expect(editor.undo.canUndo).toBe(false)
   })
 
+  test('renaming a text layer stops its name following its text, and undo resumes it', () => {
+    editor = createEditor()
+    const { id } = editor.graph.createNode('TEXT', editor.state.currentPageId, { text: 'Hello' })
+    editor.renameNode(id, 'Title')
+    expect(node(id).autoRename).toBe(false)
+    editor.undo.undo()
+    expect([node(id).name, node(id).autoRename]).toEqual(['Hello', true])
+
+    editor.select([id])
+    editor.renameSelected({ match: '', replacement: 'Heading', startNumber: 1 })
+    expect([node(id).name, node(id).autoRename]).toEqual(['Heading', false])
+    editor.undo.undo()
+    expect([node(id).name, node(id).autoRename]).toEqual(['Hello', true])
+    editor.graph.updateNode(id, { text: 'Bye' })
+    expect(node(id).name).toBe('Bye')
+  })
+
   test('moving to another page undoes back to each layer’s place in the stack', () => {
     const { page, a, b, c } = setup()
     const other = editor.addPage('Other')

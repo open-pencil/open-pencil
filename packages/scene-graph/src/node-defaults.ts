@@ -8,6 +8,12 @@ import { createInstanceOverrideState } from './instances/overrides'
 import { NO_LETTER_SPACING } from './text/lengths'
 import type { NodeType, SceneNode, SourceMetadata } from './types'
 
+/** The name a layer of `type` starts with: its type in words, as Figma names a new layer. */
+export function defaultNodeName(type: NodeType): string {
+  const words = type.toLowerCase().replaceAll('_', ' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
 export function createDefaultSourceMetadata(): SourceMetadata {
   return {
     format: null,
@@ -80,7 +86,7 @@ export function createDefaultNode(
   const defaults = {
     id: generateId(),
     type,
-    name: type.charAt(0) + type.slice(1).toLowerCase(),
+    name: defaultNodeName(type),
     parentId: null,
     childIds: ownList(overrides.childIds),
     x: 0,

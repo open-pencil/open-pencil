@@ -48,7 +48,6 @@ export function createClipboardWebActions(ctx: EditorContext, deps: WebPasteDepe
     const parentId = resolvePasteTarget(ctx)
     const node = ctx.graph.createNode('TEXT', parentId, {
       ...newLayerDefaults('TEXT', layerTheme(ctx.state)),
-      name: text.replace(/\s+/g, ' ').trim(),
       text,
       styleRuns: linkRuns(links),
       textAutoResize: 'WIDTH_AND_HEIGHT'

@@ -3,7 +3,8 @@ import { isEqual, omitBy, pick } from 'es-toolkit'
 import type { ArcData, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
 import { counterAxisSpacingOf, layoutSizing } from '@open-pencil/scene-graph/layout'
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { createDefaultNode, defaultNodeName } from '@open-pencil/scene-graph/node-defaults'
+import { textLayerName } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
 import { appendAll } from '@open-pencil/std/arrays'
@@ -354,7 +355,11 @@ export function collectProps(
   const props: JSXProp[] = []
   const ctx = getNodeContext(node, graph)
 
-  if (node.name && node.name !== node.type) props.push(['name', node.name])
+  // A text layer named by its text, and following it, keeps doing so when read back unnamed.
+  const followsText =
+    node.type === 'TEXT' && node.autoRename && node.name === textLayerName(node.text)
+  if (node.name && node.name !== defaultNodeName(node.type) && !followsText)
+    props.push(['name', node.name])
 
   collectPositionProps(node, ctx, props)
   collectSizingProps(node, ctx, graph, props)
