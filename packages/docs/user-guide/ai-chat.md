@@ -26,7 +26,7 @@ The AI uses a model for each kind of work, which you can change in the model men
 | **Design agent** | The chat itself. |
 | **Vision** | Reads the images you attach. |
 | **Review** | Writes [design reviews](#ask-for-a-review). Uses the Design agent unless you choose another. |
-| **Fast tasks** | Names conversations, and, when it's an API model, writes summaries of long ones; otherwise the Design agent writes them. Without it, a conversation takes its first message as its name. |
+| **Fast tasks** | Names conversations, and, when it's an API model, writes summaries of long ones; otherwise the Design agent writes them. Pi doesn't name conversations. Without a model that does, a conversation takes its first message as its name. |
 
 ## Ask for a Design
 
@@ -116,7 +116,7 @@ The **Local MCP** tab sets the tools for [coding agents and other MCP clients](.
 
 ## Connect Other Tools {#external-mcp-connections}
 
-In the desktop app, coding agents can use other [MCP](https://modelcontextprotocol.io/) servers too, such as your issue tracker. In **Settings → MCP**, under **MCP connections**, add the server's address and, if it needs one, its token. Only add servers you trust: their tools act with the access you give them.
+In the desktop app, coding agents can use other [MCP](https://modelcontextprotocol.io/) servers too, such as your issue tracker. In **Settings → MCP**, under **MCP connections**, add the server's address and, if it needs one, its token, and turn the connection on: agents don't get connections that are off. Only add servers you trust: their tools act with the access you give them.
 
 ## Get Notified
 

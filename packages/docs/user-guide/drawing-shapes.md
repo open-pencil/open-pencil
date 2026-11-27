@@ -20,7 +20,7 @@ A click without a drag makes a 100 × 100 shape, or a line 100 long. Start insid
 
 ## Round the Corners
 
-Hover a selected rectangle: a dot shows inside each corner. Drag one to round all the corners. Hold <Keys mac="⌥" other="Alt" /> to round only that corner, and <Keys mac="⇧" other="Shift" /> to go in steps of 10.
+Hover a selected rectangle: a dot shows inside each corner. Drag one to round the corners: all of them while they're equal, or only that one when they differ. Hold <Keys mac="⌥" other="Alt" /> to do the opposite, and <Keys mac="⇧" other="Shift" /> to go in steps of 10.
 
 To type a radius, use **Radius** in the Design panel. The button next to it sets each corner on its own. **Corner smoothing** starts the curve earlier, as on an app icon.
 
