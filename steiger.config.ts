@@ -12,6 +12,8 @@ export default defineConfig([
   {
     ignores: [
       '.claude/**',
+      // Generated, such as the sources tools/generate/kits installs.
+      '.cache/**',
       'node_modules/**',
       'dist/**',
       'desktop/**',
