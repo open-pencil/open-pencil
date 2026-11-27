@@ -1,6 +1,7 @@
 import { params } from '@nanostores/i18n'
 
 export const credentialsMessageDefaults = {
+  saveFailed: 'Could not save the provider credentials. Check the connection and save again.',
   checkFailed: 'Could not check access to saved credentials.',
   retryCheck: 'Retry check',
   retryAccess: 'Retry access',

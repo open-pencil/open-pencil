@@ -1,0 +1,1 @@
+- Explain when saving an AI model fails to save its provider credentials, and let users retry from the same settings.

@@ -202,6 +202,9 @@ test('a partial model save is explained and retry does not duplicate the profile
   try {
     await page.getByRole('button', { name: 'Save model', exact: true }).click()
     await expect(
+      page.getByText('Could not save the provider credentials.', { exact: false })
+    ).toBeVisible()
+    await expect(
       page.getByText('Some changes may already be saved. Review the settings and try again.')
     ).toBeVisible()
     await expect(page.getByTestId('provider-settings-api-key')).toHaveValue('test-only-key')
