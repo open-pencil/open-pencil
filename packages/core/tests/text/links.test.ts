@@ -15,6 +15,9 @@ describe('a typed link', () => {
   test('adds the scheme a bare host or address leaves out', () => {
     expect(linkFromInput('openpencil.dev/docs?a=1')?.value).toBe('https://openpencil.dev/docs?a=1')
     expect(linkFromInput('hi@openpencil.dev')?.value).toBe('mailto:hi@openpencil.dev')
+    expect(linkFromInput('openpencil.dev:8080/docs')?.value).toBe(
+      'https://openpencil.dev:8080/docs'
+    )
   })
 
   test('removes the link when empty, and rejects what is not a link', () => {

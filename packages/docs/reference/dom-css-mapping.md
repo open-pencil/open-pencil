@@ -49,7 +49,7 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `text-align` | horizontal text alignment | Supports center, right, justified, and the `-webkit-center` family `<center>` computes to; defaults left. A block holding only lines aligns them across it. |
 | `text-decoration-line` | underline / strikethrough | Decoration style/thickness are not mapped yet. |
 | `text-transform` | `textCase` | Uppercase, lowercase, and capitalize map to SceneGraph text case. |
-| `font-variant-caps` | `textCase` | `small-caps` and `all-small-caps` map to small caps and forced small caps where `text-transform` sets no case. |
+| `font-variant-caps` | `textCase` | `small-caps` and `all-small-caps` map to small caps and forced small caps; `small-caps` gives way to a case `text-transform` sets. |
 | `white-space: nowrap` | `maxLines = 1` | Other white-space values are not mapped yet. |
 | `text-shadow` | drop shadow effect | Simple shadows only. |
 

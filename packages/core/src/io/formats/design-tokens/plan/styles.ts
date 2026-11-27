@@ -85,7 +85,7 @@ const ownTextSchema = v.object({
     lineHeight: v.nullable(textLengthSchema),
     letterSpacing: textLengthSchema,
     textDecoration: v.picklist(['NONE', 'UNDERLINE', 'STRIKETHROUGH']),
-    textCase: v.picklist(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
+    textCase: v.picklist(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE', 'SMALL_CAPS', 'SMALL_CAPS_FORCED'])
   }),
   bindings: v.optional(v.record(v.string(), v.string())),
   aliasData: v.optional(v.fallback(aliasDataSchema, {}))

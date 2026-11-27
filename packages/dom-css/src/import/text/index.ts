@@ -128,16 +128,19 @@ function decorationStyle(value: string | undefined): SceneNode['textDecorationSt
   return 'SOLID'
 }
 
-/** The case `text-transform` gives the letters, else the small caps `font-variant-caps` draws. */
+/**
+ * The case `text-transform` gives the letters, else the small caps `font-variant-caps` draws.
+ * `all-small-caps` draws every letter as a small capital, whatever case a transform gives it.
+ */
 function textCaseFromCSS(
   transform: string | undefined,
   variantCaps: string | undefined
 ): SceneNode['textCase'] {
+  if (variantCaps === 'all-small-caps') return 'SMALL_CAPS_FORCED'
   if (transform === 'uppercase') return 'UPPER'
   if (transform === 'lowercase') return 'LOWER'
   if (transform === 'capitalize') return 'TITLE'
   if (variantCaps === 'small-caps') return 'SMALL_CAPS'
-  if (variantCaps === 'all-small-caps') return 'SMALL_CAPS_FORCED'
   return 'ORIGINAL'
 }
 

@@ -48,6 +48,12 @@ describe('font features in the typography panel', () => {
     expect(sections.other.map(({ tag }) => tag)).toEqual(['ZZZZ'])
   })
 
+  test('keep a number feature no style offers as a switch of its own', () => {
+    const sections = fontFeatureSections(available(['onum']))
+    expect(sections.numberStyles).toEqual([])
+    expect(sections.other.map(({ tag }) => tag)).toEqual(['ONUM'])
+  })
+
   test('offer no number styles or positions to a font without them', () => {
     const sections = fontFeatureSections(available(['liga']))
     expect(sections.numberStyles).toEqual([])

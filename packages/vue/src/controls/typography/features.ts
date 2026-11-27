@@ -100,7 +100,6 @@ export interface FontFeatureSections {
 const LETTER_CASE = ['CASE', 'CPSP']
 const NUMBERS = ['FRAC', 'ZERO']
 const LETTERFORMS = ['DLIG', 'ORDN', 'SALT', 'SWSH', 'TITL', 'HLIG']
-const NUMBER_FEATURES = new Set(['PNUM', 'TNUM', 'LNUM', 'ONUM', 'SUPS', 'SUBS'])
 const STYLISTIC_SET = /^SS\d\d$/
 const CHARACTER_VARIANT = /^CV\d\d$/
 
@@ -131,15 +130,20 @@ export function fontFeatureSections(available: readonly FontFeatureInfo[]): Font
       // Lining figures are the default of a font without `lnum`.
       NUMBER_STYLE_FEATURES[style].every((tag) => has(tag) || tag === 'LNUM')
   )
+  const offeredStyles = numberStyles.length > 1 ? numberStyles : []
+  const numberPositions: NumberPosition[] =
+    has('SUPS') || has('SUBS') ? ['NORMAL', ...(['SUPS', 'SUBS'] as const).filter(has)] : []
+  // A number feature no style or position offers stays a switch of its own.
+  const covered = new Set<string>([
+    ...offeredStyles.flatMap((style) => NUMBER_STYLE_FEATURES[style]),
+    ...numberPositions
+  ])
   return {
     smallCaps: has('SMCP'),
     forcedSmallCaps: has('SMCP') && has('C2SC'),
     letterCase: toggles(LETTER_CASE),
-    numberStyles: numberStyles.length > 1 ? numberStyles : [],
-    numberPositions:
-      has('SUPS') || has('SUBS')
-        ? ['NORMAL', ...toggles(['SUPS', 'SUBS']).map(({ tag }) => tag as NumberPosition)]
-        : [],
+    numberStyles: offeredStyles,
+    numberPositions,
     numbers: toggles(NUMBERS),
     letterforms: toggles(LETTERFORMS),
     stylisticSets: matching(STYLISTIC_SET),
@@ -149,7 +153,7 @@ export function fontFeatureSections(available: readonly FontFeatureInfo[]): Font
         (tag) =>
           !AUTOMATIC.has(tag) &&
           !SHOWN_ELSEWHERE.has(tag) &&
-          !NUMBER_FEATURES.has(tag) &&
+          !covered.has(tag) &&
           !listed.has(tag) &&
           !STYLISTIC_SET.test(tag) &&
           !CHARACTER_VARIANT.test(tag)

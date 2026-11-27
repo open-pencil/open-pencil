@@ -6,6 +6,7 @@ import { automaticUnderline } from '@open-pencil/core/text'
 import type { Fill, SceneNode, TextDecoration, TextDecorationStyle } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { panelFieldBase } from '@open-pencil/theme'
+import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
 import { useMessages } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
@@ -31,7 +32,7 @@ type DecorationKey = LengthKey | 'textDecorationFills'
  * The settings of the decoration every selected text shares, as Figma's underline details hold
  * them: an underline's style, thickness, offset, and ink skipping, and either decoration's colour.
  */
-const { node, decoration, decorationStyle, skipInk, fills } = defineProps<{
+const { node, decoration, decorationStyle, skipInk, fills, thickness, offset } = defineProps<{
   /** The first selected text, as the panel shows it, which automatic values are measured on. */
   node: SceneNode
   decoration: TextDecoration
@@ -39,6 +40,9 @@ const { node, decoration, decorationStyle, skipInk, fills } = defineProps<{
   skipInk: boolean | ''
   /** The decoration's own paints, empty when it takes the text's fill. */
   fills: Fill[] | null
+  /** The selected texts' thickness and offset: null is automatic, MIXED where they differ. */
+  thickness: MixedValue<number | null>
+  offset: MixedValue<number | null>
 }>()
 const emit = defineEmits<{
   style: [value: TextDecorationStyle]
@@ -61,20 +65,30 @@ const styleOptions = computed(() => [
   { value: 'DOTTED', label: typography.value.decorationDotted },
   { value: 'WAVY', label: typography.value.decorationWavy }
 ])
-const lengths = computed(() => [
+/** One of the underline's lengths: its field, its value across the selection, and Auto's value. */
+interface LengthRow {
+  key: LengthKey
+  label: string
+  modeLabel: string
+  value: MixedValue<number | null>
+  automatic: number
+  popup: ReturnType<typeof useRetainedPopup>
+}
+
+const lengths = computed<LengthRow[]>(() => [
   {
-    key: 'textDecorationThickness' as const,
+    key: 'textDecorationThickness',
     label: typography.value.decorationThickness,
     modeLabel: typography.value.decorationThicknessMode,
-    value: node.textDecorationThickness,
+    value: thickness,
     automatic: automatic.value.thickness,
     popup: thicknessPopup
   },
   {
-    key: 'textUnderlineOffset' as const,
+    key: 'textUnderlineOffset',
     label: typography.value.decorationOffset,
     modeLabel: typography.value.decorationOffsetMode,
-    value: node.textUnderlineOffset,
+    value: offset,
     automatic: automatic.value.offset,
     popup: offsetPopup
   }
@@ -95,6 +109,12 @@ function rounded(value: number): number {
 function change(key: DecorationKey, value: number | null | Fill[]) {
   emit('update', key, value)
   emit('commit', key)
+}
+
+/** Whether a length is automatic or fixed, or neither where the selected texts differ. */
+function modeOf(value: MixedValue<number | null>): 'AUTO' | 'FIXED' | undefined {
+  if (value === MIXED) return undefined
+  return value === null ? 'AUTO' : 'FIXED'
 }
 
 function setMode(key: LengthKey, mode: string, automaticValue: number) {
@@ -127,6 +147,7 @@ function solid(next: Color): Fill {
         <PanelFieldGroup v-for="length in lengths" :key="length.key" :label="length.label">
           <NumberField
             :model-value="length.value ?? rounded(length.automatic)"
+            :placeholder="panels.mixed"
             :aria-label="length.label"
             :min="length.key === 'textDecorationThickness' ? 0 : -1000"
             :step="0.5"
@@ -134,6 +155,7 @@ function solid(next: Color): Fill {
             :data-property="length.key"
             @update:model-value="emit('update', length.key, $event)"
             @commit="emit('commit', length.key)"
+            @cancel="emit('cancel', length.key)"
           >
             <template v-if="length.value === null" #display
               ><span class="min-w-0 flex-1 truncate text-surface">{{ panels.auto }}</span></template
@@ -141,7 +163,7 @@ function solid(next: Color): Fill {
             <template #suffix>
               <AppSelectRoot
                 v-model:open="length.popup.open.value"
-                :model-value="length.value === null ? 'AUTO' : 'FIXED'"
+                :model-value="modeOf(length.value)"
                 @update:model-value="setMode(length.key, String($event), length.automatic)"
               >
                 <SelectFieldTrigger :label="length.modeLabel" />

@@ -341,6 +341,8 @@ function decorated(value: MixedValue<string>): boolean {
           :decoration-style="picked(ctx.merged('textDecorationStyle'))"
           :skip-ink="picked(ctx.merged('textDecorationSkipInk'))"
           :fills="shared(ctx.merged('textDecorationFills'))"
+          :thickness="ctx.merged('textDecorationThickness')"
+          :offset="ctx.merged('textUnderlineOffset')"
           @style="ctx.actions.setDecorationStyle($event)"
           @skip-ink="ctx.actions.setDecorationSkipInk($event)"
           @update="(key, value) => ctx.actions.updateProp(key, value)"

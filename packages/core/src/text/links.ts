@@ -6,8 +6,8 @@ import type { HyperlinkTarget } from '@open-pencil/scene-graph'
  */
 export const LINK_URL = /^(?:https?:\/\/[^\s/?#]+\S*|mailto:\S+|tel:\S+)$/
 
-/** A host such as `openpencil.dev`, which a link typed without its scheme starts with. */
-const BARE_HOST = /^[\w-]+(?:\.[\w-]+)+(?:[/?#]\S*)?$/
+/** A host such as `openpencil.dev` or `openpencil.dev:8080`, which a link typed without its scheme starts with. */
+const BARE_HOST = /^[\w-]+(?:\.[\w-]+)+(?::\d+)?(?:[/?#]\S*)?$/
 const BARE_EMAIL = /^[^\s@:/]+@[\w-]+(?:\.[\w-]+)+$/
 
 /**
