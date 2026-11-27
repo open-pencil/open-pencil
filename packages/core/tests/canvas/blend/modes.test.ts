@@ -223,7 +223,12 @@ describe('a layer composited with a blend mode', () => {
 })
 
 describe('a blended layer recorded in a picture and drawn zoomed out', () => {
-  function blendedFrame(mode: BlendMode, rotation: number) {
+  const visibleSource = {
+    LINEAR_BURN: { r: 0, g: 0, b: 0 },
+    LINEAR_DODGE: { r: 1, g: 1, b: 1 }
+  } as const
+
+  function blendedFrame(mode: keyof typeof visibleSource, rotation: number) {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     graph.createNode('RECTANGLE', page.id, {
@@ -243,7 +248,7 @@ describe('a blended layer recorded in a picture and drawn zoomed out', () => {
     graph.createNode('RECTANGLE', frame.id, {
       width: 50.6,
       height: 30.4,
-      fills: [solid({ r: 0, g: 0, b: 0 })]
+      fills: [solid(visibleSource[mode])]
     })
     return { graph, pageId: page.id }
   }
@@ -276,7 +281,11 @@ describe('a blended layer recorded in a picture and drawn zoomed out', () => {
     return readSurface()
   }
 
-  function drawnDirectAndFromPicture(mode: BlendMode, rotation: number, scale: number) {
+  function drawnDirectAndFromPicture(
+    mode: keyof typeof visibleSource,
+    rotation: number,
+    scale: number
+  ) {
     const { graph, pageId } = blendedFrame(mode, rotation)
     renderer.pageId = pageId
     const direct = drawZoomed(scale, (canvas) =>
@@ -301,6 +310,8 @@ describe('a blended layer recorded in a picture and drawn zoomed out', () => {
     '%s at zoom %d, turned %d degrees, keeps its edge pixels',
     (mode, scale, rotation) => {
       const { direct, replayed } = drawnDirectAndFromPicture(mode, rotation, scale)
+      const backdrop = direct.slice(0, 4)
+      expect(direct.some((channel, index) => channel !== backdrop[index % 4])).toBe(true)
       const worst = direct.reduce(
         (largest, channel, index) => Math.max(largest, Math.abs(channel - replayed[index])),
         0
