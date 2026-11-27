@@ -1,9 +1,9 @@
 {
   "repository": "open-pencil/skia",
-  "tag": "canvaskit-77bf4092d62779386544342ed786a62f932efd40",
+  "tag": "canvaskit-47935f17145884a14d516f7e4937502fb54dafa5",
   "files": {
     "canvaskit.js": "52a85e33ca504093a91e7a454e4b6ff9bed39266be177c494209f54633e58544",
-    "canvaskit.wasm": "dda23f36d4a68cb5524aadf4809069063b3b77eb028c40fa95e57d9693113e28",
+    "canvaskit.wasm": "f76e8ffce6c15eecbd078b427be36afa502e8edb1d283da52f6d9337b263e6a2",
     "index.d.ts": "efd9cdaafc34cad030e0a6585f5b49e147036f95f595d0383135073ac56adb11",
     "THIRD-PARTY-NOTICES.md": "885ec03e9feafe74d061056775fee670a8859389317fa60ee91d6bb678822128"
   }
