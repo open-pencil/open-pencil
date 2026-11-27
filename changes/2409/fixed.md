@@ -1,0 +1,1 @@
+- A `.fig` saved from a CLI script keeps the layers the script did not touch where they were: changing only plugin data, names, or locks no longer lays the document out again, and instance text that overrides its component's opens at its own measured size instead of the component text's (#1654, #2409).

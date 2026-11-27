@@ -8,7 +8,7 @@ import {
   type SceneMutationImpact
 } from '@open-pencil/scene-graph/mutation-impact'
 
-import { computeAllLayouts, computeLayout } from '#core/layout'
+import { computeAllLayouts, computeLayoutsAround } from '#core/layout'
 
 export interface MutationWithLayout<T> {
   result: T
@@ -18,19 +18,7 @@ export interface MutationWithLayout<T> {
 
 export function createLayoutRunner(getGraph: () => SceneGraph) {
   function runLayoutForNode(id: string) {
-    const graph = getGraph()
-    const node = graph.getNode(id)
-    if (!node) return
-
-    computeAllLayouts(graph, id)
-
-    let parent = node.parentId ? graph.getNode(node.parentId) : undefined
-    while (parent) {
-      if (parent.layoutMode !== 'NONE') {
-        computeLayout(graph, parent.id)
-      }
-      parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
-    }
+    computeLayoutsAround(getGraph(), id)
   }
 
   /**
@@ -72,7 +60,10 @@ export function createLayoutRunner(getGraph: () => SceneGraph) {
     const { result, impact } = await collectSceneMutation(graph, operation)
     const layout = () => {
       if (getGraph() !== graph) return
-      if (!runLayoutForImpact(impact) && fallbackId) computeAllLayouts(graph, fallbackId)
+      if (runLayoutForImpact(impact) || !fallbackId) return
+      // An edit only to fields layout never reads, such as a rename, leaves the page as it is.
+      if (impact.changedNodeIds.size > 0 && mutationLayoutScopeIds(impact).length === 0) return
+      computeAllLayouts(graph, fallbackId)
     }
     layout()
     return { result, relayout: layout }
@@ -102,7 +93,7 @@ export function createLayoutRunner(getGraph: () => SceneGraph) {
         (id) => id && !created.has(id) && graph.getNode(id)
       )
     const connectors = [
-      ...connectorsAffectedBy(graph, impact.changedNodeIds),
+      ...connectorsAffectedBy(graph, impact.layoutNodeIds),
       ...[...created].flatMap((id) => {
         const node = graph.getNode(id)
         return node?.type === 'CONNECTOR' && joinsExisting(node) ? [node] : []

@@ -1,11 +1,10 @@
 import { compact } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { EditorContext } from '#core/editor/types'
-import { sizeAutoResizingText } from '#core/layout/text-auto-resize'
+import { layOutPreparedText } from '#core/layout'
 import { fontManager } from '#core/text/font/manager'
 import { collectNodeFontFaces } from '#core/text/requirements/collect'
 
@@ -110,17 +109,7 @@ export function createPendingTextLayout(ctx: PendingTextLayoutContext) {
     for (const [id, isDerived] of batch) {
       if (graph.getNode(id)) (isDerived ? derived : edited).push(id)
     }
-    // Layout measures text only in auto layout; text that sizes itself is measured here,
-    // unless it keeps the glyphs its file saved, whose size is the file's.
-    const relayout = (id: string) => {
-      const node = graph.getNode(id)
-      if (!node) return
-      if (!node.derivedTextGlyphs?.length) sizeAutoResizingText(graph, id)
-      ctx.runLayoutForNode(id)
-      // A sticky note, shape, or connector fits itself to the text it is named by.
-      const owner = generatedFrameOwner(graph, node)
-      if (owner) ctx.runLayoutForNode(owner.id)
-    }
+    const relayout = (id: string) => layOutPreparedText(graph, [id], ctx.runLayoutForNode)
     layingOut = new Set(batch.keys())
     try {
       if (derived.length > 0) graph.applyDerivedLayoutDuring(() => derived.forEach(relayout))

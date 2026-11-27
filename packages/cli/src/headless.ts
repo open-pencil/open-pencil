@@ -15,6 +15,7 @@ import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import {
   computeAllLayouts,
   installTextMeasurer,
+  layOutPreparedText,
   sizeAutoResizingText
 } from '@open-pencil/core/layout'
 import { writeFileAtomic } from '@open-pencil/core/node/fs'
@@ -91,15 +92,31 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
 let textMeasurer: Promise<SkiaRenderer> | null = null
 
 /**
- * Measure text a script or tool lays out with CanvasKit and the fonts it loads, as the app
- * does, instead of the estimate that knows neither line breaks nor wrapping. The document as
- * loaded keeps the layout its file gives it; only edits made afterwards are measured. Resolves
- * to the renderer that measures, which also measures geometry for the Figma API.
+ * Text the measurer met before its fonts were prepared, which keeps its size until they are, by
+ * layer id as the editor's pending text layout keeps it: layout measures some text as a copy.
+ */
+const unmeasuredText = new Set<string>()
+
+/**
+ * Measure text with CanvasKit and the fonts it loads, as the app does, instead of the estimate
+ * that knows neither line breaks nor wrapping. Text whose fonts are not prepared yet keeps the
+ * size it has, and `measureDocumentText` lays it out again once they are, as the editor does.
+ * Resolves to the renderer that measures, which also measures geometry for the Figma API.
  */
 export function measureTextHeadlessly(): Promise<SkiaRenderer> {
   textMeasurer ??= (async () => {
     const renderer = await headlessRenderer()
-    installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
+    installTextMeasurer((node, maxWidth) => {
+      const size = renderer.measureTextNode(node, maxWidth)
+      // Text measured in a stand-in for a face not loaded yet is measured again in it too.
+      if (
+        size
+          ? renderer.nodeFontReadiness(node) === 'substituted'
+          : node.type === 'TEXT' && node.text
+      )
+        unmeasuredText.add(node.id)
+      return size
+    })
     // Bounds take a text by its ink, as the app's do, for exports and absoluteRenderBounds.
     installTextInkMeasurer((node) => renderer.measureTextInk(node))
     return renderer
@@ -117,11 +134,27 @@ export function measureTextHeadlessly(): Promise<SkiaRenderer> {
  * of those fonts could not be loaded.
  */
 export async function measureDocumentText(graph: SceneGraph): Promise<DocumentFontStatus> {
-  await measureTextHeadlessly()
-  return prepareGraphFonts(
+  return layOutInDocumentFonts(
     graph,
     graph.getPages(true).map((page) => page.id)
   )
+}
+
+/**
+ * Loads the fonts of the text on `pageIds`, then lays out again the text of `graph` that was laid
+ * out before its fonts, which kept the size it had, as the editor does once fonts arrive.
+ */
+async function layOutInDocumentFonts(
+  graph: SceneGraph,
+  pageIds: readonly string[]
+): Promise<DocumentFontStatus> {
+  const renderer = await measureTextHeadlessly()
+  const status = await prepareGraphFonts(graph, pageIds)
+  renderer.syncFontGeneration()
+  const texts = [...unmeasuredText].filter((id) => graph.getNode(id))
+  for (const id of texts) unmeasuredText.delete(id)
+  graph.applyDerivedLayoutDuring(() => layOutPreparedText(graph, texts))
+  return status
 }
 
 /** `--write` and `--output` for commands that change a headless document. */
@@ -141,7 +174,7 @@ export async function writeFigDocument(graph: SceneGraph, filePath: string): Pro
 
 /** Loads a page not loaded yet with the fonts its text uses, as the editor prepares a page. */
 export async function loadDocumentPage(graph: SceneGraph, pageId: string): Promise<void> {
-  if (populateDocumentPage(graph, pageId)) await prepareGraphFonts(graph, [pageId])
+  if (populateDocumentPage(graph, pageId)) await layOutInDocumentFonts(graph, [pageId])
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {

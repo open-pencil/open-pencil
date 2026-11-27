@@ -46,3 +46,12 @@ export const LAYOUT_AFFECTING_KEYS: ReadonlySet<string> = new Set([
   'gridPosition',
   ...SIZE_CONSTRAINT_FIELDS
 ])
+
+/** Fields layout never reads, so an edit to these alone leaves every layer where it is. */
+export const LAYOUT_NEUTRAL_FIELDS: ReadonlySet<string> = new Set([
+  'name',
+  'locked',
+  'expanded',
+  'exportSettings',
+  'pluginData'
+] satisfies (keyof SceneNode)[])
