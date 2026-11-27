@@ -254,12 +254,20 @@ export function finishRoot(
   scope: RekaScope,
   props: Record<string, unknown>
 ): void {
-  const owner = graph.getNode(scope.ownerId)
-  if (!owner) return
   const spec = rootSpec(scope.kind, props)
   // `transition={{ duration: 0.2, easing: 'ease-out' }}`, either one a `{ variable }` by name.
   if (props.transition !== undefined)
     spec.transition = v.parse(behaviourSpecSchema.entries.transition, props.transition)
+  finishBehaviour(graph, scope, spec)
+}
+
+/**
+ * Store the behaviour `spec` describes on the scope's owner, with the slots and texts its parts
+ * made, as a root's props or a page's marks give it.
+ */
+export function finishBehaviour(graph: SceneGraph, scope: RekaScope, spec: BehaviourSpec): void {
+  const owner = graph.getNode(scope.ownerId)
+  if (!owner) return
   const behaviour = behaviourFromSpec(graph, owner, spec)
   behaviour.parts = { ...behaviour.parts, ...Object.fromEntries(scope.slots) }
   behaviour.texts = {
