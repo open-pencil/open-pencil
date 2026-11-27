@@ -210,6 +210,7 @@ export function createDefaultNode(
     starInnerRadius: (3 - Math.sqrt(5)) / 2,
     shapeWithTextType: 'SQUARE',
     slide: null,
+    animation: null,
     shapeUserHeight: 0,
     shapeTruncates: false,
     componentId: null,

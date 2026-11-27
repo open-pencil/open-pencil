@@ -2,7 +2,7 @@ import { PING_STEP_STARTS, PING_STEPS } from '#feedback/contract'
 import { eachDay } from '#feedback/days'
 import type { FeedbackDatabase } from '#feedback/db'
 import { type CalendarDate, parseDate } from '@internationalized/date'
-import { groupBy, sumBy } from 'es-toolkit'
+import { groupBy, mapValues, sumBy } from 'es-toolkit'
 import type { Kysely } from 'kysely'
 
 /** A day's pings for one app and step, with those that entered the step counted apart. */
@@ -86,14 +86,24 @@ function countApp(rows: StepCount[], days: string[]): InstallDay[] {
   })
 }
 
+/** Every day from the first step count through `end`, for each app on its own. */
+export function countInstallsByApp(
+  rows: StepCount[],
+  end: CalendarDate
+): Record<string, InstallDay[]> {
+  const first = rows.map((row) => row.day).toSorted()[0]
+  if (!first) return {}
+  const days = eachDay(parseDate(first), end).map(String)
+  return mapValues(
+    groupBy(rows, (row) => row.app),
+    (appRows) => countApp(appRows, days)
+  )
+}
+
 /** Every day from the first step count through `end`, for desktop and web together. */
 export function countInstalls(rows: StepCount[], end: CalendarDate): InstallDay[] {
-  const first = rows.map((row) => row.day).toSorted()[0]
-  if (!first) return []
-  const days = eachDay(parseDate(first), end).map(String)
-  const perApp = Object.values(groupBy(rows, (row) => row.app)).map((appRows) =>
-    countApp(appRows, days)
-  )
+  const perApp = Object.values(countInstallsByApp(rows, end))
+  const days = perApp[0]?.map((day) => day.day) ?? []
   return days.map((day, index) => {
     const onDay = perApp.map((app) => app[index])
     return {
@@ -105,18 +115,29 @@ export function countInstalls(rows: StepCount[], end: CalendarDate): InstallDay[
   })
 }
 
-/** The range's days as the counting laws allow them, from every step count up to its end. */
+const NO_INSTALLS = { new: 0, returning: 0, replayed: 0 }
+
+/**
+ * The range's days as the counting laws allow them, from every step count up to its end, for
+ * each app and for both together.
+ */
 export async function installs(
   db: Kysely<FeedbackDatabase>,
   end: CalendarDate,
   days: string[]
-): Promise<InstallDay[]> {
+): Promise<{ total: InstallDay[]; byApp: Record<string, InstallDay[]> }> {
   // The bounds build up from the first day with steps, so the whole history up to the end counts.
   const rows = await db
     .selectFrom('pingSteps')
     .selectAll()
     .where('day', '<=', end.toString())
     .execute()
-  const counted = new Map(countInstalls(rows, end).map((day) => [day.day, day]))
-  return days.map((day) => counted.get(day) ?? { day, new: 0, returning: 0, replayed: 0 })
+  const inRange = (counted: InstallDay[]) => {
+    const byDay = new Map(counted.map((day) => [day.day, day]))
+    return days.map((day) => byDay.get(day) ?? { day, ...NO_INSTALLS })
+  }
+  return {
+    total: inRange(countInstalls(rows, end)),
+    byApp: mapValues(countInstallsByApp(rows, end), inRange)
+  }
 }

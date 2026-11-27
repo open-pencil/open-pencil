@@ -1,5 +1,3 @@
-import type { Generated } from 'kysely'
-
 export interface UsagePingTable {
   day: string
   version: string
@@ -8,6 +6,8 @@ export interface UsagePingTable {
   app: string
   browser: string
   usageStats: string
+  /** 1 for pings that sent their step, 0 for those from versions that send none. */
+  stepped: number
   count: number
 }
 
@@ -27,17 +27,6 @@ export interface PingStepTable {
   /** 1 for pings that moved an install into the step, 0 for the rest. */
   entered: number
   count: number
-}
-
-export interface WaitlistTable {
-  id: Generated<number>
-  email: string
-  emailKey: string
-  note: string | null
-  token: string
-  createdAt: string
-  confirmationSentAt: string
-  confirmedAt: string | null
 }
 
 export interface GithubStarsTable {
@@ -90,10 +79,25 @@ export interface RepoItemTable {
   number: number
   kind: 'issue' | 'pull'
   authorAssociation: string
+  /** The author's GitHub login; `null` for bots and for items not synced since it was added. */
+  author: string | null
   createdAt: string
   closedAt: string | null
   mergedAt: string | null
   updatedAt: string
+}
+
+export interface CloudUsageTable {
+  day: string
+  signUps: number
+  activeAccounts: number
+  documentsCreated: number
+  revisions: number
+  /** Totals at the end of the day; `null` on days filled in from Cloud's records. */
+  accounts: number | null
+  documents: number | null
+  workspaces: number | null
+  storageBytes: number | null
 }
 
 /** The D1 tables `migrations/` creates, in Kysely's camelCase. */
@@ -101,7 +105,6 @@ export interface FeedbackDatabase {
   usagePings: UsagePingTable
   pingNetworks: PingNetworkTable
   pingSteps: PingStepTable
-  waitlist: WaitlistTable
   githubStars: GithubStarsTable
   releaseDownloads: ReleaseDownloadsTable
   repoTraffic: RepoTrafficTable
@@ -110,4 +113,5 @@ export interface FeedbackDatabase {
   sitePages: SitePagesTable
   siteCountries: SiteCountriesTable
   repoItems: RepoItemTable
+  cloudUsage: CloudUsageTable
 }

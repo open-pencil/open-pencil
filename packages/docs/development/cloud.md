@@ -257,10 +257,12 @@ document and collaboration epoch, so a newcomer gets the document even when nobo
 It holds the document encoded, as V2 updates it merges and diffs, never as a `Y.Doc`: a document's
 structures take about ten times its encoded size in memory, which a room of a few megabytes would
 not have on Cloudflare. Encoded updates keep the content of what the document deleted, so once a
-room has grown by a quarter, at least 1 MiB, since it was last compacted, or is three quarters
-full, the relay asks the editor longest in it for its whole copy, with the sync request every peer
-already answers. An editor's copy has what it deleted collected; the relay adds whatever it holds
-that the copy lacks, deletions included, and takes the result when it is smaller.
+room that deleted something has grown by a quarter, at least 1 MiB, since it was last compacted,
+or by half the room it had left below its limit, the relay asks the editor longest in it for its
+whole copy, with the sync request every peer already answers. An editor's copy has what it deleted
+collected; the relay adds whatever it holds that the copy lacks, deletions included, and takes the
+result when it is smaller. Each ask costs a few passes over the whole room, about a second of CPU
+for a 30 MB room, so a room that only grows, as an import does, is never asked.
 A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
 typical edit, rather than rewriting the room. Once the log reaches 500 updates, or both 4 MiB and a
 quarter of the snapshot, or a compaction shrank the room, a fresh snapshot replaces it; a closing
@@ -614,7 +616,11 @@ Services that decide entitlements, such as billing, write them through the inter
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
 `PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
 private transport of their own, and read an account's seats at
-`GET /api/internal/accounts/:userId/seats`. Every write carries an
+`GET /api/internal/accounts/:userId/seats`. The operator's dashboard reads the deployment's use at
+`GET /api/internal/usage/daily?start=&end=`, with the service token or the `[usage_report]` table's
+token, which reaches nothing else: per UTC day, sign-ups, active accounts (signed in or
+saved a revision), documents created, and revisions, with today's totals, as counts only; saves and
+active accounts are counted as they happen, since cleanup deletes old revisions and sign-ins. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.

@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
+import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { internalCanvas, newSharedStyleId } from '@open-pencil/scene-graph/shared-styles'
 
 import { applyLayerChanges } from '#core/figma-api/accessors/utils'
@@ -76,17 +77,17 @@ function typeOf(node: SceneNode): FigmaStyleType | null {
 /** A new style of `type`, empty and unnamed, kept on the document's internal page as Figma's. */
 function createStyle<T extends FigmaStyleType>(owner: StyleOwner, type: T): StyleClasses[T] {
   const graph = graphOf(owner)
-  const node = graph.createNode(type === 'TEXT' ? 'TEXT' : 'RECTANGLE', internalCanvas(graph).id, {
+  const id = newSharedStyleId()
+  graph.createNode(type === 'TEXT' ? 'TEXT' : 'RECTANGLE', internalCanvas(graph).id, {
     name: '',
     sharedStyleType: STYLE_TYPES[type],
     internalOnly: true,
     // A text style starts as Figma's does, at 12px; the others start empty.
     ...(type === 'TEXT' ? { fontSize: 12 } : { fills: [] }),
     effects: [],
-    layoutGrids: []
+    layoutGrids: [],
+    source: { ...createDefaultSourceMetadata(), id }
   })
-  const id = newSharedStyleId()
-  node.source.id = id
   return handle(owner, type, id)
 }
 

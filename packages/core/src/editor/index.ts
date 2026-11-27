@@ -50,7 +50,7 @@ export type { ClipboardPayload, ClipboardSnapshot, CopyOptions } from './clipboa
 export type { PastedTextLink } from './clipboard/web'
 export { pastedPropertyChanges } from './clipboard/paste/properties'
 export { resolvePasteTarget } from './clipboard/paste/target'
-export { playIslandRoots } from './play/islands'
+export { playIslandRoots, slideIslandRoots } from './play/islands'
 export { resolvePlayState, type InstanceState } from './play/states'
 export {
   canvasRootId,

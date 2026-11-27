@@ -143,4 +143,19 @@ describe('character ranges in .fig style overrides', () => {
       boundVariables: { fontSize: '7:1' }
     })
   })
+
+  test('keep a range whose fills were all removed, which Figma draws as nothing', () => {
+    // As Figma stores it (copied from Figma desktop): the override holds an empty paint list.
+    const runs = importStyleRuns(textChange([{ styleID: 1, fillPaints: [] }], [0, 0, 1, 1]))
+    expect(runs).toEqual([{ start: 2, length: 2, style: { fills: [] } }])
+
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Hello world',
+      styleRuns: runs
+    })
+    const [change] = sceneNodeToKiwi(node, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [])
+    const [override] = change.textData?.styleOverrideTable ?? []
+    expect(override).toMatchObject({ styleID: 1, fillPaints: [] })
+  })
 })

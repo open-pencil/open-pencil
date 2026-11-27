@@ -1,4 +1,4 @@
-/** The brand every OpenPencil email shares, from the waitlist to Cloud: its colors and type. */
+/** The brand every OpenPencil email shares: its colors and type. */
 
 /** The ivory app-icon tile, served as PNG because mail clients do not draw SVG. */
 export const LOGO_URL = 'https://openpencil.dev/brand/app-icon-1024.png'

@@ -3,6 +3,7 @@ import { mapTransitionVariables, transitionVariableIds } from '../behaviours/tra
 import { cloneNodeProps } from '../copy'
 import { overriddenBindingField, remapInstanceOverrideState } from '../instances/overrides'
 import { referencedStyleIds } from '../shared-styles'
+import { mapSlideVariables, slideVariableIds } from '../slides/motion'
 import { styleRunReferences } from '../text/references'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
@@ -16,6 +17,7 @@ export function semanticTransferReferences(node: SceneNode): string[] {
     ...(node.componentId ? [node.componentId] : []),
     ...Object.values(node.boundVariables),
     ...(behaviour ? transitionVariableIds(behaviour) : []),
+    ...slideVariableIds(node),
     ...runs.variables,
     ...referencedStyleIds(node),
     ...Object.entries(node.componentPropertyAssignments).flatMap(([id, value]) => [id, value]),
@@ -109,6 +111,12 @@ export function prepareNodeTransfer(
     result.pluginData = withBehaviour(
       source,
       mapTransitionVariables(behaviour, (id) => refs.variables.get(id))
+    )
+  // So do a slide's transition and a layer's animation.
+  if (slideVariableIds(source).length > 0)
+    Object.assign(
+      result,
+      mapSlideVariables(source, (id) => refs.variables.get(id))
     )
   // Variant values are keyed by display names, unlike definition-ID assignments.
   result.componentPropertyValues = { ...source.componentPropertyValues }

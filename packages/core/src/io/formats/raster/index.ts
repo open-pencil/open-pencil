@@ -6,17 +6,22 @@ export {
   oversizedRaster,
   rasterSize,
   renderNodesToImage,
-  renderThumbnail,
-  thumbnailFrame,
   type RasterExportFormat,
   type ScaledLayerRender,
-  type ThumbnailFit,
-  type ThumbnailFrame,
   type ExportFormat
 } from './render'
 export {
+  coverFrame,
+  renderCover,
+  renderThumbnail,
+  thumbnailFrame,
+  type ThumbnailFit,
+  type ThumbnailFrame
+} from './thumbnail'
+export {
   headlessRenderer,
   withHeadlessExport,
+  headlessRenderCover,
   headlessRenderNodes,
   headlessRenderThumbnail
 } from './headless'

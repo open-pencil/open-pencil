@@ -2,6 +2,7 @@ import { createCloudStorageAdapter } from '@/app/integrations/storage/cloud/adap
 import { defineStorageProvider } from '@/app/integrations/storage/registry'
 import type { StorageProviderRegistration } from '@/app/integrations/storage/types'
 
+import { drawCloudCover } from '../documents/cover'
 import { CLOUD_SESSION_FIELD, CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 
 /**
@@ -17,6 +18,7 @@ export const CLOUD_STORAGE_PROVIDERS: readonly StorageProviderRegistration[] = [
     preferenceFields: [],
     credentialFields: [{ id: CLOUD_SESSION_FIELD, label: 'Session' }],
     keepsComments: true,
+    drawCover: drawCloudCover,
     createAdapter: (runtime) => createCloudStorageAdapter(runtime)
   })
 ]

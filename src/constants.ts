@@ -66,7 +66,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
  * builds that sync the layer tree or variables differently, or encode what they send
  * differently, never join each other's rooms; change it with either.
  */
-export const COLLAB_APP_ID = 'openpencil/7'
+export const COLLAB_APP_ID = 'openpencil/8'
 
 // 32 base36 characters provide roughly 165 bits of entropy. The room ID is a
 // bearer credential and must resist offline enumeration from public signaling topics.
@@ -80,8 +80,6 @@ export const ROOM_STATUS_TICK_MS = 500
 export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 /** The privacy page: every request the app makes, and every usage event and field. */
 export const PRIVACY_URL = 'https://openpencil.dev/overview/privacy'
-/** The OpenPencil Cloud section of the website, with its waitlist form. */
-export const CLOUD_WAITLIST_URL = 'https://openpencil.dev/#cloud'
 /**
  * The hosted OpenPencil Cloud server, offered first when connecting. An official deployment's own
  * editor build names that deployment, such as staging.

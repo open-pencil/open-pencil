@@ -18,6 +18,7 @@ type SnapshotTable =
   | 'siteVisits'
   | 'sitePages'
   | 'siteCountries'
+  | 'cloudUsage'
 
 // D1 binds at most 100 values per statement, so long lists go in several statements.
 const MAX_BOUND_VALUES = 100
@@ -33,7 +34,8 @@ const CLEAR_DAYS: Record<SnapshotTable, ClearDays> = {
   repoReferrers: (db, days) => db.deleteFrom('repoReferrers').where('day', 'in', days).compile(),
   siteVisits: (db, days) => db.deleteFrom('siteVisits').where('day', 'in', days).compile(),
   sitePages: (db, days) => db.deleteFrom('sitePages').where('day', 'in', days).compile(),
-  siteCountries: (db, days) => db.deleteFrom('siteCountries').where('day', 'in', days).compile()
+  siteCountries: (db, days) => db.deleteFrom('siteCountries').where('day', 'in', days).compile(),
+  cloudUsage: (db, days) => db.deleteFrom('cloudUsage').where('day', 'in', days).compile()
 }
 
 /**
@@ -78,6 +80,7 @@ export async function saveRepoItems(
           conflict.column('number').doUpdateSet((eb) => ({
             kind: eb.ref('excluded.kind'),
             authorAssociation: eb.ref('excluded.authorAssociation'),
+            author: eb.ref('excluded.author'),
             createdAt: eb.ref('excluded.createdAt'),
             closedAt: eb.ref('excluded.closedAt'),
             mergedAt: eb.ref('excluded.mergedAt'),
@@ -98,13 +101,29 @@ export async function lastItemUpdate(db: Kysely<FeedbackDatabase>): Promise<stri
   return row?.updatedAt ?? undefined
 }
 
-/** The newest day recorded in a table, if any. */
-export async function lastDay(
+/**
+ * The last day every one of `hosts` has visits recorded for, or `undefined` while one has none:
+ * a host added later is then filled from as far back as Cloudflare still keeps.
+ */
+export async function lastVisitDay(
   db: Kysely<FeedbackDatabase>,
-  table: 'siteVisits'
+  hosts: string[]
 ): Promise<string | undefined> {
+  const rows = await db
+    .selectFrom('siteVisits')
+    .select(['host', (eb) => eb.fn.max('day').as('day')])
+    .where('host', 'in', hosts)
+    .groupBy('host')
+    .execute()
+  if (rows.length < hosts.length) return undefined
+  // ISO dates sort in calendar order.
+  return rows.map((row) => row.day).toSorted()[0]
+}
+
+/** The newest day with Cloud usage recorded, if any. */
+export async function lastCloudDay(db: Kysely<FeedbackDatabase>): Promise<string | undefined> {
   const row = await db
-    .selectFrom(table)
+    .selectFrom('cloudUsage')
     .select((eb) => eb.fn.max('day').as('day'))
     .executeTakeFirst()
   return row?.day ?? undefined

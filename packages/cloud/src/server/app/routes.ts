@@ -137,8 +137,12 @@ export function createAppRouters(
   })
   const publicCloudAPI = createPublicCloudAPIRouter(shared)
   // Services such as billing authenticate with their own token, not a session.
-  const internalAPI = config.internalServiceToken
-    ? createInternalRoutes(createInternalService(database), config.internalServiceToken)
-    : new Hono()
+  const internalAPI =
+    config.internalServiceToken || config.usageReportToken
+      ? createInternalRoutes(createInternalService(database), {
+          serviceToken: config.internalServiceToken,
+          usageToken: config.usageReportToken
+        })
+      : new Hono()
   return { admin, account, accessTokens, appConnections, cloudAPI, publicCloudAPI, internalAPI }
 }

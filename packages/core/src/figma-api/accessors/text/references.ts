@@ -48,7 +48,7 @@ export function installTextReferenceMethods(
       const node = raw(this, internals)
       const id = parseFigma(v.string(), styleId, method, 'styleId')
       assertTextRange(method, node, start, end)
-      const patch = rangeSharedStylePatch(graphOf(this), kind, id)
+      const patch = rangeSharedStylePatch(graphOf(this), node, kind, id)
       if (!patch) throw new Error(async ? STYLE_NOT_FOUND : `in ${method}: ${STYLE_NOT_FOUND}`)
       updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
     }

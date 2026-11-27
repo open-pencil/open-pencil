@@ -76,6 +76,7 @@ async function startConfiguredServer(
   options: NodeCloudServerOptions,
   reportError: CloudErrorReporter | undefined
 ) {
+  console.log('[Cloud] Connecting to PostgreSQL and applying migrations')
   const { database } = await migratedNodeCloudDatabase(config)
   // Before any worker starts, so a key that cannot sign leaves nothing running.
   const servicesSigningKey = await loadServicesSigningKey(config).catch(async (error: unknown) => {
