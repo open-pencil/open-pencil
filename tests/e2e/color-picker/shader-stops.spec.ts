@@ -100,3 +100,41 @@ test('an effect drawn from its own colors takes stops that start from them', asy
   await picker().getByTestId('shader-stops-remove').click()
   await expect.poll(async () => JSON.stringify(await presetJSON())).not.toContain('"stops"')
 })
+
+test('dragging a stop moves the stop, not the effect it belongs to', async () => {
+  await shaderWith({
+    components: [
+      {
+        type: 'MeshGradient',
+        props: {
+          stops: [
+            { color: '#0f0f13', position: 0 },
+            { color: '#7c3aed', position: 0.5 },
+            { color: '#fde68a', position: 1 }
+          ]
+        }
+      },
+      { type: 'FilmGrain' }
+    ]
+  })
+  // The list shows the top effect first, so the mesh gradient is the second row.
+  await picker().getByRole('button', { name: 'Collapse effect settings' }).click()
+  await picker()
+    .locator('[data-shader-effect=MeshGradient]')
+    .getByRole('button', { name: 'Expand effect settings' })
+    .click()
+  const handle = picker().getByRole('slider', { name: 'Gradient stop 2' })
+  const bar = picker().getByTestId('fill-picker-gradient-bar')
+  const [from, track] = await Promise.all([handle.boundingBox(), bar.boundingBox()])
+  if (!from || !track) throw new Error('Expected the gradient bar and its stop')
+  const y = from.y + from.height / 2
+  await page.mouse.move(from.x + from.width / 2, y)
+  await page.mouse.down()
+  await page.mouse.move(track.x + track.width * 0.2, y, { steps: 10 })
+  await page.mouse.up()
+  const preset = await presetJSON()
+  expect(preset).toMatchObject({ components: [{ type: 'MeshGradient' }, { type: 'FilmGrain' }] })
+  const [mesh] = (preset as { components: { props: { stops: { position: number }[] } }[] })
+    .components
+  expect(mesh.props.stops[1].position).toBeCloseTo(0.2, 1)
+})

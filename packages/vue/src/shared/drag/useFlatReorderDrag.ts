@@ -37,6 +37,12 @@ export interface UseFlatReorderDragOptions<TItem extends FlatReorderItem> {
   operations?: (sourceId: string, targetId: string) => FlatReorderOperations
   axis?: FlatReorderAxis
   getId?: (item: TItem) => string
+  /**
+   * The part of an item a drag starts from, by selector within it, for items that open settings
+   * of their own: without it a drag on a control inside, such as a gradient stop, would move the
+   * whole item in browsers that start a native drag from any part of it, as Safari does.
+   */
+  handle?: string
 }
 
 const REORDER_ONLY: FlatReorderOperations = { 'reorder-before': true, 'reorder-after': true }
@@ -77,7 +83,8 @@ export function useFlatReorderDrag<TItem extends FlatReorderItem>({
   onCombine,
   operations = () => REORDER_ONLY,
   axis = 'vertical',
-  getId = (item) => item.id
+  getId = (item) => item.id,
+  handle
 }: UseFlatReorderDragOptions<TItem>) {
   const draggingId = ref<string | null>(null)
   const instruction = ref<FlatReorderInstruction | null>(null)
@@ -105,6 +112,7 @@ export function useFlatReorderDrag<TItem extends FlatReorderItem>({
     const cleanup = combine(
       draggable({
         element,
+        dragHandle: (handle && element.querySelector(handle)) || undefined,
         getInitialData: () => ({ id }),
         onDragStart: () => {
           draggingId.value = id
