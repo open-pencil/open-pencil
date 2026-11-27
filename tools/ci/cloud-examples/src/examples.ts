@@ -31,7 +31,7 @@ export const EXAMPLES: ExampleSource[] = [
   {
     name: DECK_NAME,
     description:
-      'A short talk about presenting: slide transitions, build steps, a live switch, motion timed by variables, and speaker notes.',
+      'A launch talk for the tour’s music player: a live shader cover, the real player with working controls, covers in a slot, light and dark from one Theme, builds, transitions, and speaker notes.',
     build: buildDemoDeck
   }
 ]

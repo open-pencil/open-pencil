@@ -1,1 +1,1 @@
-- Add "Presenting in OpenPencil" to the community gallery: an example deck with transitions, build steps, a live switch, motion timed by variables, and speaker notes.
+- Add "Lumen 2 launch" to the community gallery: an example deck that presents the tour’s music player, with a live shader cover, working controls on the slides, light and dark modes from one Theme, builds, transitions, and speaker notes.
