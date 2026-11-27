@@ -1,1 +1,1 @@
-- On Linux desktop, Ctrl+mouse-wheel zoom uses smaller steps without changing trackpad pinch zoom.
+- Ctrl+mouse-wheel zoom on Linux moves in small steps, as on Windows, instead of jumping several times per notch, in the desktop app and in browsers.
