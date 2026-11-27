@@ -91,6 +91,7 @@ describe('shape-with-text geometry', () => {
       align: 'CENTER'
     })
     const shape = (shapeWithTextType: 'ENG_DATABASE' | 'SQUARE', strokes: Stroke[]) => ({
+      type: 'SHAPE_WITH_TEXT' as const,
       shapeWithTextType,
       width: 192,
       height: 128,

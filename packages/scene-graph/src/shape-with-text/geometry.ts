@@ -1,3 +1,4 @@
+import { drawsStroke } from '../geometry'
 import type { PolygonOutlineCommand } from '../polygon'
 import type { SceneNode } from '../types'
 import { databaseCap } from './fit'
@@ -559,9 +560,8 @@ export function shapeWithTextGeometry(
  * visible stroke.
  */
 export function shapeWithTextCutsFill(
-  node: Pick<SceneNode, 'shapeWithTextType' | 'width' | 'height' | 'strokes'>
+  node: Pick<SceneNode, 'type' | 'shapeWithTextType' | 'width' | 'height' | 'strokes'>
 ): boolean {
-  if (node.strokes.some((stroke) => stroke.visible && stroke.opacity > 0 && stroke.weight > 0))
-    return false
+  if (node.strokes.some((stroke) => stroke.opacity > 0 && drawsStroke(node, stroke))) return false
   return shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height).details.length > 0
 }

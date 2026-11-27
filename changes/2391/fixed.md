@@ -1,1 +1,2 @@
 - FigJam shapes without a line show their inner lines, such as a database's rim, as gaps in the fill, and folders and multiple documents draw as FigJam draws them (#2391).
+- A stroke of zero weight draws nothing and is left out of SVG exports, as in Figma, instead of a hairline (#2391).

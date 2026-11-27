@@ -237,9 +237,6 @@ export function paintNodeStrokes(
   vectorStroke: Path[] | null
 ): void {
   forVisibleStrokes(r, node, graph, (stroke, color) => {
-    // Skia strokes width 0 as a hairline; a FigJam shape's zero-weight stroke draws nothing, and
-    // its fill is cut as if it had no stroke (`shapeWithTextCutsFill`).
-    if (node.type === 'SHAPE_WITH_TEXT' && !(stroke.weight > 0)) return
     if (node.type === 'LINE') {
       drawLineStroke(r, canvas, node, stroke, color)
       return

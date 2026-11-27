@@ -7,6 +7,7 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
+import { drawsStroke } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'
@@ -408,7 +409,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
-  const visibleStrokes = node.strokes.filter((s) => s.visible)
+  const visibleStrokes = node.strokes.filter((stroke) => drawsStroke(node, stroke))
   const tint = ctx.tint?.(node) ?? []
   const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
   const fill = exportedFill(ownFill, node, ctx)

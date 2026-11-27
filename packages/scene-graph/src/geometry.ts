@@ -228,6 +228,17 @@ export function drawsStrokeSides(node: StrokeSidesInput): boolean {
   return node.independentStrokeWeights === true && (!node.type || SIDE_STROKE_TYPES.has(node.type))
 }
 
+/**
+ * Whether `stroke` draws anything on `node`. A zero weight draws nothing, as in Figma, unless the
+ * node strokes each side by its own weight.
+ */
+export function drawsStroke(
+  node: StrokeSidesInput,
+  stroke: Pick<Stroke, 'visible' | 'weight'>
+): boolean {
+  return stroke.visible && (stroke.weight > 0 || drawsStrokeSides(node))
+}
+
 /** The share of a stroke's weight that lies outside the shape it outlines. */
 export function strokeAlignShare(align: Stroke['align']): number {
   if (align === 'OUTSIDE') return 1
