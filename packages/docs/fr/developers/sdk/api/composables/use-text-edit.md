@@ -14,4 +14,4 @@ L’éditeur conserve le texte et ses plages de mise en forme dans une seule op�
 ## Voir aussi
 
 - [useCanvasInput](./use-canvas-input)
-- [Modifier du texte](/user-guide/text-editing)
+- [Modifier du texte](/fr/user-guide/text-editing)
