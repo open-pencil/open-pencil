@@ -15,7 +15,7 @@ const SVG_TYPE = 'image/svg+xml'
  */
 export function showsPicture(element: DesignElement): boolean {
   const tag = element.tagName.toLowerCase()
-  return tag === 'img' || (tag === 'video' && element.attrs.poster !== undefined)
+  return tag === 'img' || (tag === 'video' && Boolean(element.attrs.poster))
 }
 
 /** The address an element's own picture is written at: an `<img>`'s `src`, a `<video>`'s `poster`. */
