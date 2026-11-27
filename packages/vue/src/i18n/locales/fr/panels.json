@@ -121,6 +121,8 @@
   "shaderNeedsWebGPU": "Ce navigateur n’a pas WebGPU : les shaders affichent leur image enregistrée.",
   "stops": "Arrêts",
   "addStop": "Ajouter un arrêt",
+  "addShaderStops": "Utiliser des arrêts de couleur",
+  "removeShaderStops": "Utiliser les couleurs de l’effet",
   "alignLeft": "Aligner à gauche",
   "alignCenter": "Centrer",
   "alignRight": "Aligner à droite",

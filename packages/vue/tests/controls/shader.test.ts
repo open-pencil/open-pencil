@@ -6,8 +6,12 @@ import {
   moveShaderEffect,
   parseShaderPreset,
   removeShaderEffect,
+  seedStops,
   setShaderEffectProp,
-  shaderPresetJSON
+  shaderPresetJSON,
+  shaderStops,
+  fillStops,
+  stopsFill
 } from '#vue/controls/shader'
 
 const PRESET = { components: [{ type: 'Aurora' }, { type: 'FilmGrain' }] }
@@ -59,5 +63,45 @@ describe('shader catalog', () => {
       step: 1
     })
     expect(aurora?.props.find((prop) => prop.key === 'center')).toMatchObject({ kind: 'position' })
+  })
+})
+
+describe('shader color stops', () => {
+  test('a gradient-stops prop is edited as stops, others the library leaves to the JSON', async () => {
+    const catalog = await loadShaderCatalog()
+    const mesh = catalog.find((effect) => effect.name === 'MeshGradient')
+    expect(mesh?.props.find((prop) => prop.key === 'stops')).toMatchObject({ kind: 'stops' })
+    const glass = catalog.find((effect) => effect.name === 'Glass')
+    expect(glass?.props.find((prop) => prop.key === 'shape')).toMatchObject({ kind: 'other' })
+  })
+
+  test('stops round-trip through the gradient fill the editor edits, in position order', () => {
+    const stops = [
+      { color: '#7c3aed', position: 0.6 },
+      { color: '#0f0f13', position: 0 },
+      { color: '#e879f980', position: 1 }
+    ]
+    const fill = stopsFill(stops)
+    expect(fill.type).toBe('GRADIENT_LINEAR')
+    expect(fill.gradientStops?.[2]?.color.a).toBeCloseTo(0.5, 2)
+    expect(fillStops(fill)).toEqual([
+      { color: '#0f0f13', position: 0 },
+      { color: '#7c3aed', position: 0.6 },
+      { color: '#e879f980', position: 1 }
+    ])
+  })
+
+  test('a prop holds stops only as two or more color stops; new ones start from the colors', () => {
+    expect(shaderStops(null)).toBeNull()
+    expect(shaderStops([{ color: '#000000', position: 0 }])).toBeNull()
+    expect(shaderStops('#fff')).toBeNull()
+    expect(seedStops(['#ff0000', '#00ff00', '#0000ff'])).toEqual([
+      { color: '#ff0000', position: 0 },
+      { color: '#00ff00', position: 1 }
+    ])
+    expect(seedStops([])).toEqual([
+      { color: '#000000', position: 0 },
+      { color: '#ffffff', position: 1 }
+    ])
   })
 })
