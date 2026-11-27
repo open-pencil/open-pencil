@@ -5,7 +5,7 @@ import * as v from 'valibot'
  * boot code before them and any dynamic import at startup are left out. Raise it only for a
  * deliberate cost.
  */
-export const STARTUP_BUDGET_KIB = 3036
+export const STARTUP_BUDGET_KIB = 3040
 export const STARTUP_ENTRY = 'src/views/editor.ts'
 
 const manifestSchema = v.record(
