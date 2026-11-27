@@ -40,21 +40,36 @@ export async function renderKitPage(
   }
 }
 
-/** The kit's stylesheet compiled for the classes the page uses, as Tailwind builds it for a site. */
+/**
+ * The kit's stylesheet compiled for the classes it uses, as Tailwind builds it for a site: the
+ * candidates in the files its sources name (its own folder unless it says otherwise, with any
+ * `@source`) and in the page module, and those the rendered page holds. Markup escapes quotes,
+ * so a class such as `[&_svg:not([class*='size-'])]:size-4` is read from the source it is in.
+ */
 export async function compileKitStylesheet(
   kit: KitDefinition,
   sources: KitSources,
   html: string
 ): Promise<string> {
-  const candidates = new Scanner({}).scanFiles([{ content: html, extension: 'html' }])
   const stylesheet = await Bun.file(sources.stylesheet).text()
+  const base = dirname(sources.stylesheet)
   const compiler = await compile(`${stylesheet}\n${kit.css ?? ''}`, {
-    base: dirname(sources.stylesheet),
+    base,
     // The kit is built once, so nothing watches the files the stylesheet reads.
     onDependency: () => undefined,
     shouldRewriteUrls: true
   })
-  return compiler.build(candidates)
+  const root = compiler.root === 'none' ? [] : [compiler.root ?? { base, pattern: '**/*' }]
+  const scanner = new Scanner({
+    sources: [...root, ...compiler.sources, { base: dirname(kit.page), pattern: '**/*' }].map(
+      (source) => ({ negated: false, ...source })
+    )
+  })
+  const candidates = new Set([
+    ...scanner.scan(),
+    ...scanner.scanFiles([{ content: html, extension: 'html' }])
+  ])
+  return compiler.build([...candidates])
 }
 
 /**
