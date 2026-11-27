@@ -39,6 +39,15 @@ export {
 } from './behaviours/elements'
 
 export {
+  bindPart,
+  createScope,
+  finishBehaviour,
+  rekaRole,
+  type RekaRole,
+  type RekaScope
+} from './behaviours'
+
+export {
   type TreeNode,
   type BaseProps,
   type EllipseProps,
