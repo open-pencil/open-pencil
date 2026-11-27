@@ -253,6 +253,8 @@ export function compareLayers(
   if (tree) return { values: 0, differences: [`layers differ at ${tree}`] }
   const values = crate.properties(root, 0, occurrences.length)
   const differences: string[] = []
+  if (values.length !== occurrences.length)
+    differences.push(`crate gave values for ${values.length} of ${occurrences.length} layers`)
   let compared = 0
   for (const [at, { layer }] of layers.entries()) {
     const expected = asCrateWrites(layer.properties)

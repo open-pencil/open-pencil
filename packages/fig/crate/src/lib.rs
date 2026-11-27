@@ -55,6 +55,8 @@ pub enum Error {
     Message,
     /// A record that is its own ancestor.
     ParentCycle,
+    /// An expansion of another document, or an occurrence past an expansion's end.
+    NoOccurrence,
 }
 
 impl core::fmt::Display for Error {
@@ -69,6 +71,7 @@ impl core::fmt::Display for Error {
             Error::Schema(name) => write!(f, "the schema lacks {name}"),
             Error::Message => f.write_str("the message does not match its schema"),
             Error::ParentCycle => f.write_str("a layer is its own ancestor"),
+            Error::NoOccurrence => f.write_str("no such occurrence in this document's expansion"),
         }
     }
 }
@@ -113,6 +116,32 @@ impl Document {
 
     /// The field values of an expanded page's occurrences.
     pub fn properties<'a>(&'a self, expansion: &'a Expansion<'a>) -> Result<Properties<'a>> {
+        // Records are found by position, which only this document's expansions share.
+        if !core::ptr::eq(expansion.index(), &self.index) {
+            return Err(Error::NoOccurrence);
+        }
         Properties::new(expansion, &self.index, &self.schema, &self.message)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const FILE: &[u8] = include_bytes!("../../../../tests/fixtures/circle-text.fig");
+
+    #[test]
+    fn refuses_occurrences_it_does_not_have() {
+        let document = Document::open(FILE).unwrap();
+        let other = Document::open(FILE).unwrap();
+        let expansion = document.expand_page(0).unwrap();
+        assert_eq!(
+            other.properties(&expansion).err(),
+            Some(Error::NoOccurrence)
+        );
+        let values = document.properties(&expansion).unwrap();
+        let count = expansion.occurrences.len() as u32;
+        assert!(values.of(count - 1).is_ok());
+        assert_eq!(values.of(count).err(), Some(Error::NoOccurrence));
     }
 }

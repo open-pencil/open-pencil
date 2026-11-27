@@ -159,7 +159,13 @@ impl Properties<'_> {
                     let Some(after) = size.as_ref().and_then(vector) else {
                         continue;
                     };
+                    // An invalid scale is none, as expansion treats it.
                     let scale = f64::from(self.index.records[record as usize].scale);
+                    let scale = if scale.is_finite() && scale > 0.0 {
+                        scale
+                    } else {
+                        1.0
+                    };
                     let base = [base[0] * scale, base[1] * scale];
                     self.resize(&mut geometry, &placement, owner, base, after);
                 }

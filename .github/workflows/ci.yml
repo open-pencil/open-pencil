@@ -286,7 +286,11 @@ jobs:
         with:
           persist-credentials: false
 
+      # The fig crate's unit tests open a fixture.
       - uses: ./.github/actions/setup/workspace
+        with:
+          lfs: 'true'
+          lfs-include: tests/fixtures/circle-text.fig
 
       # The runner's rustup installs the toolchain rust-toolchain.toml pins.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
