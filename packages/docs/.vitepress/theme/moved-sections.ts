@@ -125,6 +125,31 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'choosing-a-model': '/user-guide/models-and-providers#choose-a-model',
     'keys-and-security': '/user-guide/models-and-providers#keep-your-keys-safe'
   },
+  '/user-guide/checking-designs/': {
+    'lint-panel': '/user-guide/checking-designs#find-problems',
+    'fixing-issues': '/user-guide/checking-designs#fix-problems',
+    'canvas-markers': '/user-guide/checking-designs#see-problems-on-the-canvas',
+    'in-the-code-panel': '/user-guide/checking-designs#see-problems-in-the-code',
+    rules: '/user-guide/checking-designs#choose-the-rules'
+  },
+  '/user-guide/icons/': {
+    'inserting-an-icon': '/user-guide/icons#insert-an-icon',
+    'choosing-an-icon-set': '/user-guide/icons#choose-an-icon-set',
+    'the-icon-section': '/user-guide/icons#swap-or-recolor-an-icon',
+    'material-symbols': '/user-guide/icons#adjust-material-symbols',
+    'editing-an-icon-s-paths': '/user-guide/icons#edit-an-icon-s-paths'
+  },
+  '/user-guide/photos/': {
+    'filling-a-layer-with-a-photo': '/user-guide/photos#fill-a-layer-with-a-photo'
+  },
+  '/user-guide/collaboration/': {
+    'sharing-a-room': '/user-guide/collaboration#share-a-file',
+    'joining-a-room': '/user-guide/collaboration#join-a-shared-file',
+    'what-syncs': '/user-guide/collaboration#see-what-ai-agents-are-doing',
+    'follow-mode': '/user-guide/collaboration#follow-someone',
+    'how-it-works': '/user-guide/collaboration#where-the-file-lives',
+    tips: '/user-guide/collaboration#share-a-file'
+  },
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
     'connect-a-server': '/cloud/connect',
