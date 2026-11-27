@@ -166,3 +166,10 @@ test('a shader paint naming a definition by a GUID two pasted files share copies
     SHADER_ASSET.key
   )
 })
+
+test("copying a shader paint that names no version brings its key's only definition", async () => {
+  const unversioned: Paint = { ...SHADER, customEffectId: { assetRef: { key: SHADER_ASSET.key } } }
+  const { graph, plate } = await pasted(figmaCopy(true, unversioned))
+  const { nodes } = await copied(graph, plate)
+  expect(writtenShaderDefinitions(nodes)).toHaveLength(1)
+})

@@ -76,25 +76,37 @@ function shaderReferences(node: SceneNode): ShaderReference[] {
 /**
  * Finds the shader definitions a layer names, so a copy carries each to Figma beside the layer, as
  * an instance carries its component. A definition is found by its library key and version, or by
- * the Figma ID a paint read from a file names it by. Definitions pasted from other files can share
- * that ID, and an ID alone cannot tell which one the paint means, so it finds every one.
+ * the Figma ID a paint read from a file names it by. A reference without a version takes the
+ * unversioned definition, or the key's only one, as a file's references resolve. Definitions pasted
+ * from other files can share that ID, and an ID alone cannot tell which one the paint means, so it
+ * finds every one.
  */
 export function shaderDefinitionFinder(graph: SceneGraph): (node: SceneNode) => SceneNode[] {
-  const byAsset = new Map<string, SceneNode>()
+  const byKey = new Map<string, Map<string, SceneNode>>()
   const byId = new Map<string, SceneNode[]>()
   const addId = (id: string, node: SceneNode) => byId.set(id, [...(byId.get(id) ?? []), node])
   for (const node of graph.getAllNodes()) {
     if (node.type !== 'CODE_COMPONENT') continue
-    const key = definitionAssetKey(node)
-    if (key !== undefined) byAsset.set(key, node)
+    const key = rawString(node, 'key')
+    if (key !== undefined) {
+      const versions = byKey.get(key) ?? new Map<string, SceneNode>()
+      versions.set(rawString(node, 'version') ?? '', node)
+      byKey.set(key, versions)
+    }
     addId(node.id, node)
     if (node.source.id && node.source.id !== node.id) addId(node.source.id, node)
   }
   if (byId.size === 0) return () => []
+  const byAsset = (key: string, version: string | undefined): SceneNode | undefined => {
+    const versions = byKey.get(key)
+    if (version) return versions?.get(version)
+    const only = versions?.size === 1 ? [...versions.values()][0] : undefined
+    return versions?.get('') ?? only
+  }
   return (node) =>
     shaderReferences(node).flatMap((reference) => {
       if (reference.key === undefined) return byId.get(reference.id ?? '') ?? []
-      const definition = byAsset.get(shaderAssetKey(reference.key, reference.version))
+      const definition = byAsset(reference.key, reference.version)
       return definition ? [definition] : []
     })
 }
