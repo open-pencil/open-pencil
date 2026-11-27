@@ -45,19 +45,6 @@ export const metricsTileTheme = {
   }
 } as const
 
-/** Recent sign-ups, drawn like the Cloud console's lists. */
-export const metricsWaitlistTheme = {
-  slots: {
-    list: 'flex flex-col',
-    row: 'flex min-h-9 items-center gap-3 border-b border-border py-1.5 text-xs last:border-b-0',
-    domain: 'min-w-0 flex-1 truncate font-medium',
-    time: 'shrink-0 text-2xs text-muted tabular-nums',
-    more: 'mt-2',
-    status:
-      'shrink-0 rounded px-1.5 py-px text-3xs font-medium data-[confirmed=false]:bg-panel-field data-[confirmed=false]:text-muted data-[confirmed=true]:bg-success/10 data-[confirmed=true]:text-success'
-  }
-} as const
-
 /** The busiest networks as a compact table: AS number, operator, share, and pings. */
 export const metricsNetworksTheme = {
   slots: {

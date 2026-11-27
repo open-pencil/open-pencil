@@ -315,8 +315,8 @@ const noNonUIImportsInSharedUI = createImportRule(
   }
 )
 
-// The editor's root, router, and the views its routes load together, the desktop Software Update and permission windows' page entries, the Cloud
-// portal's entry and router, and the metrics dashboard's entry.
+// The editor's root, router, and the views its routes load together, the desktop Software Update and permission windows'
+// page entries, a deck's presenter window's page entry, the Cloud portal's entry and router, and the metrics dashboard's entry.
 const VIEW_ENTRYPOINTS = new Set([
   'src/App.vue',
   'src/main.ts',
@@ -324,6 +324,7 @@ const VIEW_ENTRYPOINTS = new Set([
   'src/views/editor.ts',
   'src/updater.ts',
   'src/permission.ts',
+  'src/presenter.ts',
   'src/cloud/main.ts',
   'src/cloud/router.ts',
   'src/metrics/main.ts'

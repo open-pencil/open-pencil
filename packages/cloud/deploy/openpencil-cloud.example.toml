@@ -145,6 +145,11 @@ transport = "none"
 # bearer token defaults to OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
 # [internal_api]
 
+# Add this table to let your own dashboard read daily usage counts (sign-ups, active accounts,
+# documents, saves, and totals) at GET /api/internal/usage/daily, with the token in
+# OPENPENCIL_CLOUD_USAGE_TOKEN. That token reaches nothing else; the counts name no one.
+# [usage_report]
+
 # Optional: your own terms and privacy policy, linked at sign-up and in the portal's footer. With
 # require_acceptance, each account accepts terms_version once before using the server, and again
 # whenever you change it. abuse_email is linked as Report abuse, and is where the owner of a

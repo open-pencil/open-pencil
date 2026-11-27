@@ -1,7 +1,7 @@
 import type { Path, PathBuilder } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { nodeHasRadius } from '@open-pencil/scene-graph/corners'
-import { borderWeights, type SideWeights } from '@open-pencil/scene-graph/geometry'
+import { borderWeights, drawsStroke, type SideWeights } from '@open-pencil/scene-graph/geometry'
 
 import { baseShapePath, makeBooleanOperationPath, strokeSourcePath } from '#core/canvas/boolean'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
@@ -53,8 +53,7 @@ export function strokeGeometryPath(
   const builder = new r.ck.PathBuilder()
   let painted = false
   for (const stroke of node.strokes) {
-    // A side of its own weight paints whatever the stroke's weight says.
-    if (!stroke.visible || (!node.independentStrokeWeights && stroke.weight <= 0)) continue
+    if (!drawsStroke(node, stroke)) continue
     const band = strokeBand(r, graph, node, stroke)
     if (!band) continue
     builder.addPath(band)

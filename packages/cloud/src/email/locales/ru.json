@@ -143,12 +143,5 @@
   "commentSomeone": "Кто-то",
   "openComment": "Открыть комментарий",
   "commentSettings": "Эти письма приходят по вашим настройкам уведомлений. Изменить их можно в {link}.",
-  "commentSettingsLink": "настройках аккаунта",
-  "waitlistSubject": "Подтвердите место в листе ожидания OpenPencil Cloud",
-  "waitlistHeading": "Подтвердите почту",
-  "waitlistPreview": "Один клик — и вы в листе ожидания OpenPencil Cloud.",
-  "waitlist": "Спасибо за интерес к OpenPencil Cloud. Подтвердите этот адрес, чтобы попасть в лист ожидания, — мы напишем один раз, когда OpenPencil Cloud будет готов для вас.",
-  "waitlistAction": "Встать в лист ожидания",
-  "waitlistNote": "Не записывались? Просто проигнорируйте это письмо — адрес удалится через семь дней. Или {link}.",
-  "waitlistLeave": "удалите его сейчас"
+  "commentSettingsLink": "настройках аккаунта"
 }

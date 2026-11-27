@@ -32,12 +32,15 @@ function usageQuery(range: MetricsQuery) {
   ].join('\nUNION ALL ')
 }
 
-/** For installs first seen in the range, how many opened the app again each day after. */
+/**
+ * For installs first seen in the range, how many opened the app again each day after, up to the
+ * range's end, so a past range shows what was known by then.
+ */
 function retentionQuery(range: MetricsQuery) {
   return `SELECT toString(f.first_day), dateDiff('day', f.first_day, toDate(e.timestamp)) AS n, count(DISTINCT e.distinct_id)
 FROM events e
 INNER JOIN (SELECT distinct_id, min(toDate(timestamp)) AS first_day FROM events WHERE event = 'app_opened' GROUP BY distinct_id) AS f ON e.distinct_id = f.distinct_id
-WHERE e.event = 'app_opened' AND ${dayRange(range, 'f.first_day')}
+WHERE e.event = 'app_opened' AND ${dayRange(range, 'f.first_day')} AND ${dayRange(range, 'toDate(e.timestamp)')}
 GROUP BY f.first_day, n`
 }
 

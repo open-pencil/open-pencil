@@ -1,9 +1,17 @@
-import { sql, type Expression, type Transaction } from 'kysely'
+import { sql, type Expression, type RawBuilder, type Transaction } from 'kysely'
 
 import type { CloudDatabase } from './tables'
 
 export const CURRENT_TIMESTAMP = sql<Date>`current_timestamp`
 export const EMPTY_JSON_OBJECT = sql`'{}'::jsonb`
+
+/**
+ * The UTC calendar day of a `timestamptz` column as `YYYY-MM-DD`, whatever the session's time
+ * zone, for counts grouped by day. `column` is a reference such as `user.createdAt`.
+ */
+export function utcDayOf(column: string): RawBuilder<string> {
+  return sql<string>`to_char(${sql.ref(column)} at time zone 'UTC', 'YYYY-MM-DD')`
+}
 
 const CHECK_VALUE_PATTERN = /^[a-z][a-z0-9-]*$/
 

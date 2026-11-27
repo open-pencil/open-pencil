@@ -48,7 +48,11 @@ type AppAnswer = (args: Record<string, unknown>) => unknown
  */
 async function server(
   results: Record<string, unknown>,
-  { withRoot = true, pathConsent }: { withRoot?: boolean; pathConsent?: PathConsent } = {}
+  {
+    withRoot = true,
+    open = ['design'],
+    pathConsent
+  }: { withRoot?: boolean; open?: string[]; pathConsent?: PathConsent } = {}
 ) {
   const root = await mkdtemp(join(tmpdir(), 'op-mcp-root-'))
   const sent: Record<string, unknown>[] = []
@@ -63,6 +67,9 @@ async function server(
         mcpRoot: withRoot ? root : undefined,
         pathConsent,
         sendRPC: async (body) => {
+          // A session asks which documents are open when it starts; no tool is called then.
+          if (body.command === 'list_documents')
+            return { ok: true, result: { documents: open.map((kind) => ({ kind })) } }
           const { command } = body as { command: string }
           commands.push(command)
           // Document commands get the app's answer, or an empty success.
@@ -107,7 +114,18 @@ async function server(
     const message: unknown = JSON.parse(json)
     return (message as { result: ToolResult }).result
   }
-  return { root, sent, commands, call }
+  const list = async (): Promise<string[]> => {
+    const response = await connection.handleRequest(
+      request({ jsonrpc: '2.0', id: ++id, method: 'tools/list', params: {} }, sessionId)
+    )
+    const text = await response.text()
+    const json = text.startsWith('{') ? text : (text.split('data: ')[1] ?? '')
+    const message: unknown = JSON.parse(json)
+    return (message as { result: { tools: { name: string }[] } }).result.tools.map(
+      (tool) => tool.name
+    )
+  }
+  return { root, sent, commands, call, list }
 }
 
 const zigzag = `M0 0${Array.from({ length: 64 }, (_, i) => ` L${(i + 1) * 3} ${(i % 2) * 20}`).join('')}`
@@ -381,5 +399,20 @@ describe('MCP path consent', () => {
 
     expect((await call('export_pdf', { path: 'doc.pdf' })).isError).toBe(true)
     expect(await readdir(root)).toEqual(['photo.png'])
+  })
+})
+
+describe('tools for a kind of document', () => {
+  test('the slide tools are listed only once a deck is open', async () => {
+    const open = ['design']
+    const { call, list } = await server({}, { open })
+    await call('list_documents', {})
+    expect(await list()).not.toContain('get_deck')
+    open.push('slides')
+    await call('list_documents', {})
+    expect(await list()).toContain('get_deck')
+    open.splice(0, open.length, 'board')
+    await call('list_documents', {})
+    expect(await list()).not.toContain('get_deck')
   })
 })

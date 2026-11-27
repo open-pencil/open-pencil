@@ -1,0 +1,1 @@
+- `createInternalRoutes` from `@open-pencil/cloud/server` takes `{ serviceToken, usageToken }` instead of the service token alone; pass `{ serviceToken }` to keep the internal API as it was (#2383).

@@ -91,7 +91,7 @@ const CONTAINER_TYPES: ReadonlySet<string> = new Set([
 ])
 
 /** The variable type each field takes from `setBoundVariable`, which is stricter than the panel. */
-function fieldType(field: FigmaBindableField): VariableType {
+export function bindingVariableType(field: FigmaBindableField): VariableType {
   if (field === 'characters' || field === 'fontFamily' || field === 'fontStyle') return 'STRING'
   if (field === 'visible') return 'BOOLEAN'
   return 'FLOAT'
@@ -127,7 +127,7 @@ export function bindingVariable(
   const id = typeof variable === 'string' ? variable : variable.id
   const found = graph.variables.get(id)
   if (!found) throw new Error(`in ${method}: Variable not found`)
-  if (found.type !== fieldType(field)) {
+  if (found.type !== bindingVariableType(field)) {
     throw new Error(
       `in ${method}: variable of resolved type '${found.type}' cannot be bound to '${field}'`
     )

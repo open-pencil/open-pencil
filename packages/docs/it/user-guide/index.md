@@ -17,10 +17,10 @@ OpenPencil è un editor di design locale e open source, compatibile con Figma, c
 
 ## Disegnare
 
-- [Disegnare forme](./drawing-shapes) — rettangoli, ellissi, linee, frame, sezioni, poligoni e stelle
-- [Strumento Penna](./pen-tool) — disegnare tracciati vettoriali e curve di Bézier
-- [Modificare vettori](./vector-edit) — intervenire su punti, maniglie e segmenti
-- [Modificare testo](./text-editing) — creare, selezionare e formattare testo
+- [Disegnare forme](/user-guide/drawing-shapes) — rettangoli, ellissi, linee, frame, sezioni, poligoni e stelle
+- [Strumento Penna](/user-guide/pen-tool) — disegnare tracciati vettoriali e curve di Bézier
+- [Modificare vettori](/user-guide/vector-edit) — intervenire su punti, maniglie e segmenti
+- [Modificare testo](/user-guide/text-editing) — creare, selezionare e formattare testo
 
 ## Creare un design system
 

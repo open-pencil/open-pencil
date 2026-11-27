@@ -15,6 +15,7 @@ import { CODEGEN_PROMPT, toolInputFor } from '@open-pencil/core/tools'
 import { askPath, type PathConsent } from '#mcp/consent'
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
+import { createDocumentKindTools } from '#mcp/tool/document-kinds'
 import { readFileInput, withFileInput } from '#mcp/tool/input'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import { toolAnnotations, type ToolDescriptor, type ToolPolicy } from '#mcp/tool/metadata'
@@ -140,12 +141,12 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   ) => {
     const descriptor = descriptors.get(name)
     if (!descriptor) throw new Error(`Missing MCP tool descriptor for "${name}"`)
-    if (!isToolEnabled(descriptor, policy)) return
+    if (!isToolEnabled(descriptor, policy)) return undefined
     callable.set(name, {
       input: toolOptions.inputSchema,
       run: async (args, context) => handler(args, context)
     })
-    mcpServer.registerTool(
+    return mcpServer.registerTool(
       name,
       {
         description: toolOptions.description ?? descriptor.description,
@@ -164,10 +165,11 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
 
   const canWriteFiles = resolvedRoot !== null
+  const kindTools = createDocumentKindTools(sendRPC)
   for (const def of getMCPToolDefinitions()) {
     const input = toolInputFor(def, 'mcp')
     const entries = resolvedRoot ? withFileInput(def.name, input.entries) : input.entries
-    register(
+    const registered = register(
       def.name,
       {
         description: def.description,
@@ -246,13 +248,15 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         }
       }
     )
+    if (registered && def.documentKinds) kindTools.add(registered, def.documentKinds)
   }
 
   register(
     'list_documents',
     {
       description:
-        'List open OpenPencil documents/tabs with their IDs, file paths, current pages, and pages.',
+        'List open documents with their IDs, kinds (design, board, slides), paths, and pages; ' +
+        'tools for a kind, such as the slide tools for decks, are listed while one is open.',
       inputSchema: v.strictObject({})
     },
     async () => {
@@ -260,6 +264,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         const result = await sendRPC({ command: 'list_documents', args: {} })
         const res = result as { ok?: boolean; result?: unknown; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
+        kindTools.follow(res.result)
         return ok(res.result ?? {})
       } catch (e) {
         return fail(e)
@@ -338,6 +343,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
+          void kindTools.refresh()
           const response: { opened: true; target?: unknown } = { opened: true }
           if (res.target) response.target = res.target
           return ok(response)
@@ -393,6 +399,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
+          void kindTools.refresh()
           const response: { created: true; target?: unknown } = { created: true }
           if (res.target) response.target = res.target
           return ok(response)
@@ -546,6 +553,8 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   )
 
   if (agentSession?.defersTools) registerCallTool(mcpServer, callable, options.onToolSettled)
+  // A session starts with the tools for the kinds of document the app has open.
+  void kindTools.refresh()
 }
 
 /** A registered tool as `call_mcp_tool` runs it: its input, and its handler. */

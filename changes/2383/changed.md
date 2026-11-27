@@ -1,0 +1,1 @@
+- Settings → Cloud no longer offers the OpenPencil Cloud waitlist, now that Cloud is open; sign up at cloud.openpencil.dev instead.

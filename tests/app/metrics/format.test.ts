@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { formatCountry, formatDay } from '@/app/metrics/format'
+import { formatBytes, formatCountry, formatDay } from '@/app/metrics/format'
 import { presetRange } from '@/app/metrics/range'
 
 describe('metrics labels', () => {
@@ -14,6 +14,14 @@ describe('metrics labels', () => {
 
   test('formats a day as the UTC day it names', () => {
     expect(formatDay('2026-10-19')).toBe('Oct 19')
+  })
+
+  test('sizes storage in decimal units', () => {
+    expect(formatBytes(0)).toBe('0 B')
+    expect(formatBytes(999)).toBe('999 B')
+    expect(formatBytes(1500)).toBe('1.5 kB')
+    expect(formatBytes(1_843_000_000)).toBe('1.8 GB')
+    expect(formatBytes(2_500_000_000_000)).toBe('2.5 TB')
   })
 })
 

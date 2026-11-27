@@ -255,7 +255,7 @@ describe('account deletion', () => {
         .where('id', '=', invitation)
         .executeTakeFirstOrThrow()
       expect(sent.revokedAt).not.toBeNull()
-      for (const table of ['accountEntitlement', 'signIn'] as const) {
+      for (const table of ['accountEntitlement', 'signIn', 'dailyActiveAccount'] as const) {
         expect(
           await database
             .selectFrom(table)

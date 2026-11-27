@@ -3,7 +3,7 @@
   "version": "0.17.0",
   "private": true,
   "license": "MIT",
-  "description": "The OpenPencil feedback service on Cloudflare Workers: usage pings, opt-in usage stats, error and problem reports, the Cloud waitlist, and the daily metrics snapshot.",
+  "description": "The OpenPencil feedback service on Cloudflare Workers: usage pings, opt-in usage stats, error and problem reports, and the daily metrics snapshot.",
   "type": "module",
   "imports": {
     "#feedback/*": "./src/*",
@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "@internationalized/date": "^3.12.3",
-    "@open-pencil/cloud": "workspace:*",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@open-pencil/std": "workspace:*",

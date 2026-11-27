@@ -282,8 +282,6 @@ ja:settings.mcp
 ja:storage.providerAmazonS3
 ja:storage.providerBackblaze
 ja:storage.providerR2
-ja:storage.cloudTitle
-ja:storage.waitlistPlaceholder
 pl:ai.completions
 pl:ai.modelAgentConnection
 pl:ai.modelConfiguration
@@ -346,8 +344,6 @@ ru:settings.mcp
 ru:storage.providerAmazonS3
 ru:storage.providerBackblaze
 ru:storage.providerR2
-ru:storage.cloudTitle
-ru:storage.waitlistPlaceholder
 zh-cn:ai.completions
 zh-cn:ai.responses
 zh-cn:ai.notifyTitle
@@ -372,8 +368,6 @@ zh-cn:settings.mcp
 zh-cn:storage.providerAmazonS3
 zh-cn:storage.providerBackblaze
 zh-cn:storage.providerR2
-zh-cn:storage.cloudTitle
-zh-cn:storage.waitlistPlaceholder
 de:variables/panel.name
 de:variables/panel.stylesheet
 es:variables/panel.unitAuto
@@ -390,22 +384,17 @@ fr:menu.diagnostics
 fr:menu.variables
 fr:variables/panel.collections
 de:panels.gridAuto
-de:storage.cloudTitle
 de:statuses.name
 de:statuses.status
 es:panels.effectColor
 es:panels.gridColor
 es:panels.gridAuto
-es:storage.cloudTitle
 es:statuses.color
 fr:panels.gridType
 fr:panels.gridAuto
-fr:storage.cloudTitle
 fr:statuses.presetSimple
 it:panels.gridAuto
-it:storage.cloudTitle
 pl:panels.gridAuto
-pl:storage.cloudTitle
 pl:statuses.status
 es:cloud/portal.productName
 es:cloud/portal/person.workspaceRoleEditor
@@ -610,7 +599,6 @@ pt-br:settings.skills
 pt-br:settings.prompts
 pt-br:statuses.status
 pt-br:storage.bucket
-pt-br:storage.cloudTitle
 pt-br:storage.endpoint
 pt-br:storage.providerAmazonS3
 pt-br:storage.providerBackblaze
@@ -638,8 +626,6 @@ ar:settings.mcp
 ar:storage.providerR2
 ar:storage.providerAmazonS3
 ar:storage.providerBackblaze
-ar:storage.cloudTitle
-ar:storage.waitlistPlaceholder
 ar:cloud/editor.productName
 ar:cloud/editor.inviteEmailPlaceholder
 ar:cloud/editor.homeCloudOnHost
@@ -777,6 +763,10 @@ es:slides.sizeStandard
 fr:slides.sizeWide
 fr:slides.sizeStandard
 fr:slides.sizePortrait
+de:slides.easing
+fr:slides.transitionStyle
+fr:slides.direction
+fr:slides.animations
 it:slides.sizeWide
 it:slides.sizeStandard
 ja:slides.sizeWide

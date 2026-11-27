@@ -77,6 +77,10 @@ endpoint = "https://billing.openpencil.dev"
 # secret, which billing holds as CLOUD_SERVICE_TOKEN.
 [internal_api]
 
+# The team dashboard (feedback.openpencil.dev) reads daily usage counts with its own token, the
+# OPENPENCIL_CLOUD_USAGE_TOKEN secret, which the feedback Worker holds as CLOUD_SERVICE_TOKEN.
+[usage_report]
+
 [email]
 transport = "cloudflare"
 from = "cloud@openpencil.dev"

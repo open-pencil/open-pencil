@@ -29,7 +29,7 @@ Der MCP-Server stellt Claude Code, Cursor, Windsurf und jedem anderen MCP-Client
   <SdkCard title="Referenz für Design-JSX" to="/reference/design-authoring" description="Was Design-JSX akzeptiert." />
 </SdkCardGroup>
 
-Wenn Sie stattdessen einen Agenten in der App verwenden möchten, lesen Sie [AI-Chat](../user-guide/ai-chat) und [Coding-Agenten](/user-guide/coding-agents).
+Wenn Sie stattdessen einen Agenten in der App verwenden möchten, lesen Sie [AI-Chat](/user-guide/ai-chat) und [Coding-Agenten](/user-guide/coding-agents).
 
 ## Einen eigenen Editor bauen
 

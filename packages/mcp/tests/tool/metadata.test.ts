@@ -8,7 +8,8 @@ const descriptor = {
   effect: 'read',
   availability: 'filesystem',
   capabilities: ['document:read', 'filesystem:write'],
-  enabled: true
+  enabled: true,
+  documentKinds: null
 } satisfies ToolDescriptor
 
 describe('parseToolDescriptor', () => {

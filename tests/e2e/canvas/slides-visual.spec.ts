@@ -25,3 +25,12 @@ test('Grid view numbers its slides and outlines a selected one without handles',
   editor.canvas.assertNoErrors()
   expect(await editor.canvas.screenshotCanvasRegion(900, 600)).toMatchSnapshot('grid-view.png')
 })
+
+test('a presented slide fills the screen on black, clipped, with layers its build holds back hidden', async () => {
+  const [first] = await deck.open([2])
+  await deck.addBoxPastRightEdge(first)
+  await deck.addAnimatedBox(first, 'Held back')
+  await deck.present(first)
+  await expect(editor.page.getByTestId('slides-presentation')).toHaveScreenshot('presentation.png')
+  await deck.stopPresenting()
+})
