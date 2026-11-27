@@ -1,15 +1,21 @@
 import {
   DE,
+  DE_PAGE,
   DE_PROG,
   ES,
+  ES_PAGE,
   ES_PROG,
   FR,
+  FR_PAGE,
   FR_PROG,
   IT,
+  IT_PAGE,
   IT_PROG,
   PL,
+  PL_PAGE,
   PL_PROG,
   RU,
+  RU_PAGE,
   RU_PROG
 } from '#docs/labels.ts'
 
@@ -35,7 +41,8 @@ export const docsLocales = {
         cloud: 'Cloud'
       },
       DE,
-      DE_PROG
+      DE_PROG,
+      DE_PAGE
     )
   },
   it: {
@@ -53,7 +60,8 @@ export const docsLocales = {
         cloud: 'Cloud'
       },
       IT,
-      IT_PROG
+      IT_PROG,
+      IT_PAGE
     )
   },
   fr: {
@@ -72,7 +80,8 @@ export const docsLocales = {
         openApp: "Ouvrir l'app"
       },
       FR,
-      FR_PROG
+      FR_PROG,
+      FR_PAGE
     )
   },
   es: {
@@ -90,7 +99,8 @@ export const docsLocales = {
         cloud: 'Cloud'
       },
       ES,
-      ES_PROG
+      ES_PROG,
+      ES_PAGE
     )
   },
   pl: {
@@ -108,7 +118,8 @@ export const docsLocales = {
         cloud: 'Cloud'
       },
       PL,
-      PL_PROG
+      PL_PROG,
+      PL_PAGE
     )
   },
   ru: {
@@ -126,7 +137,9 @@ export const docsLocales = {
         cloud: 'Cloud'
       },
       RU,
-      RU_PROG
+      RU_PAGE,
+      RU_PROG,
+      RU_PAGE
     )
   }
 }

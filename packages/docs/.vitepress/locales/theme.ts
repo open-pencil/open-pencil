@@ -1,14 +1,26 @@
-import type { NavLabels, ProgrammableLabels, SidebarLabels } from '#docs/labels.ts'
+import type { NavLabels, PageLabels, ProgrammableLabels, SidebarLabels } from '#docs/labels.ts'
 import { sdkSidebar } from '#docs/sdk/sidebar.ts'
 import { developersSidebar, docsSidebar, sectionMatch } from '#docs/sidebars.ts'
 import type { DefaultTheme } from 'vitepress'
+
+/** The same edit link as the English pages; a locale's own config replaces the root's. */
+const EDIT_PATTERN = 'https://github.com/open-pencil/open-pencil/edit/master/packages/docs/:path'
 
 export const localeThemeConfig = (
   prefix: string,
   nav: NavLabels,
   sidebar: SidebarLabels,
-  prog: ProgrammableLabels
+  prog: ProgrammableLabels,
+  page: PageLabels
 ): DefaultTheme.Config => ({
+  outline: { label: page.outline },
+  docFooter: { prev: page.previous, next: page.next },
+  editLink: { pattern: EDIT_PATTERN, text: page.editPage },
+  lastUpdated: { text: page.lastUpdated },
+  returnToTopLabel: page.returnToTop,
+  sidebarMenuLabel: page.menu,
+  langMenuLabel: page.language,
+  darkModeSwitchLabel: page.theme,
   // Not every canonical page has a maintained translation. Locale switches return
   // to the locale home instead of inventing a corresponding URL that may 404.
   i18nRouting: false,

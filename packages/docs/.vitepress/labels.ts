@@ -59,6 +59,19 @@ export interface ProgrammableLabels {
   urlScheme: string
 }
 
+/** The theme's own words around a page: its outline, footer, and menus. */
+export interface PageLabels {
+  outline: string
+  previous: string
+  next: string
+  editPage: string
+  lastUpdated: string
+  returnToTop: string
+  menu: string
+  language: string
+  theme: string
+}
+
 export interface NavLabels {
   docs: string
   developers: string
@@ -469,4 +482,76 @@ export const RU: SidebarLabels = {
   codingAgents: 'Агенты для программирования',
   modelsAndProviders: 'Модели и провайдеры',
   keyboardShortcuts: 'Горячие клавиши'
+}
+
+export const DE_PAGE: PageLabels = {
+  outline: 'Auf dieser Seite',
+  previous: 'Vorherige Seite',
+  next: 'Nächste Seite',
+  editPage: 'Diese Seite bearbeiten',
+  lastUpdated: 'Zuletzt aktualisiert',
+  returnToTop: 'Nach oben',
+  menu: 'Menü',
+  language: 'Sprache',
+  theme: 'Design wechseln'
+}
+
+export const IT_PAGE: PageLabels = {
+  outline: 'In questa pagina',
+  previous: 'Pagina precedente',
+  next: 'Pagina successiva',
+  editPage: 'Modifica questa pagina',
+  lastUpdated: 'Ultimo aggiornamento',
+  returnToTop: 'Torna su',
+  menu: 'Menu',
+  language: 'Lingua',
+  theme: 'Cambia tema'
+}
+
+export const FR_PAGE: PageLabels = {
+  outline: 'Sur cette page',
+  previous: 'Page précédente',
+  next: 'Page suivante',
+  editPage: 'Modifier cette page',
+  lastUpdated: 'Dernière mise à jour',
+  returnToTop: 'Retour en haut',
+  menu: 'Menu',
+  language: 'Langue',
+  theme: 'Changer de thème'
+}
+
+export const ES_PAGE: PageLabels = {
+  outline: 'En esta página',
+  previous: 'Página anterior',
+  next: 'Página siguiente',
+  editPage: 'Editar esta página',
+  lastUpdated: 'Última actualización',
+  returnToTop: 'Volver arriba',
+  menu: 'Menú',
+  language: 'Idioma',
+  theme: 'Cambiar tema'
+}
+
+export const PL_PAGE: PageLabels = {
+  outline: 'Na tej stronie',
+  previous: 'Poprzednia strona',
+  next: 'Następna strona',
+  editPage: 'Edytuj tę stronę',
+  lastUpdated: 'Ostatnia aktualizacja',
+  returnToTop: 'Do góry',
+  menu: 'Menu',
+  language: 'Język',
+  theme: 'Zmień motyw'
+}
+
+export const RU_PAGE: PageLabels = {
+  outline: 'На этой странице',
+  previous: 'Предыдущая страница',
+  next: 'Следующая страница',
+  editPage: 'Редактировать страницу',
+  lastUpdated: 'Обновлено',
+  returnToTop: 'Наверх',
+  menu: 'Меню',
+  language: 'Язык',
+  theme: 'Сменить тему'
 }
