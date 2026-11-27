@@ -1,12 +1,11 @@
-import {
-  decodeAgentToolMessage,
-  encodeAgentToolMessage,
-  type AgentToolCall,
-  type AgentToolMessage,
-  type AgentToolOutcome
-} from '#cloud/contract'
+import type { AgentToolCall, AgentToolOutcome } from '#cloud/contract'
 
 import { COLLAB_ACTIONS, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import {
+  decodeAutomationMessage,
+  encodeAutomationMessage,
+  type AutomationMessage
+} from '@open-pencil/collab/automation'
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import type { RelayPeer } from './connection'
@@ -14,6 +13,9 @@ import { send } from './room'
 
 /** How long the relay waits for an editor to answer a call before it cancels it. */
 export const AGENT_TOOL_TIMEOUT_MS = DEADLINE_MS.slowRequest
+
+/** The longest failure the relay passes on to the app. */
+const MAX_ERROR_LENGTH = 4096
 
 type PendingCall = {
   peer: RelayPeer
@@ -29,13 +31,28 @@ export function mayHostTools(peer: Pick<RelayPeer, 'authorization'>): boolean {
   return peer.authorization.permission === 'edit' && peer.authorization.principal.kind === 'user'
 }
 
-function deliver(peer: RelayPeer, message: AgentToolMessage) {
+function deliver(peer: RelayPeer, message: AutomationMessage) {
   send(peer.socket, {
     type: 'message',
     namespace: COLLAB_ACTIONS.agentTools,
     from: RELAY_SERVER_PEER,
-    payload: encodeAgentToolMessage(message)
+    payload: encodeAutomationMessage(message)
   })
+}
+
+/**
+ * A call as the local MCP server sends the app its `tool` request: the page it names beside the
+ * tool's own arguments, since the editor finds the page before the tool runs, and the app as an
+ * MCP session's agent.
+ */
+function toolRequestArgs({ name, args, agent }: AgentToolCall) {
+  const { page_id: pageId, ...toolArgs } = args
+  return {
+    ...(typeof pageId === 'string' ? { page_id: pageId } : {}),
+    name,
+    args: toolArgs,
+    agent: { ...agent, kind: 'mcp' }
+  }
 }
 
 /**
@@ -62,20 +79,25 @@ export function createAgentToolCalls(options: {
   return {
     /** Takes an `agent-tools` message a peer sent the relay. */
     receive(peer: RelayPeer, payload: Uint8Array) {
-      const message = decodeAgentToolMessage(payload)
+      const message = decodeAutomationMessage(payload)
       if (!message) return
-      if (message.type === 'host') {
+      if (message.type === 'register') {
         if (!mayHostTools(peer) || peer.toolHost) return
         peer.toolHost = true
         options.remember(peer)
         return
       }
-      if (message.type !== 'result' || pending.get(message.id)?.peer !== peer) return
+      if (message.type !== 'response' || pending.get(message.id)?.peer !== peer) return
       finish(
         message.id,
-        message.ok
-          ? { ok: true, result: message.result }
-          : { ok: false, failure: 'tool_failed', message: message.error }
+        message.ok === false
+          ? {
+              ok: false,
+              failure: 'tool_failed',
+              message: (message.error ?? 'The tool failed').slice(0, MAX_ERROR_LENGTH)
+            }
+          : // JSON drops a result a tool left undefined; it arrives as one that answered nothing.
+            { ok: true, result: message.result ?? null }
       )
     },
 
@@ -89,7 +111,7 @@ export function createAgentToolCalls(options: {
           deliver(host, { type: 'cancel', id })
         }, timeoutMs)
         pending.set(id, { peer: host, settle, timer })
-        deliver(host, { type: 'call', id, ...call })
+        deliver(host, { type: 'request', id, command: 'tool', args: toolRequestArgs(call) })
       })
     },
 

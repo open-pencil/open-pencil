@@ -323,11 +323,13 @@ while a deck is open, a stateless endpoint cannot tell clients their list change
 tool and answers `422 wrong_document_kind` before any editor sees a call on another kind.
 
 The server has no editor to run them in, so `POST /api/documents/:id/tools/{read,write}` hands each
-call to the document's relay (`callDocumentTool`). A signed-in editor tab offers to run tools on the
-room's `agent-tools` channel each time it joins; the relay gives the call to the newest such tab of
-the person whose token made it, waits for that tab's answer alone, and cancels the call after 30
-seconds. The tab runs it as the local MCP server's calls run, showing the app as an agent and making
-the edit the person's own. With nobody's tab open the call answers `409 editor_not_open`, and the
+call to the document's relay (`callDocumentTool`). The room's `agent-tools` channel carries the
+local MCP server's own messages (`@open-pencil/collab/automation`): a signed-in editor tab registers
+to run requests each time it joins; the relay hands the newest such tab of the person whose token
+made the call a `tool` request, as a local MCP server does, waits for that tab's response alone,
+and cancels the request after 30 seconds. The tab runs it as it runs the local server's, on the
+room's own document, showing the app as an agent and making the edit the person's own; it refuses
+any other command. With nobody's tab open the call answers `409 editor_not_open`, and the
 tool gives the model the document's link to pass on. Running tools on a graph the server decodes
 itself, without an open editor, is a later step.
 
