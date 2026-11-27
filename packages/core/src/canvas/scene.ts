@@ -43,7 +43,7 @@ import {
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
 import {
   drawTextEmoji,
-  drawTextRangeFills,
+  drawTextOwnPaints,
   hasOverflowPathTextPaint,
   renderText
 } from './text/draw/text'
@@ -581,7 +581,7 @@ export function paintShapeContent(
     drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, fill))
   }
   if (node.type === 'TEXT') {
-    drawTextRangeFills(r, canvas, node, graph)
+    drawTextOwnPaints(r, canvas, node, graph)
     drawTextEmoji(r, canvas, node)
   }
   afterFills?.()

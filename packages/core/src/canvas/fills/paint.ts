@@ -191,7 +191,7 @@ function recordPatternSource(
         (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
         { patternStack }
       )
-      if (source.type === 'TEXT') r.drawTextRangeFills(canvas, source, graph)
+      if (source.type === 'TEXT') r.drawTextOwnPaints(canvas, source, graph)
     }
     canvas.restore()
   }
