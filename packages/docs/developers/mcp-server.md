@@ -356,6 +356,18 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `list_statuses` | List the document's statuses and the sections, frames, components, and instances that show one, optionally only one status |
 | `set_status`    | Give a layer one of the document's statuses by name, or clear it                                                           |
 
+### Slides
+
+These are listed while a deck is open: `list_documents` reports each document's kind, and the tool list changes when a deck opens or closes.
+
+| Tool             | Description                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `get_deck`       | Outline the deck on the current page: sections, slides with numbers, notes, text, transitions, and animated layers |
+| `create_slides`  | Add empty slides after a slide or at the end, optionally as a new section                                           |
+| `move_slides`    | Move slides after another, to the start, or into a section of their own                                             |
+| `set_slides`     | Set speaker notes, skipping, and the transition, whose duration and easing may follow variables                     |
+| `set_animations` | Animate layers as steps of their slide's build, or stop animating them                                              |
+
 ### Navigation
 
 | Tool          | Description                    |

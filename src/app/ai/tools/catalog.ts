@@ -1,4 +1,11 @@
-import { ALL_TOOLS, CORE_TOOLS, isToolExposed, toolChangesDocument } from '@open-pencil/core/tools'
+import {
+  ALL_TOOLS,
+  CORE_TOOLS,
+  isToolExposed,
+  isToolForDocuments,
+  toolChangesDocument
+} from '@open-pencil/core/tools'
+import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import type { ToolAccessEntry } from '@/app/automation/tool-access/types'
 
@@ -27,7 +34,9 @@ const defaultNames = new Set([
   // Lets the model look at what it built.
   'export_image',
   'list_pages',
-  'create_page'
+  'create_page',
+  // Tools for one kind of document are on, and offered only while the chat's document is one.
+  ...ALL_TOOLS.filter((tool) => tool.documentKinds).map((tool) => tool.name)
 ])
 
 export const aiToolDefinitions = ALL_TOOLS.filter((tool) => isToolExposed(tool, 'ai'))
@@ -42,6 +51,12 @@ export function isAIToolEnabled(name: string, overrides: Readonly<Record<string,
   return overrides[name] ?? defaultNames.has(name)
 }
 
-export function enabledAIToolDefinitions(overrides: Readonly<Record<string, boolean>>) {
-  return aiToolDefinitions.filter((tool) => isAIToolEnabled(tool.name, overrides))
+/** The tools a chat offers on a document of `kind`: those enabled, and for its kind. */
+export function enabledAIToolDefinitions(
+  overrides: Readonly<Record<string, boolean>>,
+  kind: DocumentKind
+) {
+  return aiToolDefinitions.filter(
+    (tool) => isAIToolEnabled(tool.name, overrides) && isToolForDocuments(tool, [kind])
+  )
 }

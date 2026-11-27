@@ -54,3 +54,19 @@ export const easingSchema = v.object({
   bezier: v.optional(cubicBezierSchema),
   spring: v.optional(springSchema)
 })
+
+/** A duration or easing as a spec writes it: a value, or a variable by name or ID. */
+const variableReferenceSchema = v.object({ variable: v.string() })
+
+/**
+ * A duration and easing as scripts, tools, and JSX write them: seconds or a TIMING variable; a CSS
+ * easing such as `ease-out` or `cubic-bezier(…)`, an easing name such as `GENTLE_SPRING`, an
+ * easing as stored, or an EASING variable.
+ */
+export const motionSpecSchema = v.object({
+  duration: v.optional(
+    v.union([v.pipe(v.number(), v.finite(), v.minValue(0)), variableReferenceSchema])
+  ),
+  easing: v.optional(v.union([v.string(), variableReferenceSchema, easingSchema]))
+})
+export type MotionSpec = v.InferOutput<typeof motionSpecSchema>
