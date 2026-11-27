@@ -29,7 +29,7 @@ CLI `openpencil` читает, проверяет, экспортирует и �
   <SdkCard title="Справочник JSX для дизайна" to="/reference/design-authoring" description="Что принимает JSX для дизайна." />
 </SdkCardGroup>
 
-Чтобы работать с агентом прямо в приложении, см. [Чат с ИИ](/user-guide/ai-chat) и [Агенты для программирования](/user-guide/coding-agents).
+Чтобы работать с агентом прямо в приложении, см. [Чат с ИИ](/ru/user-guide/ai-chat) и [Агенты для программирования](/ru/user-guide/coding-agents).
 
 ## Собственный редактор
 
