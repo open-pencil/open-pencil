@@ -12,7 +12,7 @@ OpenPencil opens the `.pen` files of pen.dev, formerly called Pencil. Your desig
 
 Press <Keys mac="⌘ O" other="Ctrl O" /> and choose the file, or drag it onto the window. On your computer, you can also open it from Finder or File Explorer with the desktop app.
 
-OpenPencil reads `.pen` files but doesn't write them. When you save, the design goes to a new `.fig` file next to the original, which stays as it was. The `.fig` file opens in Figma too.
+OpenPencil reads `.pen` files but doesn't write them. The first time you save, it asks where to put a new `.fig` file, named like the original; a browser without a save dialog downloads it instead. The `.pen` file stays as it was, and the `.fig` file opens in Figma too.
 
 ## What Comes Along
 
