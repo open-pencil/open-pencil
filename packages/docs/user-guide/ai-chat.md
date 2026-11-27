@@ -26,7 +26,7 @@ The AI uses a model for each kind of work, which you can change in the model men
 | **Design agent** | The chat itself. |
 | **Vision** | Reads the images you attach. |
 | **Review** | Writes [design reviews](#ask-for-a-review). Uses the Design agent unless you choose another. |
-| **Fast tasks** | Names conversations and writes summaries of long ones. Without it, a conversation takes its first message as its name. |
+| **Fast tasks** | Names conversations, and, when it's an API model, writes summaries of long ones; otherwise the Design agent writes them. Pi doesn't name conversations. Without a model that does, a conversation takes its first message as its name. |
 
 ## Ask for a Design
 
@@ -45,7 +45,7 @@ Some things to try:
 - "Turn this frame's background into a gradient from blue to purple."
 - "Make this component a switch I can try in preview."
 
-The AI checks its work by looking at a picture of what it made, so it can fix what it got wrong.
+With a model that reads images, the AI checks its work by looking at a picture of what it made, so it can fix what it got wrong.
 
 ## While the AI Works
 
@@ -54,7 +54,7 @@ The AI checks its work by looking at a picture of what it made, so it can fix wh
 - Type another message and press <Keys mac="Enter" other="Enter" /> to send it once the current step is done, so the AI can change course. <Keys mac="⌥ Enter" other="Alt Enter" /> waits until it's done with everything. Waiting messages show dimmed below the reply.
 - **Stop** ends the reply. An edit already being made finishes; the next message tells the AI what changed.
 
-**Maximum steps per message**, under **Chat** in **Settings → Models**, limits how long one reply can work, 50 steps unless you change it. When a reply reaches it, **Continue** goes on.
+**Maximum steps per message**, under **Chat** in **Settings → Models**, limits how long one reply of the built-in AI can work, 50 steps unless you change it. Coding agents set their own limits. When a reply reaches it, **Continue** goes on.
 
 ## Undo What the AI Did
 
@@ -116,7 +116,7 @@ The **Local MCP** tab sets the tools for [coding agents and other MCP clients](.
 
 ## Connect Other Tools {#external-mcp-connections}
 
-In the desktop app, coding agents can use other [MCP](https://modelcontextprotocol.io/) servers too, such as your issue tracker. In **Settings → MCP**, under **MCP connections**, add the server's address and, if it needs one, its token. Only add servers you trust: their tools act with the access you give them.
+In the desktop app, coding agents can use other [MCP](https://modelcontextprotocol.io/) servers too, such as your issue tracker. In **Settings → MCP**, under **MCP connections**, add the server's address and, if it needs one, its token, and turn the connection on: agents don't get connections that are off. Only add servers you trust: their tools act with the access you give them.
 
 ## Get Notified
 

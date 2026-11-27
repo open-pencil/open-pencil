@@ -41,9 +41,18 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'visibility-lock': '/user-guide/selection-and-manipulation#hide-and-lock-layers',
     'move-to-page': '/user-guide/layers-and-pages#work-with-pages'
   },
-  // Provider sign-ins moved to Models and Providers when AI Chat was rewritten.
+  // AI Chat's sections when it was rewritten as tasks; provider sign-ins went to Models and Providers.
   '/user-guide/ai-chat/': {
-    'supported-providers': '/user-guide/models-and-providers#providers'
+    'supported-providers': '/user-guide/models-and-providers#providers',
+    setup: '/user-guide/ai-chat#set-up-the-ai',
+    'step-limit': '/user-guide/ai-chat#while-the-ai-works',
+    'tool-access': '/user-guide/ai-chat#choose-what-the-ai-can-do',
+    skills: '/user-guide/ai-chat#teach-the-ai-with-skills',
+    'saved-conversations': '/user-guide/ai-chat#long-conversations',
+    'design-reviews': '/user-guide/ai-chat#ask-for-a-review',
+    prompts: '/user-guide/ai-chat#change-the-ai-s-instructions',
+    'context-and-compaction': '/user-guide/ai-chat#long-conversations',
+    'undoing-the-assistant-s-edits': '/user-guide/ai-chat#undo-what-the-ai-did'
   },
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
