@@ -57,3 +57,17 @@ test('dragging a step reorders the build', async () => {
     .poll(async () => (await deck.animations(first)).map((step) => step.name))
     .toEqual(['Three', 'One', 'Two'])
 })
+
+test('Play runs the build on the canvas and turns into Stop while it plays', async () => {
+  const [first] = await deck.open([1])
+  await deck.addAnimatedBox(first, 'One')
+  await deck.show(first)
+  await editor.page.getByTestId('properties-tab-animate').click()
+  await editor.page.getByTestId('animate-play').click()
+  await expect(editor.page.getByTestId('animate-stop')).toBeVisible()
+  await editor.page.getByTestId('animate-stop').click()
+  await expect(editor.page.getByTestId('animate-play')).toBeVisible()
+  expect(
+    await editor.page.evaluate(() => window.openPencil?.getStore?.().state.buildPreview ?? null)
+  ).toBeNull()
+})

@@ -72,6 +72,8 @@
   "phaseIn": "Wejście",
   "phaseOut": "Wyjście",
   "phase": "Animacja",
+  "playAnimations": "Odtwórz animacje",
+  "stopAnimations": "Zatrzymaj animacje",
   "slide": "Przesunięcie",
   "start": "Rozpoczęcie",
   "durationAndEasing": "Czas trwania i krzywa",

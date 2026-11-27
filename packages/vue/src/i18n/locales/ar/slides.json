@@ -72,6 +72,8 @@
   "phaseIn": "دخول",
   "phaseOut": "خروج",
   "phase": "الحركة",
+  "playAnimations": "تشغيل الحركات",
+  "stopAnimations": "إيقاف الحركات",
   "slide": "انزلاق",
   "start": "البدء",
   "durationAndEasing": "المدة والتسارع",

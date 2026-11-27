@@ -175,8 +175,55 @@ export function createPresentActions(ctx: EditorContext) {
     if (ctx.state.presentation) ctx.state.presentation = null
   }
 
-  // Another document has none of these slides.
-  ctx.onEditorEvent('graph:replaced', stopPresenting)
+  let preview: { player: SlidePlayer; slideId: string; cancel: () => void } | null = null
+
+  /** Draws the next frame of the build preview, playing each step once the one before ends. */
+  function previewFrame(): void {
+    if (!preview) return
+    const now = seconds()
+    const { player: current, slideId } = preview
+    current.tick(now)
+    if (!current.moving(now)) {
+      if (current.played >= current.steps) {
+        stopBuildPreview()
+        return
+      }
+      current.next(now)
+    }
+    ctx.state.buildPreview = { slideId, layers: current.sceneAt(now).layers }
+    ctx.requestRepaint()
+    preview.cancel = nextFrame(previewFrame)
+  }
+
+  /**
+   * Plays a slide's build on the canvas, every step in turn as clicks would play them, then shows
+   * the slide as it was. False when the slide has no build to play.
+   */
+  function previewBuild(slideId: string): boolean {
+    stopBuildPreview()
+    const previewed = createSlidePlayer(ctx.graph, [slideId], slideId)
+    previewed.start(seconds())
+    if (previewed.steps === 0) return false
+    preview = { player: previewed, slideId, cancel: () => undefined }
+    previewFrame()
+    return true
+  }
+
+  function stopBuildPreview(): void {
+    preview?.cancel()
+    preview = null
+    if (ctx.state.buildPreview) {
+      ctx.state.buildPreview = null
+      ctx.requestRepaint()
+    }
+  }
+
+  // Another document has none of these slides, and another page shows none of the previewed one.
+  ctx.onEditorEvent('graph:replaced', () => {
+    stopPresenting()
+    stopBuildPreview()
+  })
+  ctx.onEditorEvent('page:changed', stopBuildPreview)
 
   return {
     present,
@@ -185,6 +232,8 @@ export function createPresentActions(ctx: EditorContext) {
     presentNext,
     presentPrevious,
     presentSlide,
-    stopPresenting
+    stopPresenting,
+    previewBuild,
+    stopBuildPreview
   }
 }

@@ -83,7 +83,7 @@ const addable = useSceneComputed(() =>
     </p>
     <template v-else>
       <AnimateTransition :slide-ids="slideIds" :transition="transition" />
-      <AnimateSteps :steps="steps" :addable="addable" />
+      <AnimateSteps :slide-id="slide.id" :steps="steps" :addable="addable" />
     </template>
   </div>
 </template>

@@ -154,6 +154,8 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'presentPrevious',
   'presentSlide',
   'stopPresenting',
+  'previewBuild',
+  'stopBuildPreview',
 
   // Copying out
   'copySelectionAsJSX',

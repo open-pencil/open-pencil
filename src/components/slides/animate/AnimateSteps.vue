@@ -27,7 +27,8 @@ export interface AnimatedStep {
  * A slide's build as the Effects section lists effects: a row per animated layer in the order
  * they play, dragged to reorder, each opening its settings under it.
  */
-const { steps, addable } = defineProps<{
+const { slideId, steps, addable } = defineProps<{
+  slideId: string
   steps: readonly AnimatedStep[]
   /** Selected layers on the slide that can animate and do not yet. */
   addable: readonly string[]
@@ -37,6 +38,9 @@ const store = useEditorStore()
 const messages = useMessages('slides')
 const ui = tv(animateTheme)()
 const previewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
+
+/** Whether this slide's build is playing on the canvas. */
+const playing = computed(() => store.state.buildPreview?.slideId === slideId)
 
 /** The step whose settings show; selecting an animated layer on the canvas opens its step. */
 const expandedId = ref<string | null>(null)
@@ -67,6 +71,23 @@ function dropPosition(id: string) {
 <template>
   <PanelSection :label="messages.animations" data-test-id="animate-animations">
     <template #actions>
+      <IconButton
+        v-if="playing"
+        :label="messages.stopAnimations"
+        data-test-id="animate-stop"
+        @click="store.stopBuildPreview()"
+      >
+        <icon-lucide-square class="size-3.5" />
+      </IconButton>
+      <IconButton
+        v-else
+        :label="messages.playAnimations"
+        :disabled="steps.length === 0"
+        data-test-id="animate-play"
+        @click="store.previewBuild(slideId)"
+      >
+        <icon-lucide-play class="size-3.5" />
+      </IconButton>
       <IconButton
         :label="messages.addAnimation"
         :disabled="addable.length === 0"

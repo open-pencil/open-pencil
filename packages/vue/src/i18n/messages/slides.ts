@@ -75,6 +75,8 @@ export const slideMessageDefaults = {
   phaseIn: 'In',
   phaseOut: 'Out',
   phase: 'Animate',
+  playAnimations: 'Play animations',
+  stopAnimations: 'Stop animations',
   slide: 'Slide',
   start: 'Start',
   durationAndEasing: 'Duration and easing',

@@ -72,6 +72,8 @@
   "phaseIn": "イン",
   "phaseOut": "アウト",
   "phase": "アニメーション",
+  "playAnimations": "アニメーションを再生",
+  "stopAnimations": "アニメーションを停止",
   "slide": "スライド",
   "start": "開始",
   "durationAndEasing": "時間とイージング",

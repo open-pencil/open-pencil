@@ -72,6 +72,8 @@
   "phaseIn": "Появление",
   "phaseOut": "Исчезновение",
   "phase": "Анимация",
+  "playAnimations": "Воспроизвести анимацию",
+  "stopAnimations": "Остановить анимацию",
   "slide": "Сдвиг",
   "start": "Запуск",
   "durationAndEasing": "Длительность и сглаживание",

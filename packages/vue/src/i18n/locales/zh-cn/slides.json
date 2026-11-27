@@ -72,6 +72,8 @@
   "phaseIn": "进入",
   "phaseOut": "退出",
   "phase": "动画",
+  "playAnimations": "播放动画",
+  "stopAnimations": "停止动画",
   "slide": "滑动",
   "start": "开始",
   "durationAndEasing": "时长与缓动",

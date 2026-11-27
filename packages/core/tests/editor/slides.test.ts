@@ -392,3 +392,28 @@ test('undoing a Slide view edit from another page leaves the page shown as it is
   expect(selected(editor)).toEqual([])
   await editor.switchPage(deckPage)
 })
+
+test("Play moves a slide's layers through its build on the canvas, then lets go", async () => {
+  const editor = open()
+  editor.replaceGraph(createDocumentGraph('slides', 'light'))
+  const slide = expectDefined(slides(editor)[0]?.[0])
+  expect(editor.previewBuild(slide)).toBe(false)
+
+  const boxes = ['One', 'Two'].map(
+    (name) => editor.graph.createNode('RECTANGLE', slide, { name, width: 100, height: 100 }).id
+  )
+  editor.addLayerAnimations(boxes)
+  editor.setLayerAnimations(boxes, (animation) => ({ ...animation, duration: 0.05 }))
+  expect(editor.previewBuild(slide)).toBe(true)
+  // The second step waits for a click while presenting; the preview plays it after the first.
+  expect(editor.state.buildPreview?.slideId).toBe(slide)
+  expect(editor.state.buildPreview?.layers.get(boxes[1])?.opacity).toBe(0)
+  const seen = new Set<string>()
+  while (editor.state.buildPreview) {
+    for (const [id, frame] of editor.state.buildPreview.layers)
+      if (frame.opacity > 0 && frame.opacity < 1) seen.add(id)
+    await Bun.sleep(10)
+  }
+  expect([...seen].sort()).toEqual([...boxes].sort())
+  expect(editor.state.buildPreview).toBeNull()
+})
