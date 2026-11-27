@@ -4,6 +4,7 @@ import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 
 import { createFigDocumentSession } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { guid } from '@open-pencil/test-support/fig/guid'
 
@@ -52,10 +53,79 @@ function records(): NodeChange[] {
 
 test('a file opens with every style it has not deleted, and texts on a deleted one detached', async () => {
   const session = createFigDocumentSession(await figArchiveOf(records()))
+  const listed = () => [
+    getSharedStyles(session.graph, 'fill').map((style) => style.name),
+    getSharedStyles(session.graph, 'text').map((style) => style.name)
+  ]
+  expect(listed()).toEqual([['Unused'], []])
+
+  // Loading every page, Figma's internal canvas among them, lists no deleted style either.
   for (const page of session.pages) session.loadPage(page.id)
   const label = [...session.graph.getAllNodes()].find((node) => node.name === 'Label')
 
-  expect(getSharedStyles(session.graph, 'fill').map((style) => style.name)).toEqual(['Unused'])
-  expect(getSharedStyles(session.graph, 'text')).toEqual([])
+  expect(listed()).toEqual([['Unused'], []])
   expect([label?.textStyleId, label?.fontSize]).toEqual([null, 20])
+})
+
+// Figma keeps the deleted style's variables on the text it detaches, which follows their modes.
+test('a text on a deleted style keeps the variables the style bound', async () => {
+  const set = guid(30)
+  const compact = guid(31)
+  const roomy = guid(32)
+  const size = guid(33)
+  const sizeIn = (modeID: typeof compact, value: number) => ({
+    modeID,
+    variableData: { dataType: 'FLOAT', value: { floatValue: value } }
+  })
+  const file = records().map((record) =>
+    record.name === 'Deleted'
+      ? {
+          ...record,
+          parameterConsumptionMap: {
+            entries: [
+              {
+                variableField: 'FONT_SIZE',
+                variableData: {
+                  dataType: 'ALIAS',
+                  resolvedDataType: 'FLOAT',
+                  value: { alias: { guid: size } }
+                }
+              }
+            ]
+          }
+        }
+      : record.name === 'Label'
+        ? {
+            ...record,
+            variableModeBySetMap: {
+              entries: [{ variableSetID: { guid: set }, variableModeID: roomy }]
+            }
+          }
+        : record
+  )
+  const session = createFigDocumentSession(
+    await figArchiveOf([
+      ...file,
+      {
+        guid: set,
+        type: 'VARIABLE_SET',
+        variableSetModes: [
+          { id: compact, name: 'Compact', sortPosition: 'a' },
+          { id: roomy, name: 'Roomy', sortPosition: 'b' }
+        ]
+      },
+      {
+        guid: size,
+        type: 'VARIABLE',
+        variableResolvedType: 'FLOAT',
+        variableSetID: { guid: set },
+        variableDataValues: { entries: [sizeIn(compact, 20), sizeIn(roomy, 32)] }
+      }
+    ] as NodeChange[])
+  )
+  for (const page of session.pages) session.loadPage(page.id)
+  const label = [...session.graph.getAllNodes()].find((node) => node.name === 'Label')
+
+  expect([label?.textStyleId, label?.fontSize]).toEqual([null, 32])
+  expect(label?.boundVariables.fontSize).toBe(guidToString(size))
 })

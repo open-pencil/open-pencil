@@ -33,6 +33,7 @@ import {
   type TextStyleLookup
 } from '../node-change/style/lookup'
 import { applyFillStyleRef, applyStyleRefsToFields } from '../node-change/style/refs'
+import { mergeVariableConsumptionMaps } from '../node-change/variable/bindings'
 import {
   createBindingNormalizer,
   resolveDocumentBindingReferences,
@@ -158,15 +159,22 @@ function resolveStyleFields(
 
 /**
  * A layer whose style Figma deleted shows detached, as Figma shows it: it keeps the values the
- * style gave it, without the reference. The archive keeps the reference for a layer left as is.
+ * style gave it, and a text the variables its style bound, without the reference. The archive
+ * keeps the reference for a layer left as is.
  */
 function detachDeletedStyles(
   styles: Parameters<typeof applyStyleRefsToFields>[0],
   record: NodeChange,
   assets: ReadonlyMap<string, string>
 ): void {
-  for (const field of STYLE_REFERENCE_FIELDS)
-    if (referencedStyle(styles, record[field], assets)?.isSoftDeleted) record[field] = undefined
+  for (const field of STYLE_REFERENCE_FIELDS) {
+    const style = referencedStyle(styles, record[field], assets)
+    if (!style?.isSoftDeleted) continue
+    // Paints and effects carry their variables in the values they copied; text fields do not.
+    if (field === 'styleIdForText')
+      Object.assign(record, mergeVariableConsumptionMaps(record, style))
+    record[field] = undefined
+  }
 }
 
 function paintTextRangesFromFillStyles(
