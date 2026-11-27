@@ -216,7 +216,7 @@ describe('Cloud server', () => {
   test('lets only the site’s own scripts run, never frames or plugins', async () => {
     const directives = policy(await navigate('/'))
     expect(directives).toContain(
-      "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com"
+      "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com https://static.cloudflareinsights.com"
     )
     expect(directives).toContain("worker-src 'self' blob:")
     expect(directives).toContain("object-src 'none'")
