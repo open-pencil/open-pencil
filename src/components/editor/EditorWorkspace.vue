@@ -29,6 +29,8 @@ import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
+import PresentButton from '@/components/slides/present/PresentButton.vue'
+import PresentView from '@/components/slides/present/PresentView.vue'
 import SlideNotes from '@/components/slides/SlideNotes.vue'
 import StatusesDialog from '@/components/statuses/StatusesDialog.vue'
 import EditorToolbar from '@/components/toolbar/EditorToolbar.vue'
@@ -271,6 +273,7 @@ const { pending: roomPending } = useRoomActions()
       >
         <div class="flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5">
           <CollabPanel class="min-w-0 flex-1" />
+          <PresentButton />
           <IconButton
             :label="
               editor.startPreview({
@@ -311,6 +314,7 @@ const { pending: roomPending } = useRoomActions()
     </div>
   </div>
 
+  <PresentView v-if="store.state.presentation" />
   <VariablesDialog />
   <StatusesDialog />
   <CommentDeleteDialog />

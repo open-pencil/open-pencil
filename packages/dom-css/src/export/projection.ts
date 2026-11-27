@@ -66,6 +66,8 @@ export interface SceneGraphToDesignOptions {
   canvasMetrics?: CanvasMetrics
   /** Hidden layers to project as shown, such as the tab panels a component reveals itself. */
   shown?: ReadonlySet<string>
+  /** Whether roots keep their place in their parents; false for roots a host places, as islands. */
+  placeRoots?: boolean
 }
 
 /** What the canvas measures and CSS would work out differently. */
@@ -422,6 +424,7 @@ interface ProjectionContext {
   vectorElement: VectorElementRenderer | undefined
   canvasMetrics: CanvasMetrics | undefined
   shown: ReadonlySet<string> | undefined
+  placeRoots: boolean
 }
 
 /**
@@ -456,7 +459,9 @@ function sceneNodeToDesignNode(
 ): DesignNode | null {
   if ((!node.visible && !context.shown?.has(node.id)) || node.internalOnly) return null
   const { graph, includeSourceIds, tokens, canvasMetrics: metrics } = context
-  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  // A root its host places is projected alone, as a page's top-level layer is.
+  const placed = (!root || context.placeRoots) && node.parentId
+  const parent = placed ? graph.getNode(placed) : undefined
   const entered = tokens?.enter(node, inherited, root)
   const modes = entered?.modes ?? inherited
   const attrs = { ...attrsForNode(graph, node, includeSourceIds), ...entered?.attrs }
@@ -531,21 +536,18 @@ function sceneNodeToDesignNode(
 
 function projectionContext(
   graph: SceneGraph,
-  {
-    includeSourceIds = true,
-    tokens = true,
-    vectorElement,
-    canvasMetrics,
-    shown
-  }: SceneGraphToDesignOptions
+  { includeSourceIds = true, tokens = true, placeRoots = true, ...rest }: SceneGraphToDesignOptions
 ): ProjectionContext {
+  const { vectorElement, canvasMetrics, shown } = rest
+  const designTokens = tokens ? new DesignTokens(graph) : undefined
   return {
     graph,
     includeSourceIds,
-    tokens: tokens ? new DesignTokens(graph) : undefined,
+    tokens: designTokens,
     vectorElement,
     canvasMetrics,
-    shown
+    shown,
+    placeRoots
   }
 }
 

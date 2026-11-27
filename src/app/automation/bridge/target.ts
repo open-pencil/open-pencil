@@ -83,6 +83,7 @@ export function listAutomationDocuments(activeStore: EditorStore): AutomationDoc
     return {
       id: tab.id,
       name: tab.store.state.documentName,
+      kind: tab.store.state.documentKind,
       ...(path ? { path } : {}),
       active: tab.id === activeTab?.id,
       current_page_id: tab.store.state.currentPageId,
