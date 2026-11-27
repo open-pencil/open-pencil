@@ -1,38 +1,26 @@
+import dns from 'node:dns/promises'
+import { isIP } from 'node:net'
+
 import {
   // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
   validateClientIdUrl as validateClientIDURL
 } from '@better-auth/cimd'
 import type { ClientMetadataResourceFetch } from '@better-auth/oauth-provider'
-import * as v from 'valibot'
 
-/** Cloudflare's resolver over HTTPS, which a Worker reaches like any other address. */
-const RESOLVER = 'https://cloudflare-dns.com/dns-query'
+/** What `node:dns` answers for a name with no records of the type asked for. */
+const NO_RECORDS = new Set(['ENODATA', 'ENOTFOUND'])
 
-/** Record types whose answers are addresses: A and AAAA. */
-const ADDRESS_TYPES = { A: 1, AAAA: 28 } as const
-
-const answersSchema = v.object({
-  Status: v.number(),
-  Answer: v.optional(v.array(v.object({ type: v.number(), data: v.string() })), [])
-})
-
-async function addresses(
-  hostname: string,
-  type: keyof typeof ADDRESS_TYPES,
-  signal?: AbortSignal | null
-): Promise<string[]> {
-  const url = new URL(RESOLVER)
-  url.searchParams.set('name', hostname)
-  url.searchParams.set('type', type)
-  const response = await fetch(url, {
-    headers: { accept: 'application/dns-json' },
-    signal: signal ?? undefined
-  })
-  if (!response.ok) throw new Error(`Resolving ${hostname} failed with ${response.status}`)
-  const answers = v.parse(answersSchema, await response.json())
-  return answers.Answer.filter((answer) => answer.type === ADDRESS_TYPES[type]).map(
-    (answer) => answer.data
-  )
+/**
+ * The host's addresses of one family, through the Workers runtime's DNS over HTTPS, which also
+ * answers with the names a CNAME points to.
+ */
+async function addresses(resolve: (hostname: string) => Promise<string[]>, hostname: string) {
+  try {
+    return (await resolve(hostname)).filter((answer) => isIP(answer) !== 0)
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && NO_RECORDS.has(String(error.code))) return []
+    throw error
+  }
 }
 
 /** Whether an address is one the CIMD plugin takes for a public host. */
@@ -54,8 +42,8 @@ export const fetchClientMetadataOnCloudflare: ClientMetadataResourceFetch = asyn
   const url = new URL(input instanceof Request ? input.url : input)
   const found = (
     await Promise.all([
-      addresses(url.hostname, 'A', init?.signal),
-      addresses(url.hostname, 'AAAA', init?.signal)
+      addresses((name) => dns.resolve4(name), url.hostname),
+      addresses((name) => dns.resolve6(name), url.hostname)
     ])
   ).flat()
   if (found.length === 0 || !found.every(isPublic)) {

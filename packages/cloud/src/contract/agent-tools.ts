@@ -86,7 +86,8 @@ export const agentToolMessageSchema = v.variant('type', [
     type: v.literal('result'),
     id: callIdSchema,
     ok: v.literal(true),
-    result: v.unknown()
+    // JSON drops a result a tool left undefined; it arrives as one that answered nothing.
+    result: v.optional(v.unknown(), null)
   }),
   v.object({
     type: v.literal('result'),
@@ -101,12 +102,7 @@ const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
 export function encodeAgentToolMessage(message: AgentToolMessage): Uint8Array {
-  // A tool that answers nothing still answers: JSON drops an undefined result.
-  const sent =
-    message.type === 'result' && message.ok
-      ? { ...message, result: message.result ?? null }
-      : message
-  return encoder.encode(JSON.stringify(sent))
+  return encoder.encode(JSON.stringify(message))
 }
 
 /** The message a room payload carries, or null when it is not one. */
