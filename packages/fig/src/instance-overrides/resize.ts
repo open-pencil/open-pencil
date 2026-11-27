@@ -112,6 +112,46 @@ export function transformForSavedSize(
   }
 }
 
+const IDENTITY: Matrix = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+
+interface FreeformChild {
+  child: InstanceOccurrence
+  size: Vector
+  transform: Matrix
+}
+
+function freeformChildren(parent: InstanceOccurrence): FreeformChild[] {
+  const autoLayout = parent.properties.stackMode && parent.properties.stackMode !== 'NONE'
+  const children: FreeformChild[] = []
+  for (const child of parent.children) {
+    const { size, transform, stackPositioning } = child.properties
+    if (size && (!autoLayout || stackPositioning === 'ABSOLUTE')) {
+      children.push({ child, size, transform: transform ?? IDENTITY })
+    }
+  }
+  return children
+}
+
+function sameSize(a: Vector, b: Vector): boolean {
+  return a.x === b.x && a.y === b.y
+}
+
+export function parentResized(placement: PlacementBeforeResize): boolean {
+  const parentSize = placement.parent.properties.size
+  return parentSize !== undefined && !sameSize(parentSize, placement.parentSize)
+}
+
+function recordPlacements(
+  parent: InstanceOccurrence,
+  parentSize: Vector,
+  placements: PlacementsBeforeResize
+): void {
+  for (const { child, size, transform } of freeformChildren(parent)) {
+    placements.set(child, { parent, parentSize, size, transform })
+    recordPlacements(child, size, placements)
+  }
+}
+
 /** Apply freeform resize constraints in occurrence coordinates before saved derived bounds. */
 export function resizeFreeformOccurrence(
   root: InstanceOccurrence,
@@ -119,32 +159,35 @@ export function resizeFreeformOccurrence(
   after: Vector,
   placements: PlacementsBeforeResize
 ): void {
-  if (before.x === after.x && before.y === after.y) return
-  const autoLayout = root.properties.stackMode && root.properties.stackMode !== 'NONE'
-  for (const child of root.children) {
+  if (sameSize(before, after)) {
+    return
+  }
+  for (const { child, size: original, transform } of freeformChildren(root)) {
     const props = child.properties
-    if (autoLayout && props.stackPositioning !== 'ABSOLUTE') continue
-    if (!props.size) continue
-    const transform = props.transform ?? { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     const x = constrainedAxis(
       transform.m02,
-      props.size.x,
+      original.x,
       before.x,
       after.x,
       props.horizontalConstraint
     )
     const y = constrainedAxis(
       transform.m12,
-      props.size.y,
+      original.y,
       before.y,
       after.y,
       props.verticalConstraint
     )
     const size = { x: x.size, y: y.size }
-    resizeFreeformOccurrence(child, props.size, size, placements)
-    if (props.type === 'VECTOR' && props.size.x > 0 && props.size.y > 0)
-      growInheritedOutlineScale(child, size.x / props.size.x, size.y / props.size.y)
-    placements.set(child, { parent: root, parentSize: before, size: props.size, transform })
+    if (sameSize(original, size)) {
+      recordPlacements(child, original, placements)
+    } else {
+      resizeFreeformOccurrence(child, original, size, placements)
+    }
+    if (props.type === 'VECTOR' && original.x > 0 && original.y > 0) {
+      growInheritedOutlineScale(child, size.x / original.x, size.y / original.y)
+    }
+    placements.set(child, { parent: root, parentSize: before, size: original, transform })
     props.size = size
     props.transform = { ...transform, m02: x.position, m12: y.position }
   }

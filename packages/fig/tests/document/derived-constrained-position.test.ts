@@ -26,7 +26,7 @@ interface ResizedInstance {
   instance: Vector
   saved: Pick<NodeChange, 'size' | 'transform'> | null
   layer?: { size: Vector; transform: Matrix }
-  frame?: Pick<NodeChange, 'stackMode'>
+  frame?: Pick<NodeChange, 'stackMode' | 'horizontalConstraint' | 'verticalConstraint'>
 }
 
 function layerInResizedInstance({
@@ -163,6 +163,33 @@ test('a saved size without a transform keeps a centered layer centered at that s
     layer: { size: { x: 400, y: 1080 }, transform: at(760, 0) }
   })
   expect(placedLayer(changes)).toEqual({ x: 980, y: 0, width: 600, height: 1440 })
+})
+
+test('a saved size without a transform reruns the constraint under a frame only its saved size grew', () => {
+  const instance = { x: 2560, y: 1440 }
+  const changes = layerInResizedInstance({
+    horizontal: 'CENTER',
+    instance,
+    saved: { size: { x: 600, y: 1440 } },
+    layer: { size: { x: 400, y: 1080 }, transform: at(760, 0) },
+    frame: { horizontalConstraint: 'MIN', verticalConstraint: 'MIN' }
+  })
+  expect(placedLayer(changes)).toEqual({ x: 980, y: 0, width: 600, height: 1440 })
+})
+
+test('a saved size without a transform keeps the position under a frame that kept its size', () => {
+  const changes = layerInResizedInstance({
+    horizontal: 'CENTER',
+    instance: { x: 2560, y: 1440 },
+    saved: null,
+    layer: { size: { x: 400, y: 1080 }, transform: at(760, 0) },
+    frame: { horizontalConstraint: 'MIN', verticalConstraint: 'MIN' }
+  })
+  const instanceRecord = changes[changes.length - 1]
+  instanceRecord.derivedSymbolData = [
+    { guidPath: { guids: [guid(3), guid(4)] }, size: { x: 600, y: 1080 } }
+  ]
+  expect(placedLayer(changes)).toEqual({ x: 760, y: 0, width: 600, height: 1080 })
 })
 
 test('a saved size without a transform keeps an auto layout child where the symbol put it', () => {
