@@ -101,6 +101,7 @@ export function createDefaultNode(
     effectStyleId: null,
     gridStyleId: null,
     sharedStyleType: null,
+    sharedStyleDeleted: false,
     opacity: 1,
     cornerRadius: 0,
     topLeftRadius: 0,

@@ -645,6 +645,14 @@ function getVectorStrokeJoin(nc: NodeChange, vectorNetwork: VectorNetwork | null
     'MITER') as StrokeJoin
 }
 
+/** A style record's kind, and whether Figma deleted it while layers still use it. */
+function sharedStyleProps(
+  nc: NodeChange
+): Pick<SceneNode, 'sharedStyleType' | 'sharedStyleDeleted'> {
+  const type = sharedStyleType(nc.styleType)
+  return { sharedStyleType: type, sharedStyleDeleted: type !== null && nc.isSoftDeleted === true }
+}
+
 function sharedStyleType(value: string | undefined): SharedStyleType | null {
   if (value === 'FILL' || value === 'TEXT' || value === 'EFFECT' || value === 'GRID') return value
   return null
@@ -808,7 +816,7 @@ export function nodeChangeToProps(
     textStyleId: styleRefId(nc.styleIdForText),
     effectStyleId: styleRefId(nc.styleIdForEffect),
     gridStyleId: styleRefId(nc.styleIdForGrid),
-    sharedStyleType: sharedStyleType(nc.styleType),
+    ...sharedStyleProps(nc),
     ...convertCornerProps(nc),
     ...convertPolygonProps(nc),
     ...convertTextProps(nc, blobs),

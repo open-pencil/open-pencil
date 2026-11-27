@@ -1082,6 +1082,7 @@ export function sceneNodeToKiwiWithContext(
     transform: exportNodeTransform(context, node)
   }
   if (node.sharedStyleType) nc.styleType = node.sharedStyleType
+  if (node.sharedStyleDeleted) nc.isSoftDeleted = true
   // Readers take a missing blend mode as pass-through, the layer default.
   if (node.blendMode !== 'PASS_THROUGH') nc.blendMode = node.blendMode
   if (node.type === 'GROUP') {

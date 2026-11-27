@@ -114,11 +114,12 @@ export function sharedStyleLayers(graph: SceneGraph): Map<string, SceneNode> {
   return styles
 }
 
+/** The document's styles of a kind, by name; a deleted style stays out, as in Figma's lists. */
 export function getSharedStyles(graph: SceneGraph, kind: SharedStyleKind): SharedStyle[] {
   const type = sharedStyleTypeForKind(kind)
   const styles: SharedStyle[] = []
   for (const node of graph.getAllNodes()) {
-    if (node.sharedStyleType !== type || !node.source.id) continue
+    if (node.sharedStyleType !== type || !node.source.id || node.sharedStyleDeleted) continue
     styles.push({ id: node.source.id, nodeId: node.id, name: node.name, type })
   }
   return styles.sort((left, right) => left.name.localeCompare(right.name))

@@ -52,7 +52,8 @@ import { createDocumentVariables, type DocumentVariables } from './variables'
 
 /** Indexed source document. Resources remain separate from scene occurrences. */
 export function createDocumentReader(source: readonly NodeChange[], pageIds?: ReadonlySet<string>) {
-  return createScopedReader(wholeRecords(source), pageIds)
+  const records = wholeRecords(source)
+  return createScopedReader(records, pageIds, liveStyleIds(records.records))
 }
 
 /**
@@ -70,6 +71,7 @@ export const RECORD_HEADER_FIELDS = [
   'key',
   'version',
   'styleType',
+  'isSoftDeleted',
   'overrideKey',
   // A variant's copies of its set's properties are read for every variant a page links, which
   // would otherwise keep each variant's whole record decoded for the session.
@@ -80,16 +82,28 @@ export const RECORD_HEADER_FIELDS = [
 /** Parse into exclusively owned records; callers never receive the mutable source index. */
 export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: ReadonlySet<string>) {
   const parsed = parseFigBuffer(bytes, undefined, { NodeChange: RECORD_HEADER_FIELDS })
+  const records = archiveRecords(parsed.nodeChanges)
   return {
     figKiwiVersion: parsed.figKiwiVersion,
     figSchemaDeflated: parsed.figSchemaDeflated,
     kind: parsed.kind,
-    reader: createScopedReader(archiveRecords(parsed.nodeChanges), pageIds),
+    reader: createScopedReader(records, pageIds, liveStyleIds(records.records)),
     blobs: parsed.blobs,
     images: parsed.images,
     /** The archive's record headers, which carry the identities patching numbers from. */
     records: parsed.nodeChanges
   }
+}
+
+/**
+ * The styles a file lists as its own: every style record it has not deleted. They live on Figma's
+ * internal canvas, which no page loads, so they open with the document whether or not a layer
+ * uses them yet.
+ */
+function liveStyleIds(records: readonly NodeChange[]): string[] {
+  return records.flatMap((record) =>
+    record.styleType && !record.isSoftDeleted && record.guid ? [guidToString(record.guid)] : []
+  )
 }
 
 /** Whole records, prepared, by the record or header that stands for them. */
