@@ -21,7 +21,8 @@ use parley::fontique::{Blob, FontInfoOverride, GenericFamily};
 use parley::{FontContext, PositionedLayoutItem};
 use serde_json::{Map, Value, json};
 use style::computed_values::border_collapse::T as BorderCollapse;
-use style::properties::{LonghandId, PropertyDeclarationId};
+use style::properties::{ComputedValues, LonghandId, PropertyDeclarationId};
+use style::selector_parser::PseudoElement;
 use style::servo_arc::Arc as ServoArc;
 use style::stylesheets::{CssRule, Stylesheet};
 use style::values::computed::Length;
@@ -852,6 +853,135 @@ fn capture_node(
     if let Some(after) = pseudo(el.after) {
         capture_pseudo(doc, context, scope, after, "::after", out, index);
     }
+    capture_field_text(doc, context, scope, node, out, index);
+}
+
+/// Where a generated node with no node of its own in the document, such as a field's
+/// `::placeholder`, is numbered: past every node's id, so it is the same in every mode.
+const GENERATED_IDS: u64 = 1 << 40;
+
+/// The text a text field shows: its value, or, while it is empty, its placeholder. Blitz lays
+/// neither out as a node of the document, so the field holds a block of its own for it: a
+/// `::placeholder` styled by the rules that target it, or a `::value` in the field's text style.
+/// The block has the field's content box, one line high in a textarea, and no lines.
+fn capture_field_text(
+    doc: &BaseDocument,
+    context: &Context,
+    scope: &Scope,
+    node: &Node,
+    out: &mut Vec<Value>,
+    parent: usize,
+) {
+    let Some(el) = node.element_data() else {
+        return;
+    };
+    let Some(input) = el.text_input_data() else {
+        return;
+    };
+    let value = input.editor.raw_text().to_string();
+    let (tag, pseudo, text) = if value.is_empty() {
+        let placeholder = el.attr(LocalName::from("placeholder")).unwrap_or_default();
+        (
+            "::placeholder",
+            PseudoElement::Placeholder,
+            placeholder.to_owned(),
+        )
+    } else if el.attr(LocalName::from("type")) == Some("password") {
+        // A password shows a bullet for each character, as browsers draw it.
+        let bullets = "\u{2022}".repeat(value.chars().count());
+        (
+            "::value",
+            PseudoElement::ServoTextControlInnerEditor,
+            bullets,
+        )
+    } else {
+        ("::value", PseudoElement::ServoTextControlInnerEditor, value)
+    };
+    if text.is_empty() {
+        return;
+    }
+    let Some(style) = doc.lazy_pseudo_style(node.id, &pseudo) else {
+        return;
+    };
+    let multiline = input.is_multiline;
+    let id = GENERATED_IDS + node.id.as_u64();
+    let layout = node.final_layout();
+    let at = node.absolute_position(0.0, 0.0);
+    let (border, padding) = (layout.border, layout.padding);
+    let content_height =
+        layout.size.height - border.top - border.bottom - padding.top - padding.bottom;
+    // One line centered in an input, and lines from the top of a textarea, which wrap there.
+    let height = if multiline {
+        line_height(&style).min(content_height)
+    } else {
+        content_height
+    };
+    let mut entry = Map::new();
+    entry.insert("id".into(), id.into());
+    entry.insert("parent".into(), parent.into());
+    entry.insert("tag".into(), tag.into());
+    entry.insert(
+        "box".into(),
+        rect(
+            at.x + border.left + padding.left,
+            at.y + border.top + padding.top,
+            layout.size.width - border.left - border.right - padding.left - padding.right,
+            height,
+        ),
+    );
+    let mut values = style_values(&style);
+    if let Value::Object(values) = &mut values {
+        values.insert("display".into(), "block".into());
+        if !multiline {
+            values.insert("white-space".into(), "nowrap".into());
+        }
+    }
+    entry.insert("style".into(), values);
+    if let Some(root) = &context.root {
+        let (references, _) = references::of_style(
+            doc,
+            node,
+            &style,
+            root,
+            scope,
+            &doc.guard().read(),
+            PROPERTIES,
+        );
+        entry.insert("references".into(), references);
+    }
+    let index = out.len();
+    out.push(Value::Object(entry));
+    out.push(json!({ "id": id + GENERATED_IDS, "parent": index, "text": text }));
+}
+
+/// The height of one line of a style's text, in pixels: its `line-height`, or 1.2 times its font
+/// size for `normal`, as browsers take it.
+fn line_height(style: &ComputedValues) -> f32 {
+    let font = style.get_font();
+    let size = font.font_size.computed_size().px();
+    match &font.line_height {
+        LineHeight::Normal => size * 1.2,
+        LineHeight::Number(number) => number.0 * size,
+        LineHeight::Length(length) => length.0.px(),
+    }
+}
+
+/// A style's computed values of `PROPERTIES`, for a style no node has, so none are resolved
+/// against a box; those at a fixed initial value are left out, as `styles` leaves them.
+fn style_values(style: &ComputedValues) -> Value {
+    let defaults = default_styles();
+    let mut out = Map::new();
+    for property in PROPERTIES {
+        let Some(id) = references::longhand(property) else {
+            continue;
+        };
+        let value = style.computed_value_to_string(PropertyDeclarationId::Longhand(id));
+        if value.is_empty() || defaults.get(*property).is_some_and(|d| *d == value) {
+            continue;
+        }
+        out.insert((*property).into(), value.into());
+    }
+    Value::Object(out)
 }
 
 fn capture_pseudo(
