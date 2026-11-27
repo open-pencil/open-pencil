@@ -31,7 +31,7 @@ export function useVariableBinding(options: UseVariableBindingOptions) {
 
   function getBoundVariable(nodeId: string, index?: number): Variable | undefined {
     const path = bindingPath(index)
-    const selection = store.getSelectionVariableBinding?.(nodeId, path)
+    const selection = store.getSelectionVariableBinding(nodeId, path)
     if (selection) {
       return !selection.mixed && selection.variableId
         ? store.getVariable(selection.variableId)
@@ -47,7 +47,7 @@ export function useVariableBinding(options: UseVariableBindingOptions) {
     const path = bindingPath(index)
     const variableIds = new Set<string | undefined>()
     for (const nodeId of nodeIds) {
-      const selection = store.getSelectionVariableBinding?.(nodeId, path)
+      const selection = store.getSelectionVariableBinding(nodeId, path)
       if (selection?.mixed) return 'mixed'
       if (selection) {
         variableIds.add(selection.variableId)

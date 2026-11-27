@@ -35,7 +35,7 @@ function isFillBindingField(field: string): boolean {
 function layerFillBindings(node: SceneNode): TextRunBoundVariables {
   return Object.fromEntries(
     Object.entries(node.boundVariables).filter(([key]) => isFillBindingField(key))
-  ) as TextRunBoundVariables
+  )
 }
 
 function readBoundVariable(
@@ -93,7 +93,7 @@ function fillBindingPatch(
   const hasExplicitFills = override.fills !== undefined
   const baseBound = override.boundVariables ?? {}
   if (variableId && color) {
-    const fills = copyFills(style.fills)
+    const fills = copyFills(style.fills ?? [])
     const paint = fills.at(targetIndex)
     if (!paint) return {}
     applyPaintColor(paint, color)
@@ -109,7 +109,7 @@ function fillBindingPatch(
   const sourceBound = hasExplicitFills ? baseBound : { ...inheritedFillBindings, ...baseBound }
   const boundVariables = omitBy(sourceBound, (_, key) => key === field) as TextRunBoundVariables
   if (!hasExplicitFills && readBoundVariable(inheritedFillBindings, field) !== undefined) {
-    return { fills: copyFills(style.fills), boundVariables }
+    return { fills: copyFills(style.fills ?? []), boundVariables }
   }
   if (
     (hasExplicitFills || readBoundVariable(baseBound, field) !== undefined) &&
