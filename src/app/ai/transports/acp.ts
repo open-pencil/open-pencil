@@ -409,11 +409,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         if (signal?.aborted)
           void session.connection.agent.notify(methods.agent.session.cancel, { sessionId })
         if (!isModeRefusal(error)) throw error
-        // Kept asking: the turn goes on in the mode it had, which the composer shows again, unless
-        // the agent reported a newer one meanwhile.
-        if (session.choices[category] !== unknown) continue
-        session.choices[category] = choice
-        this.onAgentChoices?.({ [category]: choice.current })
+        // Kept asking: the turn goes on in the mode it had, or one the agent reported meanwhile,
+        // which the composer shows.
+        const kept = session.choices[category] === unknown ? choice : session.choices[category]
+        session.choices[category] = kept
+        if (kept.current) this.onAgentChoices?.({ [category]: kept.current })
       }
     }
   }
