@@ -70,11 +70,12 @@ function textStyleOverrideToKiwi(
   if (style.lineHeight !== undefined) override.lineHeight = figmaLineHeight(style.lineHeight)
   applyTextDecorationOverrideFields(override, style, fillToKiwiPaint)
   if (style.textCase) override.textCase = style.textCase
-  const exportedFills = style.fills?.length
-    ? style.fills
-    : hasFillVariableBinding(style)
-      ? node.fills
-      : undefined
+  let exportedFills: SceneNode['fills'] | undefined
+  if (style.fills?.length) {
+    exportedFills = style.fills
+  } else if (hasFillVariableBinding(style)) {
+    exportedFills = node.fills
+  }
   if (exportedFills && exportedFills.length > 0) {
     override.fillPaints = exportedFills.map(fillToKiwiPaint)
   }

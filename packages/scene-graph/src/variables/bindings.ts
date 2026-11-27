@@ -172,11 +172,12 @@ export function resolvedValueBindings(graph: SceneGraph, node: SceneNode): Parti
   return updates
 }
 
-type RunHolder = Pick<SceneNode, 'id' | 'fills' | 'styleRuns' | 'componentScale'>
+type RunHolder = Pick<SceneNode, 'id' | 'styleRuns' | 'componentScale'> &
+  Partial<Pick<SceneNode, 'fills'>>
 
 function resolvedRunPaintColors(
   graph: SceneGraph,
-  node: Pick<SceneNode, 'id' | 'fills'>,
+  node: Pick<SceneNode, 'id'> & Partial<Pick<SceneNode, 'fills'>>,
   style: CharacterStyleOverride,
   bound: Readonly<Partial<Record<string, string>>>
 ): CharacterStyleOverride {
@@ -186,7 +187,7 @@ function resolvedRunPaintColors(
     if (target?.list !== 'fills' || !variableId) continue
     const color = graph.resolveColorVariableForNode(node.id, variableId)
     if (!color) continue
-    const baseFills = fills ?? style.fills ?? node.fills
+    const baseFills = fills ?? style.fills ?? node.fills ?? []
     const paint = baseFills.at(target.index)
     if (!paint || showsPaintColor(paint, color)) continue
     fills ??= copyFills(baseFills)

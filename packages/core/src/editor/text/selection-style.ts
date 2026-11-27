@@ -58,6 +58,68 @@ function styleKeys(changes: Partial<SceneNode>): TextStyleKey[] {
   return TEXT_STYLE_KEYS.filter((key) => Object.hasOwn(changes, key))
 }
 
+function nextFillRunEnd(
+  chars: ReturnType<typeof characterStyles>,
+  explicit: (CharacterStyleOverride | undefined)[],
+  start: number,
+  at: number
+): number {
+  const base = chars[at]
+  const baseOverride = explicit[start + at] ?? {}
+  let next = at + 1
+  while (next < chars.length) {
+    const candidateOverride = explicit[start + next] ?? {}
+    if (
+      !isEqual(chars[next].fills, base.fills) ||
+      (candidateOverride.fills !== undefined) !== (baseOverride.fills !== undefined) ||
+      !isEqual(candidateOverride.boundVariables, baseOverride.boundVariables)
+    ) {
+      break
+    }
+    next++
+  }
+  return next
+}
+
+function fillBindingPatch(
+  style: CharacterStyleOverride,
+  override: CharacterStyleOverride,
+  inheritedFillBindings: TextRunBoundVariables,
+  field: string,
+  targetIndex: number,
+  variableId: string | undefined,
+  color: Parameters<typeof applyPaintColor>[1] | undefined
+): CharacterStyleOverride {
+  const hasExplicitFills = override.fills !== undefined
+  const baseBound = override.boundVariables ?? {}
+  if (variableId && color) {
+    const fills = copyFills(style.fills)
+    const paint = fills.at(targetIndex)
+    if (!paint) return {}
+    applyPaintColor(paint, color)
+    return {
+      fills,
+      boundVariables: {
+        ...(hasExplicitFills ? undefined : inheritedFillBindings),
+        ...baseBound,
+        [field]: variableId
+      }
+    }
+  }
+  const sourceBound = hasExplicitFills ? baseBound : { ...inheritedFillBindings, ...baseBound }
+  const boundVariables = omitBy(sourceBound, (_, key) => key === field) as TextRunBoundVariables
+  if (!hasExplicitFills && readBoundVariable(inheritedFillBindings, field) !== undefined) {
+    return { fills: copyFills(style.fills), boundVariables }
+  }
+  if (
+    (hasExplicitFills || readBoundVariable(baseBound, field) !== undefined) &&
+    !isEqual(boundVariables, baseBound)
+  ) {
+    return { boundVariables }
+  }
+  return {}
+}
+
 /**
  * While text is edited with characters selected, a property its characters can each have, such
  * as a fill or font size, styles the selected characters instead of the layer, as in Figma. A
@@ -211,54 +273,16 @@ export function createTextSelectionStyle(
     let styleRuns = node.styleRuns
     let at = 0
     while (at < chars.length) {
-      let next = at + 1
-      const atOverride = explicit[start + at] ?? {}
-      while (next < chars.length) {
-        const nextOverride = explicit[start + next] ?? {}
-        if (
-          !isEqual(chars[next].fills, chars[at].fills) ||
-          (nextOverride.fills !== undefined) !== (atOverride.fills !== undefined) ||
-          !isEqual(nextOverride.boundVariables, atOverride.boundVariables)
-        ) {
-          break
-        }
-        next++
-      }
-      const style = chars[at]
-      const hasExplicitFills = atOverride.fills !== undefined
-      const baseBound = atOverride.boundVariables ?? {}
-      const patch: CharacterStyleOverride = {}
-      if (variableId && color) {
-        const fills = copyFills(style.fills)
-        const paint = fills.at(target.index)
-        if (!paint) {
-          at = next
-          continue
-        }
-        applyPaintColor(paint, color)
-        patch.fills = fills
-        patch.boundVariables = {
-          ...(hasExplicitFills ? undefined : inheritedFillBindings),
-          ...baseBound,
-          [field]: variableId
-        }
-      } else {
-        const inheritsTarget =
-          !hasExplicitFills && readBoundVariable(inheritedFillBindings, field) !== undefined
-        const sourceBound = hasExplicitFills
-          ? baseBound
-          : { ...inheritedFillBindings, ...baseBound }
-        const boundVariables = omitBy(
-          sourceBound,
-          (_, key) => key === field
-        ) as TextRunBoundVariables
-        if (inheritsTarget) {
-          patch.fills = copyFills(style.fills)
-          patch.boundVariables = boundVariables
-        } else if (hasExplicitFills || readBoundVariable(baseBound, field) !== undefined) {
-          if (!isEqual(boundVariables, baseBound)) patch.boundVariables = boundVariables
-        }
-      }
+      const next = nextFillRunEnd(chars, explicit, start, at)
+      const patch = fillBindingPatch(
+        chars[at],
+        explicit[start + at] ?? {},
+        inheritedFillBindings,
+        field,
+        target.index,
+        variableId,
+        color
+      )
       if (!isEmptyObject(patch)) {
         styleRuns = styleRunsWithPatch({ ...node, styleRuns }, start + at, start + next, patch)
       }
