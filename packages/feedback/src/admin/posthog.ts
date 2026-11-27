@@ -1,4 +1,10 @@
-import type { MetricsQuery, MetricsUsage, RankedCount } from '#feedback/contract'
+import {
+  CAMPAIGN_PLACEMENTS,
+  DONATION_SOURCES,
+  type MetricsQuery,
+  type MetricsUsage,
+  type RankedCount
+} from '#feedback/contract'
 import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import { groupBy, orderBy } from 'es-toolkit'
 import * as v from 'valibot'
@@ -18,7 +24,12 @@ const retentionRowSchema = v.tuple([v.string(), v.number(), v.number()])
 export const dayRange = ({ start, end }: MetricsQuery, column = 'toDate(timestamp)') =>
   `${column} >= toDate('${start}') AND ${column} <= toDate('${end}')`
 
-/** Installs per day and in all, then documents, exports, and AI replies by kind. */
+const CAMPAIGN_EVENTS = ['campaign_shown', 'campaign_dismissed', 'campaign_acted'] as const
+
+/**
+ * Installs per day and in all, then documents, exports, and AI replies by kind, campaign events
+ * by campaign and placement (IDs and placements have no spaces), and donation page openings.
+ */
 function usageQuery(range: MetricsQuery) {
   const inRange = dayRange(range)
   const counted = (event: string, property: string) =>
@@ -28,7 +39,12 @@ function usageQuery(range: MetricsQuery) {
     `SELECT 'unique', '', count(DISTINCT distinct_id) FROM events WHERE event = 'app_opened' AND ${inRange}`,
     counted('document_opened', 'format'),
     counted('document_exported', 'format'),
-    counted('ai_reply_finished', 'provider')
+    counted('ai_reply_finished', 'provider'),
+    ...CAMPAIGN_EVENTS.map(
+      (event) =>
+        `SELECT '${event}', concat(toString(properties.campaign), ' ', toString(properties.placement)) AS shown_in, count() FROM events WHERE event = '${event}' AND ${inRange} GROUP BY shown_in`
+    ),
+    counted('donate_clicked', 'source')
   ].join('\nUNION ALL ')
 }
 
@@ -50,6 +66,34 @@ const ranked = (rows: [string, string, number][]): RankedCount[] =>
     ['value'],
     ['desc']
   )
+
+const placementSchema = v.picklist(CAMPAIGN_PLACEMENTS)
+const donationSourceSchema = v.picklist(DONATION_SOURCES)
+
+/** Shown, put off, and followed per campaign and placement, the most shown first. */
+function campaignCounts(rowsOf: (kind: string) => [string, string, number][]) {
+  const rows = CAMPAIGN_EVENTS.flatMap((event) =>
+    rowsOf(event).map(([, shownIn, value]) => ({ event, shownIn, value }))
+  )
+  const campaigns = Object.entries(groupBy(rows, (row) => row.shownIn)).flatMap(
+    ([shownIn, counts]) => {
+      const [campaign = '', placement] = shownIn.split(' ')
+      const parsed = v.safeParse(placementSchema, placement)
+      if (!parsed.success) return []
+      const count = (event: string) => counts.find((row) => row.event === event)?.value ?? 0
+      return [
+        {
+          campaign,
+          placement: parsed.output,
+          shown: count('campaign_shown'),
+          dismissed: count('campaign_dismissed'),
+          acted: count('campaign_acted')
+        }
+      ]
+    }
+  )
+  return orderBy(campaigns, ['shown'], ['desc'])
+}
 
 /**
  * Runs one HogQL query over PostHog's query API with a personal key that can only read queries,
@@ -118,6 +162,15 @@ export async function fetchUsage(
       }),
     documents: ranked(rowsOf('document_opened')),
     exports: ranked(rowsOf('document_exported')),
-    aiProviders: ranked(rowsOf('ai_reply_finished'))
+    aiProviders: ranked(rowsOf('ai_reply_finished')),
+    campaigns: campaignCounts(rowsOf),
+    donations: orderBy(
+      rowsOf('donate_clicked').flatMap(([, source, clicks]) => {
+        const parsed = v.safeParse(donationSourceSchema, source)
+        return parsed.success ? [{ source: parsed.output, clicks }] : []
+      }),
+      ['clicks'],
+      ['desc']
+    )
   }
 }

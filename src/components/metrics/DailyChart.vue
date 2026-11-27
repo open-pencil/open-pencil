@@ -12,7 +12,7 @@ import {
 } from 'vccs'
 import { computed } from 'vue'
 
-import { formatCount, formatDay } from '@/app/metrics/format'
+import { formatCompact, formatCount, formatDay } from '@/app/metrics/format'
 
 import type { Release } from './types'
 
@@ -59,7 +59,7 @@ const markers = computed(() =>
 const PARTIAL_OPACITY = 0.45
 const STACK = 'day'
 const formatTick = (value: unknown) =>
-  typeof value === 'number' ? formatCount(value) : String(value)
+  typeof value === 'number' ? formatCompact(value) : String(value)
 // Stacked bars round only the top segment; side-by-side bars round each one.
 const radius = (index: number): [number, number, number, number] =>
   !stacked || index === series.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]

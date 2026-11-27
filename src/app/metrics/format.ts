@@ -17,6 +17,7 @@ const TIME = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC'
 })
 const COUNT = new Intl.NumberFormat('en-US')
+const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 const PERCENT = new Intl.NumberFormat('en-US', {
   style: 'percent',
   maximumFractionDigits: 0
@@ -26,6 +27,8 @@ const CHANGE = new Intl.NumberFormat('en-US', { signDisplay: 'exceptZero' })
 export const formatDay = (day: string) => DAY.format(parseDate(day).toDate(METRICS_TIME_ZONE))
 export const formatTime = (iso: string) => `${TIME.format(new Date(iso))} UTC`
 export const formatCount = (value: number) => COUNT.format(value)
+/** A count short enough for a chart axis: `950`, `1.5K`, `10K`. */
+export const formatCompact = (value: number) => COMPACT.format(value)
 export const formatPercent = (value: number) => PERCENT.format(value)
 export const formatChange = (value: number) => CHANGE.format(value)
 

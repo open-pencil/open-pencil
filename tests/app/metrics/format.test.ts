@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { formatBytes, formatCountry, formatDay } from '@/app/metrics/format'
+import { formatBytes, formatCompact, formatCountry, formatDay } from '@/app/metrics/format'
 import { presetRange } from '@/app/metrics/range'
 
 describe('metrics labels', () => {
@@ -14,6 +14,12 @@ describe('metrics labels', () => {
 
   test('formats a day as the UTC day it names', () => {
     expect(formatDay('2026-10-19')).toBe('Oct 19')
+  })
+
+  test('shortens axis counts past a thousand', () => {
+    expect(formatCompact(950)).toBe('950')
+    expect(formatCompact(1500)).toBe('1.5K')
+    expect(formatCompact(10_000)).toBe('10K')
   })
 
   test('sizes storage in decimal units', () => {

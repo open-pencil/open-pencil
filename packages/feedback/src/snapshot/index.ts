@@ -7,9 +7,11 @@ import { compact } from 'es-toolkit'
 import { type CloudUsage, CLOUD_USAGE_MAX_DAYS, fetchCloudUsage } from './cloud'
 import { cloudflareClient } from './cloudflare'
 import { githubClient } from './github'
+import { NPM_MAX_DAYS, npmClient } from './npm'
 import {
   lastCloudDay,
   lastItemUpdate,
+  lastNpmDay,
   lastVisitDay,
   replaceDays,
   saveRepoItems,
@@ -29,7 +31,7 @@ const SETTLING_DAYS = 3
  */
 const MAX_ITEM_PAGES = 20
 
-export type SnapshotSource = 'github' | 'traffic' | 'site' | 'activity' | 'cloud'
+export type SnapshotSource = 'github' | 'traffic' | 'site' | 'activity' | 'cloud' | 'npm'
 
 interface Run {
   store: SnapshotStore
@@ -175,12 +177,35 @@ async function recordCloud({ store, env, yesterday }: Run) {
   )
 }
 
+/**
+ * Downloads of each of the npm organization's packages for every day not recorded yet plus the
+ * last few, which npm may still be counting. The first run, or one after a package is first
+ * published, fills in as far back as npm keeps.
+ */
+async function recordNpm({ store, env, services, yesterday }: Run) {
+  const npm = npmClient(services.fetch)
+  const packages = await npm.packages(env.NPM_ORG)
+  const oldest = yesterday.subtract({ days: NPM_MAX_DAYS - 1 })
+  const recorded = await lastNpmDay(store.db, packages)
+  const next = recorded ? parseDate(recorded).add({ days: 1 }) : oldest
+  const settling = yesterday.subtract({ days: SETTLING_DAYS - 1 })
+  const start = maxDate(minDate(next, settling), oldest) ?? oldest
+  const rows = []
+  // One after the other, to stay polite to a public API that needs no token.
+  for (const name of packages) {
+    for (const day of await npm.downloads(name, start, yesterday))
+      rows.push({ ...day, package: name })
+  }
+  await replaceDays(store, 'npmDownloads', eachDay(start, yesterday), rows)
+}
+
 const SOURCES: [SnapshotSource, (run: Run) => Promise<void>][] = [
   ['github', recordGithub],
   ['traffic', recordTraffic],
   ['site', recordSite],
   ['activity', recordActivity],
-  ['cloud', recordCloud]
+  ['cloud', recordCloud],
+  ['npm', recordNpm]
 ]
 
 /**

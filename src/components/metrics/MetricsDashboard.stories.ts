@@ -219,6 +219,17 @@ const cloudDays = DAYS.slice(0, -1).map((day, index) => ({
   documentsCreated: [20, 35, 28, 19, 15, 30][index] ?? 0,
   revisions: [88, 140, 162, 131, 97, 175][index] ?? 0
 }))
+// Answers to sharing usage stats, shaped like the real split: few agree, about half never answer.
+const sharing = installs.map((day) => {
+  const checked = day.new + day.returning + day.replayed
+  const granted = Math.round(checked * 0.06)
+  const denied = Math.round(checked * 0.45)
+  return { day: day.day, granted, denied, unset: checked - granted - denied }
+})
+const npmDaily = DAYS.slice(0, -1).map((day, index) => ({
+  day,
+  downloads: [7120, 8919, 6245, 6967, 5310, 4870][index] ?? 0
+}))
 const usageDaily = [
   { day: '2026-10-13', installs: 2 },
   { day: '2026-10-14', installs: 30 },
@@ -263,6 +274,7 @@ function scope(
     end: range.end,
     dailyActive: inRange(dailyActive),
     installs: inRange(installs),
+    sharing: inRange(sharing),
     platforms: [
       { os: 'macos', desktop: 428, web: 356 },
       { os: 'windows', desktop: 386, web: 327 },
@@ -339,6 +351,17 @@ function scope(
           }
         }
       : null,
+    npm: {
+      daily: inRange(npmDaily),
+      packages: [
+        { name: '@open-pencil/core', value: 21_840 },
+        { name: '@open-pencil/scene-graph', value: 9_120 },
+        { name: '@open-pencil/fig', value: 4_515 },
+        { name: '@open-pencil/vue', value: 2_960 },
+        { name: '@open-pencil/mcp', value: 1_230 },
+        { name: '@open-pencil/cli', value: 941 }
+      ]
+    },
     usage: withUsage
       ? {
           installs: sumBy(inRange(usageDaily), (day) => day.installs),
@@ -361,6 +384,15 @@ function scope(
             { name: 'anthropic-compatible', value: 3 },
             { name: 'google', value: 1 },
             { name: 'anthropic', value: 1 }
+          ],
+          campaigns: [
+            { campaign: 'donation', placement: 'prompt', shown: 24, dismissed: 16, acted: 2 },
+            { campaign: 'cloud-trial', placement: 'share', shown: 11, dismissed: 3, acted: 4 }
+          ],
+          donations: [
+            { source: 'settings', clicks: 4 },
+            { source: 'menu', clicks: 3 },
+            { source: 'prompt', clicks: 1 }
           ]
         }
       : null

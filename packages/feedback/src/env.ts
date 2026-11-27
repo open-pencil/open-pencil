@@ -37,6 +37,8 @@ export interface FeedbackBindings {
   POSTHOG_KEY: string
   /** `owner/name` of the repository whose stars, downloads, and traffic are recorded. */
   GITHUB_REPOSITORY: string
+  /** The npm organization whose packages' downloads are recorded. */
+  NPM_ORG: string
   /** A fine-grained token that can read the repository's traffic (Administration: read). */
   GITHUB_TOKEN: string
   /** The Cloudflare zone holding `SITE_HOSTS`, for its visit analytics. */
