@@ -1,0 +1,1 @@
+- While editing text, a colour or number variable bound from the panel, and a text or colour style applied there, now change only the selected characters instead of the whole layer, and a text range's own fill keeps its colour variable through .fig files and the plugin API (#2390).
