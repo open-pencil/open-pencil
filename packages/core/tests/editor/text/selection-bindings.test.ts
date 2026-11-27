@@ -77,6 +77,22 @@ describe('variables bound while text is edited', () => {
     expect(editor.getTextSelectionStyle(node())?.boundVariables).toEqual({ fontSize: size.id })
   })
 
+  test("binding or unbinding a size keeps the characters' colour variable", async () => {
+    const { editor, graph, collection, id, node } = await editingWorld()
+    const brand = graph.createVariable('Brand', 'COLOR', collection.id, RED)
+    const size = graph.createVariable('Size', 'FLOAT', collection.id, 30)
+    editor.bindVariable(id, 'fills/0/color', brand.id)
+
+    editor.bindVariable(id, 'fontSize', size.id)
+    expect(node().styleRuns[0]?.style.boundVariables).toEqual({
+      'fills/0/color': brand.id,
+      fontSize: size.id
+    })
+
+    editor.unbindVariable(id, 'fontSize')
+    expect(node().styleRuns[0]?.style.boundVariables).toEqual({ 'fills/0/color': brand.id })
+  })
+
   test('with nothing selected, a variable binds the layer', async () => {
     const { editor, graph, collection, id, node, state } = await editingWorld()
     const brand = graph.createVariable('Brand', 'COLOR', collection.id, RED)

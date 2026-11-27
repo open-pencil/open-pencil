@@ -1,4 +1,4 @@
-import { mapValues, omit, pick } from 'es-toolkit/object'
+import { omit, pick } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
@@ -18,7 +18,7 @@ import { boundNumberValue, textStyleBoundVariables } from '@open-pencil/scene-gr
 
 import { parseFigma } from '#core/figma-api/validation'
 import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
-import { styleRunsWithPatch } from '#core/text/character/style'
+import { characterStyles, styleRunsWithPatch } from '#core/text/character/style'
 import { faceForStyle } from '#core/text/font/names'
 
 import { getStyledTextSegments } from './style'
@@ -168,10 +168,11 @@ export function rangeBindingChanges(
     ? scaledTextStyleLengths(boundValue(graph, node, field, bound), node.componentScale)
     : {}
   let styleRuns = node.styleRuns
-  // Characters bound apart keep their other bindings.
+  // Characters bound apart keep their other bindings, their fills' colours included, which
+  // Figma lists on the paints rather than in a segment's bindings.
   for (const segment of getStyledTextSegments(node, ['boundVariables'], start, end)) {
-    const aliases = (segment.boundVariables ?? {}) as Record<string, FigmaVariableAlias>
-    const ids = mapValues(aliases, (alias) => alias.id)
+    const [style] = characterStyles(node, segment.start, segment.start + 1)
+    const ids = style.boundVariables
     const boundVariables = bound ? { ...ids, [field]: bound.id } : omit(ids, [field])
     styleRuns = styleRunsWithPatch({ ...node, styleRuns }, segment.start, segment.end, {
       ...value,

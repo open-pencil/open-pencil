@@ -19,12 +19,13 @@ export function editingWorldFixture() {
     const ck = await getCanvasKit()
     const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(200, 200), 'surface'))
     const editor = createEditor()
-    editor.setCanvasKit(ck, renderer)
-    await renderer.loadFonts()
+    // Registered first, so a failed font load still frees the surface and the editor.
     cleanups.push(() => {
       editor.dispose()
       renderer.destroy()
     })
+    editor.setCanvasKit(ck, renderer)
+    await renderer.loadFonts()
     const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
       text: 'Hello world',
       width: 200,
