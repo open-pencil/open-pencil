@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { named } from '#core-tests/helpers/html/kit'
+import { pick } from 'es-toolkit'
 
 import { readHTMLDocument } from '@open-pencil/core/io/formats/html/import'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -40,7 +41,8 @@ describe('instances a page marks', () => {
 
   test('take the text they show as an override', async () => {
     const graph = await page(
-      `<div id="row">${button('Primary', 'data-op-instance="Button" data-op-variant="Variant=Primary"', 'Submit')}</div>`
+      `<div id="row">${button('Primary', 'data-op-instance="Button" data-op-variant="Variant=Primary"', 'Submit')}</div>
+       <div>${button('Primary', 'id="plain"', 'Submit')}</div>`
     )
     const [instance] = graph.getChildren(used(graph, 'row').id)
     expect(instance.type).toBe('INSTANCE')
@@ -49,6 +51,11 @@ describe('instances a page marks', () => {
       .map(({ node }) => node)
       .find((node) => node.type === 'TEXT')
     expect(text?.text).toBe('Submit')
+    // Laid out as the page laid the longer text out, rather than where the shorter one was.
+    const [plain] = graph.getChildren(used(graph, 'plain').id)
+    expect(text && pick(text, ['x', 'y', 'width', 'height'])).toEqual(
+      pick(plain, ['x', 'y', 'width', 'height'])
+    )
   })
 
   test('stay the layers they are where they draw something their variant does not', async () => {

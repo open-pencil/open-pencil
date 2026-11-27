@@ -66,8 +66,14 @@ function drawsAs(graph: SceneGraph, layer: SceneNode, main: SceneNode, root = tr
   )
 }
 
-/** Gives each text layer of the instance the text the page's layer had there. */
-function overrideTexts(graph: SceneGraph, layer: SceneNode, copy: SceneNode): void {
+/** Where a layer is and how big, as the page laid it out. */
+const GEOMETRY = ['x', 'y', 'width', 'height'] as const satisfies readonly (keyof SceneNode)[]
+
+/**
+ * Gives each layer of the instance what the page's layer had there: its text, as an override,
+ * and where the page laid it out, which its text and the instance's size decide.
+ */
+function takeOver(graph: SceneGraph, layer: SceneNode, copy: SceneNode): void {
   if (copy.type === 'TEXT' && copy.text !== layer.text) {
     graph.updateNode(copy.id, { text: layer.text })
     recordInstanceOverride(graph, copy.id, ['text'])
@@ -75,7 +81,9 @@ function overrideTexts(graph: SceneGraph, layer: SceneNode, copy: SceneNode): vo
   const children = graph.getChildren(layer.id)
   graph.getChildren(copy.id).forEach((child, index) => {
     const own = children.at(index)
-    if (own) overrideTexts(graph, own, child)
+    if (!own) return
+    graph.updateNode(child.id, pick(own, GEOMETRY))
+    takeOver(graph, own, child)
   })
 }
 
@@ -119,7 +127,7 @@ export function createMarkedInstances(graph: SceneGraph, sources: LayerSources):
     const instance = graph.createInstance(main.id, parent.id, pick(layer, PLACEMENT))
     if (!instance) continue
     graph.insertChildAt(instance.id, parent.id, parent.childIds.indexOf(layer.id))
-    overrideTexts(graph, layer, instance)
+    takeOver(graph, layer, instance)
     graph.deleteNode(layer.id)
     sources.delete(layer.id)
   }
