@@ -6,6 +6,7 @@ import type { Easing, SceneNode } from '@open-pencil/scene-graph'
 import {
   animatedLayers,
   animationSlide,
+  animationTarget,
   layerAnimationDirection,
   layerAnimationStyle,
   MOTION_DIRECTIONS,
@@ -135,11 +136,20 @@ const layers = useSceneComputed(() =>
       }))
     : []
 )
-/** Selected layers on the slide that can animate and do not yet. */
+/**
+ * Selected layers on the slide that can animate and do not yet; a layer inside an instance counts
+ * as its instance, which Figma animates instead.
+ */
 const addable = useSceneComputed(() =>
-  [...store.state.selectedIds].filter((id) => {
-    const node = store.graph.getNode(id)
-    return node && !node.animation && animationSlide(store.graph, id)?.id === slide.value?.id
+  [...store.state.selectedIds].flatMap((id) => {
+    const target = animationTarget(store.graph, id)
+    const node = target ? store.graph.getNode(target) : undefined
+    return node &&
+      target &&
+      !node.animation &&
+      animationSlide(store.graph, target)?.id === slide.value?.id
+      ? [target]
+      : []
   })
 )
 /** The animation the panel edits: the one of the only selected layer. */

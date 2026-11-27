@@ -102,6 +102,17 @@ describe('slide tools', () => {
     expect(slides[0].animations.map(({ name }) => name)).toEqual(['Title'])
   })
 
+  test('a layer inside an instance animates as its instance, which the result names', async () => {
+    const { graph, figma, first } = deck()
+    const card = graph.createNode('COMPONENT', first, { name: 'Card' })
+    graph.createNode('ELLIPSE', card.id, { name: 'Dot' })
+    const instance = graph.createInstance(card.id, first)
+    if (!instance) throw new Error('No instance')
+    const [inner] = graph.getChildren(instance.id)
+    const result = await setAnimations.execute(figma, { layers: [inner.id], animation: {} })
+    expect(result).toEqual({ layers: [instance.id] })
+  })
+
   test('a page without slides is reported', async () => {
     const figma = new FigmaAPI(createDocumentGraph('design', 'light'))
     expect(await getDeck.execute(figma, {})).toEqual({

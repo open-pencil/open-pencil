@@ -2,6 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   animatedLayers,
   animationSlide,
+  animationTarget,
   defaultLayerAnimation,
   defaultSlideTransition,
   slideSettings,
@@ -114,7 +115,9 @@ export function createSlideAnimateActions(ctx: EditorContext) {
   function addLayerAnimations(ids: Iterable<string>): void {
     const next = new Map<string, LayerAnimation | null>()
     const lastOrder = new Map<string, number>()
-    for (const id of inLayerOrder(ids)) {
+    // A layer inside an instance animates as its instance, as in Figma.
+    const targets = [...ids].flatMap((id) => animationTarget(ctx.graph, id) ?? [])
+    for (const id of inLayerOrder(targets)) {
       const node = ctx.graph.getNode(id)
       const slide = animationSlide(ctx.graph, id)
       if (!node || node.animation || !slide) continue

@@ -1,9 +1,11 @@
+import { uniq } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
   animatedLayers,
   animationSlide,
+  animationTarget,
   createSlide,
   defaultLayerAnimation,
   defaultSlideTransition,
@@ -346,7 +348,8 @@ function layerAnimationFrom(
 export const setAnimations = defineTool({
   name: 'set_animations',
   description:
-    'Animate layers on slides as steps of the slide build, or with null stop animating them. ' +
+    'Animate layers on slides as steps of the slide build, or with null stop animating them; a ' +
+    'layer inside an instance animates as its instance, as in Figma, and the result names it. ' +
     'A layer not yet animated is added after the steps its slide has, in the order given, with ' +
     "Figma's default: slide in rightwards on a click over 0.6s. Each step fades or slides, In " +
     'or Out, on a click or after the step before, with a duration in seconds and an easing, ' +
@@ -359,11 +362,16 @@ export const setAnimations = defineTool({
   execute: (figma, { layers, animation }) => {
     try {
       const graph = graphOf(figma)
-      for (const id of layers) {
+      // A layer inside an instance animates as its instance, as in Figma.
+      const targets = layers.map((id) => {
+        const target = animationTarget(graph, id)
+        if (!target) throw new Error(`${id} is not a layer on a slide`)
+        return target
+      })
+      for (const id of uniq(targets)) {
         const node = graph.getNode(id)
         const slide = animationSlide(graph, id)
-        if (!node || !slide)
-          throw new Error(`${id} is not a layer on a slide outside an instance, which can animate`)
+        if (!node || !slide) throw new Error(`${id} is not a layer on a slide`)
         if (animation === null) {
           graph.updateNode(id, { animation: null })
           continue
@@ -374,7 +382,7 @@ export const setAnimations = defineTool({
         const current = node.animation ?? defaultLayerAnimation(last + 1)
         graph.updateNode(id, { animation: layerAnimationFrom(graph, current, animation) })
       }
-      return { layers }
+      return { layers: uniq(targets) }
     } catch (error) {
       return toolFailure(error)
     }

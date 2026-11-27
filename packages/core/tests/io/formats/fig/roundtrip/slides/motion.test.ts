@@ -163,3 +163,23 @@ describe('moving a group of animated layers between slides', () => {
     expect(steps).toEqual([0, 1])
   })
 })
+
+describe('animated instances', () => {
+  test('an instance animates as one layer and keeps its step through a save', async () => {
+    const { graph, slide } = deck()
+    const component = graph.createNode('COMPONENT', slide.id, {
+      name: 'Card',
+      width: 300,
+      height: 200
+    })
+    graph.createNode('ELLIPSE', component.id, { name: 'Dot', width: 80, height: 80 })
+    const instance = graph.createInstance(component.id, slide.id, { x: 0, y: 400 })
+    if (!instance) throw new Error('No instance')
+    graph.updateNode(instance.id, { name: 'Card copy', animation: defaultLayerAnimation(0) })
+    const reopened = await reopen(graph)
+    const build = slideBuild(reopened, firstSlide(reopened).id)
+    expect(
+      build.flatMap((step) => step.layers.map(({ id }) => reopened.getNode(id)?.type))
+    ).toEqual(['INSTANCE'])
+  })
+})

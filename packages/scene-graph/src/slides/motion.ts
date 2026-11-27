@@ -144,3 +144,26 @@ export function animationSlide(graph: SceneGraph, layerId: string): SceneNode | 
   if (graph.closest(node.parentId, (item) => item.type === 'INSTANCE')) return undefined
   return graph.closest(node.parentId, (item) => item.type === 'SLIDE') ?? undefined
 }
+
+/**
+ * The layer an animation for `layerId` goes on, as Figma's Animate panel picks it: the layer
+ * itself, or for a layer inside an instance the outermost instance on the slide, which Figma
+ * animates instead. Undefined for a layer on no slide, or a slide.
+ */
+export function animationTarget(graph: SceneGraph, layerId: string): string | undefined {
+  const node = graph.getNode(layerId)
+  if (!node || node.type === 'SLIDE') return undefined
+  let target = layerId
+  let id = node.parentId
+  // A parent cycle in bad data ends the walk.
+  const seen = new Set<string>()
+  while (id && !seen.has(id)) {
+    seen.add(id)
+    const parent = graph.getNode(id)
+    if (!parent) return undefined
+    if (parent.type === 'SLIDE') return target
+    if (parent.type === 'INSTANCE') target = parent.id
+    id = parent.parentId
+  }
+  return undefined
+}

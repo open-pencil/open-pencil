@@ -85,4 +85,15 @@ describe('the Animate tab edits', () => {
     editor.setSlideTransition([first], null)
     expect(transition(first)).toBeNull()
   })
+
+  test('a layer inside an instance animates as its instance, as in Figma', () => {
+    const { editor, first } = setup()
+    const card = editor.graph.createNode('COMPONENT', first, { name: 'Card' })
+    editor.graph.createNode('ELLIPSE', card.id, { name: 'Dot' })
+    const instance = expectDefined(editor.graph.createInstance(card.id, first))
+    const [inner] = editor.graph.getChildren(instance.id)
+    editor.addLayerAnimations([inner.id])
+    expect(editor.graph.getNode(instance.id)?.animation).not.toBeNull()
+    expect(editor.graph.getNode(inner.id)?.animation).toBeNull()
+  })
 })
