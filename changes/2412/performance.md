@@ -1,0 +1,1 @@
+- Changing a layer inside a frame redraws only the canvas around that layer instead of the whole frame, so editing text, recolouring, or moving a layer in a frame that fills the view no longer repaints the whole view (#2412).
