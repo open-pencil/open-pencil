@@ -3,18 +3,13 @@ import * as v from 'valibot'
 import type { HyperlinkTarget, NodeType, SceneGraph } from '@open-pencil/scene-graph'
 
 import { parseFigma } from '#core/figma-api/validation'
+import { LINK_URL } from '#core/text/links'
 
 /** Figma's `HyperlinkTarget`, or null to remove a link; Figma checks a value against both. */
 const hyperlinkSchema = v.union([
   v.strictObject({ type: v.picklist(['URL', 'NODE']), value: v.string() }),
   v.null()
 ])
-
-/**
- * URLs Figma links to: web addresses with a host, in lower case and without surrounding space,
- * and mail and phone links. Measured in live Figma (2026-10-11).
- */
-const LINK_URL = /^(?:https?:\/\/[^\s/?#]+\S*|mailto:\S+|tel:\S+)$/
 
 /** Layers a link may lead to, which Figma frames in view: containers and pages. */
 const LINK_TARGETS = new Set<NodeType>([

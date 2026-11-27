@@ -2,9 +2,17 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import { faceForStyle, fontManager, nearestFamilyFace } from '@open-pencil/core/text'
+import {
+  faceForStyle,
+  fontFeaturesSync,
+  fontManager,
+  nearestFamilyFace
+} from '@open-pencil/core/text'
 import type {
+  Fill,
+  LeadingTrim,
   SceneNode,
+  TextDecorationStyle,
   TextLength,
   TextListType,
   TextParagraphSpacingField
@@ -21,6 +29,12 @@ import {
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 import { styleFontVariations } from '#vue/controls/typography/axes'
 import { useFamilyFaces } from '#vue/controls/typography/faces'
+import {
+  featureEnabled,
+  fontFeatureSections,
+  withFeatures,
+  type FontFeatureSections
+} from '#vue/controls/typography/features'
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
 import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { selectedNodesAsShown } from '#vue/editor/selection-state/nodes'
@@ -33,7 +47,8 @@ type TextVerticalAlign = SceneNode['textAlignVertical']
 type TextCase = SceneNode['textCase']
 type TextTruncation = SceneNode['textTruncation']
 /** A value the panel previews and commits on every selected text. */
-type PropValue = number | string | TextLength | null
+/** A value a field previews: a number or length, or a paint list such as a decoration's colour. */
+type PropValue = number | string | TextLength | Fill[] | null
 
 function sharedValue<T>(values: readonly T[]): MixedValue<T> {
   const [first] = values
@@ -101,10 +116,15 @@ export function createTypographyState(editor: Editor) {
 
   /** Whether one OpenType feature is on for every text layer, MIXED when they differ. */
   function fontFeature(tag: string): MixedValue<boolean> {
-    return sharedValue(
-      nodes.value.map((n) => n.fontFeatures.find((feature) => feature.tag === tag)?.enabled ?? true)
-    )
+    return sharedValue(nodes.value.map((n) => featureEnabled(n.fontFeatures, tag)))
   }
+
+  /** The features the first text's font offers, by section, once the font is loaded. */
+  const fontFeatures = useSceneComputed<FontFeatureSections | null>(() => {
+    const first = node.value
+    const available = first && fontFeaturesSync(first.fontFamily, faceStyleKey(first))
+    return available ? fontFeatureSections(available) : null
+  })
 
   return {
     node,
@@ -112,6 +132,7 @@ export function createTypographyState(editor: Editor) {
     merged,
     paragraphSpacing,
     fontFeature,
+    fontFeatures,
     fontFamily,
     fontWeight,
     fontSize,
@@ -299,13 +320,26 @@ export function createTypographyActions({
     update('Change text truncation', { textTruncation })
   }
 
+  /** Trims the text's box to its cap height and baseline, or back to its full line height. */
+  function setLeadingTrim(leadingTrim: LeadingTrim) {
+    update('Change vertical trim', { leadingTrim })
+  }
+
+  function setDecorationStyle(textDecorationStyle: TextDecorationStyle) {
+    update('Change underline style', { textDecorationStyle })
+  }
+
+  function setDecorationSkipInk(textDecorationSkipInk: boolean) {
+    update('Change underline skip ink', { textDecorationSkipInk })
+  }
+
   function setFontFeature(tag: string, enabled: boolean) {
-    updateEach(`Change ${tag} feature`, (target) => ({
-      fontFeatures: [
-        ...target.fontFeatures.filter((feature) => feature.tag !== tag),
-        { tag, enabled }
-      ]
-    }))
+    setFontFeatures(`Change ${tag} feature`, { [tag]: enabled })
+  }
+
+  /** Turns features on or off, or with `null` back to the font's default, in one undo step. */
+  function setFontFeatures(label: string, changes: Readonly<Record<string, boolean | null>>) {
+    updateEach(label, (target) => ({ fontFeatures: withFeatures(target.fontFeatures, changes) }))
   }
 
   function setListType(listType: TextListType) {
@@ -484,7 +518,11 @@ export function createTypographyActions({
     setVerticalAlign,
     setTextCase,
     setTruncation,
+    setLeadingTrim,
+    setDecorationStyle,
+    setDecorationSkipInk,
     setFontFeature,
+    setFontFeatures,
     setListType,
     previewParagraphSpacing,
     setParagraphSpacing,

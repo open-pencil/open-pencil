@@ -35,6 +35,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
+import { requestTextLink } from '@/app/editor/text-link'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -213,7 +214,10 @@ const { detailMarker: hoveredIssueMarker, cursor: issueMarkerCursor } = useCanva
   }
 )
 
-useTextEdit(canvasRef, store, { isEnabled: () => isActivePane.value })
+useTextEdit(canvasRef, store, {
+  isEnabled: () => isActivePane.value,
+  addLink: requestTextLink
+})
 const { isDraggingOver } = useCanvasDrop(canvasRef, store, activatePane)
 
 const valueFieldIcons = {

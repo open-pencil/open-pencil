@@ -69,13 +69,18 @@ describe('text case ranges', () => {
     expect(text.getRangeTextCase(0, 5)).toBe('LOWER')
   })
 
-  test('reject what Figma rejects, and small caps OpenPencil cannot draw', () => {
+  test('take small caps, as Figma does', () => {
+    const { text } = styledText()
+    text.setRangeTextCase(0, 5, 'SMALL_CAPS_FORCED')
+    expect(text.getRangeTextCase(0, 5)).toBe('SMALL_CAPS_FORCED')
+    text.textCase = 'SMALL_CAPS'
+    expect(text.textCase).toBe('SMALL_CAPS')
+  })
+
+  test('reject what Figma rejects', () => {
     const { text } = styledText()
     expect(() => text.setRangeTextCase(0, 5, 'SHOUT' as 'UPPER')).toThrow(
       `in setRangeTextCase: Property "textCase" failed validation: Invalid option: expected one of "ORIGINAL"|"UPPER"|"LOWER"|"TITLE"|"SMALL_CAPS"|"SMALL_CAPS_FORCED"`
-    )
-    expect(() => text.setRangeTextCase(0, 5, 'SMALL_CAPS' as 'UPPER')).toThrow(
-      'in setRangeTextCase: OpenPencil does not support the SMALL_CAPS text case'
     )
     expect(() => text.setRangeTextCase(3, 3, 'UPPER')).toThrow(
       "in setRangeTextCase: Empty range selected. 'end' must be greater than 'start'"

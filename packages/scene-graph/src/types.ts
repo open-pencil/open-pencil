@@ -416,7 +416,11 @@ export interface ConnectorLabelPosition {
   offAxis: 'NONE' | 'ABOVE' | 'BELOW'
 }
 export type TextAlignVertical = 'TOP' | 'CENTER' | 'BOTTOM'
-export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
+/**
+ * How a text's letters are cased: as typed, re-cased, or drawn as small caps, which take the
+ * font's own small capitals for lower-case letters and, forced, for capitals too.
+ */
+export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE' | 'SMALL_CAPS' | 'SMALL_CAPS_FORCED'
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH'
 export type TextDecorationStyle = 'SOLID' | 'DOTTED' | 'WAVY'
 export type LeadingTrim = 'NONE' | 'CAP_HEIGHT'

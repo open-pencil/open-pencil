@@ -42,7 +42,8 @@ function close() {
 
 if (IS_BROWSER) {
   useEventListener(window, 'keydown', (event) => {
-    if (!matchesKeyboardEvent(event, COMMAND_PALETTE_SHORTCUT)) return
+    // Text being edited takes Mod+K to add a link, as in Figma.
+    if (event.defaultPrevented || !matchesKeyboardEvent(event, COMMAND_PALETTE_SHORTCUT)) return
     event.preventDefault()
     open.value = true
   })

@@ -78,6 +78,7 @@ export const menuMessageDefaults = {
   bold: 'Bold',
   italic: 'Italic',
   underline: 'Underline',
+  addLink: 'Add link',
   strikethrough: 'Strikethrough',
 
   pasteHere: 'Paste here',

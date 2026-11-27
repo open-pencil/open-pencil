@@ -168,3 +168,29 @@ describe('panel edits to a text layer whose characters a range styled', () => {
     })
   })
 })
+
+describe('links', () => {
+  const LINK = { type: 'URL' as const, value: 'https://openpencil.dev' }
+
+  test('link the selected characters, and undo the link', async () => {
+    const { editor, id, node } = await editingWorld()
+
+    editor.setTextLink(id, LINK)
+
+    expect(node().styleRuns).toEqual([{ start: 6, length: 5, style: { hyperlink: LINK } }])
+    expect(editor.getTextLink(id)).toEqual(LINK)
+    editor.undoAction()
+    expect(node().styleRuns).toEqual([])
+    expect(editor.getTextLink(id)).toBeNull()
+  })
+
+  test('link the whole text when it is not being edited, and remove the link', async () => {
+    const { editor, id, node } = await editingWorld()
+    editor.commitTextEdit()
+
+    editor.setTextLink(id, LINK)
+    expect(node().styleRuns).toEqual([{ start: 0, length: 11, style: { hyperlink: LINK } }])
+    editor.setTextLink(id, null)
+    expect(editor.getTextLink(id)).toBeNull()
+  })
+})

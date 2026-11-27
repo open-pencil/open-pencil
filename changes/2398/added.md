@@ -1,0 +1,2 @@
+- The Typography section edits underline and strikethrough style, thickness, offset, colour, and ink skipping, plus vertical trim and links (<kbd>⌘</kbd><kbd>K</kbd> while editing text). More features lists the font's own OpenType features, such as stylistic sets and number styles (#2398).
+- Small caps and forced small caps render from the font's own small capitals. You can set them in the Case menu for fonts that have them, and they carry through `.fig` files, the plugin API, and HTML/CSS (#2398).

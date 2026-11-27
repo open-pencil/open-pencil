@@ -37,6 +37,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'getSelectedNode',
   'getSelectedNodes',
   'getShownStatus',
+  'getTextLink',
   'getTextSelectionStyle',
   'getVariable',
   'getVariableCount',

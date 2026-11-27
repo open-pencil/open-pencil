@@ -1,7 +1,12 @@
 import { omit, pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  HyperlinkTarget,
+  SceneNode,
+  StyleRun
+} from '@open-pencil/scene-graph'
 
 import type { EditorContext } from '#core/editor/types'
 import {
@@ -133,5 +138,34 @@ export function createTextSelectionStyle(
     return layerTextStyleChanges(node, changes)
   }
 
-  return { updateNode, updateNodeWithUndo, commitNodeUpdate, selectionStyle, layerChanges }
+  /**
+   * Links the selected characters to `link`, or the whole text when none are selected, or removes
+   * their link with `null`, in one undo step.
+   */
+  function linkSelection(id: string, link: HyperlinkTarget | null, update: NodeUpdate): void {
+    const node = ctx.graph.getNode(id)
+    if (!node) return
+    const range = selectedRange(id) ?? [0, node.text.length]
+    const styleRuns = styleRunsWithPatch(node, ...range, { hyperlink: link })
+    preview = null
+    if (ctx.state.editingTextId === id) runTextEditStep(() => update(id, { styleRuns }))
+    else update(id, { styleRuns })
+  }
+
+  /** The link of the selected characters, or of the text's first character when none are. */
+  function selectionLink(node: SceneNode): HyperlinkTarget | null {
+    const start = selectedRange(node.id)?.[0] ?? 0
+    // An empty text has no character to read.
+    return characterStyles(node, start, start + 1).at(0)?.hyperlink ?? null
+  }
+
+  return {
+    updateNode,
+    updateNodeWithUndo,
+    commitNodeUpdate,
+    selectionStyle,
+    layerChanges,
+    linkSelection,
+    selectionLink
+  }
 }

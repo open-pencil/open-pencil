@@ -20,7 +20,11 @@ import { focusTextAreaOnCanvasPointerDown, useTextEditingSession } from './texta
 export function useTextEdit(
   canvasRef: Ref<HTMLCanvasElement | null>,
   store: Editor,
-  options?: { isEnabled?: () => boolean }
+  options?: {
+    isEnabled?: () => boolean
+    /** Opens where a link for the selected characters is typed, which Mod+K asks for. */
+    addLink?: () => void
+  }
 ) {
   const textareaRef = shallowRef<HTMLTextAreaElement | null>(null)
   const { resetBlink, stopBlink } = createCaretBlink(store)
@@ -73,7 +77,8 @@ export function useTextEdit(
     toggleItalic,
     toggleUnderline,
     toggleListType,
-    changeIndentation
+    changeIndentation,
+    addLink: options?.addLink
   })
 
   useEventListener(textareaRef, 'input', onInput)

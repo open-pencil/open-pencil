@@ -54,7 +54,8 @@ function shardFont(data: ArrayBuffer): HarfBuzzFont | null {
   return parsed
 }
 
-function getParsedFont(family: string, style: string): HarfBuzzFont | null {
+/** A loaded face as HarfBuzz reads it, parsed once per file; null until it and HarfBuzz load. */
+export function getParsedFont(family: string, style: string): HarfBuzzFont | null {
   if (!isHarfBuzzLoaded()) return null
   const key = `${family}|${style}`
   const bytes = fontManager.loadedData(family, style)

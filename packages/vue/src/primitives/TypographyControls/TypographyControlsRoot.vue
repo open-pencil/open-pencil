@@ -26,7 +26,11 @@ const actions = {
   setVerticalAlign: ctx.setVerticalAlign,
   setTextCase: ctx.setTextCase,
   setTruncation: ctx.setTruncation,
+  setLeadingTrim: ctx.setLeadingTrim,
+  setDecorationStyle: ctx.setDecorationStyle,
+  setDecorationSkipInk: ctx.setDecorationSkipInk,
   setFontFeature: ctx.setFontFeature,
+  setFontFeatures: ctx.setFontFeatures,
   setListType: ctx.setListType,
   setHangingList: ctx.setHangingList,
   previewParagraphSpacing: ctx.previewParagraphSpacing,
@@ -53,6 +57,7 @@ const actions = {
     :merged="ctx.merged"
     :paragraph-spacing="ctx.paragraphSpacing"
     :font-feature="ctx.fontFeature"
+    :font-features="ctx.fontFeatures"
     :faces="ctx.faces"
     :face-name="ctx.faceName"
     :missing-fonts="ctx.missingFonts"

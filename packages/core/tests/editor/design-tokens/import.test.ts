@@ -202,6 +202,19 @@ describe('design token import', () => {
     })
   })
 
+  test('a style token keeps small caps', () => {
+    const graph = new SceneGraph()
+    const source = designSystem()
+    const [heading] = getSharedStyles(source, 'text')
+    const node = source.getNode(heading.nodeId)
+    if (node) node.textCase = 'SMALL_CAPS_FORCED'
+
+    importInto(graph, exported(source))
+
+    const [style] = getSharedStyles(graph, 'text')
+    expect(graph.getNode(style.nodeId)?.textCase).toBe('SMALL_CAPS_FORCED')
+  })
+
   test('an edited shadow takes the place of the exact one, and the blur keeps its own', () => {
     const source = new SceneGraph()
     const shadow = (radius: number) => ({

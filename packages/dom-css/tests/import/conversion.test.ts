@@ -507,3 +507,32 @@ describe('text alignment import', () => {
     expect(importedText({}).textDirection).toBe('AUTO')
   })
 })
+
+describe('text case import', () => {
+  function importedCase(computedStyle: Record<string, string>) {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          attrs: {},
+          computedStyle: { 'font-size': '16px', width: '200px', ...computedStyle },
+          children: [{ type: 'text', text: 'Small caps' }]
+        }
+      ]
+    })
+    return expectText([...graph.getAllNodes()].find((node) => node.type === 'TEXT')).textCase
+  }
+
+  // A transform re-cases the letters, which then take no small capitals unless all are small.
+  it.each([
+    [{ 'font-variant-caps': 'small-caps' }, 'SMALL_CAPS'],
+    [{ 'font-variant-caps': 'all-small-caps' }, 'SMALL_CAPS_FORCED'],
+    [{ 'font-variant-caps': 'small-caps', 'text-transform': 'uppercase' }, 'UPPER'],
+    [{ 'font-variant-caps': 'all-small-caps', 'text-transform': 'uppercase' }, 'SMALL_CAPS_FORCED'],
+    [{ 'font-variant-caps': 'normal' }, 'ORIGINAL']
+  ] as const)('imports %o as %s', (style, textCase) => {
+    expect(importedCase(style)).toBe(textCase)
+  })
+})

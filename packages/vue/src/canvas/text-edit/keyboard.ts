@@ -19,6 +19,8 @@ type TextKeyboardOptions = {
   toggleUnderline: (node: SceneNode) => void
   toggleListType: (node: SceneNode, listType: Exclude<TextListType, 'NONE'>) => void
   changeIndentation: (node: SceneNode, delta: 1 | -1) => boolean
+  /** Opens where a link for the selected characters is typed, on Mod+K, if the host has one. */
+  addLink?: () => void
 }
 
 export function createTextKeyDownHandler(options: TextKeyboardOptions) {
@@ -33,7 +35,8 @@ export function createTextKeyDownHandler(options: TextKeyboardOptions) {
     KeyV: (node) => void options.handlePaste(node),
     KeyB: (node) => options.toggleBold(node),
     KeyI: (node) => options.toggleItalic(node),
-    KeyU: (node) => options.toggleUnderline(node)
+    KeyU: (node) => options.toggleUnderline(node),
+    ...(options.addLink ? { KeyK: () => options.addLink?.() } : {})
   }
 
   // Figma's list shortcuts: ⌘⇧8 for bullets, ⌘⇧7 for numbers.

@@ -30,6 +30,7 @@ import panels from './panels.json'
 import panelsBehaviours from './panels/behaviours.json'
 import panelsLibraries from './panels/libraries.json'
 import panelsPickers from './panels/pickers.json'
+import panelsTypography from './panels/typography.json'
 import recovery from './recovery.json'
 import rename from './rename.json'
 import settings from './settings.json'
@@ -74,6 +75,7 @@ export default {
   'panels/behaviours': panelsBehaviours,
   'panels/libraries': panelsLibraries,
   'panels/pickers': panelsPickers,
+  'panels/typography': panelsTypography,
   recovery,
   rename,
   settings,

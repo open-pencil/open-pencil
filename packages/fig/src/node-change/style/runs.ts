@@ -18,7 +18,14 @@ import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from '../t
 import { textRunVariableBindings } from '../variable/bindings'
 import { styleRefId } from './refs'
 
-const TEXT_CASES = new Set<unknown>(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'] satisfies TextCase[])
+const TEXT_CASES = new Set<unknown>([
+  'ORIGINAL',
+  'UPPER',
+  'LOWER',
+  'TITLE',
+  'SMALL_CAPS',
+  'SMALL_CAPS_FORCED'
+] satisfies TextCase[])
 
 /** A link Figma keeps on characters: to a URL, or to a node by its GUID. */
 export function importHyperlink(value: unknown): HyperlinkTarget | undefined {

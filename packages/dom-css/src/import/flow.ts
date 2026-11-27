@@ -70,6 +70,7 @@ const TEXT_PROPERTIES = [
   'text-decoration-line',
   'text-shadow',
   'text-transform',
+  'font-variant-caps',
   'text-wrap-mode',
   'white-space'
 ]

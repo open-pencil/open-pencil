@@ -8,6 +8,7 @@ import {
   copySelectionProperties,
   pasteClipboardProperties
 } from '@/app/editor/clipboard/properties'
+import { requestTextLink } from '@/app/editor/text-link'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import {
   setCommentsOnCanvas,
@@ -108,6 +109,7 @@ export function createSharedEditorMenuActions(
     'text.bold': onCanvasSelection(toggleSelectedTextBold),
     'text.italic': onCanvasSelection(toggleSelectedTextItalic),
     'text.underline': onCanvasSelection(toggleSelectedTextUnderline),
+    'text.link': onCanvasSelection(requestTextLink),
     'arrange.align-left': onCanvasSelection(() => alignSelected('horizontal', 'min')),
     'arrange.align-center': onCanvasSelection(() => alignSelected('horizontal', 'center')),
     'arrange.align-right': onCanvasSelection(() => alignSelected('horizontal', 'max')),

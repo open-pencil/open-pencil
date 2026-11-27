@@ -8,6 +8,7 @@ export const TEXT_MENU: AppMenuGroupSchema = {
   items: [
     { id: 'text.bold', label: 'Bold', shortcut: 'Mod+B' },
     { id: 'text.italic', label: 'Italic', shortcut: 'Mod+I' },
-    { id: 'text.underline', label: 'Underline', shortcut: 'Mod+U' }
+    { id: 'text.underline', label: 'Underline', shortcut: 'Mod+U' },
+    { id: 'text.link', label: 'Add link' }
   ]
 }
