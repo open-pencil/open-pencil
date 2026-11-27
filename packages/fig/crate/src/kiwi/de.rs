@@ -86,30 +86,12 @@ impl<'a> Decoder<'_, 'a> {
     }
 }
 
-impl<'a> de::Deserializer<'a> for Decoder<'_, 'a> {
-    type Error = Error;
-
-    fn deserialize_any<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+impl<'r, 'a> Decoder<'r, 'a> {
+    /// A scalar: a primitive or an enum member's name.
+    fn scalar<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
         let reader = self.reader;
         if self.array {
-            if self.ty == BYTE {
-                let length = reader.varuint()? as usize;
-                let end = reader.position.checked_add(length).ok_or(Malformed)?;
-                let bytes = reader.data.get(reader.position..end).ok_or(Malformed)?;
-                reader.position = end;
-                return visitor.visit_borrowed_bytes(bytes);
-            }
-            // Each element takes at least a byte, so a count past the bytes left is damaged.
-            let left = reader.varuint()? as usize;
-            if left > reader.data.len() - reader.position {
-                return Err(Malformed.into());
-            }
-            return visitor.visit_seq(Elements {
-                reader,
-                schema: self.schema,
-                ty: self.ty,
-                left,
-            });
+            return Err(de::Error::custom("expected a value, found an array"));
         }
         match self.ty {
             BOOL => visitor.visit_bool(reader.bool()?),
@@ -137,36 +119,120 @@ impl<'a> de::Deserializer<'a> for Decoder<'_, 'a> {
             UINT64 => visitor.visit_u64(reader.varuint64()?),
             _ => {
                 let definition = Decoder { reader, ..self }.definition()?;
-                match definition.kind {
-                    DefinitionKind::Enum => visitor.visit_borrowed_str(member(definition, reader)?),
-                    DefinitionKind::Struct => {
-                        reader.enter()?;
-                        let fields = StructFields {
-                            reader: &mut *reader,
-                            schema: self.schema,
-                            fields: &definition.fields,
-                            next: 0,
-                        };
-                        let result = visitor.visit_map(fields);
-                        reader.depth -= 1;
-                        result
-                    }
-                    DefinitionKind::Message => {
-                        reader.enter()?;
-                        let fields = MessageFields {
-                            reader: &mut *reader,
-                            schema: self.schema,
-                            definition,
-                            field: None,
-                            keep: self.keep,
-                        };
-                        let result = visitor.visit_map(fields);
-                        reader.depth -= 1;
-                        result
-                    }
+                if definition.kind != DefinitionKind::Enum {
+                    return Err(de::Error::custom(
+                        "expected a value, found a struct or message",
+                    ));
                 }
+                visitor.visit_borrowed_str(member(definition, reader)?)
             }
         }
+    }
+
+    /// A byte array, borrowed from the message.
+    fn bytes<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        if !self.array || self.ty != BYTE {
+            return Err(de::Error::custom("expected a byte array"));
+        }
+        let reader = self.reader;
+        let length = reader.varuint()? as usize;
+        let end = reader.position.checked_add(length).ok_or(Malformed)?;
+        let bytes = reader.data.get(reader.position..end).ok_or(Malformed)?;
+        reader.position = end;
+        visitor.visit_borrowed_bytes(bytes)
+    }
+
+    /// An array's elements.
+    fn elements<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        if !self.array || self.ty == BYTE {
+            return Err(de::Error::custom("expected an array"));
+        }
+        let reader = self.reader;
+        // Each element takes at least a byte, so a count past the bytes left is damaged.
+        let left = reader.varuint()? as usize;
+        if left > reader.data.len() - reader.position {
+            return Err(Malformed.into());
+        }
+        visitor.visit_seq(Elements {
+            reader,
+            schema: self.schema,
+            ty: self.ty,
+            left,
+        })
+    }
+
+    /// A struct's or a message's fields.
+    fn fields<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        if self.array || self.ty < 0 {
+            return Err(de::Error::custom("expected a struct or message"));
+        }
+        let definition = self.definition()?;
+        let shape = match definition.kind {
+            DefinitionKind::Struct => Shape::Struct { next: 0 },
+            DefinitionKind::Message => Shape::Message {
+                field: None,
+                keep: self.keep,
+            },
+            DefinitionKind::Enum => {
+                return Err(de::Error::custom(
+                    "expected a struct or message, found an enum",
+                ));
+            }
+        };
+        let reader = self.reader;
+        reader.enter()?;
+        let result = visitor.visit_map(Fields {
+            reader: &mut *reader,
+            schema: self.schema,
+            definition,
+            shape,
+        });
+        reader.depth -= 1;
+        result
+    }
+}
+
+/// Each serde method reads only the shape its type asks for, so a type's visitor is compiled for
+/// that shape alone rather than for every shape a Kiwi value can take.
+impl<'a> de::Deserializer<'a> for Decoder<'_, 'a> {
+    type Error = Error;
+
+    fn deserialize_any<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        if self.array {
+            if self.ty == BYTE {
+                return self.bytes(visitor);
+            }
+            return self.elements(visitor);
+        }
+        if self.ty >= 0 && self.definition()?.kind != DefinitionKind::Enum {
+            return self.fields(visitor);
+        }
+        self.scalar(visitor)
+    }
+
+    fn deserialize_struct<V: Visitor<'a>>(
+        self,
+        _: &'static str,
+        _: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Error> {
+        self.fields(visitor)
+    }
+
+    fn deserialize_map<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.fields(visitor)
+    }
+
+    fn deserialize_seq<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.elements(visitor)
+    }
+
+    fn deserialize_bytes<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.bytes(visitor)
+    }
+
+    fn deserialize_byte_buf<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.bytes(visitor)
     }
 
     /// A field a message holds is present; one it leaves out never reaches the decoder.
@@ -181,11 +247,11 @@ impl<'a> de::Deserializer<'a> for Decoder<'_, 'a> {
         visitor: V,
     ) -> Result<V::Value, Error> {
         if self.array || self.ty < 0 {
-            return self.deserialize_any(visitor);
+            return Err(de::Error::custom("expected an enum member"));
         }
         let definition = self.definition()?;
         if definition.kind != DefinitionKind::Enum {
-            return self.deserialize_any(visitor);
+            return Err(de::Error::custom("expected an enum member"));
         }
         visitor.visit_enum(Member(member(definition, self.reader)?))
     }
@@ -203,10 +269,45 @@ impl<'a> de::Deserializer<'a> for Decoder<'_, 'a> {
         visitor.visit_newtype_struct(self)
     }
 
+    fn deserialize_bool<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_u8<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_i32<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_u32<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_i64<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_u64<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_f64<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_str<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
+    fn deserialize_string<V: Visitor<'a>>(self, visitor: V) -> Result<V::Value, Error> {
+        self.scalar(visitor)
+    }
+
     forward_to_deserialize_any! {
         <W: Visitor<'a>>
-        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string bytes byte_buf unit
-        unit_struct seq tuple tuple_struct map struct identifier
+        i8 i16 i128 u16 u128 f32 char unit unit_struct tuple tuple_struct identifier
     }
 }
 
@@ -291,22 +392,57 @@ impl<'a> SeqAccess<'a> for Elements<'_, 'a> {
     }
 }
 
-/// A struct's fields, every one present and in order.
-struct StructFields<'r, 'a> {
-    reader: &'r mut Reader<'a>,
-    schema: &'a Schema,
-    fields: &'a [Field],
-    next: usize,
+/// How a definition's fields are laid out.
+enum Shape<'r, 'a> {
+    /// A struct: every field, in order.
+    Struct { next: usize },
+    /// A message: the fields it holds, by their ids until the zero that ends it, those `keep`
+    /// rejects skipped.
+    Message {
+        field: Option<&'a Field>,
+        keep: Option<&'r dyn Fn(&str) -> bool>,
+    },
 }
 
-impl<'a> MapAccess<'a> for StructFields<'_, 'a> {
+/// A struct's or a message's fields, one type for both so a visitor is compiled once.
+struct Fields<'r, 'a> {
+    reader: &'r mut Reader<'a>,
+    schema: &'a Schema,
+    definition: &'a Definition,
+    shape: Shape<'r, 'a>,
+}
+
+impl<'a> Fields<'_, 'a> {
+    /// The next field, or `None` past the last.
+    fn next_field(&mut self) -> Result<Option<&'a Field>, Error> {
+        match &mut self.shape {
+            Shape::Struct { next } => Ok(self.definition.fields.get(*next)),
+            Shape::Message { field, keep } => loop {
+                let id = self.reader.varuint()?;
+                if id == 0 {
+                    return Ok(None);
+                }
+                let index = *self.definition.by_id.get(id as usize).ok_or(Malformed)?;
+                let found =
+                    &self.definition.fields[index.checked_sub(1).ok_or(Malformed)? as usize];
+                if keep.is_none_or(|keep| keep(&found.name)) {
+                    *field = Some(found);
+                    return Ok(Some(found));
+                }
+                self.reader.skip_field(self.schema, found)?;
+            },
+        }
+    }
+}
+
+impl<'a> MapAccess<'a> for Fields<'_, 'a> {
     type Error = Error;
 
     fn next_key_seed<K: DeserializeSeed<'a>>(
         &mut self,
         seed: K,
     ) -> Result<Option<K::Value>, Error> {
-        let Some(field) = self.fields.get(self.next) else {
+        let Some(field) = self.next_field()? else {
             return Ok(None);
         };
         seed.deserialize(BorrowedStrDeserializer::new(field.name.as_str()))
@@ -314,53 +450,14 @@ impl<'a> MapAccess<'a> for StructFields<'_, 'a> {
     }
 
     fn next_value_seed<V: DeserializeSeed<'a>>(&mut self, seed: V) -> Result<V::Value, Error> {
-        let field = &self.fields[self.next];
-        self.next += 1;
-        seed.deserialize(Decoder {
-            reader: &mut *self.reader,
-            schema: self.schema,
-            ty: field.ty,
-            array: field.is_array,
-            keep: None,
-        })
-    }
-}
-
-/// A message's fields, those it holds, by their ids until the zero that ends it.
-struct MessageFields<'r, 'a> {
-    reader: &'r mut Reader<'a>,
-    schema: &'a Schema,
-    definition: &'a Definition,
-    field: Option<&'a Field>,
-    keep: Option<&'r dyn Fn(&str) -> bool>,
-}
-
-impl<'a> MapAccess<'a> for MessageFields<'_, 'a> {
-    type Error = Error;
-
-    fn next_key_seed<K: DeserializeSeed<'a>>(
-        &mut self,
-        seed: K,
-    ) -> Result<Option<K::Value>, Error> {
-        let field = loop {
-            let id = self.reader.varuint()?;
-            if id == 0 {
-                return Ok(None);
+        let field = match &mut self.shape {
+            Shape::Struct { next } => {
+                let field = self.definition.fields.get(*next).ok_or(Malformed)?;
+                *next += 1;
+                field
             }
-            let index = *self.definition.by_id.get(id as usize).ok_or(Malformed)?;
-            let field = &self.definition.fields[index.checked_sub(1).ok_or(Malformed)? as usize];
-            if self.keep.is_none_or(|keep| keep(&field.name)) {
-                break field;
-            }
-            self.reader.skip_field(self.schema, field)?;
+            Shape::Message { field, .. } => field.take().ok_or(Malformed)?,
         };
-        self.field = Some(field);
-        seed.deserialize(BorrowedStrDeserializer::new(field.name.as_str()))
-            .map(Some)
-    }
-
-    fn next_value_seed<V: DeserializeSeed<'a>>(&mut self, seed: V) -> Result<V::Value, Error> {
-        let field = self.field.take().ok_or(Malformed)?;
         seed.deserialize(Decoder {
             reader: &mut *self.reader,
             schema: self.schema,
