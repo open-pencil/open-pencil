@@ -35,10 +35,15 @@ const islands = computed(() => {
   const slideId = current?.slideIds[current.index]
   if (!current || current.moving || !slideId) return []
   void current.played
-  const resting = store.presentationScene().layers
+  // A layer whose build, or the build of a layer inside it, has not played yet stays on the
+  // canvas, which keeps the unplayed layers hidden; it goes live once its builds have played.
+  const held = [...store.presentationScene().layers].flatMap(([id, frame]) =>
+    frame.opacity === 0 ? [id] : []
+  )
   return slideIslandRoots(store.graph, slideId).flatMap((id) => {
     const node = store.graph.getNode(id)
-    if (!node || resting.get(id)?.opacity === 0) return []
+    if (!node || held.some((layer) => layer === id || store.graph.isDescendant(layer, id)))
+      return []
     return [{ id, x: node.x, y: node.y }]
   })
 })
@@ -96,6 +101,7 @@ useEventListener(
   window,
   'keydown',
   (event: KeyboardEvent) => {
+    if (inControl(event)) return
     if (NEXT_KEYS.has(event.key)) store.presentNext()
     else if (PREVIOUS_KEYS.has(event.key)) store.presentPrevious()
     else if (event.key === 'Home') store.presentSlide(0)
@@ -108,7 +114,23 @@ useEventListener(
   { capture: true }
 )
 
+/**
+ * Whether an event belongs to a live control on the slide or to a button of the presentation,
+ * which take their own keys. Focus left on the editor's buttons behind the deck does not count.
+ */
+function inControl(event: Event): boolean {
+  return event
+    .composedPath()
+    .some(
+      (target) =>
+        target instanceof HTMLElement &&
+        (target.dataset.testId === 'slide-islands' ||
+          (target.tagName === 'BUTTON' && Boolean(root.value?.contains(target))))
+    )
+}
+
 function onPointerDown(event: PointerEvent) {
+  if (inControl(event)) return
   if (event.button === 0) store.presentNext()
   else if (event.button === 2) store.presentPrevious()
 }
@@ -132,7 +154,6 @@ function onPointerDown(event: PointerEvent) {
       :islands="islands"
       :placement="placement"
       :revision="0"
-      @pointerdown.stop
     />
     <button
       type="button"

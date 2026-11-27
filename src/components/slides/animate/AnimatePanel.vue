@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import type { Easing, SceneNode } from '@open-pencil/scene-graph'
 import {
   animatedLayers,
+  animationSlide,
   layerAnimationDirection,
   layerAnimationStyle,
   MOTION_DIRECTIONS,
@@ -28,6 +30,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import animateTheme from '@/theme/slides/animate'
 
 import AnimateDirection from './AnimateDirection.vue'
 
@@ -37,6 +40,7 @@ import AnimateDirection from './AnimateDirection.vue'
  */
 const store = useEditorStore()
 const messages = useMessages('slides')
+const ui = tv(animateTheme)()
 
 /** The slides the transition applies to: those selected, else the one on the stage, else the one holding the selection. */
 const slides = useSceneComputed<SceneNode[]>(() => {
@@ -131,13 +135,11 @@ const layers = useSceneComputed(() =>
       }))
     : []
 )
-/** Selected layers on the slide that have no animation yet. */
-const addable = computed(() =>
+/** Selected layers on the slide that can animate and do not yet. */
+const addable = useSceneComputed(() =>
   [...store.state.selectedIds].filter((id) => {
     const node = store.graph.getNode(id)
-    return node && node.type !== 'SLIDE' && !node.animation && slide.value
-      ? store.graph.isDescendant(id, slide.value.id)
-      : false
+    return node && !node.animation && animationSlide(store.graph, id)?.id === slide.value?.id
   })
 )
 /** The animation the panel edits: the one of the only selected layer. */
@@ -201,8 +203,8 @@ type MotionPatch = { duration?: number; easing?: Easing }
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col overflow-y-auto" data-test-id="animate-panel">
-    <p v-if="!slide" class="px-3 py-6 text-center text-2xs text-muted">
+  <div :class="ui.root()" data-test-id="animate-panel">
+    <p v-if="!slide" :class="ui.pick()">
       {{ messages.pickSlide }}
     </p>
     <template v-else>
@@ -225,19 +227,14 @@ type MotionPatch = { duration?: number; easing?: Easing }
             <icon-lucide-plus class="size-3.5" />
           </IconButton>
         </template>
-        <div v-if="transition && transitionMotion" class="flex flex-col gap-1.5">
+        <div v-if="transition && transitionMotion" :class="ui.fields()">
           <AppSelect
             v-model="kind"
             :label="messages.transitionStyle"
             :options="kindOptions"
             data-property="animate-transition-style"
           />
-          <AnimateDirection
-            v-if="direction"
-            :direction="direction"
-            data-property="animate-transition-direction"
-            @update="setDirection"
-          />
+          <AnimateDirection v-if="direction" :direction="direction" @update="setDirection" />
           <MotionFields
             v-if="kind !== 'NONE'"
             :motion="transitionMotion"
@@ -282,25 +279,25 @@ type MotionPatch = { duration?: number; easing?: Easing }
             <icon-lucide-plus class="size-3.5" />
           </IconButton>
         </template>
-        <p v-if="layers.length === 0" class="text-2xs text-muted">{{ messages.noAnimations }}</p>
-        <ol v-else class="flex flex-col gap-1">
+        <p v-if="layers.length === 0" :class="ui.empty()">{{ messages.noAnimations }}</p>
+        <ol v-else :class="ui.steps()">
           <li v-for="(layer, index) in layers" :key="layer.id">
             <button
               type="button"
-              class="flex w-full items-center gap-2 rounded px-1.5 py-1 text-start text-xs hover:bg-hover aria-pressed:bg-accent/15"
+              :class="ui.step()"
               :aria-pressed="editing?.id === layer.id"
               data-test-id="animate-step"
               @click="store.select([layer.id])"
             >
-              <span class="w-4 shrink-0 text-end text-3xs text-muted tabular-nums">
+              <span :class="ui.stepNumber()">
                 {{ index + 1 }}
               </span>
-              <span class="min-w-0 flex-1 truncate">{{ layer.name }}</span>
-              <span class="shrink-0 text-2xs text-muted">{{ summary(layer.animation) }}</span>
+              <span :class="ui.stepName()">{{ layer.name }}</span>
+              <span :class="ui.stepSummary()">{{ summary(layer.animation) }}</span>
             </button>
           </li>
         </ol>
-        <div v-if="editing && editingMotion" class="mt-2 flex flex-col gap-1.5">
+        <div v-if="editing && editingMotion" :class="ui.editor()">
           <AppSelect
             v-model="layerStyle"
             :label="messages.transitionStyle"
@@ -308,6 +305,7 @@ type MotionPatch = { duration?: number; easing?: Easing }
             data-property="animate-layer-style"
           />
           <MotionFields
+            :key="editing.id"
             :motion="editingMotion"
             :duration-label="messages.duration"
             :easing-label="messages.easing"
@@ -325,7 +323,7 @@ type MotionPatch = { duration?: number; easing?: Easing }
             data-property="animate-layer-trigger"
           />
           <SegmentedControl v-model="phase" :options="phaseOptions" :label="messages.phase" />
-          <div class="flex items-center justify-end gap-1">
+          <div :class="ui.actions()">
             <IconButton
               :label="messages.moveEarlier"
               :disabled="layers[0]?.id === editing.id"

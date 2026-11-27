@@ -27,7 +27,8 @@ useAppTheme()
 const current = computed(() => status.value?.slides[status.value.index] ?? null)
 const next = computed(() => status.value?.slides[status.value.index + 1] ?? null)
 
-const NOTES_SIZES = [14, 16, 18, 22, 26, 32]
+/** Note sizes in rem, so they follow the interface's text size. */
+const NOTES_SIZES = [0.875, 1, 1.125, 1.375, 1.625, 2]
 const notesSize = ref(2)
 
 /** The timer counts from the presentation's start, or from when the presenter restarted it. */
@@ -146,7 +147,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
           </div>
           <div
             :class="ui.notes()"
-            :style="{ fontSize: `${NOTES_SIZES[notesSize]}px` }"
+            :style="{ fontSize: `${NOTES_SIZES[notesSize]}rem` }"
             data-test-id="presenter-notes"
           >
             <span v-if="current?.notes">{{ current.notes }}</span>
