@@ -46,6 +46,13 @@ describe('parseWebOpenParams', () => {
     expect(parseWebOpenParams('?file=file%3A%2F%2F%2Fetc%2Fpasswd.pen')).toBeNull()
   })
 
+  test("accepts a board's and a deck's own files", () => {
+    for (const name of ['board.jam', 'talk.deck'])
+      expect(parseWebOpenParams(`?file=https%3A%2F%2Fexample.com%2F${name}`)?.file.href).toBe(
+        `https://example.com/${name}`
+      )
+  })
+
   test('refuses another extension', () => {
     expect(parseWebOpenParams('?file=https%3A%2F%2Fexample.com%2Fa.svg')).toBeNull()
   })

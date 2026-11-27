@@ -392,15 +392,21 @@ export function createSlideActions(ctx: EditorContext, zoomToFit: () => void) {
     })
   })
   // A deck opens on its first slide, as Figma's does; a page without slides shows whole.
+  // A page read from a file may get its layers only when shown, so it is looked at again then.
+  let awaitingLayers = false
   const openOnFirstSlide = () => {
     ctx.state.focusedSlideId = slideOrder().at(0) ?? null
-    if (ctx.state.focusedSlideId === null) return
+    awaitingLayers = ctx.state.focusedSlideId === null
+    if (awaitingLayers) return
     const { width, height } = ctx.getViewportSize()
     // A canvas not yet measured is fitted by its host once it has a size.
     if (width > 0 && height > 0) zoomToFit()
   }
   ctx.onEditorEvent('graph:replaced', openOnFirstSlide)
   ctx.onEditorEvent('page:changed', openOnFirstSlide)
+  ctx.onEditorEvent('page:shown', () => {
+    if (awaitingLayers) openOnFirstSlide()
+  })
   // A new editor's canvas has no size of its own yet, so its host fits the slide once shown.
   ctx.state.focusedSlideId = slideOrder().at(0) ?? null
 
