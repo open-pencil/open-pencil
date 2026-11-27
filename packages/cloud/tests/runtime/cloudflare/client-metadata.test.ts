@@ -3,6 +3,8 @@ import dns from 'node:dns/promises'
 
 import { fetchClientMetadataOnCloudflare } from '#cloud/runtime/cloudflare/client-metadata'
 
+import { asDouble } from '@open-pencil/test-support/doubles'
+
 const realFetch = globalThis.fetch
 const document = 'https://agent.example.com/client.json'
 
@@ -14,8 +16,12 @@ function noRecords(): never {
 /** Answers lookups with `addresses` and records what else the transport fetched, and how. */
 function resolveTo(addresses: { A?: string[]; AAAA?: string[] }) {
   const fetched: { url: string; redirect?: RequestRedirect }[] = []
-  spyOn(dns, 'resolve4').mockImplementation(async () => addresses.A ?? noRecords())
-  spyOn(dns, 'resolve6').mockImplementation(async () => addresses.AAAA ?? noRecords())
+  spyOn(dns, 'resolve4').mockImplementation(
+    asDouble<typeof dns.resolve4>(async () => addresses.A ?? noRecords())
+  )
+  spyOn(dns, 'resolve6').mockImplementation(
+    asDouble<typeof dns.resolve6>(async () => addresses.AAAA ?? noRecords())
+  )
   globalThis.fetch = Object.assign(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(input instanceof Request ? input.url : input)
