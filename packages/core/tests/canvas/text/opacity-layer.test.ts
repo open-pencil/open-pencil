@@ -45,7 +45,13 @@ await fontManager.markLoaded(
   await Bun.file(repoPath('packages/core/assets/NotoNaskhArabic-Regular.ttf')).arrayBuffer()
 )
 fontManager.setArabicFallbackFamily(ARABIC_FAMILY)
+// No web provider is asked, so a family found nowhere is missing at once, not after a lookup.
+const providers = fontManager.enabledOnlineFontProviders()
+fontManager.setOnlineFontProviders({})
 afterAll(() => {
+  fontManager.setOnlineFontProviders(
+    Object.fromEntries(providers.map((provider) => [provider, true]))
+  )
   loading.destroy()
   loaded.destroy()
 })

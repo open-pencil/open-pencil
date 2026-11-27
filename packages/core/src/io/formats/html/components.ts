@@ -1,7 +1,12 @@
 import { pick } from 'es-toolkit'
 
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
-import { COMPONENT_ATTRIBUTES, isMarked, type LayerSources } from '@open-pencil/dom-css/scene-graph'
+import {
+  COMPONENT_ATTRIBUTES,
+  isMarked,
+  isUnseen,
+  type LayerSources
+} from '@open-pencil/dom-css/scene-graph'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReference,
@@ -139,7 +144,8 @@ function requireLayers(sources: LayerSources, page: DesignDocument): void {
   const visit = (parent: DesignDocument | DesignElement) => {
     for (const child of parent.children) {
       if (child.type !== 'element') continue
-      const hidden = child.computedStyle?.display === 'none'
+      // Left out with what it holds, as the import leaves out a box that shows nothing.
+      const hidden = child.computedStyle?.display === 'none' || isUnseen(child)
       if (hidden) continue
       if (isMarked(child) && !layered.has(child)) {
         throw new Error(`The marked <${child.tagName}> is part of other text and has no layer`)

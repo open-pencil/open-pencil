@@ -211,6 +211,8 @@ export interface DocumentRevisionTable {
   documentId: string
   parentRevisionId: string | null
   storageObjectId: string
+  /** The workspace image drawn as the revision's cover, or null for none; see migration 022. */
+  coverChecksum: Generated<string | null>
   createdBy: string
   createdAt: TimestampColumn
 }

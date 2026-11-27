@@ -59,6 +59,26 @@ describe('components a page marks', () => {
     expect(named(graph, 'Label')).toMatchObject({ type: 'COMPONENT', fills: [] })
   })
 
+  test('leave out a box beside them that shows nothing and takes no room', async () => {
+    const hidden = '<input type="checkbox" aria-hidden="true" style="position:absolute;opacity:0">'
+    const { graph } = await readHTMLDocument(
+      `<div data-op-component-set="Check"><button data-op-component="Checked=false">A</button>${hidden}<button data-op-component="Checked=true">B</button>${hidden}</div>`,
+      { components: true }
+    )
+    const set = named(graph, 'Check')
+    expect(graph.getChildren(set.id).map((child) => child.type)).toEqual(['COMPONENT', 'COMPONENT'])
+  })
+
+  test('leave out a marked box that shows nothing, with its marks', async () => {
+    const { graph } = await readHTMLDocument(
+      '<div data-op-component-set="Check"><button data-op-component="Checked=false">A</button><i data-op-component="Ghost" style="position:absolute;opacity:0">x</i></div>',
+      { components: true }
+    )
+    expect(graph.getChildren(named(graph, 'Check').id).map((child) => child.name)).toEqual([
+      'Checked=false'
+    ])
+  })
+
   test('refuse a mark on a word inside a sentence', async () => {
     await expect(
       readHTMLDocument('<p>A <b data-op-text="Label">B</b> C</p>', { components: true })

@@ -22,10 +22,16 @@ export function previewBox(page: Page, islandId: string, name: string): Promise<
     })
 }
 
-/** The height preview gives the island's own layer. */
-export function previewHeight(page: Page, islandId: string): Promise<number> {
+/** The size preview gives the island's own layer. */
+export function previewSize(
+  page: Page,
+  islandId: string
+): Promise<{ width: number; height: number }> {
   return page
     .locator(`[data-island="${islandId}"] [data-layer]`)
     .first()
-    .evaluate((element: HTMLElement) => element.offsetHeight)
+    .evaluate((element: HTMLElement) => ({
+      width: element.offsetWidth,
+      height: element.offsetHeight
+    }))
 }

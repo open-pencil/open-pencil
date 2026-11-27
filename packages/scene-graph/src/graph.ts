@@ -24,6 +24,7 @@ import Matrix from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
+import { SharedStyleIndex } from './shared-style-index'
 import { markSourceFieldsEdited } from './source-metadata'
 import { strokeLineChanges } from './strokes'
 import { textCacheInvalidationChanges } from './text/picture'
@@ -36,6 +37,7 @@ import type {
   NodeType,
   SceneGraphEventHandlers,
   SceneNode,
+  SharedStyleType,
   Variable,
   VariableCollection,
   VariableType,
@@ -87,6 +89,7 @@ export class SceneGraph {
   instanceIndex = new Map<string, Set<string>>()
   /** Every connector in the graph, so routing need not scan every layer. */
   connectorIds = new Set<string>()
+  readonly sharedStyleIndex = new SharedStyleIndex(() => this.nodes)
 
   constructor(private readonly idGenerator: () => string = generateId) {
     const root = createDefaultNode(this.idGenerator, 'FRAME', {
@@ -463,6 +466,7 @@ export class SceneGraph {
     node.parentId = parentId
     this.nodes.set(node.id, node)
     if (node.type === 'CONNECTOR') this.connectorIds.add(node.id)
+    this.sharedStyleIndex.added(node)
     for (const observer of this.changeObservers) observer.created(node)
     if (node.type === 'INSTANCE' && node.componentId) this.indexInstance(node.componentId, node.id)
     this.emitter.emit('node:created', node)
@@ -621,6 +625,15 @@ export class SceneGraph {
     this.applyNodeChanges(node, this.impliedChanges(node, omitBy(changes, isUndefined)))
   }
 
+  /** The node of the shared style with this ID, when the document holds one of `type`. */
+  getSharedStyleNode(styleId: string, type: SharedStyleType): SceneNode | undefined {
+    return this.sharedStyleIndex.styleNode(styleId, type)
+  }
+
+  private styleIndexWillChange(node: SceneNode, changes: Partial<SceneNode>): boolean {
+    return !this.isApplyingLayout && this.sharedStyleIndex.willChange(node, changes)
+  }
+
   /**
    * `changes` with what they also set: a size from outside layout on a generated frame, and
    * strokes and the layer's line fields kept in agreement (`strokeLineChanges`).
@@ -683,9 +696,11 @@ export class SceneGraph {
       changes,
       this.scopeDepths.sourceMetadata === 0 && !this.isApplyingDerivedLayout
     )
+    const restyled = this.styleIndexWillChange(node, changes)
     Object.assign(node, changes)
     this.followListBindings(node, changes)
     for (const key of absent) Reflect.deleteProperty(node, key)
+    this.sharedStyleIndex.didChange(node, restyled)
     this.publishNodeUpdate(id, changes)
   }
 
@@ -803,6 +818,7 @@ export class SceneGraph {
 
     if (node.type === 'INSTANCE' && node.componentId) this.unindexInstance(node.componentId, id)
     this.connectorIds.delete(id)
+    this.sharedStyleIndex.removed(node)
     this.nodes.delete(id)
     this.emitter.emit('node:deleted', id, node.parentId)
   }

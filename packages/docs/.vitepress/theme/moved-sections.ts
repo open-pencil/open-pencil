@@ -20,6 +20,16 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'saving-files': '/user-guide/files#save',
     'round-trip-compatibility': '/user-guide/files#save'
   },
+  // Libraries became a page of their own, and behaviours a task on the Components page.
+  '/user-guide/components/': {
+    'component-libraries': '/user-guide/component-libraries',
+    'publish-a-library': '/user-guide/component-libraries#publish-a-library',
+    'enable-and-insert-library-assets': '/user-guide/component-libraries#use-a-library',
+    'review-and-accept-updates': '/user-guide/component-libraries#update-to-a-new-version',
+    'local-storage-and-offline-use': '/user-guide/component-libraries#where-libraries-live',
+    'saving-consumer-documents': '/user-guide/component-libraries#where-libraries-live',
+    'behaviours-and-preview': '/user-guide/components#make-a-component-work-like-a-control'
+  },
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
     'connect-a-server': '/cloud/connect',

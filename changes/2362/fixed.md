@@ -1,0 +1,1 @@
+- Texts follow the variables their text style binds, in every mode and at an instance's scale; while the style is attached, a text's own binding of a field the style sets waits, as in Figma, and binding one on the whole text keeps the style (#2362).

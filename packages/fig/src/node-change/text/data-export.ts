@@ -63,9 +63,8 @@ function textStyleOverrideToKiwi(
   if (style.lineHeight !== undefined) override.lineHeight = figmaLineHeight(style.lineHeight)
   applyTextDecorationOverrideFields(override, style, fillToKiwiPaint)
   if (style.textCase) override.textCase = style.textCase
-  if (style.fills && style.fills.length > 0) {
-    override.fillPaints = style.fills.map(fillToKiwiPaint)
-  }
+  // An empty list stays: the range draws nothing, as Figma stores a range whose fills were removed.
+  if (style.fills) override.fillPaints = style.fills.map(fillToKiwiPaint)
   return override
 }
 
