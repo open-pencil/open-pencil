@@ -211,6 +211,8 @@ export interface DocumentRevisionTable {
   documentId: string
   parentRevisionId: string | null
   storageObjectId: string
+  /** The workspace image drawn as the revision's cover, or null for none; see migration 022. */
+  coverChecksum: Generated<string | null>
   createdBy: string
   createdAt: TimestampColumn
 }
@@ -531,7 +533,7 @@ export interface CloudDatabase {
   passkey: PasskeyTable
   mfaAssurance: MFAAssuranceTable
   signIn: SignInTable
-  /** Saves per UTC day, and accounts active on each, counted as they happen; see migration 022. */
+  /** Saves per UTC day, and accounts active on each, counted as they happen; see migration 023. */
   dailyRevisionCount: { day: string; count: Generated<number> }
   dailyActiveAccount: { day: string; userId: string }
   verification: VerificationTable

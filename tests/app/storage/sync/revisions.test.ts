@@ -31,6 +31,8 @@ function revisionedProvider() {
   const documents = new Map<string, { bytes: Uint8Array; revision: string; name: string }>()
   let counter = 0
   const writes: { id: string; base: string | null }[] = []
+  /** The cover each write carried, by write. */
+  const covers: (number[] | null)[] = []
   // The Cloud adapter can report a conflict without being able to name the newer revision.
   let conflictsNameRevision = true
   const adapter: StorageAdapter = {
@@ -54,6 +56,7 @@ function revisionedProvider() {
       const current = documents.get(id)
       const base = options?.baseRevision ?? null
       writes.push({ id, base })
+      covers.push(options?.cover ? [...options.cover] : null)
       if (current && current.revision !== base) {
         throw new StorageRevisionConflictError(conflictsNameRevision ? current.revision : null)
       }
@@ -72,6 +75,7 @@ function revisionedProvider() {
     adapter,
     documents,
     writes,
+    covers,
     hideConflictRevisions() {
       conflictsNameRevision = false
     },
@@ -112,12 +116,13 @@ afterEach(() => {
   resetStorageProviderRegistryForTests()
 })
 
-async function save(canvasId: string, bytes: number[], name = 'Design') {
+async function save(canvasId: string, bytes: number[], name = 'Design', cover?: number[]) {
   await persistStorageCanvasLocally({
     ...location,
     canvasId,
     name,
-    figBytes: new Uint8Array(bytes)
+    figBytes: new Uint8Array(bytes),
+    coverBytes: cover ? new Uint8Array(cover) : null
   })
   await drain()
 }
@@ -151,6 +156,13 @@ describe('storage revisions', () => {
       profileId: 'server-a',
       containerId: 'workspace-1'
     })
+  })
+
+  test('sends the cover a save drew with its file, and none once a save draws none', async () => {
+    await save('canvas-1', [1], 'Design', [9, 9])
+    await save('canvas-1', [1, 2])
+
+    expect(provider.covers).toEqual([[9, 9], null])
   })
 
   test('keeps both versions and waits for a choice when someone else saved first', async () => {

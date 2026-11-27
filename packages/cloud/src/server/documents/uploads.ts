@@ -89,6 +89,7 @@ export function createDocumentUploads(
       revisionId,
       storageObjectId,
       images: revisionImages,
+      cover,
       name,
       kind
     }: {
@@ -104,6 +105,7 @@ export function createDocumentUploads(
       revisionId: string
       storageObjectId: string
       images: CommitUploadInput['images']
+      cover: CommitUploadInput['cover']
       name: CommitUploadInput['name']
       kind: CommitUploadInput['kind']
     }
@@ -142,10 +144,20 @@ export function createDocumentUploads(
         documentId: upload.documentId,
         parentRevisionId: upload.baseRevisionId,
         storageObjectId,
+        coverChecksum: cover ?? null,
         createdBy: userId
       })
       .execute()
     await recordSave(transaction, userId)
+    if (
+      cover &&
+      !(await images.holdCoverInTransaction(transaction, {
+        workspaceId: upload.workspaceId,
+        checksum: cover
+      }))
+    ) {
+      throw new UploadInvalidError()
+    }
     const attached = await images.attachInTransaction(transaction, {
       workspaceId: upload.workspaceId,
       revisionId,
@@ -276,6 +288,9 @@ export function createDocumentUploads(
     if (input.checksum !== upload.checksum) throw new UploadInvalidError()
     if (upload.status !== 'committed') {
       await refuseAtStorageLimit(upload.documentId)
+      if (input.cover && !(await images.isCover(upload.workspaceId, input.cover))) {
+        throw new UploadInvalidError()
+      }
       const checkpointed =
         upload.kind === 'image'
           ? await finalizeUpload(upload, input.multipart, (stored) =>
@@ -291,6 +306,7 @@ export function createDocumentUploads(
                   revisionId: crypto.randomUUID(),
                   storageObjectId: crypto.randomUUID(),
                   images: input.images,
+                  cover: input.cover,
                   name: input.name,
                   kind: input.kind
                 })
