@@ -65,7 +65,7 @@ function drawnShape(kind: SceneNode['shapeWithTextType'], strokes: Stroke[]) {
     const offset = strokes.length > 0 ? STROKE.weight / 2 : 0
     return (x: number, y: number) => pixels[((y + offset) * width + x + offset) * 4 + 3]
   } finally {
-    surface.delete()
+    surface.dispose()
   }
 }
 

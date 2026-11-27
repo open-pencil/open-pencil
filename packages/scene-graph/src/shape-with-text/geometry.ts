@@ -561,6 +561,7 @@ export function shapeWithTextGeometry(
 export function shapeWithTextCutsFill(
   node: Pick<SceneNode, 'shapeWithTextType' | 'width' | 'height' | 'strokes'>
 ): boolean {
-  if (node.strokes.some((stroke) => stroke.visible && stroke.opacity > 0)) return false
+  if (node.strokes.some((stroke) => stroke.visible && stroke.opacity > 0 && stroke.weight > 0))
+    return false
   return shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height).details.length > 0
 }

@@ -82,12 +82,12 @@ describe('shape-with-text geometry', () => {
   })
 
   test('the fill is cut along the lines only of a shape with inner lines and no stroke drawing', () => {
-    const stroke = (opacity: number): Stroke => ({
+    const stroke = (opacity: number, weight = 4): Stroke => ({
       type: 'SOLID',
       color: { r: 0, g: 0, b: 0, a: 1 },
       opacity,
       visible: true,
-      weight: 4,
+      weight,
       align: 'CENTER'
     })
     const shape = (shapeWithTextType: 'ENG_DATABASE' | 'SQUARE', strokes: Stroke[]) => ({
@@ -98,6 +98,7 @@ describe('shape-with-text geometry', () => {
     })
     expect(shapeWithTextCutsFill(shape('ENG_DATABASE', []))).toBe(true)
     expect(shapeWithTextCutsFill(shape('ENG_DATABASE', [stroke(0)]))).toBe(true)
+    expect(shapeWithTextCutsFill(shape('ENG_DATABASE', [stroke(1, 0)]))).toBe(true)
     expect(shapeWithTextCutsFill(shape('ENG_DATABASE', [stroke(1)]))).toBe(false)
     expect(shapeWithTextCutsFill(shape('SQUARE', []))).toBe(false)
   })
