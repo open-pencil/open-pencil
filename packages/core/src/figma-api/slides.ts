@@ -8,6 +8,7 @@ import {
   SLIDE_TRANSITION_STYLES,
   slideGrid,
   slideRows,
+  resolveSlideTransition,
   slideSettings,
   type SlideTransition,
   type SlideTransitionStyle
@@ -20,6 +21,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 
 import { invalid, parseFigma, received } from './validation'
 
@@ -75,16 +77,19 @@ const UNSET_TRANSITION: PluginSlideTransition = {
 }
 
 /** A transition as the plugin API gives it: values, whichever variables they follow. */
-function pluginTransition(transition: SlideTransition): PluginSlideTransition {
-  const { timing } = transition
+/**
+ * A slide's transition as the plugin API gives it: the values it plays, with the variables it
+ * follows read for the slide, as presenting reads them. Setting it back sets those values.
+ */
+function pluginTransition(graph: SceneGraph, slide: SceneNode): PluginSlideTransition {
+  const played = resolveSlideTransition(graph, slide)
+  if (!played) return structuredClone(UNSET_TRANSITION)
   return {
-    style: transition.style,
-    duration: transition.duration,
-    curve: curveOf(transition.easing.easing),
+    style: played.style,
+    duration: played.duration,
+    curve: curveOf(played.easing.easing),
     timing:
-      timing.type === 'ON_CLICK'
-        ? { type: 'ON_CLICK' }
-        : { type: 'AFTER_DELAY', delay: timing.delay }
+      played.delay === null ? { type: 'ON_CLICK' } : { type: 'AFTER_DELAY', delay: played.delay }
   }
 }
 
@@ -176,8 +181,8 @@ export function installSlideNodeProxyAccessors(
     },
     getSlideTransition: {
       value(this: ProxyThis): PluginSlideTransition {
-        const { transition } = settingsOf(this, 'getSlideTransition')
-        return transition ? pluginTransition(transition) : structuredClone(UNSET_TRANSITION)
+        settingsOf(this, 'getSlideTransition')
+        return pluginTransition(graphOf(this), raw(this, internals))
       }
     },
     setSlideTransition: {

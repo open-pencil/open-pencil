@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { DECK_TYPES } from '@open-pencil/scene-graph/generated'
 import { slideRows, slideSettings } from '@open-pencil/scene-graph/slides'
 
@@ -25,9 +25,35 @@ export function addTransitionSlides(
       if (slideSettings(slide)?.transition) add(slide.id)
 }
 
+/** Whether a layer or any layer inside it animates on its slide. */
+function holdsAnimation(graph: SceneGraph, id: string): boolean {
+  const node = graph.getNode(id)
+  if (!node) return false
+  return node.animation !== null || node.childIds.some((child) => holdsAnimation(graph, child))
+}
+
+/**
+ * The slide a layer was or is on: up its saved parents when it changed since the archive was
+ * read, or its current ones otherwise.
+ */
+function slideAbove(
+  graph: SceneGraph,
+  parentId: string | null | undefined,
+  saved: ReadonlyMap<string, SceneNode> | undefined
+): string | undefined {
+  let id = parentId
+  while (id) {
+    const node = saved?.get(id) ?? graph.getNode(id)
+    if (!node) return undefined
+    if (node.type === 'SLIDE') return node.id
+    id = node.parentId
+  }
+  return undefined
+}
+
 /**
  * A layer's animation is kept in its slide's record, so adding, changing, or deleting one rewrites
- * the slide it was or is on.
+ * the slide it was or is on, as does moving or deleting a layer holding animated ones.
  */
 export function addAnimatedSlides(
   graph: SceneGraph,
@@ -38,10 +64,11 @@ export function addAnimatedSlides(
   for (const id of changes.touched) {
     const node = graph.getNode(id)
     const was = before?.get(id)
-    if (!node?.animation && !was?.animation) continue
-    for (const parentId of new Set([node?.parentId, was?.parentId])) {
-      const slide = parentId ? graph.closest(parentId, (item) => item.type === 'SLIDE') : undefined
-      if (slide) add(slide.id)
-    }
+    if (!holdsAnimation(graph, id) && !was?.animation) continue
+    for (const slide of [
+      slideAbove(graph, node?.parentId, undefined),
+      slideAbove(graph, was?.parentId, before)
+    ])
+      if (slide) add(slide)
   }
 }

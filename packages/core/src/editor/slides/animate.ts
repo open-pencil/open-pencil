@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   animatedLayers,
+  animationSlide,
   defaultLayerAnimation,
   defaultSlideTransition,
   slideSettings,
@@ -10,7 +11,7 @@ import {
 
 import type { EditorContext } from '#core/editor/types'
 
-type Field = 'animation' | 'slide'
+type Field = 'animation'
 
 /**
  * A slide's transition and its layers' animations, edited as the Animate tab edits them: each
@@ -47,28 +48,40 @@ export function createSlideAnimateActions(ctx: EditorContext) {
 
   /**
    * Sets how the slides move on to the next one, or with null takes their transition away; a
-   * function gives each slide's own from its current one, as an edit of one setting does.
+   * function gives each slide's own from its current one, as an edit of one setting does. Only the
+   * transition is recorded, so undo and redo leave notes or skipping someone changed meanwhile.
    */
   function setSlideTransition(
     ids: Iterable<string>,
     transition: SlideTransition | null | ((current: SlideTransition) => SlideTransition)
   ): void {
-    const next = new Map<string, SceneNode['slide']>()
+    const before = new Map<string, SlideTransition | null>()
+    const after = new Map<string, SlideTransition | null>()
     for (const slide of slidesOf(ids)) {
-      const settings = slideSettings(slide)
-      if (!settings) continue
-      const current = settings.transition ?? defaultSlideTransition()
-      const value = typeof transition === 'function' ? transition(current) : transition
-      next.set(slide.id, { ...settings, transition: value && structuredClone(value) })
+      const current = slideSettings(slide)?.transition ?? null
+      const value =
+        typeof transition === 'function'
+          ? transition(current ?? defaultSlideTransition())
+          : transition
+      before.set(slide.id, current)
+      after.set(slide.id, value && structuredClone(value))
     }
-    write(transition === null ? 'Remove transition' : 'Set transition', 'slide', next)
-  }
-
-  /** The slide a layer is on, or undefined for a layer on no slide. */
-  function slideOf(id: string): SceneNode | undefined {
-    const node = ctx.graph.getNode(id)
-    if (!node?.parentId || node.type === 'SLIDE') return undefined
-    return ctx.graph.closest(node.parentId, (item) => item.type === 'SLIDE') ?? undefined
+    if (after.size === 0) return
+    const apply = (values: ReadonlyMap<string, SlideTransition | null>) => {
+      for (const [id, value] of values) {
+        const node = ctx.graph.getNode(id)
+        const settings = node && slideSettings(node)
+        if (settings)
+          ctx.graph.updateNode(id, { slide: { ...settings, transition: structuredClone(value) } })
+      }
+      ctx.requestRender()
+    }
+    apply(after)
+    ctx.undo.push({
+      label: transition === null ? 'Remove transition' : 'Set transition',
+      forward: () => apply(after),
+      inverse: () => apply(before)
+    })
   }
 
   /** The order of a slide's last step, or -1 for a slide with none. */
@@ -89,7 +102,7 @@ export function createSlideAnimateActions(ctx: EditorContext) {
         visit(child.id)
       }
     }
-    const slides = new Set([...wanted].flatMap((id) => slideOf(id)?.id ?? []))
+    const slides = new Set([...wanted].flatMap((id) => animationSlide(ctx.graph, id)?.id ?? []))
     for (const slide of slides) visit(slide)
     return ordered
   }
@@ -103,7 +116,7 @@ export function createSlideAnimateActions(ctx: EditorContext) {
     const lastOrder = new Map<string, number>()
     for (const id of inLayerOrder(ids)) {
       const node = ctx.graph.getNode(id)
-      const slide = slideOf(id)
+      const slide = animationSlide(ctx.graph, id)
       if (!node || node.animation || !slide) continue
       const last = lastOrder.get(slide.id) ?? lastStep(slide.id)
       lastOrder.set(slide.id, last + 1)
@@ -133,7 +146,7 @@ export function createSlideAnimateActions(ctx: EditorContext) {
 
   /** Moves a layer's animation to `index` among its slide's steps, renumbering them all. */
   function moveLayerAnimation(id: string, index: number): void {
-    const slide = slideOf(id)
+    const slide = animationSlide(ctx.graph, id)
     if (!slide) return
     const layers = animatedLayers(ctx.graph, slide.id)
     const from = layers.findIndex((layer) => layer.id === id)

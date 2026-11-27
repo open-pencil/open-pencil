@@ -1,8 +1,9 @@
 import * as v from 'valibot'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
   animatedLayers,
+  animationSlide,
   createSlide,
   defaultLayerAnimation,
   defaultSlideTransition,
@@ -194,7 +195,13 @@ export const createSlides = defineTool({
       const { graph, pageId } = deckPage(figma)
       const anchor = after === undefined ? lastSlide(graph, pageId) : after
       const rowId = (anchor && graph.getNode(anchor)?.parentId) ?? newSlideRow(graph, pageId).id
-      const ids = Array.from({ length: count }, () => createSlide(graph, rowId).id)
+      // New slides take the size of the slide they follow, wherever it is in its row.
+      const size = anchor ? graph.getNode(anchor) : undefined
+      const ids = Array.from({ length: count }, () => {
+        const slide = createSlide(graph, rowId)
+        if (size) graph.updateNode(slide.id, { width: size.width, height: size.height })
+        return slide.id
+      })
       arrangeSlides(graph, pageId, placed(order(graph, pageId), ids, anchor, newSection))
       renumberSlides(graph, pageId)
       return { slides: ids }
@@ -321,12 +328,6 @@ const animationSpecSchema = v.strictObject({
   ...motionSpecSchema.entries
 })
 
-/** The slide a layer is on, or undefined. */
-function slideOf(graph: SceneGraph, node: SceneNode): SceneNode | undefined {
-  if (!node.parentId || node.type === 'SLIDE') return undefined
-  return graph.closest(node.parentId, (item) => item.type === 'SLIDE') ?? undefined
-}
-
 function layerAnimationFrom(
   graph: SceneGraph,
   current: LayerAnimation,
@@ -360,8 +361,9 @@ export const setAnimations = defineTool({
       const graph = graphOf(figma)
       for (const id of layers) {
         const node = graph.getNode(id)
-        const slide = node && slideOf(graph, node)
-        if (!node || !slide) throw new Error(`${id} is not a layer on a slide`)
+        const slide = animationSlide(graph, id)
+        if (!node || !slide)
+          throw new Error(`${id} is not a layer on a slide outside an instance, which can animate`)
         if (animation === null) {
           graph.updateNode(id, { animation: null })
           continue

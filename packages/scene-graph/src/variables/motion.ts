@@ -31,7 +31,8 @@ export function liveVariable(
   type: Variable['type']
 ): Variable | undefined {
   const variable = id ? graph.variables.get(id) : undefined
-  return variable && !variable.deleted && variable.type === type ? variable : undefined
+  // A deleted variable the document keeps still resolves for the bindings it had.
+  return variable?.type === type ? variable : undefined
 }
 
 /** A TIMING variable's value for `nodeId`, or `fallback` when there is none to read. */
@@ -133,12 +134,18 @@ export function motionFromSpec<T extends Motion>(graph: SceneGraph, spec: Motion
   return motion
 }
 
+/** How a spec names a variable: by its name, or by its ID where another live variable shares it. */
+function specReference(graph: SceneGraph, variable: Variable): { variable: string } {
+  const named = graph.getLiveVariables().filter((item) => item.name === variable.name)
+  return { variable: named.length === 1 ? variable.name : variable.id }
+}
+
 /** A motion as a spec reads it: variables by name, while they exist, else values. */
 export function motionToSpec(graph: SceneGraph, motion: Motion): Required<MotionSpec> {
   const timing = liveVariable(graph, motion.durationVariableId, 'TIMING')
   const easing = liveVariable(graph, motion.easingVariableId, 'EASING')
   return {
-    duration: timing ? { variable: timing.name } : motion.duration,
-    easing: easing ? { variable: easing.name } : structuredClone(motion.easing)
+    duration: timing ? specReference(graph, timing) : motion.duration,
+    easing: easing ? specReference(graph, easing) : structuredClone(motion.easing)
   }
 }

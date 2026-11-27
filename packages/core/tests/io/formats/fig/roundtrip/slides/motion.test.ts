@@ -7,6 +7,7 @@ import { createDocumentGraph } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
+  createSlide,
   defaultLayerAnimation,
   slideBuild,
   slideRows,
@@ -140,5 +141,25 @@ describe('layer animations in a .deck', () => {
     expect(slideBuild(reopened, firstSlide(reopened).id).map((step) => step.layers)).toEqual([
       [{ id: byName(reopened, 'Box').id, animation: defaultLayerAnimation(0) }]
     ])
+  })
+})
+
+describe('moving a group of animated layers between slides', () => {
+  test('rewrites the build of the slide it left and of the one it joined', async () => {
+    const { graph, slide } = deck()
+    const next = createSlide(graph, slide.parentId ?? '')
+    const group = graph.createNode('FRAME', slide.id, { name: 'Group', width: 300, height: 300 })
+    const dot = graph.createNode('ELLIPSE', group.id, { name: 'Dot', width: 50, height: 50 })
+    graph.updateNode(dot.id, { animation: defaultLayerAnimation(0) })
+    const opened = await open(await exportFigFile(graph))
+    opened.reparentNode(byName(opened, 'Group').id, next.id)
+    // Figma reads a slide's build from its own record, so both records must say where the step is.
+    const slides = [...recordsOf(await exportFigFile(opened)).values()].filter(
+      (record) => record.type === 'SLIDE'
+    )
+    const steps = slides.map((record) =>
+      Array.isArray(record.objectAnimations) ? record.objectAnimations.length : 0
+    )
+    expect(steps).toEqual([0, 1])
   })
 })

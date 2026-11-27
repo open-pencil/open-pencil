@@ -23,7 +23,8 @@ export function variableRecord(
   variableId: string | undefined
 ): unknown {
   const variable = variableId ? context.graph.variables.get(variableId) : undefined
-  if (!variableId || !variable || variable.deleted) return undefined
+  // A deleted variable the document keeps is still written for the bindings it had.
+  if (!variableId || !variable) return undefined
   return {
     dataType: 'ALIAS',
     resolvedDataType: variable.type,

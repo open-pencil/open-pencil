@@ -53,10 +53,10 @@ export function easingBezier(easing: Easing): CubicBezier | undefined {
   return easing.bezier ?? PRESET_BEZIERS[easing.easing]
 }
 
-/** The spring an easing is: its own, or its preset's; curves have none. */
+/** The spring an easing is: its own, or its preset's, as a spring without numbers starts; curves have none. */
 export function easingSpring(easing: Easing): Spring | undefined {
   if (!isSpringCurve(easing.easing)) return undefined
-  return easing.spring ?? PRESET_SPRINGS[easing.easing]
+  return easing.spring ?? PRESET_SPRINGS[easing.easing] ?? springWithBounce(0)
 }
 
 /** The curves a curve's numbers name: the preset with exactly them, else a custom curve. */

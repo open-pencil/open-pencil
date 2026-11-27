@@ -1,6 +1,7 @@
 import { compact } from 'es-toolkit/array'
 
 import type { SceneGraph } from '../graph'
+import { findInstanceAncestor } from '../instances/main-component'
 import type { SceneNode } from '../types'
 import { easingPreset } from '../variables/easing'
 import {
@@ -132,4 +133,15 @@ export function slideBuild(graph: SceneGraph, slideId: string): BuildStep[] {
     else steps.push({ onClick: layer.animation.trigger === 'ON_CLICK', layers: [layer] })
   }
   return steps
+}
+
+/**
+ * The slide a layer animates on, or undefined for a layer that cannot have an animation: one on no
+ * slide, a slide itself, or a layer inside an instance, whose component gives it its fields.
+ */
+export function animationSlide(graph: SceneGraph, layerId: string): SceneNode | undefined {
+  const node = graph.getNode(layerId)
+  if (!node?.parentId || node.type === 'SLIDE') return undefined
+  if (findInstanceAncestor(graph, node.parentId)) return undefined
+  return graph.closest(node.parentId, (item) => item.type === 'SLIDE') ?? undefined
 }
