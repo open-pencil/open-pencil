@@ -35,4 +35,3 @@ OpenPencil es un editor de diseño local y de código abierto, compatible con Fi
 
 ## Referencia
 
-- [Menú contextual](./context-menu) — portapapeles, grupos, componentes y otras acciones

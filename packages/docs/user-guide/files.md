@@ -6,7 +6,7 @@ description: Open documents and web pages, place files, and save your work.
 
 # Opening and Saving
 
-OpenPencil opens and saves `.fig` files, the same format Figma uses. It opens web pages and Pencil's `.pen` files too.
+OpenPencil opens and saves `.fig` files, the same format Figma uses. It opens web pages and pen.dev's `.pen` files too.
 
 ## Open a Document
 

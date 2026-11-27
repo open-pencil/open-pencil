@@ -1,4 +1,5 @@
 ---
+pageClass: guide
 title: Cloud Storage
 description: Keep documents and component libraries in your own S3-compatible bucket — AWS S3, Backblaze B2, Cloudflare R2, MinIO, and others.
 ---

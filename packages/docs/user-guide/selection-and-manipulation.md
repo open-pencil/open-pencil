@@ -55,16 +55,35 @@ Drag a selected layer. Arrow keys move it by one pixel, and by ten with <Keys ma
 
 </GuideLegend>
 
-To type an exact size or angle, use **W**, **H**, and the angle field in the Design panel.
+To type an exact size or angle, use **W**, **H**, and the angle field in the Design panel. <Keys mac="⇧ H" other="Shift H" /> and <Keys mac="⇧ V" other="Shift V" /> flip the selection across or upside down.
 
 ## Copy, Paste, and Delete
 
 - <Keys mac="⌘ D" other="Ctrl D" /> makes a copy next to the original.
 - Hold <Keys mac="⌥" other="Alt" /> while you drag to drag out a copy.
 - <Keys mac="⌘ C" other="Ctrl C" /> and <Keys mac="⌘ V" other="Ctrl V" /> copy and paste. A pasted layer keeps its place; to paste under the pointer, right-click and choose **Paste here**.
+- <Keys mac="⇧ ⌘ R" other="Ctrl Shift R" /> pastes in place of the selected layers.
 - <Keys mac="⌫" other="Delete" /> deletes the selection.
 
 Text copied from a web page pastes as one text layer. When you copy part of a page's layout, such as a card, a notice offers **Paste as layers** to rebuild it as frames and text.
+
+## Copy the Look of a Layer
+
+<Keys mac="⌥ ⌘ C" other="Ctrl Alt C" /> copies how a layer looks, and <Keys mac="⌥ ⌘ V" other="Ctrl Alt V" /> gives that look to every selected layer. It works with layers copied in Figma too.
+
+The look is fills, strokes, effects, opacity, blend mode, corner radius, and the styles and variables they use. Between frames it includes auto layout, and between text layers the text style. Position, size, name, and content stay as they are.
+
+## Group Layers
+
+- <Keys mac="⌘ G" other="Ctrl G" /> groups the selection.
+- <Keys mac="⌥ ⌘ G" other="Ctrl Alt G" /> puts it in a new frame instead.
+- <Keys mac="⇧ ⌘ G" other="Ctrl Shift G" /> takes a group, frame, or section apart, and leaves its layers where they are.
+
+To lay out layers in a row or column, use [auto layout](./auto-layout) instead.
+
+## Show a Layer Through a Shape
+
+Put the shape below the layers it should cut out, select them all, and press <Keys mac="⌥ ⌘ M" other="Ctrl Alt M" />. The bottom layer becomes a mask: the layers above show only inside it, such as a photo in a circle. Press it again to turn the mask off.
 
 ## Put Layers in Front or Behind
 

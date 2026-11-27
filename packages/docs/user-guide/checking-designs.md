@@ -1,4 +1,5 @@
 ---
+pageClass: guide
 title: Checking Designs
 description: Find accessibility, consistency, and structure issues with the Lint panel and canvas issue markers.
 ---
@@ -7,18 +8,20 @@ description: Find accessibility, consistency, and structure issues with the Lint
 
 OpenPencil checks the current page as you work and points out layers that break common design rules: text that is hard to read, controls that are too small to tap, colors that should use a variable, and spacing off the scale.
 
-## Lint Panel
+## Find Problems
 
 Open the **Lint** tab in the right panel. Its badge shows how many errors and warnings the page has.
+
+<GuideImage name="checking-designs/lint" alt="A signup card with faint, small text and a small button, its issue markers, and the Lint panel listing low contrast, small text, and a small touch target" />
 
 - **Page** lists every issue on the current page; **Selection** narrows the list to the selected layers and everything inside them; **Document** lists every page's issues, tagging the ones on other pages. Clicking one of those switches to its page. Pages of a large `.fig` file that have not been opened yet are checked once you open them.
 - Issues are grouped by rule, most severe first. Errors and warnings start expanded; suggestions start collapsed.
 - The severity buttons under the scope switch filter errors, warnings, and suggestions on and off.
 - Hover a group title to read what the rule checks and why.
 
-Hover an issue to highlight its layer on the canvas. Click it to select the layer; if it is off screen, the canvas pans to it, and zooms out only when the layer does not fit.
+Hover an issue to highlight its layer on the canvas. Click it to select the layer; if it is off screen, the canvas pans to it, and zooms out only when the layer doesn't fit.
 
-## Fixing Issues
+## Fix Problems
 
 Rows that can be fixed in one step show a button on hover:
 
@@ -31,7 +34,7 @@ Binding colors and rounding pixels keep the design as it looks, so their groups 
 
 Other issues show the value that needs attention, such as a contrast ratio or a touch target size, so you can fix them in the Design panel.
 
-## Canvas Markers
+## See Problems on the Canvas
 
 Canvas markers, page counts, and Layers panel marks stay off until you turn them on, so a file opened in a new profile is not covered in warnings. Turn them on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu. A profile that already stored the choice keeps it.
 
@@ -45,11 +48,11 @@ While they are on, layers with errors and warnings carry a marker at their top-r
 
 Pages with errors or warnings show their count in the page list, checked in the background while you work. The Layers panel marks the same layers: a layer with errors or warnings shows the most severe as an icon, and a collapsed layer with issues inside it shows a dot. Those marks follow the same switch as the canvas markers.
 
-## In the Code Panel
+## See Problems in the Code
 
 The Code tab underlines errors and warnings on the Design JSX, HTML, Vue, or React of their layers, on the property that causes the issue when there is one, such as `size={10}` for small text, or the class that styles the layer. Hover the underline to read the issue. The page is checked while the Lint panel is open or canvas markers are on, and the underlines follow that check and your edits.
 
-## Rules
+## Choose the Rules
 
 The settings menu in the Lint panel switches between rule presets:
 
