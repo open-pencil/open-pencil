@@ -175,9 +175,11 @@ pub extern "C" fn properties(page: u32, first: u32, count: u32) -> i32 {
         } = state;
         json.clear();
         let Some(document) = document else {
+            *error = String::from("no document is open");
             return -1;
         };
         let Some(expansion) = document.expand_page(page as usize) else {
+            *error = format!("the document has no page {page}");
             return -1;
         };
         let values = match document.properties(&expansion) {
