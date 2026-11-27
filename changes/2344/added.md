@@ -1,0 +1,1 @@
+- A page that frames the web app can open a document in it and get the edited file back through window messages, after naming its origin with `?embedder=`.

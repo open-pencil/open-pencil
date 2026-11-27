@@ -1,6 +1,6 @@
 ---
 title: URL scheme
-description: Link a published page straight to a layer, with openpencil:// for the desktop app and ?file= for the web app.
+description: Link a published page straight to a layer, with openpencil:// for the desktop app and ?file= for the web app, or embed the web app with ?embedder=.
 ---
 
 # URL scheme
@@ -28,3 +28,13 @@ Here `file` is an absolute `https:` URL ending in `.pen` or `.fig` — the web a
 The browser fetches the file cross-origin, so the host must allow it: `raw.githubusercontent.com` sends `Access-Control-Allow-Origin: *` and works. The request carries no credentials and refuses to follow redirects, which keeps an `https:` link from being bounced to a plaintext one — a `https://github.com/<owner>/<repo>/raw/...` URL redirects to `raw.githubusercontent.com` and is therefore refused, so link to the raw host directly. `file` and `node` are stripped from the address bar through the router as soon as they are read — before the fetch, and also when the link was refused — so a reload does not re-open the document, and neither a copied URL nor a later in-app navigation carries the link payload. A linked document is capped at 256 MiB: the body is counted as it streams in, not trusted from `Content-Length`, and the request is aborted the moment it goes over, with the link reporting that the file exceeds 256 MiB. A deployment that serves the app under a Content-Security-Policy must allow the linked host in `connect-src`, otherwise the fetch is blocked and the link reports that it could not open the file.
 
 On macOS the scheme belongs to the installed app bundle, so links reach an installed build and not a `tauri dev` process. On Windows and Linux the link arrives through the deep-link plugin, including when the app is not running yet: the link is queued at startup and handled once the editor is ready; on Linux the bundled desktop entry passes the link through `%U`.
+
+## Embedding the web app
+
+A page that frames the web app can hand it a document and keep the file itself. OpenPencil Cloud's editor pages refuse framing, so this works with a build of the web app you serve yourself, such as the `dist/` of `bun run build`. The page names its own origin in the frame's address:
+
+```html
+<iframe src="https://design.example.com/?embedder=https%3A%2F%2Fexample.com"></iframe>
+```
+
+`embedder` must be an `http:` or `https:` origin with nothing after it; anything else, including `*`, is ignored. The app then reads window messages only from its parent frame and only from that origin, and posts every reply to that origin alone. It says `{ type: 'openpencil:ready' }` once it listens. The page sends `{ type: 'openpencil:open', name: 'design.fig', data }` with the file as an `ArrayBuffer`, and the app opens it in a tab and answers `{ type: 'openpencil:opened' }`. Each time the document's edited state changes the app posts `{ type: 'openpencil:edited', edited }`, so the page can save only when something was edited. To save, the page sends `{ type: 'openpencil:save', id }`; the app answers `{ type: 'openpencil:saved', id, data }` with the `.fig` file, counts the document as saved, and posts `edited: false`. A request that fails is answered with `{ type: 'openpencil:failed', id, message }`.
