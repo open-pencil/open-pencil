@@ -32,6 +32,9 @@ export interface SidebarLabels {
   comparison: string
   privacy: string
   figmaMatrix: string
+  codingAgents: string
+  modelsAndProviders: string
+  keyboardShortcuts: string
 }
 
 export interface ProgrammableLabels {
@@ -234,7 +237,10 @@ export const EN: SidebarLabels = {
   techStack: 'Tech Stack',
   comparison: 'Comparison',
   privacy: 'Privacy',
-  figmaMatrix: 'Figma Feature Matrix'
+  figmaMatrix: 'Figma Feature Matrix',
+  codingAgents: 'Coding Agents',
+  modelsAndProviders: 'Models and Providers',
+  keyboardShortcuts: 'Keyboard Shortcuts'
 }
 export const DE: SidebarLabels = {
   getStarted: 'Loslegen',
@@ -269,7 +275,10 @@ export const DE: SidebarLabels = {
   techStack: 'Tech-Stack',
   comparison: 'Vergleich',
   privacy: 'Datenschutz',
-  figmaMatrix: 'Figma-Funktionsmatrix'
+  figmaMatrix: 'Figma-Funktionsmatrix',
+  codingAgents: 'Coding-Agents',
+  modelsAndProviders: 'Modelle und Anbieter',
+  keyboardShortcuts: 'Tastenkürzel'
 }
 export const IT: SidebarLabels = {
   getStarted: 'Primi passi',
@@ -304,7 +313,10 @@ export const IT: SidebarLabels = {
   techStack: 'Stack tecnologico',
   comparison: 'Confronto',
   privacy: 'Privacy',
-  figmaMatrix: 'Matrice funzionalità Figma'
+  figmaMatrix: 'Matrice funzionalità Figma',
+  codingAgents: 'Agenti di programmazione',
+  modelsAndProviders: 'Modelli e provider',
+  keyboardShortcuts: 'Scorciatoie da tastiera'
 }
 export const FR: SidebarLabels = {
   getStarted: 'Bien démarrer',
@@ -339,7 +351,10 @@ export const FR: SidebarLabels = {
   techStack: 'Stack technique',
   comparison: 'Comparaison',
   privacy: 'Confidentialité',
-  figmaMatrix: 'Matrice des fonctionnalités Figma'
+  figmaMatrix: 'Matrice des fonctionnalités Figma',
+  codingAgents: 'Agents de code',
+  modelsAndProviders: 'Modèles et fournisseurs',
+  keyboardShortcuts: 'Raccourcis clavier'
 }
 export const ES: SidebarLabels = {
   getStarted: 'Primeros pasos',
@@ -374,7 +389,10 @@ export const ES: SidebarLabels = {
   techStack: 'Stack tecnológico',
   comparison: 'Comparación',
   privacy: 'Privacidad',
-  figmaMatrix: 'Matriz de funcionalidades Figma'
+  figmaMatrix: 'Matriz de funcionalidades Figma',
+  codingAgents: 'Agentes de programación',
+  modelsAndProviders: 'Modelos y proveedores',
+  keyboardShortcuts: 'Atajos de teclado'
 }
 export const PL: SidebarLabels = {
   getStarted: 'Pierwsze kroki',
@@ -409,7 +427,10 @@ export const PL: SidebarLabels = {
   techStack: 'Stack technologiczny',
   comparison: 'Porównanie',
   privacy: 'Prywatność',
-  figmaMatrix: 'Matryca funkcji Figma'
+  figmaMatrix: 'Matryca funkcji Figma',
+  codingAgents: 'Agenci programistyczni',
+  modelsAndProviders: 'Modele i dostawcy',
+  keyboardShortcuts: 'Skróty klawiszowe'
 }
 export const RU: SidebarLabels = {
   getStarted: 'Начало работы',
@@ -444,5 +465,8 @@ export const RU: SidebarLabels = {
   techStack: 'Технологии',
   comparison: 'Сравнение',
   privacy: 'Конфиденциальность',
-  figmaMatrix: 'Матрица функций Figma'
+  figmaMatrix: 'Матрица функций Figma',
+  codingAgents: 'Агенты для программирования',
+  modelsAndProviders: 'Модели и провайдеры',
+  keyboardShortcuts: 'Горячие клавиши'
 }
