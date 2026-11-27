@@ -106,7 +106,10 @@ function namedComponent(
  */
 export function createMarkedInstances(graph: SceneGraph, sources: LayerSources): void {
   for (const [nodeId, element] of sources) {
-    if (!Object.hasOwn(element.attrs, COMPONENT_ATTRIBUTES.instance)) continue
+    // An element the page makes a component is that component, not an instance of another.
+    const marks = element.attrs
+    if (!Object.hasOwn(marks, COMPONENT_ATTRIBUTES.instance)) continue
+    if (Object.hasOwn(marks, COMPONENT_ATTRIBUTES.component)) continue
     // An instance an outer one replaced is gone with it; a text layer shares its box's element.
     const layer = graph.getNode(nodeId)
     const parent = layer?.parentId ? graph.getNode(layer.parentId) : undefined

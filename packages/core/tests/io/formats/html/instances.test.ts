@@ -60,6 +60,16 @@ describe('instances a page marks', () => {
     expect(types).toEqual(['FRAME', 'FRAME'])
   })
 
+  test('leave an element the page makes a component that component', async () => {
+    const marked = `<div data-op-component-set="Chip">
+      ${button('Primary', 'data-op-component="Variant=Primary" data-op-instance="Button" data-op-variant="Variant=Primary"')}
+    </div>`
+    const { graph: chips } = await readHTMLDocument(SET + marked, { components: true })
+    const chip = [...chips.getAllNodes()].find((node) => node.name === 'Chip')
+    expect(chip?.type).toBe('COMPONENT_SET')
+    expect(chips.getChildren(chip?.id ?? '').map(({ type }) => type)).toEqual(['COMPONENT'])
+  })
+
   test('name a component the page marks', async () => {
     await expect(
       page(`<button data-op-instance="Toggle" style="${BUTTON}">B</button>`)
