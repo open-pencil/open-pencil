@@ -37,8 +37,10 @@ export function useVariableBinding(options: UseVariableBindingOptions) {
 
   function getBindingState(nodeIds: string[], index?: number): VariableBindingState {
     const variableIds = new Set<string | undefined>()
-    for (const nodeId of nodeIds)
-      variableIds.add(store.getBoundVariable(nodeId, bindingPath(index)))
+    // A text being edited counts each binding its selected characters have.
+    for (const nodeId of nodeIds) {
+      for (const id of store.getBoundVariableIds(nodeId, bindingPath(index))) variableIds.add(id)
+    }
     if (variableIds.size > 1) return 'mixed'
     return variableIds.has(undefined) ? 'unbound' : 'bound'
   }

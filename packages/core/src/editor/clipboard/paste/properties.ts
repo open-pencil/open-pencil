@@ -91,7 +91,8 @@ function runsWithout(runs: StyleRun[], fields: ReadonlySet<string>): StyleRun[] 
     if (style.boundVariables) {
       const bound = omit(
         style.boundVariables,
-        Object.keys(style.boundVariables).filter((key) => fields.has(key))
+        // A paint's binding, such as `fills/0/color`, goes with the list it belongs to.
+        Object.keys(style.boundVariables).filter((key) => fields.has(fieldOf(key)))
       )
       if (Object.keys(bound).length > 0) style.boundVariables = bound
       else delete style.boundVariables

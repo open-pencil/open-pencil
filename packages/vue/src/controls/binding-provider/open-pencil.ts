@@ -74,8 +74,9 @@ export function createOpenPencilBindingProvider<V>(
 
   function getState(targets: BindingTarget[]): BindingState {
     if (targets.length === 0) return 'unbound'
+    // A text being edited counts each binding its selected characters have.
     const variableIds = new Set(
-      targets.map((target) => editor.getBoundVariable(target.nodeId, target.path) ?? undefined)
+      targets.flatMap((target) => editor.getBoundVariableIds(target.nodeId, target.path))
     )
     // Identity takes precedence: an explicit mixed edit can detach the selection.
     // edit-variable still requires every bound destination to prepare successfully.

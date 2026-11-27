@@ -36,13 +36,44 @@ function fillSegments(node: SceneNode, start: number, end: number): FillSegment[
   return segments
 }
 
+/** Whether a binding field names the colour of one of the fills. */
+function isFillField(field: string): boolean {
+  return paintBindingTarget(field)?.list === 'fills'
+}
+
+/** The bindings among `bound` of fills' colours. */
+export function fillBindings(bound: Readonly<Record<string, string>>): TextBoundVariables {
+  const fills: TextBoundVariables = {}
+  for (const [field, variableId] of Object.entries(bound)) {
+    if (isFillField(field)) fills[field] = variableId
+  }
+  return fills
+}
+
+/**
+ * The runs whose characters in `text[start, end)` take `fills` as the bindings of their fills'
+ * colours, each keeping its other bindings, as a fill list edited on them moves its paints'.
+ */
+export function rangeFillBindingRuns(
+  node: SceneNode,
+  start: number,
+  end: number,
+  fills: TextBoundVariables
+): StyleRun[] {
+  let styleRuns = node.styleRuns
+  for (const segment of fillSegments(node, start, end)) {
+    const own = segment.style.boundVariables
+    const kept = omit(own, Object.keys(own).filter(isFillField))
+    styleRuns = styleRunsWithPatch({ ...node, styleRuns }, segment.start, segment.end, {
+      boundVariables: { ...kept, ...fills }
+    })
+  }
+  return styleRuns
+}
+
 /** The bindings of the layer's own fills' colours, which characters showing them take along. */
 function layerFillBindings(node: SceneNode): TextBoundVariables {
-  const bound: TextBoundVariables = {}
-  for (const [field, variableId] of Object.entries(node.boundVariables)) {
-    if (paintBindingTarget(field)?.list === 'fills') bound[field] = variableId
-  }
-  return bound
+  return fillBindings(node.boundVariables)
 }
 
 /**
@@ -102,9 +133,7 @@ export function rangeFillsRuns(
   }
   let styleRuns = node.styleRuns
   for (const segment of fillSegments(node, start, end)) {
-    const replaced = Object.keys(segment.style.boundVariables).filter(
-      (field) => paintBindingTarget(field)?.list === 'fills'
-    )
+    const replaced = Object.keys(segment.style.boundVariables).filter(isFillField)
     const bound: TextBoundVariables = { ...omit(segment.style.boundVariables, replaced) }
     for (const [index, variableId] of bindings) bound[`fills/${index}/color`] = variableId
     styleRuns = styleRunsWithPatch({ ...node, styleRuns }, segment.start, segment.end, {

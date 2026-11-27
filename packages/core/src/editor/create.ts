@@ -455,6 +455,11 @@ export function createEditor(options?: EditorOptions) {
         nodes.unbindVariable(id, path)
       }
     },
+    /** Each variable a field is bound to as the panel shows it, so differing characters are mixed. */
+    getBoundVariableIds: (id: string, path: string): (string | undefined)[] => {
+      const node = ctx.graph.getNode(id)
+      return node ? textSelectionStyle.boundVariableIds(node, path) : [undefined]
+    },
     /** The variable a field is bound to, as the panel shows it: a text selection's, if any. */
     getBoundVariable: (id: string, path: string): string | undefined => {
       const node = ctx.graph.getNode(id)

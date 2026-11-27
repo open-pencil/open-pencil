@@ -1,48 +1,21 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { editingWorldFixture } from '#core-tests/editor/text/helpers'
+
 import type { Fill } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-const cleanups: (() => void)[] = []
-
-afterEach(() => {
-  for (const cleanup of cleanups.splice(0)) cleanup()
-})
 
 const BLACK: Fill = { type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 const BLUE = { r: 0, g: 0, b: 1, a: 1 }
 
-/** An editor editing "Hello world" in black with "world" selected. */
+const editingText = editingWorldFixture()
+
+/** "Hello world" in black being edited with "world" selected, and a collection for variables. */
 async function editingWorld() {
-  const ck = await getCanvasKit()
-  const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(200, 200), 'surface'))
-  const editor = createEditor()
-  editor.setCanvasKit(ck, renderer)
-  await renderer.loadFonts()
-  cleanups.push(() => {
-    editor.dispose()
-    renderer.destroy()
-  })
-  const { graph } = editor
-  const page = editor.state.currentPageId
-  const collection = graph.createCollection('Tokens')
-  const text = graph.createNode('TEXT', page, {
-    text: 'Hello world',
-    width: 200,
-    height: 20,
-    fills: [BLACK]
-  })
-  editor.startTextEditing(text.id)
-  const state = expectDefined(editor.textEditor?.state, 'text editor state')
-  state.selectionAnchor = 6
-  state.cursor = 11
-  const node = () => expectDefined(graph.getNode(text.id), 'text')
-  return { editor, graph, collection, id: text.id, node, state }
+  const editing = await editingText({ fills: [BLACK] })
+  return { ...editing, collection: editing.graph.createCollection('Tokens') }
 }
 
 describe('variables bound while text is edited', () => {
@@ -133,6 +106,76 @@ describe('variables bound while text is edited', () => {
 
     expect(node().boundVariables).toEqual({})
     expect(node().styleRuns[0]?.style.boundVariables).toEqual({ 'fills/1/color': brand.id })
+  })
+})
+
+describe('bindings the panel shows and keeps for a selection', () => {
+  test('a paragraph binding of the layer still shows over characters that bind their own', async () => {
+    const { editor, graph, collection, id } = await editingWorld()
+    const size = graph.createVariable('Size', 'FLOAT', collection.id, 12)
+    const spacing = graph.createVariable('Spacing', 'FLOAT', collection.id, 8)
+    // As a .fig file can hold them: the layer binds its paragraphs' spacing, and the selected
+    // characters bind their size alone.
+    graph.updateNode(id, {
+      boundVariables: { paragraphSpacing: spacing.id },
+      styleRuns: [
+        { start: 6, length: 5, style: { fontSize: 12, boundVariables: { fontSize: size.id } } }
+      ]
+    })
+
+    expect(editor.getBoundVariable(id, 'paragraphSpacing')).toBe(spacing.id)
+    expect(editor.getBoundVariable(id, 'fontSize')).toBe(size.id)
+  })
+
+  test("a fill list edited on the selection keeps each character's own size binding", async () => {
+    const { editor, graph, collection, id, node, state } = await editingWorld()
+    const brand = graph.createVariable('Brand', 'COLOR', collection.id, RED)
+    const small = graph.createVariable('Small', 'FLOAT', collection.id, 12)
+    const large = graph.createVariable('Large', 'FLOAT', collection.id, 30)
+    state.selectionAnchor = 6
+    state.cursor = 8
+    editor.bindVariable(id, 'fontSize', small.id)
+    state.selectionAnchor = 8
+    state.cursor = 11
+    editor.bindVariable(id, 'fontSize', large.id)
+    state.selectionAnchor = 6
+
+    editor.updateNodeWithUndo(
+      id,
+      { fills: [{ ...BLACK, color: RED }], boundVariables: { 'fills/0/color': brand.id } },
+      'Change fills'
+    )
+
+    expect(node().styleRuns.map((run) => run.style.boundVariables)).toEqual([
+      { fontSize: small.id, 'fills/0/color': brand.id },
+      { fontSize: large.id, 'fills/0/color': brand.id }
+    ])
+  })
+
+  test("unbinding characters that show the layer's bound fill keeps them off its variable", async () => {
+    const { editor, graph, collection, id, node } = await editingWorld()
+    const brand = graph.createVariable('Brand', 'COLOR', collection.id, RED)
+    graph.bindVariable(id, 'fills/0/color', brand.id)
+
+    editor.unbindVariable(id, 'fills/0/color')
+    editor.updateVariableValue(brand.id, expectDefined(collection.modes[0], 'mode').modeId, BLUE)
+
+    expect(node().fills[0]?.color).toEqual(BLUE)
+    // Binding gave the layer's fill the variable's red, which the characters keep.
+    expect(node().styleRuns).toEqual([
+      { start: 6, length: 5, style: { fills: [{ ...BLACK, color: RED }] } }
+    ])
+    expect(editor.getBoundVariable(id, 'fills/0/color')).toBeUndefined()
+  })
+
+  test('characters bound apart show each binding, so the panel can show them as mixed', async () => {
+    const { editor, graph, collection, id, state } = await editingWorld()
+    const brand = graph.createVariable('Brand', 'COLOR', collection.id, RED)
+    state.selectionAnchor = 8
+    editor.bindVariable(id, 'fills/0/color', brand.id)
+    state.selectionAnchor = 6
+
+    expect(editor.getBoundVariableIds(id, 'fills/0/color')).toEqual([undefined, brand.id])
   })
 })
 

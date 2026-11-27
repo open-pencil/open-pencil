@@ -236,4 +236,26 @@ describe('paste properties on text', () => {
     expect(pastedShape.fills[0]?.color).toEqual(RED.color)
     expect([pastedShape.cornerRadius, pastedShape.fontSize]).toEqual([4, shape.fontSize])
   })
+
+  test("pasted fills drop the colour variables a character range's own fills were bound to", async () => {
+    const { editor, styled, plain } = textSetup()
+    const collection = editor.graph.createCollection('Brand')
+    const accent = editor.graph.createVariable('Accent', 'COLOR', collection.id, GREEN.color)
+    editor.graph.updateNode(plain.id, {
+      styleRuns: [
+        {
+          start: 5,
+          length: 5,
+          style: { fills: [GREEN], boundVariables: { 'fills/0/color': accent.id } }
+        }
+      ]
+    })
+    const { snapshot } = await copyProperties(editor, [styled.id])
+    editor.select([plain.id])
+    await editor.pastePropertiesFromSnapshot(snapshot)
+
+    const pasted = getNodeOrThrow(editor.graph, plain.id)
+    expect(pasted.fills[0]?.color).toEqual(RED.color)
+    expect(pasted.styleRuns.some((run) => run.style.boundVariables)).toBe(false)
+  })
 })

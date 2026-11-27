@@ -137,14 +137,26 @@ function definedOverrides(style: CharacterStyleOverride): Partial<CharacterStyle
   return defined as Partial<CharacterStyle>
 }
 
-/** Whether a range binds the colour of one of its own fills, which it then has to keep. */
-function bindsOwnFills(style: CharacterStyleOverride): boolean {
-  return Object.keys(style.boundVariables ?? {}).some((field) => field.startsWith('fills/'))
+/** The bindings of fills' colours among `bound`, as `field=id` pairs in order. */
+function fillBindingPairs(bound: Readonly<Record<string, string>> | undefined): string[] {
+  return Object.entries(bound ?? {})
+    .filter(([field]) => field.startsWith('fills/'))
+    .map(([field, id]) => `${field}=${id}`)
+    .sort()
 }
 
 /**
- * Style runs with no override that only repeats the text's own value. Fills a range binds stay
- * its own even where they look like the text's, so the binding has its paint to color.
+ * Whether a range's fills bind otherwise than the layer's, so that it keeps them even where
+ * they look like the layer's: bound on its own, or left unbound where the layer's are bound.
+ */
+function bindsFillsApart(node: SceneNode, style: CharacterStyleOverride): boolean {
+  return !isEqual(fillBindingPairs(style.boundVariables), fillBindingPairs(node.boundVariables))
+}
+
+/**
+ * Style runs with no override that only repeats the text's own value. Fills a range binds
+ * otherwise than the text stay its own even where they look like the text's, so a binding has its
+ * paint to colour, and an unbound range does not follow the text's variable.
  */
 function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[] {
   const base = nodeStyle(node)
@@ -154,7 +166,7 @@ function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[
       (key) =>
         run.style[key] !== undefined &&
         isEqual(run.style[key], base[key]) &&
-        !(key === 'fills' && bindsOwnFills(run.style))
+        !(key === 'fills' && bindsFillsApart(node, run.style))
     )
     // A key a copy left undefined overrides nothing either.
     appendStyleRun(result, run.start, run.length, omitBy(omit(run.style, repeated), isUndefined))

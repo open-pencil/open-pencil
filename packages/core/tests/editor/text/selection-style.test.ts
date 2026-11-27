@@ -1,16 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { editingWorldFixture } from '#core-tests/editor/text/helpers'
+
 import { createEditor } from '@open-pencil/core'
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-const cleanups: (() => void)[] = []
-
-afterEach(() => {
-  for (const cleanup of cleanups.splice(0)) cleanup()
-})
 
 const RED: Fill = {
   type: 'SOLID',
@@ -19,31 +13,7 @@ const RED: Fill = {
   visible: true
 }
 
-/** An editor editing "Hello world" with "world" selected. */
-async function editingWorld() {
-  const ck = await getCanvasKit()
-  const surface = expectDefined(ck.MakeSurface(200, 200), 'surface')
-  const renderer = new SkiaRenderer(ck, surface)
-  const editor = createEditor()
-  editor.setCanvasKit(ck, renderer)
-  await renderer.loadFonts()
-  cleanups.push(() => {
-    editor.dispose()
-    renderer.destroy()
-  })
-  const page = editor.state.currentPageId
-  const text = editor.graph.createNode('TEXT', page, {
-    text: 'Hello world',
-    width: 200,
-    height: 20
-  })
-  editor.startTextEditing(text.id)
-  const state = expectDefined(editor.textEditor?.state, 'text editor state')
-  state.selectionAnchor = 6
-  state.cursor = 11
-  const node = () => expectDefined(editor.graph.getNode(text.id), 'text')
-  return { editor, id: text.id, node }
-}
+const editingWorld = editingWorldFixture()
 
 describe('panel edits while text is edited', () => {
   test('fill the selected characters, not the layer, and undo the fill', async () => {
@@ -111,6 +81,10 @@ describe('text case while text is edited', () => {
 
 describe('panel edits to a text layer whose characters a range styled', () => {
   const BLUE: Fill = { ...RED, color: { r: 0, g: 0, b: 1, a: 1 } }
+  const cleanups: (() => void)[] = []
+  afterEach(() => {
+    for (const cleanup of cleanups.splice(0)) cleanup()
+  })
 
   /** "Hello" drawn at 40 and red by a range over all of it, over the layer's own 14. */
   function rangeStyled() {

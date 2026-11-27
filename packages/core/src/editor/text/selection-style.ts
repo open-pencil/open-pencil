@@ -1,3 +1,4 @@
+import { uniq } from 'es-toolkit/array'
 import { omit, pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
@@ -12,7 +13,11 @@ import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import type { EditorContext } from '#core/editor/types'
 import { rangeBindingChanges, rangeSharedStylePatch } from '#core/figma-api/text/bindings'
-import { rangePaintBindingRuns } from '#core/text/character/bindings'
+import {
+  fillBindings,
+  rangeFillBindingRuns,
+  rangePaintBindingRuns
+} from '#core/text/character/bindings'
 import {
   characterStyles,
   layerTextStyleChanges,
@@ -50,26 +55,16 @@ function sharedStyleChange(changes: Partial<SceneNode>): 'text' | 'fill' | null 
   return null
 }
 
-/** The bindings characters keep of their own: text fields and their own fills' colours. */
-function characterOwnBindings(bound: Readonly<Record<string, string>>): Record<string, string> {
-  const own: Record<string, string> = {}
-  for (const [field, variableId] of Object.entries(bound)) {
-    const textField = (TEXT_BINDABLE_FIELDS as readonly string[]).includes(field)
-    if (textField || paintBindingTarget(field)?.list === 'fills') own[field] = variableId
-  }
-  return own
-}
-
 /**
  * The bindings the panel shows for characters: the layer's, with the text fields the characters
  * bind in place of the layer's, and the colours of fills the characters have of their own.
  */
 function characterBindings(node: SceneNode, style: CharacterStyle): Record<string, string> {
   const ownFills = style.fills !== node.fills
+  // Paragraph spacing and indent stay the layer's, as they bind on it.
   const replaced = Object.keys(node.boundVariables).filter(
     (field) =>
-      (TEXT_BINDABLE_FIELDS as readonly string[]).includes(field) ||
-      (ownFills && paintBindingTarget(field)?.list === 'fills')
+      RANGE_BINDABLE_FIELDS.has(field) || (ownFills && paintBindingTarget(field)?.list === 'fills')
   )
   return { ...omit(node.boundVariables, replaced), ...style.boundVariables }
 }
@@ -110,15 +105,17 @@ export function createTextSelectionStyle(
     const keys = styleKeys(changes)
     if (keys.length === 0) return null
     const patch = pick(changes, keys) as CharacterStyleOverride
-    let layer = omit(changes, keys)
-    // A fill list edited on the selection takes the bindings its paints moved with, which are
-    // the characters' own: the layer keeps its own.
+    const styleRuns = styleRunsWithPatch(node, ...range, patch)
+    // A fill list edited on the selection moves its paints' bindings, which are the characters'
+    // own: each keeps its other bindings, and the layer keeps its own.
     if (patch.fills && changes.boundVariables) {
-      const own = characterOwnBindings(changes.boundVariables)
-      patch.boundVariables = Object.keys(own).length > 0 ? own : undefined
-      layer = omit(layer, ['boundVariables'])
+      const moved = fillBindings(changes.boundVariables)
+      return {
+        ...omit(changes, [...keys, 'boundVariables']),
+        styleRuns: rangeFillBindingRuns({ ...node, styleRuns }, ...range, moved)
+      }
     }
-    return { ...layer, styleRuns: styleRunsWithPatch(node, ...range, patch) }
+    return { ...omit(changes, keys), styleRuns }
   }
 
   /**
@@ -166,6 +163,18 @@ export function createTextSelectionStyle(
     preview = null
     runTextEditStep(() => update(id, { styleRuns }))
     return true
+  }
+
+  /**
+   * The variables a field of a layer is bound to as the panel shows it, each once: the layer's, or
+   * across its selected characters, so characters bound apart show as mixed.
+   */
+  function boundVariableIds(node: SceneNode, field: string): (string | undefined)[] {
+    const range = selectedRange(node.id)
+    if (!range) return [node.boundVariables[field]]
+    return uniq(
+      characterStyles(node, ...range).map((style) => characterBindings(node, style)[field])
+    )
   }
 
   /** The variable a field of a layer is bound to, as the panel shows it: its selection's, if any. */
@@ -267,6 +276,7 @@ export function createTextSelectionStyle(
     selectionStyle,
     layerChanges,
     bindSelection,
-    boundVariable
+    boundVariable,
+    boundVariableIds
   }
 }
