@@ -23,6 +23,8 @@ const NO_BOX_VALUES: Record<string, readonly string[]> = {
   'max-height': ['none'],
   'object-fit': ['fill'],
   overflow: ['visible'],
+  'overflow-x': ['visible'],
+  'overflow-y': ['visible'],
   position: ['static'],
   top: ['auto'],
   right: ['auto'],
