@@ -166,6 +166,22 @@ describe('shape-with-text geometry', () => {
     }
   )
 
+  test('a document whose corners are larger than its sides allow stays inside its box', () => {
+    for (const [w, h] of [
+      [200, 80],
+      [80, 80],
+      [400, 60]
+    ]) {
+      const { outline } = shapeWithTextGeometry('DOCUMENT_SINGLE', w, h, 40)
+      for (const point of points(outline)) {
+        expect(point.x).toBeGreaterThanOrEqual(-1e-9)
+        expect(point.x).toBeLessThanOrEqual(w + 1e-9)
+        expect(point.y).toBeGreaterThanOrEqual(-1e-9)
+        expect(point.y).toBeLessThanOrEqual(h + 1e-9)
+      }
+    }
+  })
+
   test('the fill is cut along the lines only of a shape with inner lines and no stroke drawing', () => {
     const stroke = (opacity: number, weight = 4): Stroke => ({
       type: 'SOLID',

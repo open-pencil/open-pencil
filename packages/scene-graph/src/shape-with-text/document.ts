@@ -131,6 +131,9 @@ export function documentOutline(w: number, h: number, radius: number): PolygonOu
   const left = corner(UP, leaving(intoLeft), r)
   const rightTrim = Math.min(right.trim, (rightSide.y - r) / 2)
   const leftTrim = Math.min(left.trim, (leftSide.y - r) / 2)
+  // A corner trimmed short of its radius shortens its handles with it.
+  const rightHandle = right.trim > 0 ? (right.handle * rightTrim) / right.trim : 0
+  const leftHandle = left.trim > 0 ? (left.handle * leftTrim) / left.trim : 0
   const first = r > 0 ? subPiece(fromRight, parameterAt(fromRight, rightTrim), 1) : fromRight
   const last = r > 0 ? subPiece(toLeft, 0, 1 - parameterAt(intoLeft, leftTrim)) : toLeft
   const rightEnd = { x: w, y: rightSide.y - rightTrim }
@@ -146,8 +149,8 @@ export function documentOutline(w: number, h: number, radius: number): PolygonOu
     const back = unit({ x: -first.handleFrom.x, y: -first.handleFrom.y })
     commands.push(
       curveTo(
-        { x: w, y: rightEnd.y + right.handle },
-        { x: first.from.x + back.x * right.handle, y: first.from.y + back.y * right.handle },
+        { x: w, y: rightEnd.y + rightHandle },
+        { x: first.from.x + back.x * rightHandle, y: first.from.y + back.y * rightHandle },
         first.from
       )
     )
@@ -157,8 +160,8 @@ export function documentOutline(w: number, h: number, radius: number): PolygonOu
     const on = unit({ x: -last.handleTo.x, y: -last.handleTo.y })
     commands.push(
       curveTo(
-        { x: last.to.x + on.x * left.handle, y: last.to.y + on.y * left.handle },
-        { x: 0, y: leftEnd.y + left.handle },
+        { x: last.to.x + on.x * leftHandle, y: last.to.y + on.y * leftHandle },
+        { x: 0, y: leftEnd.y + leftHandle },
         leftEnd
       )
     )
