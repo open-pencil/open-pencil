@@ -1,4 +1,5 @@
 import type { PolygonOutlineCommand } from '../polygon'
+import type { SceneNode } from '../types'
 import { databaseCap } from './fit'
 import type { ShapeWithTextType } from './kinds'
 
@@ -11,6 +12,20 @@ export interface ShapeWithTextGeometry {
 
 /** Bezier handle length for a quarter ellipse. */
 const KAPPA = 0.5522847498
+
+/**
+ * The band FigJam cuts out of a shape's fill along its outline and inner lines when no stroke
+ * draws them, so a database still shows its rim: half of it insets the outline.
+ */
+export const SHAPE_WITH_TEXT_LINE_GAP = 3
+
+/** A folder's tab: its height, and how far its base reaches past the middle of the box. */
+const FOLDER_TAB_HEIGHT = 44
+const FOLDER_TAB_OVERHANG = 13
+/** How far the tab's sides lean in over its full height. */
+const FOLDER_TAB_SLANT = 18
+/** How far a multiple document's front page sits right of and below its back page. */
+const DOCUMENT_OFFSET = 16
 
 type Point = readonly [number, number]
 
@@ -136,7 +151,7 @@ const plain = (outline: PolygonOutlineCommand[]): ShapeWithTextGeometry => ({
   details: []
 })
 
-type Builder = (w: number, h: number, min: number) => ShapeWithTextGeometry
+type Builder = (w: number, h: number, min: number, radius: number) => ShapeWithTextGeometry
 
 /** How far a parallelogram's sides lean: FigJam leans them with the height, not the width. */
 export function parallelogramSlant(w: number, h: number): number {
@@ -260,18 +275,27 @@ const BUILDERS: Record<ShapeWithTextType, Builder> = {
       details: [...line([w - f, 0], [w - f, f]), { type: 'L', x: w, y: f }]
     }
   },
-  ENG_FOLDER: (w, h) => {
-    const tab = Math.min(h * 0.18, w * 0.2)
-    return plain(
-      polygon([
-        [0, 0],
-        [w * 0.4, 0],
-        [w * 0.4 + tab, tab],
-        [w, tab],
-        [w, h],
-        [0, h]
-      ])
-    )
+  // A tab on the left of the box above a body; the line between them is the body's top edge.
+  // The corners where tab and body meet stay sharp.
+  ENG_FOLDER: (w, h, _min, radius) => {
+    const tab = Math.min(FOLDER_TAB_HEIGHT, h)
+    const base = Math.min(w / 2 + FOLDER_TAB_OVERHANG, w)
+    const slant = Math.min((FOLDER_TAB_SLANT * tab) / FOLDER_TAB_HEIGHT, base / 2)
+    return {
+      outline: roundedPolygon(
+        [
+          [0, h],
+          [0, tab],
+          [slant, 0],
+          [base - slant, 0],
+          [base, tab],
+          [w, tab],
+          [w, h]
+        ],
+        [radius, 0, radius, radius, 0, radius, radius]
+      ),
+      details: line([0, tab], [base, tab])
+    }
   },
   TRAPEZOID: (w, h) => {
     const s = Math.min(w * 0.2, h)
@@ -298,18 +322,35 @@ const BUILDERS: Record<ShapeWithTextType, Builder> = {
       { type: 'Z' }
     ]),
   DOCUMENT_SINGLE: (w, h) => plain(documentPage(0, 0, w, h)),
-  DOCUMENT_MULTIPLE: (w, h, min) => {
-    const o = min * 0.06
+  // A back page with a front page over its lower right; the front page's top and left edges,
+  // where it lies over the back one, are the inner lines.
+  DOCUMENT_MULTIPLE: (w, h, _min, radius) => {
+    const o = Math.min(DOCUMENT_OFFSET, w / 4, h / 4)
+    const front = documentPage(o, o, w - o, h - o)
+    const wave = front.filter((command) => command.type === 'C')
+    const base = wave.at(-1)?.y ?? h
+    // The back page ends on the front page's left side, sloping down to it.
+    const join = Math.min(h - 2 * o, base)
+    const outline = roundedPolygon(
+      [
+        [0, 0],
+        [w - o, 0],
+        [w - o, o],
+        [w, o],
+        [w, base],
+        [o, base],
+        [o, join],
+        [0, join - o / 4]
+      ],
+      [radius, radius, 0, radius, 0, 0, 0, radius]
+    )
+    // The straight edge along the bottom becomes the front page's wave.
+    const bottom = outline.findIndex(
+      (command) => command.type === 'L' && command.x === o && command.y === base
+    )
     return {
-      outline: documentPage(0, o * 2, w - o * 2, h - o * 2),
-      details: [
-        ...line([o, o * 2], [o, o]),
-        { type: 'L', x: w - o, y: o },
-        { type: 'L', x: w - o, y: h - o * 2 },
-        ...line([o * 2, o], [o * 2, 0]),
-        { type: 'L', x: w, y: 0 },
-        { type: 'L', x: w, y: h - o * 3 }
-      ]
+      outline: [...outline.slice(0, bottom), ...wave, ...outline.slice(bottom + 1)],
+      details: [...line([w - o, o], [o, o]), { type: 'L', x: o, y: join }]
     }
   },
   MANUAL_INPUT: (w, h) =>
@@ -451,8 +492,25 @@ function roundCorners(commands: PolygonOutlineCommand[], radius: number): Polygo
   const points: Point[] = []
   for (const command of commands) if (command.type !== 'Z') points.push([command.x, command.y])
   if (points.length < 3) return commands
+  return roundedPolygon(
+    points,
+    points.map(() => radius)
+  )
+}
+
+/**
+ * The closed polygon through `points` with the corner at each rounded to its own radius in
+ * `radii`, shortened where an edge is too short for it; a corner with radius 0 stays sharp.
+ */
+function roundedPolygon(points: Point[], radii: number[]): PolygonOutlineCommand[] {
   const rounded: PolygonOutlineCommand[] = []
   points.forEach((vertex, index) => {
+    const radius = radii[index] ?? 0
+    const type = index === 0 ? 'M' : 'L'
+    if (radius <= 0) {
+      rounded.push({ type, x: vertex[0], y: vertex[1] })
+      return
+    }
     const before = points[(index + points.length - 1) % points.length]
     const after = points[(index + 1) % points.length]
     const toward = (to: Point): Point => {
@@ -462,7 +520,7 @@ function roundCorners(commands: PolygonOutlineCommand[], radius: number): Polygo
     }
     const [inX, inY] = toward(before)
     const [outX, outY] = toward(after)
-    rounded.push({ type: index === 0 ? 'M' : 'L', x: inX, y: inY })
+    rounded.push({ type, x: inX, y: inY })
     rounded.push(
       curve(
         inX + (vertex[0] - inX) * KAPPA,
@@ -491,6 +549,18 @@ export function shapeWithTextGeometry(
 ): ShapeWithTextGeometry {
   const w = Math.max(0, width)
   const h = Math.max(0, height)
-  const geometry = BUILDERS[type](w, h, Math.min(w, h))
+  const geometry = BUILDERS[type](w, h, Math.min(w, h), cornerRadius)
   return { ...geometry, outline: roundCorners(geometry.outline, cornerRadius) }
+}
+
+/**
+ * Whether the shape's fill has its outline and inner lines cut out of it, as FigJam draws a shape
+ * with inner lines, such as a database, when no stroke draws them: it has inner lines and no
+ * visible stroke.
+ */
+export function shapeWithTextCutsFill(
+  node: Pick<SceneNode, 'shapeWithTextType' | 'width' | 'height' | 'strokes'>
+): boolean {
+  if (node.strokes.some((stroke) => stroke.visible && stroke.opacity > 0)) return false
+  return shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height).details.length > 0
 }
