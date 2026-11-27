@@ -1,6 +1,10 @@
 {
   "name": "@open-pencil/mcp-catalog-tools",
+  "version": "0.0.0",
   "private": true,
+  "bin": {
+    "mcp-catalog": "./src/generate.ts"
+  },
   "type": "module",
   "imports": {
     "#mcp-catalog/*": "./src/*.ts"

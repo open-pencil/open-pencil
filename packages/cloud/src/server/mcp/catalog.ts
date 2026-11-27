@@ -15,8 +15,8 @@ const designToolSchema = v.object({
 export type DesignTool = v.InferOutput<typeof designToolSchema>
 
 /**
- * The design tools apps run on documents through an editor, generated from Core's tools
- * (`bun run generate:mcp-catalog`): the server holds no editor, so it knows them from this list.
+ * The design tools apps run on documents through an editor, which the package's build writes from
+ * Core's tools (`tools/generate/mcp-catalog`): the server holds no editor, so it knows them from this list.
  */
 export const DESIGN_TOOLS: readonly DesignTool[] = v.parse(v.array(designToolSchema), catalog)
 

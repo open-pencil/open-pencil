@@ -11,7 +11,7 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 | `dev/`      | Test running, benchmarks, and local services for humans                                                                       | `unit-tests`, `navigation-benchmark`, `dev-server`, `cloud`                                                                          |
 
 - `checks/bundle-budget` owns `check:bundle`, the gzipped startup budget; it reads the last build's Vite manifest, so `preview-build.yml` runs it after `bun run build`.
-- Nothing under `generate/` or `release/` runs from `bun run check` except through a check entrypoint; `generate/authoring-reference` and `generate/mcp-catalog` keep their `check.ts` beside `generate.ts` until they split.
+- Nothing under `generate/` or `release/` runs from `bun run check` except through a check entrypoint; `generate/authoring-reference` keeps its `check.ts` beside `generate.ts` until it splits.
 - Resolve the workspace with `resolveWorkspaceRoot` from `@open-pencil/package-artifacts-tools`, not parent-directory traversal. Keep sibling imports relative.
 - `dev/unit-tests` owns the shard map and runner (`tests/AGENTS.md`).
 - No `scripts/` entrypoints: root `package.json` scripts call tool files directly.

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 import { omit } from 'es-toolkit/object'
@@ -57,15 +57,4 @@ export async function writeCloudMCPCatalog(root: string): Promise<void> {
   const target = join(root, CLOUD_MCP_CATALOG_PATH)
   await mkdir(dirname(target), { recursive: true })
   await writeFile(target, renderCloudMCPCatalog())
-}
-
-/** Whether the catalog in the repository is what Core's tools generate now. */
-export async function cloudMCPCatalogIsCurrent(root: string): Promise<boolean> {
-  const actual = await readFile(join(root, CLOUD_MCP_CATALOG_PATH), 'utf8').catch(
-    (error: unknown) => {
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return null
-      throw error
-    }
-  )
-  return actual === renderCloudMCPCatalog()
 }
