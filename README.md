@@ -149,7 +149,7 @@ Install the agent's ACP program and `@open-pencil/mcp`, then open **Settings →
 
 ### MCP server
 
-Connect Claude Code, Cursor, Windsurf, or any MCP client to inspect, modify, and export design documents headlessly. [Full docs →](https://openpencil.dev/programmable/mcp-server)
+Connect Claude Code, Cursor, Windsurf, or any MCP client to the running app to inspect, modify, and export the open document; the [CLI](#cli) works on files without the app. The server is listed in the [MCP Registry](https://registry.modelcontextprotocol.io) as `dev.openpencil/mcp`. [Full docs →](https://openpencil.dev/developers/mcp-server)
 
 **Stdio** (Claude Code, Cursor, Windsurf):
 
