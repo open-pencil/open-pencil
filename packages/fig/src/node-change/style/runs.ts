@@ -33,6 +33,16 @@ export function importHyperlink(value: unknown): HyperlinkTarget | undefined {
  * What a range refers to beyond its look: its case, link, styles, and bindings. A style the
  * text uses itself is the range's own only when the range names another.
  */
+/** The colour variables a range's own fills are bound to, as a layer's paints carry them. */
+function rangePaintBindings(override: NodeChange): Record<string, string> {
+  const bound: Record<string, string> = {}
+  override.fillPaints?.forEach((paint, index) => {
+    const guid = paint.colorVar?.value?.alias?.guid
+    if (guid) bound[`fills/${index}/color`] = guidToString(guid)
+  })
+  return bound
+}
+
 function applyRangeReferences(
   style: CharacterStyleOverride,
   override: NodeChange,
@@ -49,7 +59,7 @@ function applyRangeReferences(
     const id = styleRefId(override[field])
     if (id !== styleRefId(text[field])) style[key] = id
   }
-  const boundVariables = textRunVariableBindings(override)
+  const boundVariables = { ...textRunVariableBindings(override), ...rangePaintBindings(override) }
   if (!isEmptyObject(boundVariables)) style.boundVariables = boundVariables
 }
 

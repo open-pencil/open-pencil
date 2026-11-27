@@ -228,6 +228,19 @@ export function paintBindings(node: SceneNode, key: 'fills' | 'strokes'): Map<nu
   return bindings
 }
 
+/** The colour variable each paint's `boundVariables.color` names, by index, of those that exist. */
+export function paintColorVariables(
+  graph: SceneGraph,
+  paints: readonly FigmaPaint[]
+): Map<number, string> {
+  const bound = new Map<number, string>()
+  paints.forEach((paint, index) => {
+    const id = 'boundVariables' in paint ? paint.boundVariables?.color?.id : undefined
+    if (id && graph.variables.get(id)?.type === 'COLOR') bound.set(index, id)
+  })
+  return bound
+}
+
 /**
  * Binds each paint's colour to the variable its `boundVariables.color` names, as Figma does when
  * paints are set, and drops bindings of paints that no longer carry one.
@@ -239,11 +252,7 @@ export function setPaintBindings(
   paints: readonly FigmaPaint[]
 ): void {
   const current = paintBindings(node, key)
-  const wanted = new Map<number, string>()
-  paints.forEach((paint, index) => {
-    const id = 'boundVariables' in paint ? paint.boundVariables?.color?.id : undefined
-    if (id && graph.variables.get(id)?.type === 'COLOR') wanted.set(index, id)
-  })
+  const wanted = paintColorVariables(graph, paints)
   for (const index of current.keys()) {
     if (!wanted.has(index)) graph.unbindVariable(node.id, `${key}/${index}/color`)
   }

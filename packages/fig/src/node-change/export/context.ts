@@ -274,7 +274,15 @@ export function applyColorVariableBinding(
   paint: Paint,
   field: string
 ): Paint {
-  const variableId = node.boundVariables[field]
+  return withColorVariable(context, paint, node.boundVariables[field])
+}
+
+/** A paint carrying `variableId` as its colour's variable, or none when it has none. */
+export function withColorVariable(
+  context: Pick<SceneNodeToKiwiContext, 'graph' | 'varIdToGuid'>,
+  paint: Paint,
+  variableId: string | undefined
+): Paint {
   // An imported paint carries the binding it arrived with. Unbinding the field has to clear
   // it, or the export hands Figma back a variable the document no longer references.
   if (!variableId) {

@@ -1,4 +1,4 @@
-import { omitBy, pick } from 'es-toolkit/object'
+import { omit, omitBy, pick } from 'es-toolkit/object'
 
 import { materializeFigFragment } from '@open-pencil/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
@@ -89,7 +89,10 @@ function runsWithout(runs: StyleRun[], fields: ReadonlySet<string>): StyleRun[] 
   return runs.flatMap((run) => {
     const style = omitBy(run.style, (_, key) => overrides.has(key))
     if (style.boundVariables) {
-      const bound = omitBy(style.boundVariables, (_, key) => fields.has(key))
+      const bound = omit(
+        style.boundVariables,
+        Object.keys(style.boundVariables).filter((key) => fields.has(key))
+      )
       if (Object.keys(bound).length > 0) style.boundVariables = bound
       else delete style.boundVariables
     }

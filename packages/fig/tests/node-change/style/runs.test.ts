@@ -6,6 +6,7 @@ import { importStyleRuns } from '#fig/node-change/style/runs'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph, type StyleRun } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 // Field names and shapes from the Kiwi schema (`packages/kiwi/src/fig/schema/fig.kiwi`): a style
 // override is a NodeChange, which holds `textCase`, `hyperlink`, `styleIdForText`,
@@ -157,5 +158,48 @@ describe('character ranges in .fig style overrides', () => {
     const [change] = sceneNodeToKiwi(node, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [])
     const [override] = change.textData?.styleOverrideTable ?? []
     expect(override).toMatchObject({ styleID: 1, fillPaints: [] })
+  })
+
+  test("read and write the colour variable a range's own fill is bound to", () => {
+    // As Figma stores it: the range's paint carries the variable, as a layer's paint does.
+    const colorVar = {
+      dataType: 'ALIAS',
+      resolvedDataType: 'COLOR',
+      value: { alias: { guid: { sessionID: 7, localID: 2 } } }
+    } as const
+    const paint = { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, colorVar }
+    const runs = importStyleRuns(
+      textChange([{ styleID: 1, fillPaints: [paint] } as NodeChange], [0, 0, 1, 1])
+    )
+    expect(runs[0]?.style.boundVariables).toEqual({ 'fills/0/color': '7:2' })
+
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Brand')
+    const red = graph.createVariable('Red', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Hello world',
+      styleRuns: [
+        {
+          ...expectDefined(runs[0], 'run'),
+          style: { ...runs[0]?.style, boundVariables: { 'fills/0/color': red.id } }
+        }
+      ]
+    })
+    const varIdToGuid = new Map([[red.id, { sessionID: 7, localID: 2 }]])
+    const [change] = sceneNodeToKiwi(
+      node,
+      { sessionID: 1, localID: 1 },
+      0,
+      { value: 2 },
+      graph,
+      [],
+      {
+        varIdToGuid
+      }
+    )
+    const [override] = change.textData?.styleOverrideTable ?? []
+    expect(override?.fillPaints?.[0]?.colorVar?.value?.alias).toEqual({
+      guid: { sessionID: 7, localID: 2 }
+    })
   })
 })

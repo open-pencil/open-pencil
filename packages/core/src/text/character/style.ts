@@ -137,13 +137,24 @@ function definedOverrides(style: CharacterStyleOverride): Partial<CharacterStyle
   return defined as Partial<CharacterStyle>
 }
 
-/** Style runs with no override that only repeats the text's own value. */
+/** Whether a range binds the colour of one of its own fills, which it then has to keep. */
+function bindsOwnFills(style: CharacterStyleOverride): boolean {
+  return Object.keys(style.boundVariables ?? {}).some((field) => field.startsWith('fills/'))
+}
+
+/**
+ * Style runs with no override that only repeats the text's own value. Fills a range binds stay
+ * its own even where they look like the text's, so the binding has its paint to color.
+ */
 function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[] {
   const base = nodeStyle(node)
   const result: StyleRun[] = []
   for (const run of runs) {
     const repeated = CHARACTER_STYLE_KEYS.filter(
-      (key) => run.style[key] !== undefined && isEqual(run.style[key], base[key])
+      (key) =>
+        run.style[key] !== undefined &&
+        isEqual(run.style[key], base[key]) &&
+        !(key === 'fills' && bindsOwnFills(run.style))
     )
     // A key a copy left undefined overrides nothing either.
     appendStyleRun(result, run.start, run.length, omitBy(omit(run.style, repeated), isUndefined))
@@ -194,7 +205,7 @@ function withoutBindingsStyleTakesOver(
   if (!own || !tookStyle) {
     return after
   }
-  const kept = omitBy(own, (_value, field) => isTextStyleField(field))
+  const kept = omit(own, Object.keys(own).filter(isTextStyleField))
   return isEmptyObject(kept) ? omit(after, ['boundVariables']) : { ...after, boundVariables: kept }
 }
 

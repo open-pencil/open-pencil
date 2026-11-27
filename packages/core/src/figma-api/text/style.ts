@@ -9,6 +9,7 @@ import {
   paragraphSpacingAt,
   paragraphStyleAt
 } from '@open-pencil/scene-graph/text'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
@@ -79,12 +80,17 @@ type FieldContext = { node: SceneNode; style: CharacterStyle; paragraph: number 
  * characters without fills of their own share, draw at their opacity alone.
  */
 function rangeFills(node: SceneNode, style: CharacterStyle): FigmaPaint[] {
-  if (style.fills === node.fills) return style.fills.map((paint) => toFigmaPaint(paint))
-  return style.fills.map((paint) =>
+  if (style.fills === node.fills) {
+    return style.fills.map((paint, index) =>
+      toFigmaPaint(paint, node.boundVariables[`fills/${index}/color`])
+    )
+  }
+  return style.fills.map((paint, index) =>
     toFigmaPaint(
       paint.type === 'SOLID'
         ? { ...paint, opacity: paint.opacity * paint.color.a, color: { ...paint.color, a: 1 } }
-        : paint
+        : paint,
+      style.boundVariables[`fills/${index}/color`]
     )
   )
 }
@@ -142,8 +148,12 @@ const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown
     paragraphStyleAt(node.textParagraphs, paragraph).indentation,
   hyperlink: ({ style }) => (style.hyperlink ? { ...style.hyperlink } : null),
   openTypeFeatures: ({ style }) => fontFeatureMap(style),
+  // A range's paints carry their own colour variables, as Figma lists them on the paints.
   boundVariables: ({ style }) =>
-    mapValues(pickBy(style.boundVariables, Boolean), (id) => variableAlias(String(id))),
+    mapValues(
+      pickBy(style.boundVariables, (id, field) => Boolean(id) && !paintBindingTarget(field)),
+      (id) => variableAlias(String(id))
+    ),
   textStyleOverrides: () => [],
   paragraphSpacing: spacing('paragraphSpacing'),
   listSpacing: spacing('listSpacing'),
