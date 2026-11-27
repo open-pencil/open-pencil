@@ -130,6 +130,14 @@ export function textCaseToFontVariantCaps(value: SceneNode['textCase']): string 
   return undefined
 }
 
+/** A text's case, as the letters' transform or the small caps its font draws. */
+export function addTextCase(style: DesignStyleDeclaration, node: SceneNode): void {
+  const transform = textCaseToCSS(node.textCase)
+  if (transform) style['text-transform'] = transform
+  const variantCaps = textCaseToFontVariantCaps(node.textCase)
+  if (variantCaps) style['font-variant-caps'] = variantCaps
+}
+
 export function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
   if (value === 'UPPER') return 'uppercase'
   if (value === 'LOWER') return 'lowercase'

@@ -39,10 +39,9 @@ import {
 } from './spacing'
 import {
   addTextBox,
+  addTextCase,
   addTextLines,
   insideRightToLeftFrame,
-  textCaseToCSS,
-  textCaseToFontVariantCaps,
   textElementContent,
   uniformLetterSpacing
 } from './text'
@@ -379,10 +378,7 @@ function styleFromTextNode(
     style['text-decoration-line'] =
       node.textDecoration === 'UNDERLINE' ? 'underline' : 'line-through'
   }
-  const textTransform = textCaseToCSS(node.textCase)
-  if (textTransform) style['text-transform'] = textTransform
-  const variantCaps = textCaseToFontVariantCaps(node.textCase)
-  if (variantCaps) style['font-variant-caps'] = variantCaps
+  addTextCase(style, node)
   addTextLines(style, node)
   return style
 }
