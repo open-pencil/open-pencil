@@ -14,4 +14,4 @@ El editor conserva el texto y sus intervalos de estilo en una única operación 
 ## Véase también
 
 - [useCanvasInput](./use-canvas-input)
-- [Edición de texto](/user-guide/text-editing)
+- [Edición de texto](/es/user-guide/text-editing)

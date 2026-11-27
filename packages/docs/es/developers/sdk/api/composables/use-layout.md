@@ -19,4 +19,4 @@ Las acciones actualizan la selección mediante la integración del editor y part
 ## Véase también
 
 - [LayoutControlsRoot](../components/layout-controls-root)
-- [Disposición automática](/user-guide/auto-layout)
+- [Disposición automática](/es/user-guide/auto-layout)

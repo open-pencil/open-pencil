@@ -17,4 +17,4 @@ Use el composable para construir una interfaz propia sobre el sistema de exporta
 
 ## Véase también
 
-- [Guía de exportación](/user-guide/exporting)
+- [Guía de exportación](/es/user-guide/exporting)
