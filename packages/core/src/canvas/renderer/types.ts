@@ -38,12 +38,24 @@ export interface PresenceCursor {
   outline?: Rect[]
 }
 
+/** Where a presentation draws an animating layer, relative to where it is. */
+export interface LayerMotion {
+  x: number
+  y: number
+  opacity: number
+}
+
 export interface RenderOverlays {
   /** Whether the canvas previews: it draws the design without labels or editing outlines. */
   playing?: boolean
   /** Nodes a previewing canvas draws from its preview session instead of the document. */
   /** Layers a previewing canvas leaves to its live islands. */
   playIslands?: ReadonlySet<string>
+  /**
+   * Layers a presentation moves or fades as they animate onto or off their slide, by ID: an offset
+   * in their parent's coordinates and an opacity the layer's own is multiplied by.
+   */
+  layerMotion?: ReadonlyMap<string, LayerMotion>
   hoveredNodeId?: string | null
   /** Draw the pixel grid when zoomed in far enough. */
   showPixelGrid?: boolean

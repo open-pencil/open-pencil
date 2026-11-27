@@ -20,11 +20,12 @@ import {
   slideSettings,
   type SlideTransition
 } from '@open-pencil/scene-graph/slides'
+import { easingPreset } from '@open-pencil/scene-graph/variables'
 
 const SMART: SlideTransition = {
   style: 'SMART_ANIMATE',
   duration: 0.5,
-  curve: 'GENTLE',
+  easing: easingPreset('GENTLE_SPRING'),
   timing: { type: 'AFTER_DELAY', delay: 2 }
 }
 

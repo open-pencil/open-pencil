@@ -184,8 +184,9 @@ describe('MCP server', () => {
 
   test('lists all registered tools', async () => {
     const { tools } = await client.listTools()
+    // The app has a design open, so tools for other kinds of document are not listed.
     const expectedNames = createToolDescriptors(false)
-      .filter((tool) => tool.availability === 'default')
+      .filter((tool) => tool.availability === 'default' && !tool.documentKinds)
       .map((tool) => tool.name)
       .sort()
     expect(tools.map((tool) => tool.name).sort()).toEqual(expectedNames)

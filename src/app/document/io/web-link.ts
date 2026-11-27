@@ -2,7 +2,8 @@
 // desktop `openpencil://open` link. The desktop variant resolves a repo-relative path
 // against open tabs; the web app has no filesystem, so `file` is an absolute `https:`
 // URL the browser fetches cross-origin, without credentials and without following a
-// redirect. Nothing else is reachable: no `http:`, no `file:`, no other extension.
+// redirect. Nothing else is reachable: no `http:`, no `file:`, no extension other than a
+// document's own: .pen, .fig, a board's .jam, or a deck's .deck.
 import { omit } from 'es-toolkit'
 
 import { errorMessage } from '@open-pencil/std/errors'
@@ -39,8 +40,11 @@ export function parseWebOpenParams(search: string): WebOpenParams | null {
     console.warn('[Web link] refused a file that is not a URL:', clamp(file))
     return null
   }
-  if (url.protocol !== 'https:' || !/\.(?:pen|fig)$/i.test(url.pathname)) {
-    console.warn('[Web link] refused file, expected https and .pen or .fig:', clamp(file))
+  if (url.protocol !== 'https:' || !/\.(?:pen|fig|jam|deck)$/i.test(url.pathname)) {
+    console.warn(
+      '[Web link] refused file, expected https and .pen, .fig, .jam, or .deck:',
+      clamp(file)
+    )
     return null
   }
   // The fragment never reaches the server, so two links that differ only in it name
