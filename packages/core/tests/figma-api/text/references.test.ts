@@ -3,6 +3,9 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 import { graphOf } from '#core/figma-api/graph'
@@ -170,6 +173,143 @@ describe('style ranges', () => {
     expect(text.getRangeTextStyleId(0, 11)).toBe('')
   })
 
+  test('give a range the value a style binds in the mode of the text', () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const roomy = graph.createMode(collection.id, 'Roomy') ?? ''
+    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 14)
+    size.valuesByMode[roomy] = 20
+    textStyle(api, '1:20', { fontSize: 14, boundVariables: { fontSize: size.id } })
+    graph.updateNode(text.id, { variableModes: { [collection.id]: roomy } })
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+
+    expect(text.getRangeFontSize(0, 5)).toBe(20)
+    expect(text.getRangeTextStyleId(0, 5)).toBe('1:20')
+    expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toBeNull()
+  })
+
+  test('give each text the value a changed style binds in its own mode', () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const roomyCopy = api.createText()
+    roomyCopy.characters = 'Hello world'
+    const collection = graph.createCollection('Type scale')
+    const roomy = graph.createMode(collection.id, 'Roomy') ?? ''
+    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 14)
+    size.valuesByMode[roomy] = 20
+    const style = api.createTextStyle()
+    style.fontSize = 14
+    const styleNode = graph.getSharedStyleNode(style.id, 'TEXT')
+    if (!styleNode) {
+      throw new Error('Expected the text style node')
+    }
+    graph.updateNode(styleNode.id, { boundVariables: { fontSize: size.id } })
+    graph.updateNode(roomyCopy.id, { variableModes: { [collection.id]: roomy } })
+    text.setRangeTextStyleId(0, 5, style.id)
+    roomyCopy.setRangeTextStyleId(0, 5, style.id)
+
+    style.letterSpacing = { unit: 'PIXELS', value: 2 }
+
+    expect([text.getRangeFontSize(0, 5), roomyCopy.getRangeFontSize(0, 5)]).toEqual([14, 20])
+    expect(roomyCopy.getRangeLetterSpacing(0, 5)).toEqual({ unit: 'PIXELS', value: 2 })
+  })
+
+  // Figma keeps the style when the whole text binds a field it sets, and draws the style's value.
+  test('keep the style and its value where the whole text binds a field the style sets', () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const roomy = graph.createMode(collection.id, 'Roomy') ?? ''
+    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 14)
+    size.valuesByMode[roomy] = 20
+    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    caption.valuesByMode[roomy] = 12
+    textStyle(api, '1:20', { fontSize: 14, boundVariables: { fontSize: size.id } })
+    textStyle(api, '1:21', { fontSize: 16 })
+    const plain = api.createText()
+    plain.characters = 'Hello world'
+    text.setRangeTextStyleId(0, 11, '1:20')
+    plain.setRangeTextStyleId(0, 11, '1:21')
+
+    text.setBoundVariable('fontSize', caption)
+    plain.setBoundVariable('fontSize', caption)
+    for (const id of [text.id, plain.id])
+      graph.updateNode(id, { variableModes: { [collection.id]: roomy } })
+    reconcileVariableBindings(graph, { subtrees: [text.id, plain.id] })
+
+    expect([text.getRangeTextStyleId(0, 11), plain.getRangeTextStyleId(0, 11)]).toEqual([
+      '1:20',
+      '1:21'
+    ])
+    expect([text.getRangeFontSize(0, 11), plain.getRangeFontSize(0, 11)]).toEqual([20, 16])
+    expect(graph.getNode(text.id)?.boundVariables.fontSize).toBe(caption.id)
+  })
+
+  test('drop the bindings a range holds itself for the fields of a style it takes', () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    const spacing = graph.createVariable('Spacing', 'FLOAT', collection.id, 4)
+    textStyle(api, '1:20', { fontSize: 20 })
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(caption.id))
+    text.setRangeBoundVariable(0, 11, 'letterSpacing', api.variables.getVariableById(spacing.id))
+    text.setRangeBoundVariable(0, 11, 'paragraphSpacing', api.variables.getVariableById(spacing.id))
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+
+    expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toBeNull()
+    expect(text.getRangeBoundVariable(0, 5, 'letterSpacing')).toBeNull()
+    expect(text.getRangeBoundVariable(0, 5, 'paragraphSpacing')).toBeNull()
+    expect(text.getRangeBoundVariable(6, 11, 'letterSpacing')).toEqual({
+      type: 'VARIABLE_ALIAS',
+      id: spacing.id
+    })
+    expect(text.getRangeFontSize(0, 5)).toBe(20)
+  })
+
+  test('let a whole styled text binding replace and clear the bindings its characters hold', async () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 16)
+    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    textStyle(api, '1:21', { fontSize: 16 })
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(size.id))
+    await text.setTextStyleIdAsync('1:21')
+
+    text.setBoundVariable('fontSize', caption.id)
+
+    expect(text.getRangeBoundVariable(0, 11, 'fontSize')).toEqual({
+      type: 'VARIABLE_ALIAS',
+      id: caption.id
+    })
+    expect(text.getRangeTextStyleId(0, 11)).toBe('1:21')
+
+    text.setBoundVariable('fontSize', null)
+
+    expect(text.getRangeBoundVariable(0, 11, 'fontSize')).toBeNull()
+  })
+
+  test('let a range that left the text style drop its own bindings when it takes the style again', async () => {
+    const { api, text } = styledText()
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const caption = graph.createVariable('Caption size', 'FLOAT', collection.id, 11)
+    textStyle(api, '1:20', { fontSize: 20 })
+    await text.setTextStyleIdAsync('1:20')
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(caption.id))
+    const left = graph.getNode(text.id)?.styleRuns.find((run) => run.start === 0)
+    expect(left?.style.textStyleId).toBeNull()
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+
+    expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toBeNull()
+    expect(text.getRangeFontSize(0, 5)).toBe(20)
+  })
+
   test('give a range a fill style and its paints, and detach it when filled', async () => {
     const { api, text } = styledText()
     fillStyle(api, '1:30')
@@ -276,5 +416,105 @@ describe('bound variable ranges', () => {
     expect(() => text.setRangeBoundVariable(0, 5, 'fontSize', { ...size, id: 'missing' })).toThrow(
       'in setRangeBoundVariable: Variable not found'
     )
+  })
+})
+
+describe('style ranges with bound lengths', () => {
+  function boundStyle(api: FigmaAPI) {
+    const graph = graphOf(api)
+    const collection = graph.createCollection('Type scale')
+    const roomy = graph.createMode(collection.id, 'Roomy') ?? ''
+    const size = graph.createVariable('Body size', 'FLOAT', collection.id, 14)
+    size.valuesByMode[roomy] = 20
+    const leading = graph.createVariable('Body leading', 'FLOAT', collection.id, 18)
+    leading.valuesByMode[roomy] = 26
+    textStyle(api, '1:20', {
+      fontSize: 14,
+      lineHeight: { value: 18, unit: 'PIXELS' },
+      boundVariables: { fontSize: size.id, lineHeight: leading.id }
+    })
+    return { graph, collection, roomy, size, leading }
+  }
+
+  test('give a range the line height a style binds as a length', () => {
+    const { api, text } = styledText()
+    boundStyle(api)
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 18, unit: 'PIXELS' })
+  })
+
+  test('give a range the line height it binds itself as a length', () => {
+    const { api, text } = styledText()
+    const { leading } = boundStyle(api)
+
+    text.setRangeBoundVariable(0, 5, 'lineHeight', api.variables.getVariableById(leading.id))
+
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 18, unit: 'PIXELS' })
+  })
+
+  test('give a range in a scaled instance the style it takes at the instance scale', () => {
+    const { api } = styledText()
+    const { graph } = boundStyle(api)
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { width: 40, height: 20 })
+    graph.createNode('TEXT', component.id, { text: 'Hello world', fontSize: 14 })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    rescaleNodeTree(graph, instance.id, 3)
+    const text = api.getNodeById(graph.getChildren(instance.id)[0].id)
+    if (text?.type !== 'TEXT') {
+      throw new Error('Expected the instance to hold a text')
+    }
+
+    text.setRangeTextStyleId(0, 5, '1:20')
+    const applied = text.getRangeFontSize(0, 5)
+    reconcileVariableBindings(graph, { subtrees: [text.id] })
+
+    expect([applied, text.getRangeFontSize(0, 5)]).toEqual([42, 42])
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 54, unit: 'PIXELS' })
+  })
+
+  test('give a range in a scaled instance the size it binds itself at the instance scale', () => {
+    const { api } = styledText()
+    const { graph, size } = boundStyle(api)
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { width: 40, height: 20 })
+    graph.createNode('TEXT', component.id, { text: 'Hello world', fontSize: 14 })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    rescaleNodeTree(graph, instance.id, 3)
+    const text = api.getNodeById(graph.getChildren(instance.id)[0].id)
+    if (text?.type !== 'TEXT') {
+      throw new Error('Expected the instance to hold a text')
+    }
+
+    text.setRangeBoundVariable(0, 5, 'fontSize', api.variables.getVariableById(size.id))
+
+    expect(text.getRangeFontSize(0, 5)).toBe(42)
+  })
+
+  test('give a range in a scaled instance a style binding nothing at the instance scale', () => {
+    const { api } = styledText()
+    const graph = graphOf(api)
+    textStyle(api, '1:30', {
+      fontSize: 7,
+      lineHeight: { value: 9, unit: 'PIXELS' },
+      letterSpacing: { value: 5, unit: 'PERCENT' }
+    })
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { width: 40, height: 20 })
+    graph.createNode('TEXT', component.id, { text: 'Hello world', fontSize: 14 })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    rescaleNodeTree(graph, instance.id, 3)
+    const text = api.getNodeById(graph.getChildren(instance.id)[0].id)
+    if (text?.type !== 'TEXT') {
+      throw new Error('Expected the instance to hold a text')
+    }
+
+    text.setRangeTextStyleId(0, 5, '1:30')
+
+    expect(text.getRangeFontSize(0, 5)).toBe(21)
+    expect(text.getRangeLineHeight(0, 5)).toEqual({ value: 27, unit: 'PIXELS' })
+    expect(text.getRangeLetterSpacing(0, 5)).toEqual({ value: 5, unit: 'PERCENT' })
   })
 })

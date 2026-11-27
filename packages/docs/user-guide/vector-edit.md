@@ -1,117 +1,59 @@
 ---
-title: Vector Object Editing
-description: 'How to edit vector path geometry: anchors, bezier handles, modifiers, and Pen tool actions in edit mode.'
+pageClass: guide
+title: Vector Editing
+description: Move a path's points and curves, add and delete points, and combine shapes into new ones.
 ---
 
-# Vector Object Editing
+# Vector Editing
 
-Vector Object Editing mode lets you change a curve's **geometry**: anchor positions, segment shape, and bezier handles.  
-In this mode, you edit the path itself, not standard object transforms.
+A path is made of points joined by straight or curved lines. To change its shape, edit the points themselves.
 
-## Entering the Mode
+## Edit a Path
 
-- Select a vector object with the Select tool.
-- **Double-click the curve**.
+Double-click a path, or select it and press <Keys mac="Enter" other="Enter" />. Its points show, and the handles around the layer go away.
 
-This activates geometry editing for the selected vector.
+<GuideImage name="vector-edit/points" alt="A curved path in edit mode, with a point selected and its two handles" />
 
-## Exiting the Mode
+- Drag a point to move it.
+- Drag a point's handle to change the curve.
+- Click a line between two points to select it, and drag it to move both of its points.
+- Drag across an empty spot to select the points inside the box.
+- Inside a filled shape, the area under the pointer is hatched. Click to select it with all its points, and drag to move it.
+- Hold <Keys mac="⇧" other="Shift" /> and click to add to the selection.
 
-- Press <kbd>Escape</kbd>.
-- Click empty space on the canvas.
-- Or switch to another editing context.
+To stop editing, press <Keys mac="Esc" other="Esc" /> or <Keys mac="Enter" other="Enter" />, or click an empty part of the canvas.
 
-## What Changes in This Mode
+## Shape a Curve
 
-- The normal transform bounding box is disabled for the object.
-- Anchor, segment, and handle editing becomes available.
-- Cursor behavior does not switch to resize/rotate at bbox corners.
+Hold a key while you drag a handle:
 
-## Basic Actions
+| Hold | What it does |
+| ---- | ------------ |
+| <Keys mac="⌘" other="Ctrl" /> | Keeps both handles in one line, for a smooth curve. Only this handle's length changes. |
+| <Keys mac="⌥" other="Alt" /> | Moves only this handle, for a sharp corner. |
+| <Keys mac="⇧" other="Shift" /> | Keeps the handle's direction and changes only its length. |
 
-### Move an Anchor
+Hold <Keys mac="⌘" other="Ctrl" /> and drag a point to pull out its handles and bend the lines next to it.
 
-- Drag an anchor point.
-- Connected segments and path shape update live in preview.
+## Add and Delete Points
 
-### Edit a Bezier Handle
+Press <Keys mac="P" other="P" /> while editing to use the pen:
 
-- Drag a handle on the anchor.
-- By default, behavior follows the anchor's current handle composition.
+- Click a line to add a point on it.
+- Click the end of an open path to keep drawing from there.
+- Hold <Keys mac="⌥" other="Alt" /> and click a point to delete it.
 
-### Select and Move a Segment
+To delete what's selected, press <Keys mac="⌫" other="Delete" />. A deleted point takes its lines with it. A deleted line leaves its points, unless nothing else holds them, so deleting a line in the middle splits a path in two. To split a path at a point instead, select the point and press <Keys mac="⌥ ⌫" other="Alt Delete" />.
 
-- Click a segment to select it. The segment turns blue and shows a knob at its midpoint; its anchors stay unselected.
-- <kbd>Shift</kbd> + click adds a segment to the selection, or removes a selected one.
-- Drag a segment to move the two anchors it joins, along with the rest of the selection.
+## Combine Shapes
 
-### Select with a Marquee
+Select two or more shapes and choose how to combine them in **Object**:
 
-- Drag over empty space to select the anchors inside the rectangle and the segments between them.
-- <kbd>Shift</kbd> + drag adds them to the selection.
+<GuideImage name="vector-edit/combine" alt="A square and a circle that overlap, and the four ways to combine them: union, subtract, intersect, and exclude" />
 
-### Select a Region
+- **Union selection** joins them into one shape.
+- **Subtract selection** cuts the shapes on top out of the bottom one.
+- **Intersect selection** keeps only where they overlap.
+- **Exclude selection** keeps everything except where they overlap.
 
-- Move the pointer inside a filled area: the region under it is hatched with diagonal lines.
-- Click inside it to select the region and all of its points; drag to move it.
-- <kbd>Shift</kbd> + click adds the region to the selection.
-
-### Delete Anchors and Segments
-
-- Press <kbd>Delete</kbd> or <kbd>Backspace</kbd> to delete the selection.
-- A deleted anchor takes its segments with it.
-- A deleted segment takes only the anchors it leaves unconnected, so deleting the middle segment of a path splits it in two.
-- Deleting everything deletes the layer.
-
-## Handle Drag Modifiers
-
-| Action                           | Mac                      | Windows / Linux         |
-| -------------------------------- | ------------------------ | ----------------------- |
-| Continuous (Smooth / Continuous) | <kbd>Cmd</kbd> + drag    | <kbd>Ctrl</kbd> + drag  |
-| Corner (Independent handles)     | <kbd>Option</kbd> + drag | <kbd>Alt</kbd> + drag   |
-| Direction lock (length only)     | <kbd>Shift</kbd> + drag  | <kbd>Shift</kbd> + drag |
-
-### Continuous: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + drag
-
-- The active handle is constrained to the same line as the sister handle.
-- Only the active handle length changes.
-- Use this for smooth transitions without a corner break.
-
-### Corner: <kbd>Option</kbd>/<kbd>Alt</kbd> + drag
-
-- The active handle is edited independently.
-- The sister handle stays in place.
-- Use this to create a sharp corner transition.
-
-### Direction Lock: <kbd>Shift</kbd> + drag
-
-For anchors with **Continuous** or **Symmetric** composition:
-
-- handle direction is locked to the value from **before the current drag started**;
-- dragging changes only handle length (or lengths, depending on composition).
-
-## Bend Override by Dragging an Anchor
-
-When you drag an anchor while holding <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>, the editor selects the target handle by **segment attachment direction** at that anchor (not by nearest neighbor-point distance).  
-This also works on multi-branch vector-web anchors: once resolved, the target handle stays locked for the current drag.
-
-## Using the Pen Tool in Edit Mode
-
-With the Pen tool active:
-
-- **Click a segment** to insert a new anchor (split segment).
-- **Click an open-path endpoint** to resume drawing from that point.
-- **Option/Alt + click an anchor** to delete it (when topology allows).
-
-For path creation and closing behavior, see [Pen Tool](./pen-tool.md).
-
-## Practical Workflow
-
-1. Draw a shape with the Pen tool.
-2. Double-click the curve to enter Vector Object Editing mode.
-3. Move anchors to refine the silhouette.
-4. Drag handles:
-   - with <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> for smooth continuous transitions,
-   - with <kbd>Option</kbd>/<kbd>Alt</kbd> for independent edits,
-   - with <kbd>Shift</kbd> for length-only edits.
-5. Press <kbd>Escape</kbd> to exit.
+The result stays editable: each shape keeps its own points inside it. **Flatten** turns the selection into one plain path, and **Outline stroke** turns a stroke into a filled shape. Rectangles, ellipses, and stars become paths you can edit point by point once flattened.

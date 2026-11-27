@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
-import { signAccessToken, trustAccessKey } from '#feedback-tests/access'
+import { requestSnapshot, signAccessToken, trustAccessKey } from '#feedback-tests/access'
 import { createTestService, type TestService } from '#feedback-tests/harness'
-import { metricsSnapshotSchema, type MetricsSnapshot } from '#feedback/contract'
+import { metricsSnapshotSchema } from '#feedback/contract'
 import { createFeedbackDatabase } from '#feedback/db'
 import type { CryptoKey } from 'jose'
 import * as v from 'valibot'
@@ -17,7 +17,6 @@ const TABLES = [
   'usagePings',
   'pingNetworks',
   'pingSteps',
-  'waitlist',
   'githubStars',
   'releaseDownloads',
   'repoTraffic',
@@ -25,7 +24,8 @@ const TABLES = [
   'siteVisits',
   'sitePages',
   'siteCountries',
-  'repoItems'
+  'repoItems',
+  'cloudUsage'
 ] as const
 
 const accessToken = (key: CryptoKey, claims?: Parameters<typeof signAccessToken>[2]) =>
@@ -38,22 +38,23 @@ async function getSnapshot(query: string, token?: string) {
 }
 
 /** The snapshot through the typed client, as the dashboard asks for it. */
-async function snapshot(start = '2026-10-14', end = '2026-10-20'): Promise<MetricsSnapshot> {
-  const response = await service.client.admin.api.snapshot.$get(
-    { query: { start, end } },
-    { headers: { 'cf-access-jwt-assertion': await accessToken(signingKey) } }
-  )
-  if (response.status !== 200) throw new Error(`The snapshot answered ${response.status}`)
-  return response.json()
-}
+const snapshot = (start = '2026-10-14', end = '2026-10-20') =>
+  requestSnapshot(service, signingKey, NOW, start, end)
 
 /** The service's D1 through the same typed Kysely the Worker uses. */
 const database = () => createFeedbackDatabase(service.db)
 
-/** A day's pings from one build, as the ping route counts them. */
+/** A day's pings from one build, as the ping route counts them; `stepped` for builds that send steps. */
 function ping(
   day: string,
-  build: { version?: string; platform: string; arch?: string; app: string; browser?: string },
+  build: {
+    version?: string
+    platform: string
+    arch?: string
+    app: string
+    browser?: string
+    stepped?: boolean
+  },
   count: number
 ) {
   return database()
@@ -66,8 +67,17 @@ function ping(
       app: build.app,
       browser: build.browser ?? 'unknown',
       usageStats: 'unset',
+      stepped: build.stepped ? 1 : 0,
       count
     })
+    .execute()
+}
+
+/** A day's pings for one app and step, as the ping route counts them. */
+function steps(day: string, app: string, step: string, entered: boolean, count: number) {
+  return database()
+    .insertInto('pingSteps')
+    .values({ day, app, step, entered: entered ? 1 : 0, count })
     .execute()
 }
 
@@ -189,17 +199,18 @@ describe('admin access', () => {
 })
 
 describe('metrics snapshot API', () => {
-  test('daily active installs cover every day, with no pings counting as zero', async () => {
-    await ping('2026-10-15', { platform: 'macos', app: 'desktop' }, 400)
-    await ping(
-      '2026-10-15',
-      { platform: 'windows', arch: 'x64', app: 'web', browser: 'chrome' },
-      300
-    )
+  test('daily active installs count checked installs per app, with no pings counting as zero', async () => {
+    await steps('2026-10-14', 'desktop', '1', true, 3)
+    await steps('2026-10-15', 'desktop', '1', true, 400)
+    // Three installs could have reached step 2, so seven of these replay a saved state.
+    await steps('2026-10-15', 'desktop', '2', true, 10)
+    await steps('2026-10-15', 'web', '1', true, 300)
+    // Versions that send no step are not installs anyone can check.
+    await ping('2026-10-15', { platform: 'macos', app: 'desktop' }, 5000)
     const { dailyActive } = await snapshot('2026-10-14', '2026-10-16')
     expect(dailyActive).toEqual([
-      { day: '2026-10-14', desktop: 0, web: 0 },
-      { day: '2026-10-15', desktop: 400, web: 300 },
+      { day: '2026-10-14', desktop: 3, web: 0 },
+      { day: '2026-10-15', desktop: 403, web: 300 },
       { day: '2026-10-16', desktop: 0, web: 0 }
     ])
   })
@@ -213,11 +224,19 @@ describe('metrics snapshot API', () => {
       ])
       .execute()
 
+    // The steps' own pings are in the counters too; only the rest are unchecked.
+    await ping(
+      '2026-10-15',
+      { version: '0.17.0', platform: 'macos', app: 'desktop', stepped: true },
+      9
+    )
+    await ping('2026-10-15', { platform: 'macos', app: 'desktop' }, 3739)
+
     // The steps before the range still bound it: four installs started on Oct 12.
     const { installs } = await snapshot('2026-10-15', '2026-10-16')
     expect(installs).toEqual([
-      { day: '2026-10-15', new: 0, returning: 4, replayed: 5 },
-      { day: '2026-10-16', new: 0, returning: 0, replayed: 0 }
+      { day: '2026-10-15', new: 0, returning: 4, replayed: 5, unchecked: 3739 },
+      { day: '2026-10-16', new: 0, returning: 0, replayed: 0, unchecked: 0 }
     ])
   })
 
@@ -308,12 +327,13 @@ describe('metrics snapshot API', () => {
       ['2026-10-14', '0.16.0-beta.2', 9],
       ['2026-10-15', '0.0.0-smoke', 1]
     ] as const)
-      await ping(day, { version, platform: 'macos', app: 'desktop' }, count)
+      await ping(day, { version, platform: 'macos', app: 'desktop', stepped: true }, count)
+    await ping('2026-10-14', { version: '0.15.1', platform: 'macos', app: 'desktop' }, 70)
     const { versions, releases } = await snapshot('2026-10-14', '2026-10-15')
     expect(versions.latest).toBe('0.16.0')
     expect(versions.daily).toEqual([
-      { day: '2026-10-14', latest: 354, other: 11 },
-      { day: '2026-10-15', latest: 0, other: 1 }
+      { day: '2026-10-14', latest: 354, other: 11, unchecked: 70 },
+      { day: '2026-10-15', latest: 0, other: 1, unchecked: 0 }
     ])
     expect(releases).toEqual([
       { day: '2026-10-14', version: '0.15.1' },
@@ -321,51 +341,16 @@ describe('metrics snapshot API', () => {
     ])
   })
 
-  test('platforms add desktop and web per OS, largest first', async () => {
-    await ping('2026-10-15', { platform: 'linux', arch: 'x64', app: 'web', browser: 'firefox' }, 5)
-    await ping('2026-10-15', { platform: 'macos', app: 'desktop' }, 9)
-    await ping('2026-10-16', { platform: 'macos', app: 'web', browser: 'safari' }, 3)
+  test('platforms add checked pings for desktop and web per OS, largest first', async () => {
+    const checked = { arch: 'x64', stepped: true }
+    await ping('2026-10-15', { ...checked, platform: 'linux', app: 'web', browser: 'firefox' }, 5)
+    await ping('2026-10-15', { platform: 'macos', app: 'desktop', stepped: true }, 9)
+    await ping('2026-10-16', { platform: 'macos', app: 'web', browser: 'safari', stepped: true }, 3)
+    await ping('2026-10-16', { platform: 'windows', app: 'desktop' }, 700)
     expect((await snapshot()).platforms).toEqual([
       { os: 'macos', desktop: 9, web: 3 },
       { os: 'linux', desktop: 0, web: 5 }
     ])
-  })
-
-  test('downloads and stars grow by the difference between end-of-day totals', async () => {
-    await database()
-      .insertInto('githubStars')
-      .values([
-        { day: '2026-10-13', stars: 9000, forks: 900 },
-        { day: '2026-10-14', stars: 9030, forks: 905 },
-        { day: '2026-10-15', stars: 9068, forks: 910 }
-      ])
-      .execute()
-    await database()
-      .insertInto('releaseDownloads')
-      .values([
-        { day: '2026-10-13', tag: 'v0.15.1', kind: 'windows-installer', downloads: 2000 },
-        { day: '2026-10-13', tag: 'v0.15.1', kind: 'update-check', downloads: 15000 },
-        { day: '2026-10-14', tag: 'v0.15.1', kind: 'windows-installer', downloads: 2010 },
-        { day: '2026-10-14', tag: 'v0.16.0', kind: 'macos-installer', downloads: 100 },
-        { day: '2026-10-14', tag: 'v0.16.0', kind: 'update-check', downloads: 1110 },
-        { day: '2026-10-14', tag: 'v0.15.1', kind: 'update-check', downloads: 15400 }
-      ])
-      .execute()
-    const { github } = await snapshot('2026-10-14', '2026-10-15')
-    expect(github.stars).toEqual({
-      total: 9068,
-      daily: [
-        { day: '2026-10-14', added: 30 },
-        { day: '2026-10-15', added: 38 }
-      ]
-    })
-    expect(github.downloads).toEqual({
-      total: 2110,
-      latestTag: 'v0.16.0',
-      latestTotal: 100,
-      daily: [{ day: '2026-10-14', added: 110 }],
-      updateChecks: [{ day: '2026-10-14', added: 1510 }]
-    })
   })
 
   test('visits pivot to the website and the web app, and rankings add up the range', async () => {
@@ -373,7 +358,8 @@ describe('metrics snapshot API', () => {
       .insertInto('siteVisits')
       .values([
         { day: '2026-10-14', host: 'openpencil.dev', visits: 3884 },
-        { day: '2026-10-14', host: 'app.openpencil.dev', visits: 729 }
+        { day: '2026-10-14', host: 'app.openpencil.dev', visits: 729 },
+        { day: '2026-10-14', host: 'cloud.openpencil.dev', visits: 310 }
       ])
       .execute()
     await database()
@@ -393,8 +379,8 @@ describe('metrics snapshot API', () => {
       .execute()
     const result = await snapshot('2026-10-14', '2026-10-15')
     expect(result.visits).toEqual([
-      { day: '2026-10-14', site: 3884, app: 729 },
-      { day: '2026-10-15', site: 0, app: 0 }
+      { day: '2026-10-14', site: 3884, app: 729, cloud: 310 },
+      { day: '2026-10-15', site: 0, app: 0, cloud: 0 }
     ])
     expect(result.website).toEqual({
       pages: [
@@ -408,133 +394,50 @@ describe('metrics snapshot API', () => {
     })
   })
 
-  test('issues and pull requests count open ones per finished day, team apart from community', async () => {
-    expect((await snapshot()).github.activity).toEqual({ issues: [], pulls: [] })
-    const opened = (createdAt: string) => ({ createdAt, updatedAt: createdAt })
+  test('Cloud usage covers every finished day, with the totals of the last snapshot', async () => {
+    expect((await snapshot()).cloud).toBeNull()
+    const quiet = { accounts: null, documents: null, workspaces: null, storageBytes: null }
     await database()
-      .insertInto('repoItems')
+      .insertInto('cloudUsage')
       .values([
-        // Open before the range, closed inside it.
         {
-          number: 1,
-          kind: 'issue',
-          authorAssociation: 'NONE',
-          ...opened('2026-10-10T09:00:00.000Z'),
-          closedAt: '2026-10-15T05:00:00.000Z',
-          mergedAt: null
+          day: '2026-10-15',
+          signUps: 4,
+          activeAccounts: 6,
+          documentsCreated: 2,
+          revisions: 8,
+          ...quiet
         },
         {
-          number: 2,
-          kind: 'issue',
-          authorAssociation: 'MEMBER',
-          ...opened('2026-10-15T23:59:59.000Z'),
-          closedAt: null,
-          mergedAt: null
-        },
-        // Closed before the range: counts nowhere.
-        {
-          number: 3,
-          kind: 'issue',
-          authorAssociation: 'CONTRIBUTOR',
-          ...opened('2026-10-01T09:00:00.000Z'),
-          closedAt: '2026-10-05T09:00:00.000Z',
-          mergedAt: null
-        },
-        // Opened today, which is not counted yet.
-        {
-          number: 4,
-          kind: 'issue',
-          authorAssociation: 'CONTRIBUTOR',
-          ...opened('2026-10-20T09:00:00.000Z'),
-          closedAt: null,
-          mergedAt: null
-        },
-        {
-          number: 5,
-          kind: 'pull',
-          authorAssociation: 'OWNER',
-          ...opened('2026-10-14T09:00:00.000Z'),
-          closedAt: '2026-10-16T09:00:00.000Z',
-          mergedAt: '2026-10-16T09:00:00.000Z'
-        },
-        // Closed without merging.
-        {
-          number: 6,
-          kind: 'pull',
-          authorAssociation: 'FIRST_TIME_CONTRIBUTOR',
-          ...opened('2026-10-16T09:00:00.000Z'),
-          closedAt: '2026-10-17T09:00:00.000Z',
-          mergedAt: null
+          day: '2026-10-17',
+          signUps: 1,
+          activeAccounts: 3,
+          documentsCreated: 0,
+          revisions: 5,
+          accounts: 20,
+          documents: 31,
+          workspaces: 22,
+          storageBytes: 4096
         }
       ])
       .execute()
-    const { activity } = (await snapshot('2026-10-14', '2026-10-20')).github
-    const zero = { openedTeam: 0, openedCommunity: 0, closedTeam: 0, closedCommunity: 0 }
-    expect(activity.issues).toEqual([
-      { day: '2026-10-14', openTeam: 0, openCommunity: 1, ...zero },
-      {
-        day: '2026-10-15',
-        openTeam: 1,
-        openCommunity: 0,
-        ...zero,
-        openedTeam: 1,
-        closedCommunity: 1
-      },
-      { day: '2026-10-16', openTeam: 1, openCommunity: 0, ...zero },
-      { day: '2026-10-17', openTeam: 1, openCommunity: 0, ...zero },
-      { day: '2026-10-18', openTeam: 1, openCommunity: 0, ...zero },
-      { day: '2026-10-19', openTeam: 1, openCommunity: 0, ...zero }
+    const { cloud } = await snapshot('2026-10-14', '2026-10-20')
+    const zero = { signUps: 0, activeAccounts: 0, documentsCreated: 0, revisions: 0 }
+    expect(cloud?.days).toEqual([
+      { day: '2026-10-14', ...zero },
+      { day: '2026-10-15', signUps: 4, activeAccounts: 6, documentsCreated: 2, revisions: 8 },
+      { day: '2026-10-16', ...zero },
+      { day: '2026-10-17', signUps: 1, activeAccounts: 3, documentsCreated: 0, revisions: 5 },
+      { day: '2026-10-18', ...zero },
+      { day: '2026-10-19', ...zero }
     ])
-    const unmerged = { mergedTeam: 0, mergedCommunity: 0 }
-    expect(activity.pulls.slice(0, 4)).toEqual([
-      { day: '2026-10-14', openTeam: 1, openCommunity: 0, ...zero, ...unmerged, openedTeam: 1 },
-      { day: '2026-10-15', openTeam: 1, openCommunity: 0, ...zero, ...unmerged },
-      {
-        day: '2026-10-16',
-        openTeam: 0,
-        openCommunity: 1,
-        ...zero,
-        openedCommunity: 1,
-        closedTeam: 1,
-        mergedTeam: 1,
-        mergedCommunity: 0
-      },
-      { day: '2026-10-17', openTeam: 0, openCommunity: 0, ...zero, ...unmerged, closedCommunity: 1 }
-    ])
-  })
-
-  test('the waitlist shows email domains only', async () => {
-    await database()
-      .insertInto('waitlist')
-      .values([
-        {
-          email: 'Ada@Example.com',
-          emailKey: 'ada@example.com',
-          note: null,
-          token: 't1',
-          createdAt: '2026-10-15T08:00:00.000Z',
-          confirmationSentAt: '2026-10-15T08:00:00.000Z',
-          confirmedAt: '2026-10-15T08:01:00.000Z'
-        },
-        {
-          email: 'bob@studio.io',
-          emailKey: 'bob@studio.io',
-          note: 'note',
-          token: 't2',
-          createdAt: '2026-10-01T08:00:00.000Z',
-          confirmationSentAt: '2026-10-01T08:00:00.000Z',
-          confirmedAt: null
-        }
-      ])
-      .execute()
-    const { waitlist } = await snapshot()
-    expect(waitlist).toEqual({
-      total: 2,
-      confirmed: 1,
-      added: 1,
-      recent: [{ domain: 'example.com', signedUpAt: '2026-10-15T08:00:00.000Z', confirmed: true }]
+    expect(cloud?.totals).toEqual({
+      day: '2026-10-17',
+      accounts: 20,
+      documents: 31,
+      workspaces: 22,
+      storageBytes: 4096
     })
-    expect(JSON.stringify(waitlist)).not.toContain('@')
   })
 
   test('usage comes from PostHog with a read-only personal key', async () => {

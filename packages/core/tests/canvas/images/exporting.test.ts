@@ -25,11 +25,8 @@ import { decodedImageBytes } from '#core/canvas/images/cache'
 import { drawingExport } from '#core/canvas/images/exporting'
 import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
-import {
-  drawRegionToImage,
-  renderNodesToImage,
-  renderThumbnail
-} from '#core/io/formats/raster/render'
+import { drawRegionToImage, renderNodesToImage } from '#core/io/formats/raster/render'
+import { renderThumbnail } from '#core/io/formats/raster/thumbnail'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))

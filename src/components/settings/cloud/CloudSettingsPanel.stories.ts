@@ -41,13 +41,7 @@ const meta = {
     template: `
       <div class="flex h-140 bg-panel p-6">
         <div class="flex w-full max-w-2xl flex-col">
-          <CloudSettingsPanel :servers="args.servers" :listed="args.listed" @connect="args.onConnect">
-            <template #hosted>
-              <div class="rounded border border-dashed border-border p-3 text-2xs text-muted">
-                The OpenPencil Cloud waitlist
-              </div>
-            </template>
-          </CloudSettingsPanel>
+          <CloudSettingsPanel :servers="args.servers" :listed="args.listed" @connect="args.onConnect" />
         </div>
         <AppConfirmationDialog
           :open="args.confirmRemove"
@@ -69,6 +63,6 @@ export const SignInExpired: Story = {
   args: { servers: [official, { ...team, session: 'expired' }] }
 }
 export const NoServers: Story = { args: { servers: [] } }
-/** Before the hosted service opens, its waitlist takes the place of connecting to it. */
+/** Before the hosted service takes this editor, only a self-hosted server is offered. */
 export const BeforeLaunch: Story = { args: { servers: [], listed: false } }
 export const RemoveWithUnsavedChanges: Story = { args: { confirmRemove: true } }

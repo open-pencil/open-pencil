@@ -9,7 +9,6 @@ import type {
 } from '@open-pencil/scene-graph'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import {
-  findSharedStyle,
   sharedStyleDetachPatch,
   sharedStylePatch,
   sharedStyleRefKey,
@@ -17,7 +16,7 @@ import {
 } from '@open-pencil/scene-graph/shared-styles'
 
 import { figmaEffects, figmaFills } from '#core/figma-api/accessors/visual'
-import { rangeSharedStylePatch } from '#core/figma-api/text/bindings'
+import { sharedStyleRangePatcher } from '#core/figma-api/text/bindings'
 import { setEffectBindings, setPaintBindings } from '#core/figma-api/variables/bindings'
 import {
   layerTextStyleChanges,
@@ -63,7 +62,7 @@ export function styleChanges(
     const patch = sharedStyleDetachPatch(kind)
     return wholeText ? textStyleChanges(node, patch) : patch
   }
-  const style = findSharedStyle(graph, styleId, sharedStyleTypeForKind(kind))
+  const style = graph.getSharedStyleNode(styleId, sharedStyleTypeForKind(kind))
   if (!style) return null
   const patch = sharedStylePatch(kind, node, styleId, style)
   return wholeText ? layerTextStyleChanges(node, patch) : patch
@@ -80,7 +79,7 @@ export function bindStylePaints(
   styleId: string
 ): void {
   if ((kind !== 'fill' && kind !== 'stroke') || !styleId) return
-  const style = findSharedStyle(graph, styleId, 'FILL')
+  const style = graph.getSharedStyleNode(styleId, 'FILL')
   if (!style) return
   setPaintBindings(graph, node, kind === 'fill' ? 'fills' : 'strokes', figmaFills(style))
 }
@@ -96,7 +95,7 @@ export function bindStyleEffects(
   styleId: string
 ): void {
   if (kind !== 'effect' || !styleId) return
-  const style = findSharedStyle(graph, styleId, 'EFFECT')
+  const style = graph.getSharedStyleNode(styleId, 'EFFECT')
   if (!style) return
   setEffectBindings(graph, node, figmaEffects(style))
 }
@@ -166,19 +165,12 @@ function updateUsers(
   style: SceneNode,
   update: LayerUpdate,
   patch: (node: SceneNode, kind: SharedStyleKind) => Partial<SceneNode>,
-  rangePatch: (kind: 'text' | 'fill') => CharacterStyleOverride,
+  rangePatch: (node: SceneNode, kind: 'text' | 'fill') => CharacterStyleOverride,
   after?: (node: SceneNode, kind: SharedStyleKind) => void
 ): void {
   const id = style.source.id
   if (!id || !style.sharedStyleType) return
   const kinds = KINDS_OF_TYPE[style.sharedStyleType]
-  // A style's range patch is the same for every text, so it is built once, when one needs it.
-  const rangePatches = new Map<'text' | 'fill', CharacterStyleOverride>()
-  const lazyRangePatch = (kind: 'text' | 'fill') => () => {
-    const found = rangePatches.get(kind) ?? rangePatch(kind)
-    rangePatches.set(kind, found)
-    return found
-  }
   for (const node of graph.getAllNodes()) {
     if (node.sharedStyleType !== null) continue
     const own = kinds.filter((kind) => node[sharedStyleRefKey(kind)] === id)
@@ -188,7 +180,7 @@ function updateUsers(
       // A text or fill style reaches characters through one kind of run reference.
       const runKind = kinds.find((kind) => kind === 'text' || kind === 'fill')
       const field = runKind === 'text' ? 'textStyleId' : 'fillStyleId'
-      const runs = runKind && restyledRuns(node, field, id, lazyRangePatch(runKind))
+      const runs = runKind && restyledRuns(node, field, id, () => rangePatch(node, runKind))
       if (runs) changes.styleRuns = runs
     }
     if (Object.keys(changes).length === 0) continue
@@ -201,13 +193,19 @@ function updateUsers(
 /** Gives the layers and text ranges that use `style` its values, after the style changed. */
 export function restyleUsers(graph: SceneGraph, style: SceneNode, update: LayerUpdate): void {
   const id = style.source.id ?? ''
+  const rangePatch = sharedStyleRangePatcher(
+    graph,
+    style.sharedStyleType === 'TEXT' ? 'text' : 'fill',
+    id,
+    style
+  )
   updateUsers(
     graph,
     style,
     update,
     // A layer's own fields only: its ranges keep the values they set themselves.
     (node, kind) => sharedStylePatch(kind, node, id, style),
-    (kind) => rangeSharedStylePatch(graph, kind, id) ?? {},
+    rangePatch,
     (node, kind) => bindStyleVariables(graph, node, kind, id)
   )
 }
@@ -219,6 +217,6 @@ export function releaseUsers(graph: SceneGraph, style: SceneNode, update: LayerU
     style,
     update,
     (_node, kind) => sharedStyleDetachPatch(kind),
-    (kind) => ({ [kind === 'text' ? 'textStyleId' : 'fillStyleId']: null })
+    (_node, kind) => ({ [kind === 'text' ? 'textStyleId' : 'fillStyleId']: null })
   )
 }

@@ -60,6 +60,22 @@ describe('fill sizing in DOM/CSS export', () => {
   })
 })
 
+describe('grid tracks in DOM/CSS export', () => {
+  it('keeps tracks that hug their cells from stretching into a larger grid', () => {
+    const grid = (tracks: Partial<SceneNode>) =>
+      styleOf(exportParent({ layoutMode: 'GRID', ...tracks }, []), 'Parent')
+    const hug = { sizing: 'AUTO', value: 0 } as const
+    const flex = { sizing: 'FR', value: 1 } as const
+    expect(grid({ gridTemplateRows: [hug, hug], gridTemplateColumns: [flex] })).toMatchObject({
+      'align-content': 'start'
+    })
+    expect(grid({ gridTemplateColumns: [hug, flex] })).toMatchObject({ 'justify-content': 'start' })
+    const flexible = grid({ gridTemplateRows: [flex], gridTemplateColumns: [flex] })
+    expect(flexible).not.toHaveProperty('align-content')
+    expect(flexible).not.toHaveProperty('justify-content')
+  })
+})
+
 describe('auto layout sizes in DOM/CSS export', () => {
   const child = { name: 'Child', width: 40, height: 50 }
   const shrink = (layout: Partial<SceneNode>, over: Partial<SceneNode> = {}) =>

@@ -23,13 +23,15 @@ const TABLES = [
   'siteVisits',
   'sitePages',
   'siteCountries',
-  'repoItems'
+  'repoItems',
+  'cloudUsage'
 ] as const
 
 /** An issue or pull request as `/issues` lists it, last updated `updated`. */
 function item(number: number, updated: string, fields: Record<string, unknown> = {}) {
   return {
     number,
+    user: { login: `person-${number}`, type: 'User' },
     author_association: 'CONTRIBUTOR',
     created_at: '2026-10-01T09:00:00Z',
     updated_at: updated,
@@ -93,13 +95,35 @@ function answerGithub() {
   service.respond(`${REPO}/issues`, () =>
     Response.json([
       item(1, '2026-10-02T10:00:00Z', {
+        user: { login: 'ada', type: 'User' },
         author_association: 'MEMBER',
         closed_at: '2026-10-02T10:00:00Z',
         pull_request: { merged_at: '2026-10-02T10:00:00Z' }
       }),
-      item(2, '2026-10-03T08:00:00Z')
+      item(2, '2026-10-03T08:00:00Z'),
+      item(3, '2026-10-03T09:00:00Z', { user: { login: 'renovate[bot]', type: 'Bot' } })
     ])
   )
+}
+
+const CLOUD_USAGE = 'https://cloud.openpencil.dev/api/internal/usage/daily'
+
+/** Answers Cloud's usage for the days asked, quiet until `firstDay` and busy from then on. */
+function answerCloud(firstDay = '2026-10-17') {
+  service.respond(CLOUD_USAGE, (call) => {
+    const query = new URL(call.url).searchParams
+    const days = eachDay(parseDate(query.get('start') ?? ''), parseDate(query.get('end') ?? ''))
+    return Response.json({
+      days: days
+        .map(String)
+        .map((day) =>
+          day < firstDay
+            ? { day, signUps: 0, activeAccounts: 0, documentsCreated: 0, revisions: 0 }
+            : { day, signUps: 2, activeAccounts: 5, documentsCreated: 3, revisions: 9 }
+        ),
+      totals: { accounts: 40, documents: 75, workspaces: 41, storageBytes: 123_456 }
+    })
+  })
 }
 
 /** Answers every day with the same visits, and each breakdown with `pages` for the website. */
@@ -113,7 +137,8 @@ function answerOnce(call: FetchCall, pages: string[] = ['/', '/download']): Resp
     const days = eachDay(parseDate(variables.start), parseDate(variables.end))
     const groups = days.map(String).flatMap((date) => [
       { sum: { visits: 4000 }, dimensions: { date, clientRequestHTTPHost: 'openpencil.dev' } },
-      { sum: { visits: 1000 }, dimensions: { date, clientRequestHTTPHost: 'app.openpencil.dev' } }
+      { sum: { visits: 1000 }, dimensions: { date, clientRequestHTTPHost: 'app.openpencil.dev' } },
+      { sum: { visits: 500 }, dimensions: { date, clientRequestHTTPHost: 'cloud.openpencil.dev' } }
     ])
     return Response.json({
       data: { viewer: { zones: [{ httpRequestsAdaptiveGroups: groups }] } }
@@ -166,6 +191,7 @@ beforeEach(async () => {
   service.setNow(RUN_AT)
   answerGithub()
   answerCloudflare()
+  answerCloud()
 })
 
 afterAll(async () => {
@@ -235,13 +261,13 @@ describe('metrics snapshot', () => {
       zone: '6a1c3366d17c9cdefab66cf5dd4e1cbe',
       start: '2026-09-22',
       end: '2026-10-19',
-      hosts: ['openpencil.dev', 'app.openpencil.dev']
+      hosts: ['openpencil.dev', 'app.openpencil.dev', 'cloud.openpencil.dev']
     })
     expect(new Headers(visits?.init?.headers).get('Authorization')).toBe('Bearer cloudflare-token')
     expect(breakdowns.map((call) => variablesOf(call).host)).toEqual(
       Array.from({ length: 28 }, () => 'openpencil.dev')
     )
-    expect(await rows.siteVisits()).toHaveLength(56)
+    expect(await rows.siteVisits()).toHaveLength(84)
     expect(await rows.siteCountries()).toHaveLength(28)
   })
 
@@ -259,7 +285,13 @@ describe('metrics snapshot', () => {
     const recorded = parseDate('2026-10-19').subtract({ days: 10 })
     await database()
       .insertInto('siteVisits')
-      .values({ day: recorded.toString(), host: 'openpencil.dev', visits: 1 })
+      .values(
+        ['openpencil.dev', 'app.openpencil.dev', 'cloud.openpencil.dev'].map((host) => ({
+          day: recorded.toString(),
+          host,
+          visits: 1
+        }))
+      )
       .execute()
     await runSnapshot(service.env, service.services)
     const [visits] = cloudflareCalls()
@@ -310,7 +342,7 @@ describe('metrics snapshot', () => {
     })
     await runSnapshot(service.env, service.services)
     const visits = await rows.siteVisits()
-    expect(visits).toHaveLength(56)
+    expect(visits).toHaveLength(84)
     expect(visits.filter((row) => row.visits > 0)).toEqual([
       { day: '2026-10-19', host: 'openpencil.dev', visits: 3000 }
     ])
@@ -339,8 +371,10 @@ describe('metrics snapshot', () => {
     const visits = await rows.siteVisits()
     expect(visits.filter((row) => row.day >= '2026-10-18')).toEqual([
       { day: '2026-10-18', host: 'app.openpencil.dev', visits: 0 },
+      { day: '2026-10-18', host: 'cloud.openpencil.dev', visits: 0 },
       { day: '2026-10-18', host: 'openpencil.dev', visits: 0 },
       { day: '2026-10-19', host: 'app.openpencil.dev', visits: 0 },
+      { day: '2026-10-19', host: 'cloud.openpencil.dev', visits: 0 },
       { day: '2026-10-19', host: 'openpencil.dev', visits: 4000 }
     ])
   })
@@ -367,7 +401,7 @@ describe('metrics snapshot', () => {
     expect(await runSnapshot(service.env, service.services)).toEqual({ failed: ['github'] })
     expect(await rows.githubStars()).toEqual([])
     expect(await rows.repoTraffic()).toHaveLength(2)
-    expect(await rows.siteVisits()).toHaveLength(56)
+    expect(await rows.siteVisits()).toHaveLength(84)
   })
 
   test('an answer of the wrong shape fails that source rather than recording it', async () => {
@@ -383,6 +417,7 @@ describe('metrics snapshot', () => {
         number: 1,
         kind: 'pull',
         authorAssociation: 'MEMBER',
+        author: 'ada',
         createdAt: '2026-10-01T09:00:00.000Z',
         closedAt: '2026-10-02T10:00:00.000Z',
         mergedAt: '2026-10-02T10:00:00.000Z',
@@ -392,10 +427,22 @@ describe('metrics snapshot', () => {
         number: 2,
         kind: 'issue',
         authorAssociation: 'CONTRIBUTOR',
+        author: 'person-2',
         createdAt: '2026-10-01T09:00:00.000Z',
         closedAt: null,
         mergedAt: null,
         updatedAt: '2026-10-03T08:00:00.000Z'
+      },
+      {
+        number: 3,
+        kind: 'issue',
+        authorAssociation: 'CONTRIBUTOR',
+        // Bots are no one's contribution.
+        author: null,
+        createdAt: '2026-10-01T09:00:00.000Z',
+        closedAt: null,
+        mergedAt: null,
+        updatedAt: '2026-10-03T09:00:00.000Z'
       }
     ])
   })
@@ -422,5 +469,89 @@ describe('metrics snapshot', () => {
     await runSnapshot(service.env, service.services)
     const issueCalls = service.fetchCalls.filter((call) => call.url.startsWith(`${REPO}/issues`))
     expect(issueCalls.map(since)).toEqual(['2026-10-05T11:00:00.000Z'])
+  })
+
+  test('fills Cloud usage from its first busy day, with totals on the day that just ended', async () => {
+    expect(await runSnapshot(service.env, service.services)).toEqual({ failed: [] })
+    const recorded = await database().selectFrom('cloudUsage').selectAll().orderBy('day').execute()
+    const busy = { signUps: 2, activeAccounts: 5, documentsCreated: 3, revisions: 9 }
+    const untotalled = { accounts: null, documents: null, workspaces: null, storageBytes: null }
+    expect(recorded).toEqual([
+      { day: '2026-10-17', ...busy, ...untotalled },
+      { day: '2026-10-18', ...busy, ...untotalled },
+      {
+        day: '2026-10-19',
+        ...busy,
+        accounts: 40,
+        documents: 75,
+        workspaces: 41,
+        storageBytes: 123_456
+      }
+    ])
+    const call = service.fetchCalls.find((entry) => entry.url.startsWith(CLOUD_USAGE))
+    expect(new Headers(call?.init?.headers).get('Authorization')).toBe('Bearer cloud-service-token')
+    expect(new URL(call?.url ?? '').searchParams.get('end')).toBe('2026-10-19')
+  })
+
+  test('the next Cloud run asks only for the days after the last one recorded', async () => {
+    await runSnapshot(service.env, service.services)
+    service.fetchCalls.length = 0
+    service.setNow(new Date('2026-10-22T00:05:00.000Z'))
+    await runSnapshot(service.env, service.services)
+    const call = service.fetchCalls.find((entry) => entry.url.startsWith(CLOUD_USAGE))
+    const query = new URL(call?.url ?? '').searchParams
+    expect([query.get('start'), query.get('end')]).toEqual(['2026-10-20', '2026-10-21'])
+  })
+
+  test('a quiet first Cloud run still keeps the totals of the day that just ended', async () => {
+    answerCloud('2027-01-01')
+    await runSnapshot(service.env, service.services)
+    const recorded = await database().selectFrom('cloudUsage').selectAll().execute()
+    expect(recorded).toEqual([
+      {
+        day: '2026-10-19',
+        signUps: 0,
+        activeAccounts: 0,
+        documentsCreated: 0,
+        revisions: 0,
+        accounts: 40,
+        documents: 75,
+        workspaces: 41,
+        storageBytes: 123_456
+      }
+    ])
+  })
+
+  test('after a gap longer than one request reaches, Cloud is asked only for what it can answer', async () => {
+    const quiet = { signUps: 0, activeAccounts: 0, documentsCreated: 0, revisions: 0 }
+    await database()
+      .insertInto('cloudUsage')
+      .values({
+        day: '2025-01-01',
+        ...quiet,
+        accounts: null,
+        documents: null,
+        workspaces: null,
+        storageBytes: null
+      })
+      .execute()
+    await runSnapshot(service.env, service.services)
+    const call = service.fetchCalls.find((entry) => entry.url.startsWith(CLOUD_USAGE))
+    expect(new URL(call?.url ?? '').searchParams.get('start')).toBe('2025-09-15')
+  })
+
+  test('a host added later has its visits filled from as far back as Cloudflare keeps', async () => {
+    await database()
+      .insertInto('siteVisits')
+      .values([
+        { day: '2026-10-19', host: 'openpencil.dev', visits: 1 },
+        { day: '2026-10-19', host: 'app.openpencil.dev', visits: 1 }
+      ])
+      .execute()
+    await runSnapshot(service.env, service.services)
+    const visits = cloudflareCalls()
+      .map(variablesOf)
+      .find((variables) => 'hosts' in variables)
+    expect(visits?.start).toBe('2026-09-22')
   })
 })

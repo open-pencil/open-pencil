@@ -6,14 +6,16 @@ import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
 import { bindingOverrideField, setInstanceOverride } from '../instances/overrides'
 import { siblingOrderKeys } from '../order-keys'
-import type {
-  Effect,
-  SceneNode,
-  Variable,
-  VariableCollection,
-  VariableCollectionMode,
-  VariableType,
-  VariableValue
+import {
+  TEXT_BINDABLE_FIELDS,
+  type Effect,
+  type SceneNode,
+  type TextBindableField,
+  type Variable,
+  type VariableCollection,
+  type VariableCollectionMode,
+  type VariableType,
+  type VariableValue
 } from '../types'
 import {
   isNumericVariableBindingField,
@@ -323,6 +325,42 @@ function preparePaintBinding(
   }
 }
 
+const TEXT_BINDABLE: ReadonlySet<string> = new Set(TEXT_BINDABLE_FIELDS)
+
+function isTextBindableField(field: string): field is TextBindableField {
+  return TEXT_BINDABLE.has(field)
+}
+
+/**
+ * Checks the variable's type against a scalar, text, boolean, or text style field, and says
+ * whether the field is one of those. A text style binds every field a range of characters can,
+ * its face by style or by weight.
+ */
+function assertFieldVariableType(node: SceneNode, field: string, variable: Variable): boolean {
+  if (isNumericVariableBindingField(field)) {
+    if (variable.type !== 'FLOAT')
+      throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
+    return true
+  }
+  if (STRING_BINDING_FIELDS.has(field)) {
+    const types: readonly VariableType[] =
+      field === 'text' ? TEXT_CONTENT_VARIABLE_TYPES : ['STRING']
+    if (!types.includes(variable.type))
+      throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
+    return true
+  }
+  if (BOOLEAN_BINDING_FIELDS.has(field)) {
+    if (!VISIBILITY_VARIABLE_TYPES.some((type) => type === variable.type))
+      throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
+    return true
+  }
+  if (node.sharedStyleType !== 'TEXT' || !isTextBindableField(field)) return false
+  const type: VariableType = field === 'fontStyle' ? 'STRING' : 'FLOAT'
+  if (variable.type !== type)
+    throw new Error(`Cannot bind ${variable.type} variable to text style field "${field}"`)
+  return true
+}
+
 export function bindVariable(
   graph: SceneGraph,
   nodeId: string,
@@ -344,29 +382,8 @@ export function bindVariable(
   const effect = effectBindingTarget(field)
   if (effect) assertEffectBinding(node.effects, effect, variable.type, field)
 
-  if (isNumericVariableBindingField(field) && variable.type !== 'FLOAT') {
-    throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
-  }
-
-  const textTypes: readonly VariableType[] =
-    field === 'text' ? TEXT_CONTENT_VARIABLE_TYPES : ['STRING']
-  if (STRING_BINDING_FIELDS.has(field) && !textTypes.includes(variable.type)) {
-    throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
-  }
-
-  if (
-    BOOLEAN_BINDING_FIELDS.has(field) &&
-    !VISIBILITY_VARIABLE_TYPES.some((type) => type === variable.type)
-  ) {
-    throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
-  }
-
   const isKnownField =
-    isNumericVariableBindingField(field) ||
-    STRING_BINDING_FIELDS.has(field) ||
-    BOOLEAN_BINDING_FIELDS.has(field) ||
-    paint !== null ||
-    effect !== null
+    assertFieldVariableType(node, field, variable) || paint !== null || effect !== null
 
   if (!isKnownField) {
     throw new Error(`Unknown binding field "${field}"`)
@@ -429,6 +446,7 @@ function markBoundVariablesOverrideOnInstance(
 }
 
 export * from './bindings'
+export * from './style-bindings'
 export * from './corners'
 export * from './easing'
 export * from './formula'
