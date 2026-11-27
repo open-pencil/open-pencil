@@ -31,6 +31,9 @@ pub struct Occurrence {
     pub flags: u32,
     /// The component record it expanded, or `NONE`.
     pub component: u32,
+    /// The GUID of the component it expands once bindings and swaps chose it, also where the
+    /// file lacks that component, or `NO_GUID`.
+    pub expands: u64,
     /// One past the last occurrence below it.
     pub end: u32,
 }
@@ -172,6 +175,11 @@ pub struct Expansion<'a> {
 }
 
 impl<'a> Expansion<'a> {
+    /// The index the expansion's records belong to.
+    pub fn index(&self) -> &'a Index {
+        self.index
+    }
+
     pub fn page(index: &'a Index, page: u32) -> Expansion<'a> {
         let mut expansion = Expansion {
             index,
@@ -207,6 +215,7 @@ impl<'a> Expansion<'a> {
             next_sibling: NONE,
             flags: 0,
             component: NONE,
+            expands: NO_GUID,
             end: 0,
         });
         if parent != NONE {
@@ -411,6 +420,9 @@ impl<'a> Expansion<'a> {
         }
 
         let me = merge.unwrap_or_else(|| self.push(record, parent));
+        if merge.is_none() {
+            self.occurrences[me as usize].expands = effective;
+        }
         let mut dangling = false;
         let mut has_base = false;
         if effective != NO_GUID {
@@ -530,9 +542,13 @@ impl<'a> Expansion<'a> {
         }
         // A swapped instance without a name of its own takes its replacement's default name.
         if has_base && replaced {
+            // A variant takes its set's name; an instance standing in as a component keeps its own.
             let base = index.find(effective).unwrap_or(NONE);
             let set = index.find(index.records[base as usize].parent);
-            let named = set.filter(|&set| index.records[set as usize].flags & STATE_GROUP != 0);
+            let named = set.filter(|&set| {
+                index.records[base as usize].ty != ids.instance
+                    && index.records[set as usize].flags & STATE_GROUP != 0
+            });
             self.layer(
                 me,
                 record,

@@ -2,9 +2,9 @@
 //! `occurrence/claims.ts` in `packages/fig/src/instance-overrides/`).
 
 use super::{Properties, cleared, keeps, maps, records, remove};
-use crate::expand::{Bound, Layer, MODES, SCALED, SIZE, Source};
+use crate::expand::{Bound, INHERITED, Layer, MODES, SCALED, SIZE, Source};
 use crate::index::NONE;
-use crate::kiwi::Value;
+use crate::kiwi::{Span, Value};
 
 /// An occurrence's fields as its layers are applied, with what later layers read of earlier ones.
 pub struct Replay<'a> {
@@ -64,13 +64,11 @@ impl<'a> Replay<'a> {
             self.props.set("visible", Value::Bool(visible));
         }
         if let Some((text, _)) = bound.text {
-            let characters = String::from_utf8_lossy(&properties.message[text.range()]);
-            let mut data = self.own_text.clone().unwrap_or(Value::Fields(Vec::new()));
+            let (data, same) = bound_text(properties, self.own_text.clone(), text);
             // Glyphs the record saved are for its own characters.
-            if data.get("characters").and_then(Value::as_str) != Some(&characters) {
+            if !same {
                 remove(&mut self.props, "derivedTextData");
             }
-            data.set("characters", Value::String(characters));
             self.props.set("textData", data);
         }
     }
@@ -102,6 +100,18 @@ impl<'a> Replay<'a> {
         })?;
         if !matches!(source, Source::Derived(_)) {
             records::normalize(&mut patch);
+        }
+        // A scaled instance restores its own distances from its record as its component
+        // properties bound it: the bound text, and no glyphs saved for other characters.
+        if layer.only & SCALED != 0
+            && layer.only & INHERITED == 0
+            && let Some((text, _)) = self.bound.and_then(|bound| bound.text)
+        {
+            let (data, same) = bound_text(properties, patch.get("textData").cloned(), text);
+            if !same {
+                remove(&mut patch, "derivedTextData");
+            }
+            patch.set("textData", data);
         }
         if let (true, Source::Record(record)) = (own, source)
             && let Some(definitions) = patch.get_mut("componentPropDefs")
@@ -144,6 +154,19 @@ impl<'a> Replay<'a> {
         }
         Ok(())
     }
+}
+
+/// A record's text with the characters a text property binds, and whether they are its own.
+fn bound_text<'a>(
+    properties: &Properties<'a>,
+    own: Option<Value<'a>>,
+    text: Span,
+) -> (Value<'a>, bool) {
+    let characters = String::from_utf8_lossy(&properties.message[text.range()]);
+    let mut data = own.unwrap_or(Value::Fields(Vec::new()));
+    let same = data.get("characters").and_then(Value::as_str) == Some(&characters);
+    data.set("characters", Value::String(characters));
+    (data, same)
 }
 
 /// Whether an outer owner's assignment supersedes a claim's explicit value for a field: the

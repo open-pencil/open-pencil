@@ -58,7 +58,16 @@ function documentOf(records: NodeChange[]) {
     if (!data) throw new Error('An instance without symbol data')
     data.symbolOverrides = [...(data.symbolOverrides ?? []), override]
   }
-  return { componentOf, instancesOf, addOverride }
+  /** An instance inside a component, and an instance of that component placed on a page. */
+  const nested = (): { inner: NodeChange & { guid: GUID }; outer: NodeChange } => {
+    for (const inner of records) {
+      const holder = inner.type === 'INSTANCE' && inner.guid ? componentOf(inner) : undefined
+      const outer = holder && instancesOf(holder).find((instance) => !componentOf(instance))
+      if (outer && inner.guid) return { inner: { ...inner, guid: inner.guid }, outer }
+    }
+    throw new Error('No component holds an instance and is placed on a page')
+  }
+  return { componentOf, instancesOf, addOverride, nested }
 }
 
 /** The definition a layer's field binds through its parameter map. */
@@ -98,6 +107,71 @@ describe('field values from the Rust reader', () => {
         }
       }
       throw new Error('gold-preview.fig nests no instance whose layer binds a visible property')
+    })
+    expectSameFields(pages)
+  })
+
+  test('name the component a swap chooses though the file lacks it', async () => {
+    const pages = await fieldsAfter('gold-preview.fig', (records) => {
+      const { addOverride, nested } = documentOf(records)
+      const { inner, outer } = nested()
+      addOverride(outer, {
+        guidPath: { guids: [inner.guid] },
+        overriddenSymbolID: { sessionID: 999, localID: 999 }
+      })
+    })
+    expectSameFields(pages)
+  })
+
+  test("name an instance swapped to an instance by that instance's name", async () => {
+    const pages = await fieldsAfter('gold-preview.fig', (records) => {
+      const { addOverride, nested, componentOf } = documentOf(records)
+      const { inner, outer } = nested()
+      const set = records.find((record) => record.isStateGroup === true && record.guid)
+      const replacement = records.find(
+        (record) =>
+          record.type === 'INSTANCE' &&
+          !componentOf(record) &&
+          record.guid &&
+          record !== outer &&
+          record.name !== set?.name
+      )
+      if (!set?.guid || !replacement?.guid || !replacement.parentIndex)
+        throw new Error('gold-preview.fig lacks a variant set or a placed instance')
+      // An instance kept under a variant set stands in for the inner instance's component.
+      replacement.parentIndex = { ...replacement.parentIndex, guid: set.guid }
+      addOverride(outer, {
+        guidPath: { guids: [inner.guid] },
+        overriddenSymbolID: replacement.guid
+      })
+    })
+    expectSameFields(pages)
+  })
+
+  test('keep the text a property binds when a scaled instance restores its own fields', async () => {
+    const pages = await fieldsAfter('gold-preview.fig', (records) => {
+      const { componentOf, nested } = documentOf(records)
+      const { inner } = nested()
+      const record = records.find((candidate) => candidate.guid === inner.guid)
+      const holder = record && componentOf(record)
+      const data = record && symbolDataOf(record)
+      if (!record || !holder || !data) throw new Error('The nested instance is gone')
+      const id: GUID = { sessionID: 7, localID: 8 }
+      holder.componentPropDefs = [
+        ...((holder.componentPropDefs ?? []) as object[]),
+        { id, name: 'Label', type: 'TEXT', initialValue: { textValue: { characters: 'Bound' } } }
+      ] as NodeChange['componentPropDefs']
+      // A scaled instance saving text of its own that a property of its component binds.
+      data.uniformScaleFactor = 2
+      record.textData = { characters: 'Saved' }
+      record.parameterConsumptionMap = {
+        entries: [
+          {
+            variableField: 'TEXT_DATA',
+            variableData: { dataType: 'PROP_REF', value: { propRefValue: { defId: id } } }
+          }
+        ]
+      }
     })
     expectSameFields(pages)
   })

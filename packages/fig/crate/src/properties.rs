@@ -298,6 +298,9 @@ impl<'a> Properties<'a> {
     pub fn of(&self, occurrence: u32) -> crate::Result<Value<'a>> {
         let expansion = self.expansion;
         let at = occurrence as usize;
+        if at >= expansion.occurrences.len() {
+            return Err(Error::NoOccurrence);
+        }
         // Its layers, and the scales of the instances it is inside, in the order they happened.
         let mut steps: Vec<u32> =
             self.layers[self.layer_start[at] as usize..self.layer_start[at + 1] as usize].to_vec();
@@ -344,12 +347,11 @@ impl<'a> Properties<'a> {
                 ]),
             );
         }
-        // An instance names the component it finally expands.
-        let component = expansion.occurrences[at].component;
-        if component != NONE
+        // An instance names the component it finally expands, though the file may lack it.
+        let guid = expansion.occurrences[at].expands;
+        if guid != NO_GUID
             && let Some(data) = props.get_mut("symbolData")
         {
-            let guid = self.index.records[component as usize].guid;
             data.set(
                 "symbolID",
                 Value::Fields(vec![

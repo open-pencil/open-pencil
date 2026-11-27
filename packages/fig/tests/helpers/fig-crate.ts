@@ -267,6 +267,8 @@ export async function readFieldsWithBoth(file: Uint8Array, limit = 5): Promise<F
     let compared = 0
     if (count !== layers.length)
       differences.push(`crate has ${count} layers, reader ${layers.length}`)
+    if (values.length !== count)
+      differences.push(`crate gave values for ${values.length} of ${count} layers`)
     for (const [at, layer] of layers.entries()) {
       const expected = asCrateWrites(layer.properties)
       const actual = values[at]
