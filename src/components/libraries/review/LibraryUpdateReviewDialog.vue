@@ -120,9 +120,11 @@ function retrySync() {
   void resumeLibrarySync().then(() => void loadPreview())
 }
 
-// A pull settling reloads the preview without a click; a revision still missing stays syncing.
+// A pull settling reloads the preview without a click; a revision still missing stays
+// syncing. The watch fires in the failed state too: a resume started elsewhere — the
+// manager, a storage save — lands the revision and resolves the alert on its own.
 watch(librarySyncResolution, () => {
-  if (loadError.value === 'syncing') void loadPreview()
+  if (loadError.value === 'syncing' || loadError.value === 'failed') void loadPreview()
 })
 
 async function restoreOrigin() {

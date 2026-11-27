@@ -20,6 +20,7 @@ import {
   AppDialogRoot,
   useDialogUI
 } from '@/components/ui/dialog'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
@@ -40,6 +41,8 @@ const error = ref('')
 const baselineState = ref<'syncing' | 'failed' | null>(null)
 const changes = ref<LibraryAssetChange[]>([])
 const selectedKeys = ref(new Set<string>())
+/** Serializes overlapping discoveries: only the latest `loadChanges` result may land. */
+let discoverySequence = 0
 const changeLabels = computed(() => ({
   added: libraryMessages.value.libraryChangeAdded,
   modified: libraryMessages.value.libraryChangeModified,
@@ -61,14 +64,24 @@ const selectionState = computed<boolean | 'indeterminate'>(() => {
 })
 
 async function loadChanges() {
+  // Discoveries overlap — the resolution watch, a retry, and a reopen can all be in
+  // flight — and resolve out of order, so only the latest call writes its result: an
+  // older answer landing last would reselect deselected assets and revert the baseline.
+  const discovery = ++discoverySequence
   error.value = ''
   loading.value = true
+  // A new discovery drops the previous selection: its answer repopulates the list, and a
+  // baseline miss leaves nothing selected behind the syncing or failed row.
+  changes.value = []
+  selectedKeys.value = new Set()
   try {
     const discovered = await service.discoverPublicationChanges(editor)
+    if (discovery !== discoverySequence) return
     changes.value = discovered.changes
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
     baselineState.value = null
   } catch (cause) {
+    if (discovery !== discoverySequence) return
     // A baseline revision still pulling shows the syncing row, not an error: the engine
     // lands it and the resolution watch retries the discovery. A baseline the engine has
     // parked shows the failed row with a retry instead of the syncing row.
@@ -82,12 +95,14 @@ async function loadChanges() {
         cause instanceof Error ? cause.message : libraryMessages.value.libraryPublishFailed
     }
   } finally {
-    loading.value = false
+    if (discovery === discoverySequence) loading.value = false
   }
 }
 
 watch(publishLibraryDialogOpen, async (open) => {
   if (!open) return
+  // A discovery still in flight from the previous opening must not land in this one.
+  discoverySequence += 1
   // Selective publishing diffs against the publication's baseline revision; ask the engine
   // to mirror it while the change list computes.
   void kickLibrarySync({ includePublication: true, probe: false })
@@ -154,7 +169,8 @@ function toggleAsset(key: string, value: boolean) {
 async function publish() {
   const id = libraryId.value.trim()
   const name = libraryName.value.trim()
-  if (!id || !name || selectedKeys.value.size === 0 || publishing.value) return
+  if (!id || !name || selectedKeys.value.size === 0 || publishing.value || baselineState.value)
+    return
   publishing.value = true
   error.value = ''
   try {
@@ -233,14 +249,14 @@ async function publish() {
         >
           {{ libraryMessages.librarySyncing }}
         </div>
-        <div
-          v-else-if="baselineState === 'failed'"
-          class="flex flex-col items-center gap-2 px-3 py-6 text-xs"
-        >
-          <p class="text-error">{{ libraryMessages.librarySyncFailed }}</p>
-          <AppButton variant="outline" size="sm" @click="retrySync">
-            {{ libraryMessages.retryLibrarySync }}
-          </AppButton>
+        <div v-else-if="baselineState === 'failed'" class="px-3 py-6">
+          <AppAlert tone="error" :heading="libraryMessages.librarySyncFailed">
+            <template #actions>
+              <AppButton variant="outline" size="xs" @click="retrySync">
+                {{ libraryMessages.retryLibrarySync }}
+              </AppButton>
+            </template>
+          </AppAlert>
         </div>
         <AppPlaceholder
           v-else-if="changes.length === 0"
@@ -299,6 +315,7 @@ async function publish() {
         :disabled="
           publishing ||
           loading ||
+          !!baselineState ||
           selectedKeys.size === 0 ||
           !libraryId.trim() ||
           !libraryName.trim()

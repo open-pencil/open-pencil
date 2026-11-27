@@ -124,9 +124,11 @@ test('failure before any storage write is not reported as a partial save', async
 
 test('a provider switch while the save clears the library mirror keeps the new drafts', async () => {
   const f = fixture()
+  const mirrorClearStarted = createDeferred<undefined>()
   const mirrorCleared = createDeferred<undefined>()
   f.services.clearLibraryMirror = async () => {
     f.writes.push('clearLibraryMirror')
+    mirrorClearStarted.resolve(undefined)
     await mirrorCleared.promise
   }
   // Each provider reads its own preferences, so a second reset is visible in the drafts.
@@ -143,7 +145,7 @@ test('a provider switch while the save clears the library mirror keeps the new d
 
     const saving = state.save()
     // The save is parked inside clearLibraryMirror; switching providers resets the form.
-    while (!f.writes.includes('clearLibraryMirror')) await Promise.resolve()
+    await mirrorClearStarted.promise
     activeStorageProviderID.value = 'openpencil-cloud'
     await nextTick()
     state.preferenceDrafts.value.endpoint = 'https://new-provider.example.com'
