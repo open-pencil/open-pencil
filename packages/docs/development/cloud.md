@@ -333,6 +333,28 @@ any other command. With nobody's tab open the call answers `409 editor_not_open`
 tool gives the model the document's link to pass on. Running tools on a graph the server decodes
 itself, without an open editor, is a later step.
 
+Where `deployment.agent_pairing` is on, a tab of the server's editor can pair with a coding agent
+without an account. The tab makes an `opg_` token, connects to `/api/agent-pairing/relay` with its
+SHA-256 as `?pairing=` and presents the token in its first frame; `createAgentPairingHub` holds
+the tab's socket and nothing else, and `/mcp` turns a call with that token into the request a
+local MCP server sends the app, to the tab that registered last: a `tool` request, or one of the
+document commands in `AGENT_PAIRING_COMMANDS`. The tab runs it through the app's own request
+handler, as it runs the local server's, and refuses files, settings, and code. A call with no tab to take it
+waits up to ten seconds for one to offer, since an agent may call while the editor its sign-in
+opened is still loading, then answers that the editor is not open. On Cloudflare a pairing's tabs
+meet on the relay object named `pairing:<id>`, tagged so the object tells them from collaboration
+peers when it wakes. Pairing tokens get the design tools
+and the editor's open documents, and their calls are limited per address. A browser keeps its
+pairing in local storage, and one of its windows serves it at a time under a Web Lock.
+
+An agent that signs in reaches the same pairing at `/auth/pair`, which the sign-in page offers as
+going on without an account. Better Auth's provider has checked the app, its return address, and
+PKCE before it signs the query that page starts from, but issues codes to accounts alone, so
+`createAgentPairingGrants` issues its own `opgc_` code and answers it ahead of Better Auth's token
+endpoint. The code's row holds the browser's token for a minute, encrypted with a key derived from
+the code, and an exchange deletes the row before checking anything, so a code works once. Only apps
+without a client secret pair, since nothing here checks one, and no account is ever made.
+
 ## Enrollment and administration
 
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a

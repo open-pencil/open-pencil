@@ -1,3 +1,4 @@
+import { once } from 'es-toolkit'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { homeLocation } from '@/app/home/location'
@@ -6,9 +7,14 @@ import { homeLocation } from '@/app/home/location'
  * The editor and its workspace load with the first address that needs them, so a page that is
  * not the editor, such as an embed, never loads the editor's services, dialogs, or panels. Every
  * editor address shares one workspace component, which moving between them keeps.
+ *
+ * Both come from one import: the editor waits on WebAssembly at its top level, and WebKit before
+ * Safari 27 (and WebKitGTK) resolves a second import of such a module before it finishes, so the
+ * second route's component is not there yet (https://bugs.webkit.org/show_bug.cgi?id=242740).
  */
-const EditorLayout = () => import('./views/editor').then((views) => views.EditorLayout)
-const WorkspaceView = () => import('./views/editor').then((views) => views.WorkspaceView)
+const editorViews = once(() => import('./views/editor'))
+const EditorLayout = () => editorViews().then((views) => views.EditorLayout)
+const WorkspaceView = () => editorViews().then((views) => views.WorkspaceView)
 const EmbedView = () => import('./views/embed/EmbedView.vue')
 
 const router = createRouter({

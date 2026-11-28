@@ -1,4 +1,7 @@
 import {
+  AGENT_PAIRING_PARAM,
+  AGENT_PAIRING_RELAY_PATH,
+  agentPairingIdSchema,
   RELAY_DOCUMENT_PARAM,
   RELAY_HEARTBEAT,
   type AgentToolCall,
@@ -7,6 +10,7 @@ import {
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
+  createAgentPairingHub,
   createCollaborationRelay,
   createCollaborationStateStore,
   createConfiguredCloudPolicy,
@@ -19,8 +23,11 @@ import { DurableObject } from 'cloudflare:workers'
 import type { Context } from 'hono'
 import * as v from 'valibot'
 
+import { MAX_COLLAB_MESSAGE_BYTES } from '@open-pencil/collab'
+
 import type { CloudflareCloudEnvironment, PreparedCloudflareCloud } from '../environment'
 import { inMaintenance, MAINTENANCE_CLOSE_CODE, maintenanceResponse } from '../maintenance'
+import { createPairingSockets, PAIRING_SOCKET_TAG } from './pairing'
 import { createRelaySockets } from './sockets'
 
 /** What the Worker calls on a document's relay object. */
@@ -35,6 +42,8 @@ export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvi
   announceComments(documentId: string, threadId: string): Promise<void>
   /** Runs an app's design tool through an editor of the person that has the document open. */
   callTool(documentId: string, userId: string, call: AgentToolCall): Promise<AgentToolOutcome>
+  /** Runs an agent's design tool in the editor tab of the pairing this object serves. */
+  callPairedTool(pairing: string, call: AgentToolCall): Promise<AgentToolOutcome>
 }
 
 /** The Durable Object class a Worker exports for collaboration rooms. */
@@ -79,6 +88,34 @@ export function relayRoute(jurisdiction?: DurableObjectJurisdiction) {
     const documentId = c.req.query(RELAY_DOCUMENT_PARAM)
     if (!v.is(documentIdSchema, documentId)) return c.text('Missing document', 400)
     return relayFor(c.env, documentId, jurisdiction).fetch(c.req.raw)
+  }
+}
+
+/** The object of the editor tab paired with an agent, whose pairing ID names it. */
+export function pairingFor(
+  env: CloudflareCloudEnvironment,
+  pairing: string,
+  jurisdiction?: DurableObjectJurisdiction
+) {
+  return relayFor(env, `pairing:${pairing}`, jurisdiction)
+}
+
+/**
+ * Sends a paired tab's socket to its pairing's object, where the deployment pairs tabs; the
+ * address names the pairing, and the object refuses a token for any other.
+ */
+export function pairingRoute(
+  paired: (env: CloudflareCloudEnvironment) => Promise<boolean>,
+  jurisdiction?: DurableObjectJurisdiction
+) {
+  return async (c: Context<{ Bindings: CloudflareCloudEnvironment }>): Promise<Response> => {
+    if (!(await paired(c.env))) return c.notFound()
+    if (c.req.header('Upgrade')?.toLowerCase() !== 'websocket') {
+      return c.text('Expected a WebSocket upgrade', 426)
+    }
+    const pairing = c.req.query(AGENT_PAIRING_PARAM)
+    if (!v.is(agentPairingIdSchema, pairing)) return c.text('Missing pairing', 400)
+    return pairingFor(c.env, pairing, jurisdiction).fetch(c.req.raw)
   }
 }
 
@@ -148,10 +185,38 @@ export function createCloudflareRelayObject(
       }
     })
 
-    /** Accepts a socket that `relayRoute` sent here. */
+    readonly #pairing = createPairingSockets({
+      sockets: () => this.ctx.getWebSockets(PAIRING_SOCKET_TAG),
+      createHub: async (pairing) => {
+        const { config } = await prepare(this.env)
+        return createAgentPairingHub({
+          pairing,
+          maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
+          maximumAnswerBytes: Math.min(CLOUDFLARE_MAXIMUM_ROOM_BYTES, MAX_COLLAB_MESSAGE_BYTES)
+        })
+      }
+    })
+
+    /** Whether a socket is a paired tab's rather than a collaboration peer's. */
+    #paired(socket: WebSocket): boolean {
+      return this.ctx.getTags(socket).includes(PAIRING_SOCKET_TAG)
+    }
+
+    /** Accepts a socket that `relayRoute` or `pairingRoute` sent here. */
     override async fetch(request: Request): Promise<Response> {
       if (inMaintenance(this.env)) return maintenanceResponse(request)
-      const documentId = new URL(request.url).searchParams.get(RELAY_DOCUMENT_PARAM)
+      const url = new URL(request.url)
+      // Only `pairingRoute` sends the pairing path, and only where the deployment pairs tabs.
+      if (url.pathname === AGENT_PAIRING_RELAY_PATH) {
+        const pairing = url.searchParams.get(AGENT_PAIRING_PARAM)
+        if (!v.is(agentPairingIdSchema, pairing)) return new Response(null, { status: 400 })
+        const hub = await this.#pairing.open(pairing)
+        const { 0: tab, 1: socket } = new WebSocketPair()
+        this.ctx.acceptWebSocket(socket, [PAIRING_SOCKET_TAG])
+        this.#pairing.accept(socket, hub)
+        return new Response(null, { status: 101, webSocket: tab })
+      }
+      const documentId = url.searchParams.get(RELAY_DOCUMENT_PARAM)
       if (!v.is(documentIdSchema, documentId)) return new Response(null, { status: 400 })
       const relay = await this.#sockets.open(documentId)
       const { 0: client, 1: server } = new WebSocketPair()
@@ -167,19 +232,25 @@ export function createCloudflareRelayObject(
         socket.close(MAINTENANCE_CLOSE_CODE, 'Down for maintenance')
         return
       }
-      await this.#sockets.message(socket, message)
+      if (this.#paired(socket)) await this.#pairing.message(socket, message)
+      else await this.#sockets.message(socket, message)
     }
 
     // Under maintenance a closing socket leaves its room as it is: closing the room would save
     // its state into a database that may be mid-restore.
     override async webSocketClose(socket: WebSocket) {
-      if (inMaintenance(this.env)) return
-      await this.#sockets.closed(socket)
+      if (this.#paired(socket)) await this.#pairing.closed(socket)
+      else if (!inMaintenance(this.env)) await this.#sockets.closed(socket)
     }
 
     override async webSocketError(socket: WebSocket) {
-      if (inMaintenance(this.env)) return
-      await this.#sockets.closed(socket)
+      if (this.#paired(socket)) await this.#pairing.closed(socket)
+      else if (!inMaintenance(this.env)) await this.#sockets.closed(socket)
+    }
+
+    async callPairedTool(pairing: string, call: AgentToolCall): Promise<AgentToolOutcome> {
+      // With no tab connected yet, the hub waits a few seconds for one to offer.
+      return (await this.#pairing.open(pairing)).call(pairing, call)
     }
 
     async startOver(documentId: string) {

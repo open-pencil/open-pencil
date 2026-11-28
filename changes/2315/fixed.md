@@ -1,0 +1,1 @@
+- Trackpad pinches on Linux zoom the canvas without resizing the side panels.

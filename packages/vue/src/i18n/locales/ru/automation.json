@@ -49,6 +49,18 @@
   "statusError": "Ошибка",
   "localServer": "Локальный сервер",
   "localServerDesktopOnly": "Локальный MCP-сервер работает в настольном приложении OpenPencil. В браузере используйте WebMCP ниже.",
+  "agentPairing": "Агент в этом браузере",
+  "agentPairingDescription": "Позвольте агенту для программирования, например Claude Code, Codex или Cursor, работать над дизайном в OpenPencil в этом браузере без аккаунта. Он работает с открытыми документами, а вы наблюдаете.",
+  "agentPairingConnect": "Подключить агента",
+  "agentPairingDisconnect": "Отключить",
+  "agentPairingConnecting": "Подключение…",
+  "agentPairingWaiting": "Ждём вашего агента",
+  "agentPairingWorking": "Ваш агент работает в этом браузере",
+  "agentPairingFailed": "OpenPencil Cloud отклонил подключение. Подключитесь снова.",
+  "agentPairingInstructions": "Вставьте в агента",
+  "agentPairingClaudeCode": "Или выполните в терминале, для Claude Code",
+  "agentPairingConfig": "Или добавьте в конфигурацию MCP, например в Cursor",
+  "agentPairingNote": "Любой, у кого есть это подключение, может менять дизайны, открытые в этом браузере. Оно приостанавливается, пока OpenPencil закрыт, и заканчивается, когда вы отключаетесь. Изменения локальных дизайнов остаются на этом устройстве, пока вы их не сохраните; изменения документов Cloud сразу видят все, кто в них работает.",
   "webmcpDescription": "Разрешите браузерным агентам работать с документом напрямую, без локального MCP-сервера и Bearer-токена. Настройки локального сервера здесь не действуют.",
   "webmcpFailed": "Не удалось запустить WebMCP",
   "browserAccess": "Доступ браузерных агентов",
@@ -85,5 +97,6 @@
   "mcpFailureUnknown": "MCP-сервер не удалось запустить",
   "mcpFailureUnknownHint": "Запустите его снова или посмотрите технические подробности ниже.",
   "mcpFailureDetails": "Подробности",
-  "mcpFailureCopy": "Копировать подробности"
+  "mcpFailureCopy": "Копировать подробности",
+  "agentPairingSignIn": "Добавьте в агента, для Claude Code, затем войдите из него и выберите работу без аккаунта"
 }

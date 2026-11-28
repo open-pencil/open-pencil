@@ -167,6 +167,7 @@ export function parseCloudDeploymentConfig(
     localEditor: config.deployment.local_editor,
     embeddingEnabled: config.deployment.embedding.enabled,
     embeddingOrigins: config.deployment.embedding.allowed_origins,
+    agentPairing: config.deployment.agent_pairing,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
     minimumEditorVersion: config.deployment.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),

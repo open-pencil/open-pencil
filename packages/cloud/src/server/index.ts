@@ -97,6 +97,14 @@ export {
   type UploadCleanupService
 } from './cleanup'
 export {
+  createAgentPairingHub,
+  readPairedTabState,
+  type AgentPairingHub,
+  type AgentPairingHubOptions,
+  type PairedTabState,
+  type PairingSocket
+} from './agent-pairing'
+export {
   authorizeRelayTicket,
   createCollaborationRelay,
   createCollaborationStateStore,

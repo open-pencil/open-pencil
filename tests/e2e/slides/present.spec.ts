@@ -115,12 +115,7 @@ test('the Animate tab sets the transition of the slide on the stage', async () =
   await editor.page.getByTestId('properties-tab-design').click()
 })
 
-test("a design's selected frames present as slides without making it a deck", async () => {
-  const frames = await deck.addFrames([600, 0, 1200], 2)
-  await editor.page.getByTestId('slides-present').click()
-  await editor.page.getByTestId('slides-present-frames').click()
-  await expect(editor.page.getByTestId('slides-presentation')).toBeVisible()
-  expect((await deck.presentation())?.slideIds).toEqual([frames[1], frames[0]])
-  await editor.page.keyboard.press('Escape')
-  await deck.remove(frames)
+test('a design has no Present button; only decks present', async () => {
+  await expect(editor.page.getByTestId('editor-start-preview')).toBeVisible()
+  await expect(editor.page.getByTestId('slides-present')).toHaveCount(0)
 })

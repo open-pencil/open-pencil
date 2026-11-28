@@ -1,6 +1,7 @@
 import { drawsStroke } from '../geometry'
 import type { PolygonOutlineCommand } from '../polygon'
 import type { SceneNode } from '../types'
+import { documentOutline } from './document'
 import { databaseCap } from './fit'
 import type { ShapeWithTextType } from './kinds'
 
@@ -322,7 +323,7 @@ const BUILDERS: Record<ShapeWithTextType, Builder> = {
       curve(w * 0.25, h * 0.9, 0, h * 0.75, 0, h * 0.45),
       { type: 'Z' }
     ]),
-  DOCUMENT_SINGLE: (w, h) => plain(documentPage(0, 0, w, h)),
+  DOCUMENT_SINGLE: (w, h, _min, radius) => plain(documentOutline(w, h, radius)),
   // A back page with a front page over its lower right; the front page's top and left edges,
   // where it lies over the back one, are the inner lines.
   DOCUMENT_MULTIPLE: (w, h, _min, radius) => {

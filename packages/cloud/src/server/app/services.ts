@@ -1,4 +1,5 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin'
+import type { AgentToolCall, AgentToolOutcome } from '#cloud/contract'
 import type {
   CloudAuthAdapter,
   CloudIdentityResolver,
@@ -77,6 +78,11 @@ export type CloudServices = {
    * on this runtime's relay; without one, every call answers that no editor has it open.
    */
   callDocumentTool?: CallDocumentTool
+  /**
+   * Runs a design tool in the editor tab an agent is paired with, on this runtime's pairing hub
+   * (`createAgentPairingHub`); without one, the server pairs no tabs.
+   */
+  callPairedTool?: (pairingId: string, call: AgentToolCall) => Promise<AgentToolOutcome>
   /**
    * Keeps work a request started running after its answer, as Workers' `waitUntil` does; without
    * it the work runs on its own, as Node lets it.

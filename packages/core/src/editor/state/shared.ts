@@ -19,6 +19,7 @@ export function createDefaultEditorSharedState(): EditorSharedState {
     designIssues: null,
     codeFocusNodeId: null,
     presentation: null,
+    buildPreview: null,
     rulerTheme: undefined,
     selectionTheme: undefined,
     sceneVersion: 0,

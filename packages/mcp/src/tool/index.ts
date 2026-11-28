@@ -1,3 +1,4 @@
+export { DESIGN_TOOLS_INSTRUCTIONS } from '#mcp/instructions'
 export { mcpClientToken } from './client-token'
 export * from './metadata'
 export { createToolDescriptors, getMCPToolDefinitions } from './manifest'
