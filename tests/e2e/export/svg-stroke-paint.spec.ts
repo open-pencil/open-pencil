@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { expect, test, type Page } from '@playwright/test'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { CanvasKit } from '@open-pencil/canvaskit'
+import { withOffscreenRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
@@ -262,28 +263,12 @@ function pixel(raster: Raster, [x, y]: Point): RGB {
   return [raster.data[offset], raster.data[offset + 1], raster.data[offset + 2]]
 }
 
-async function canvasRaster(graph: SceneGraph, pageId: string, frameId: string): Promise<Raster> {
-  const ck = await getCanvasKit()
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) {
-    throw new Error('no surface')
+function decodedRaster(ck: CanvasKit, png: Uint8Array): Raster {
+  const image = ck.MakeImageFromEncoded(png)
+  if (!image) {
+    throw new Error('canvas render does not decode')
   }
-  const renderer = new SkiaRenderer(ck, surface)
-  const inter = readFileSync(repoPath('packages/core/assets/InterVariable.ttf'))
-  await fontManager.markLoaded('Inter', 'Regular', new Uint8Array(inter).buffer)
-  await renderer.loadFonts()
   try {
-    const png = renderNodesToImage(ck, renderer, graph, pageId, [frameId], {
-      scale: 1,
-      format: 'PNG'
-    })
-    if (!png) {
-      throw new Error('no canvas render')
-    }
-    const image = ck.MakeImageFromEncoded(png)
-    if (!image) {
-      throw new Error('canvas render does not decode')
-    }
     const pixels = image.readPixels(0, 0, {
       width: image.width(),
       height: image.height(),
@@ -291,15 +276,33 @@ async function canvasRaster(graph: SceneGraph, pageId: string, frameId: string):
       alphaType: ck.AlphaType.Unpremul,
       colorSpace: ck.ColorSpace.SRGB
     })
-    const width = image.width()
-    image.delete()
     if (!(pixels instanceof Uint8Array)) {
       throw new TypeError('no 8-bit canvas pixels')
     }
-    return { width, data: Array.from(pixels) }
+    return { width: image.width(), data: Array.from(pixels) }
   } finally {
-    surface.delete()
+    image.delete()
   }
+}
+
+async function canvasRaster(graph: SceneGraph, pageId: string, frameId: string): Promise<Raster> {
+  const ck = await getCanvasKit()
+  const inter = readFileSync(repoPath('packages/core/assets/InterVariable.ttf'))
+  await fontManager.markLoaded('Inter', 'Regular', new Uint8Array(inter).buffer)
+  const raster = await withOffscreenRenderer(ck, async (renderer) => {
+    const png = renderNodesToImage(ck, renderer, graph, pageId, [frameId], {
+      scale: 1,
+      format: 'PNG'
+    })
+    if (!png) {
+      throw new Error('no canvas render')
+    }
+    return decodedRaster(ck, png)
+  })
+  if (!raster) {
+    throw new Error('no offscreen renderer')
+  }
+  return raster
 }
 
 async function browserRaster(page: Page, svg: string): Promise<Raster> {
