@@ -1,8 +1,12 @@
 import {
+  agentPairingId,
   CLOUD_MCP_PATH,
   CLOUD_PROTOCOL_VERSION,
   cloudMCPResource,
-  cloudTokenScopeSchema
+  cloudTokenScopeSchema,
+  isAgentPairingToken,
+  type AgentToolCall,
+  type AgentToolOutcome
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import { resourceChallenge } from '#cloud/server/oauth'
@@ -12,15 +16,15 @@ import {
   McpServer,
   type AuthInfo
 } from '@modelcontextprotocol/server'
-import { Hono } from 'hono'
+import { Hono, type MiddlewareHandler } from 'hono'
 import { cors } from 'hono/cors'
 import * as v from 'valibot'
 
 import { createMCPAPI, MCPAPIError, type MCPAPI } from './api'
 import type { MCPCaller } from './context'
-import { registerDesignTools } from './design'
+import { registerDesignTools, registerPairedDesignTools } from './design'
 import { registerDocumentTools } from './documents'
-import { MCP_INSTRUCTIONS } from './instructions'
+import { MCP_INSTRUCTIONS, PAIRED_INSTRUCTIONS } from './instructions'
 
 /** Whom a token stands for and what it may do, or null for one the API refuses. */
 async function tokenUser(api: MCPAPI) {
@@ -41,7 +45,16 @@ export type MCPRouteDependencies = {
   publicURL: string
   /** The server itself, which each tool calls with the request's token. */
   fetchAPI: (request: Request) => Response | Promise<Response>
+  /** Whether apps connect through OAuth, so a request without a token learns where to sign in. */
+  oauth: boolean
+  /**
+   * Runs a design tool in the editor tab paired with an agent, where the server pairs tabs; pairing
+   * tokens are refused without it.
+   */
+  callPairedTool?: (pairingId: string, call: AgentToolCall) => Promise<AgentToolOutcome>
   onError?: (error: Error) => void
+  /** Counts calls before they run, inside the endpoint's CORS so a browser client reads a refusal. */
+  limit?: MiddlewareHandler
 }
 
 /**
@@ -52,7 +65,9 @@ export type MCPRouteDependencies = {
 export function createMCPRoutes(dependencies: MCPRouteDependencies) {
   const { publicURL } = dependencies
   const unauthorized = () => {
-    const challenge = resourceChallenge(publicURL, undefined, cloudMCPResource(publicURL))
+    const challenge = dependencies.oauth
+      ? resourceChallenge(publicURL, undefined, cloudMCPResource(publicURL))
+      : null
     return Response.json(
       { error: { code: 'unauthorized' as const } },
       { status: 401, headers: challenge ? { 'WWW-Authenticate': challenge } : {} }
@@ -65,6 +80,21 @@ export function createMCPRoutes(dependencies: MCPRouteDependencies) {
         { instructions: MCP_INSTRUCTIONS }
       )
       if (!authInfo) return server
+      const pairing = v.safeParse(v.string(), authInfo.extra?.pairing)
+      const callPaired = dependencies.callPairedTool
+      if (pairing.success && callPaired) {
+        const paired = new McpServer(
+          { name: 'OpenPencil', version: CLOUD_PROTOCOL_VERSION },
+          { instructions: PAIRED_INSTRUCTIONS }
+        )
+        registerPairedDesignTools(paired, (call) =>
+          callPaired(pairing.output, {
+            ...call,
+            agent: { session: `pairing:${pairing.output.slice(0, 16)}` }
+          })
+        )
+        return paired
+      }
       const workspaceId = v.safeParse(v.string(), authInfo.extra?.workspaceId)
       const caller: MCPCaller = {
         api: createMCPAPI(dependencies.fetchAPI, publicURL, `Bearer ${authInfo.token}`),
@@ -96,10 +126,22 @@ export function createMCPRoutes(dependencies: MCPRouteDependencies) {
         exposeHeaders: ['WWW-Authenticate', 'Mcp-Session-Id']
       })
     )
+    .use(CLOUD_MCP_PATH, dependencies.limit ?? ((_context, next) => next()))
     .all(CLOUD_MCP_PATH, async (context) => {
       const authorization = context.req.header('authorization')
       const token = authorization?.match(BEARER)?.[1]
       if (!authorization || !token) return unauthorized()
+      // A pairing token names an editor tab, not an account: it reaches that tab's design alone.
+      if (isAgentPairingToken(token)) {
+        if (!dependencies.callPairedTool) return unauthorized()
+        const pairingInfo: AuthInfo = {
+          token,
+          clientId: 'agent-pairing',
+          scopes: [],
+          extra: { pairing: await agentPairingId(token) }
+        }
+        return handler.fetch(context.req.raw, { authInfo: pairingInfo })
+      }
       const user = await tokenUser(createMCPAPI(dependencies.fetchAPI, publicURL, authorization))
       if (!user) return unauthorized()
       const { grant, scopes } = user

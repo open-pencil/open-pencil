@@ -5,7 +5,11 @@ import { omit } from 'es-toolkit/object'
 import * as v from 'valibot'
 
 import { isToolExposed, toolChangesDocument, toolInputFor } from '@open-pencil/core/tools'
-import { getMCPToolDefinitions, toolInputSchema } from '@open-pencil/mcp/tools'
+import {
+  DESIGN_TOOLS_INSTRUCTIONS,
+  getMCPToolDefinitions,
+  toolInputSchema
+} from '@open-pencil/mcp/tools'
 
 /**
  * The design tools a Cloud server lists to MCP clients, generated from Core's: Cloud holds no
@@ -31,7 +35,7 @@ function remoteEntries(name: string, entries: v.ObjectEntries): v.ObjectEntries 
 }
 
 /** Every tool an MCP client may call through a Cloud server, as the server lists it. */
-export function cloudMCPCatalog() {
+function cloudDesignTools() {
   return (
     getMCPToolDefinitions()
       // Running code an app sends stays a choice for whoever runs a local server.
@@ -48,6 +52,14 @@ export function cloudMCPCatalog() {
         )['~standard'].jsonSchema.input({ target: INPUT_SCHEMA_TARGET })
       }))
   )
+}
+
+/**
+ * What a Cloud server lists and says about Core's design tools: the tools, and the local server's
+ * own words on which of them read, build, and change a design.
+ */
+export function cloudMCPCatalog() {
+  return { instructions: DESIGN_TOOLS_INSTRUCTIONS, tools: cloudDesignTools() }
 }
 
 export function renderCloudMCPCatalog(): string {

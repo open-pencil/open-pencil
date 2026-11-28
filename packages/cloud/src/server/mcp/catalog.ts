@@ -17,11 +17,23 @@ const designToolSchema = v.object({
 })
 export type DesignTool = v.InferOutput<typeof designToolSchema>
 
+const catalogSchema = v.object({
+  /** The local MCP server's words on which design tools read, build, and change a design. */
+  instructions: v.string(),
+  tools: v.array(designToolSchema)
+})
+
 /**
- * The design tools apps run on documents through an editor, which the package's build writes from
- * Core's tools (`tools/generate/mcp-catalog`): the server holds no editor, so it knows them from this list.
+ * Core's design tools as the package's build writes them (`tools/generate/mcp-catalog`): the server
+ * holds no editor, so it knows them from this list.
  */
-export const DESIGN_TOOLS: readonly DesignTool[] = v.parse(v.array(designToolSchema), catalog)
+const { instructions, tools } = v.parse(catalogSchema, catalog)
+
+/** The design tools apps run on documents through an editor. */
+export const DESIGN_TOOLS: readonly DesignTool[] = tools
+
+/** Which design tools read, build, and change a design, as the local MCP server says it. */
+export const DESIGN_TOOLS_INSTRUCTIONS = instructions
 
 const byName = new Map(DESIGN_TOOLS.map((tool) => [tool.name, tool]))
 

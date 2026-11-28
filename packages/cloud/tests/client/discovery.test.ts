@@ -28,7 +28,8 @@ const discovery = {
     workspaces: true,
     collaboration: false,
     embedding: false,
-    apps: false
+    apps: false,
+    agents: false
   }
 }
 

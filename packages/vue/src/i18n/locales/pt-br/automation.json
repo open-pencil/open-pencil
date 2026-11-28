@@ -27,6 +27,18 @@
   "mcpFailureCopy": "Copiar detalhes",
   "localServer": "Servidor local",
   "localServerDesktopOnly": "O servidor MCP local é executado com o app desktop do OpenPencil. No navegador, use o WebMCP abaixo.",
+  "agentPairing": "Agente neste navegador",
+  "agentPairingDescription": "Deixe um agente de programação como Claude Code, Codex ou Cursor criar no OpenPencil neste navegador, sem conta. Ele trabalha nos documentos que você tem abertos, e você acompanha o trabalho.",
+  "agentPairingConnect": "Conectar um agente",
+  "agentPairingDisconnect": "Desconectar",
+  "agentPairingConnecting": "Conectando…",
+  "agentPairingWaiting": "Aguardando seu agente",
+  "agentPairingWorking": "Seu agente está trabalhando neste navegador",
+  "agentPairingFailed": "O OpenPencil Cloud recusou a conexão. Conecte de novo.",
+  "agentPairingInstructions": "Cole no seu agente",
+  "agentPairingClaudeCode": "Ou execute em um terminal, para o Claude Code",
+  "agentPairingConfig": "Ou adicione a uma configuração MCP, como no Cursor",
+  "agentPairingNote": "Qualquer pessoa com esta conexão pode alterar os designs abertos neste navegador. Ela pausa enquanto o OpenPencil está fechado e termina quando você desconecta. Alterações em designs locais ficam neste dispositivo até você salvá-los; alterações em documentos do Cloud chegam na hora a todos que estão neles.",
   "webmcpDescription": "Permita que agentes do navegador usem este documento diretamente, sem servidor MCP local nem bearer token. As configurações do servidor local não se aplicam aqui.",
   "browserAccess": "Acesso de agentes do navegador",
   "accessOff": "Desativado",
@@ -85,5 +97,6 @@
   "statusStarting": "Iniciando",
   "statusRunning": "Em execução",
   "statusStopped": "Parado",
-  "statusError": "Erro"
+  "statusError": "Erro",
+  "agentPairingSignIn": "Adicione ao seu agente, para o Claude Code; depois entre por ele e escolha usar sem conta"
 }

@@ -49,17 +49,22 @@ export function createCloudApp(services: CloudServices) {
   const checks = createRequestChecks(services, resolvers)
   const limiters = createAppRateLimiters(services.database, config)
   const routers = createAppRouters(services, app, resolvers, checks, limiters, allowedOrigins)
-  // Apps reach the MCP endpoint where they may connect; its tools call this app with their token.
-  const mcp = services.auth.oauth
-    ? createMCPRoutes({
-        publicURL: config.publicURL,
-        fetchAPI: (request: Request): Response | Promise<Response> => cloudApp.fetch(request),
-        onError: (error) =>
-          void reportCloudError(services.reportError, 'MCP request failed', error, {
-            source: 'request'
-          })
-      })
-    : new Hono<CloudAPIEnvironment>()
+  // Apps reach the MCP endpoint where they may connect, and agents where tabs pair with them; its
+  // tools call this app with the caller's token, or the paired tab.
+  const mcp =
+    services.auth.oauth || services.callPairedTool
+      ? createMCPRoutes({
+          publicURL: config.publicURL,
+          fetchAPI: (request: Request): Response | Promise<Response> => cloudApp.fetch(request),
+          oauth: Boolean(services.auth.oauth),
+          callPairedTool: services.callPairedTool,
+          limit: limiters.agentPairingLimiter,
+          onError: (error) =>
+            void reportCloudError(services.reportError, 'MCP request failed', error, {
+              source: 'request'
+            })
+        })
+      : new Hono<CloudAPIEnvironment>()
 
   const limitBody = bodyLimit({
     maxSize: CLOUD_API_MAX_BODY_BYTES,
@@ -113,10 +118,11 @@ export function createCloudApp(services: CloudServices) {
     .get(CLOUD_SERVICES_JWKS_PATH, async (context) =>
       app.servicesTokens ? context.json(app.servicesTokens.jwks()) : context.notFound()
     )
+    // Before Better Auth, whose token endpoint knows nothing of a pairing's codes.
+    .route('/', routers.appConnections)
     .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', routers.account)
     .route('/', routers.accessTokens)
-    .route('/', routers.appConnections)
     .route('/', mcp)
     .route('/', createPictureRoutes(app.pictures))
     .use('/api/shares/:shareId/collaboration-ticket', limiters.publicCollaborationLimiter)

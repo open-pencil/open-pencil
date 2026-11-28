@@ -11,6 +11,7 @@ import {
   cloudMFARecoveryCodesResponseSchema,
   cloudMFAStatusResponseSchema,
   cloudMFAVerifyResponseSchema,
+  cloudAgentPairingRequestResponseSchema,
   cloudOAuthDecisionResponseSchema,
   cloudOAuthRequestResponseSchema,
   cloudPasskeysResponseSchema,
@@ -19,6 +20,7 @@ import {
   cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema,
   type CloudAccessTokenCreate,
+  type CloudAgentPairingDecision,
   type CloudOAuthDecision,
   type CloudSocialProvider,
   type NotificationSettings
@@ -226,6 +228,22 @@ export function createAccountAPI(
       return call(
         (options) => apps.oauth.request.$get({ query: { query } }, options),
         cloudOAuthRequestResponseSchema,
+        signal
+      )
+    },
+    /** The agent asking to pair with this browser's editor, for a person without an account. */
+    agentPairingRequest(query: string, signal?: AbortSignal) {
+      return call(
+        (options) => apps['agent-pairing'].request.$get({ query: { query } }, options),
+        cloudAgentPairingRequestResponseSchema,
+        signal
+      )
+    },
+    /** Pairs the agent or refuses it; answers where the browser goes next. */
+    decideAgentPairing(decision: CloudAgentPairingDecision, signal?: AbortSignal) {
+      return call(
+        (options) => apps['agent-pairing'].decision.$post({ json: decision }, options),
+        cloudOAuthDecisionResponseSchema,
         signal
       )
     },

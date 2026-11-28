@@ -105,7 +105,7 @@ export async function createAccountAuthenticationFixture(
     /** How the server fetches apps' client metadata documents (CIMD). */
     fetchClientMetadata?: CloudAuthRuntimeOptions['fetchClientMetadata']
     /** Runtime services the test stands in for, such as a relay running design tools. */
-    services?: Pick<CloudServices, 'callDocumentTool'>
+    services?: Pick<CloudServices, 'callDocumentTool' | 'callPairedTool'>
   } = {}
 ) {
   const config = options.config ?? accountAuthenticationConfig

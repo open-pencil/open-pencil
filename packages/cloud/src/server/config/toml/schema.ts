@@ -116,6 +116,8 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       }),
       { enabled: false, allowed_origins: [] }
     ),
+    // The server's editor pairs a tab with a coding agent over MCP, without an account.
+    agent_pairing: v.optional(v.boolean(), false),
     listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema })),
     // How a self-hosted server names itself on its public pages.
     branding: v.optional(

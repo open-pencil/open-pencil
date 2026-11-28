@@ -6,6 +6,8 @@ import { useRouter } from 'vue-router'
 import { useMessages } from '@open-pencil/vue/i18n'
 
 import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
+import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
+import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import { startCloud } from '@/app/cloud/integration'
 import { useAutosaveFeedback } from '@/app/document/autosave/feedback'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
@@ -69,7 +71,8 @@ onMounted(() => {
   onUnmounted(
     startCloud({
       leaveLinkAddress: () => router.isReady().then(() => router.replace('/')),
-      saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
+      saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId }),
+      handleAutomationRequest: createAutomationCommandHandlers(makeFigmaFromStore).handleRequest
     })
   )
   // Signing in to a Cloud plan with AI sets the models up, so nobody has to choose one.
