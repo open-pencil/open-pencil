@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 
 import type * as FigNodeChange from '@open-pencil/fig/node-change'
@@ -394,4 +395,43 @@ test('image adjustments', async () => {
     '/tests/helpers/canvas/image-adjustments/scene.ts'
   ).build('createImageAdjustmentsScene', [...bytes])
   await expectCanvas('image-adjustments')
+})
+
+async function contrastingBlocksPNG(): Promise<number[]> {
+  return editor.page.evaluate(async () => {
+    const blocks = ['#e01b24', '#2ec27e', '#1c71d8', '#f6d32d', '#ffffff', '#000000']
+    const canvas = new OffscreenCanvas(12, 12)
+    const context = canvas.getContext('2d')
+    if (!context) {
+      throw new Error('2D context unavailable')
+    }
+    blocks.forEach((color, index) => {
+      context.fillStyle = color
+      context.fillRect((index % 3) * 4, Math.floor(index / 3) * 6, 4, 6)
+    })
+    const blob = await canvas.convertToBlob({ type: 'image/png' })
+    return [...new Uint8Array(await blob.arrayBuffer())]
+  })
+}
+
+test('image adjustments in a PNG export at 1.5x', async () => {
+  const ids = await pageScene<typeof ImageAdjustmentScenes>(
+    () => editor.page,
+    '/tests/helpers/canvas/image-adjustments/scene.ts'
+  ).build('createImageAdjustmentsScene', await contrastingBlocksPNG())
+  const exported = await editor.page.evaluate(async (nodeIds) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) {
+      throw new Error('OpenPencil store not initialized')
+    }
+    const png = await store.renderExportImage(nodeIds, 1.5, 'PNG')
+    if (!png) {
+      throw new Error('Export failed')
+    }
+    return [...png]
+  }, ids)
+  expect(Buffer.from(exported)).toMatchSnapshot('image-adjustments-export.png', {
+    maxDiffPixelRatio: 0,
+    threshold: 0
+  })
 })

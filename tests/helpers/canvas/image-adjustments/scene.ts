@@ -30,24 +30,25 @@ export function createImageAdjustmentsScene(graph: SceneGraph, pageId: string, b
   const image = Uint8Array.from(bytes)
   const hash = computeImageHash(image)
   graph.images.set(hash, image)
-  TILES.forEach((filters, index) => {
-    graph.createNode('RECTANGLE', pageId, {
-      name: `Adjusted image ${index}`,
-      x: 40 + (index % 4) * 112,
-      y: 40 + Math.floor(index / 4) * 112,
-      width: 102,
-      height: 101,
-      fills: [
-        {
-          type: 'IMAGE',
-          imageHash: hash,
-          imageScaleMode: 'FIT',
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          visible: true,
-          opacity: 1,
-          filters
-        }
-      ]
-    })
-  })
+  return TILES.map(
+    (filters, index) =>
+      graph.createNode('RECTANGLE', pageId, {
+        name: `Adjusted image ${index}`,
+        x: 40 + (index % 4) * 112,
+        y: 40 + Math.floor(index / 4) * 112,
+        width: 102,
+        height: 101,
+        fills: [
+          {
+            type: 'IMAGE',
+            imageHash: hash,
+            imageScaleMode: 'FIT',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            visible: true,
+            opacity: 1,
+            filters
+          }
+        ]
+      }).id
+  )
 }

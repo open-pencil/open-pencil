@@ -27,6 +27,18 @@ export function hasImageAdjustments(filters: ImageFilters | undefined): filters 
   return !!filters && Object.values(filters).some((value) => value !== undefined && value !== 0)
 }
 
+export function adjustmentValues(filters: ImageFilters): Adjustments {
+  return {
+    exposure: filters.exposure ?? 0,
+    contrast: filters.contrast ?? 0,
+    saturation: filters.saturation ?? 0,
+    temperature: filters.temperature ?? 0,
+    tint: filters.tint ?? 0,
+    highlights: filters.highlights ?? 0,
+    shadows: filters.shadows ?? 0
+  }
+}
+
 /** `image` with `filters` applied to every pixel; the caller deletes both shaders. */
 export function makeAdjustedImageShader(
   r: SkiaRenderer,
@@ -34,16 +46,5 @@ export function makeAdjustedImageShader(
   filters: ImageFilters
 ): Shader {
   const program = compiledProgram(r.ck, r.shaders, IMAGE_ADJUSTMENTS)
-  return program.effect.makeShaderWithChildren(
-    program.uniforms({
-      exposure: filters.exposure ?? 0,
-      contrast: filters.contrast ?? 0,
-      saturation: filters.saturation ?? 0,
-      temperature: filters.temperature ?? 0,
-      tint: filters.tint ?? 0,
-      highlights: filters.highlights ?? 0,
-      shadows: filters.shadows ?? 0
-    }),
-    [image]
-  )
+  return program.effect.makeShaderWithChildren(program.uniforms(adjustmentValues(filters)), [image])
 }

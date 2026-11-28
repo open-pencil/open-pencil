@@ -1,16 +1,25 @@
 import type { Canvas } from '@open-pencil/canvaskit'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
+import { hasImageAdjustments } from '#core/canvas/images/adjustments'
 import { recordPicture } from '#core/canvas/renderer/picture'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { localPaintBounds } from '#core/geometry/render-bounds'
 
-function drawsImage(node: SceneNode): boolean {
+function imagePaints(node: SceneNode): Fill[] {
   const regionFills = node.vectorNetwork?.regions.flatMap((region) => region.fills ?? []) ?? []
-  return [...node.fills, ...node.strokes, ...regionFills].some(
+  return [...node.fills, ...node.strokes, ...regionFills].filter(
     (paint) => paint.visible && paint.imageHash !== undefined
   )
+}
+
+function drawsImage(node: SceneNode): boolean {
+  return imagePaints(node).length > 0
+}
+
+function drawsAdjustedImage(node: SceneNode): boolean {
+  return imagePaints(node).some((paint) => hasImageAdjustments(paint.filters))
 }
 
 /** Noise samples once per output pixel in an export, so it follows that export's pixel grid. */
@@ -26,6 +35,10 @@ function samplesImagesForExport(r: SkiaRenderer, node: SceneNode): boolean {
   return r.images.supersampledOutput !== null && (drawsImage(node) || drawsNoise(node))
 }
 
+function drawsBakedImagesForExport(r: SkiaRenderer, node: SceneNode): boolean {
+  return r.images.exporting !== null && drawsAdjustedImage(node)
+}
+
 /**
  * Draws a shape with effects from its node picture, recording one when there is none: the
  * picture holds the shape with its shadows and blurs, so a tile that holds it again replays it
@@ -37,7 +50,7 @@ export function drawShapeThroughNodePicture(
   node: SceneNode,
   draw: (target: Canvas) => void
 ): void {
-  if (samplesImagesForExport(r, node)) {
+  if (samplesImagesForExport(r, node) || drawsBakedImagesForExport(r, node)) {
     draw(canvas)
     return
   }

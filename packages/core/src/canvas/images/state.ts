@@ -1,13 +1,36 @@
-import type { Image, Surface } from '@open-pencil/canvaskit'
+import type { Canvas, Image, Surface } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
+import type { ResourceCache } from '#core/cache/resource'
+
+import type { SourceScan } from './baked'
 import { createImageCache } from './cache'
 import { ImagePreviewCache } from './previews'
 
 /** A raster export drawn finer than its pixels, and where world space lands on those pixels. */
 export interface SupersampledOutput {
   readonly outputFromWorld: Mat3
+}
+
+export interface ExportTarget {
+  readonly canvas: Canvas
+  readonly rasterPixelsPerDeviceUnit: number
+}
+
+export interface ExportSource {
+  readonly width: number
+  readonly height: number
+  readonly bakesExactly: boolean
+  distinctColors: number | null
+}
+
+export interface ExportImages {
+  readonly adjusted: ResourceCache<string, Image>
+  readonly unbakeable: Set<string>
+  readonly sources: Map<string, ExportSource>
+  readonly scans: ResourceCache<string, SourceScan>
+  target: ExportTarget | null
 }
 
 /** The images a renderer holds decoded, live, or as previews, and what they were drawn for. */
@@ -36,6 +59,7 @@ export interface RendererImages {
   /** Images whose sharper preview has decoded since the last frame. */
   readonly decodedPreviewHashes: Set<string>
   supersampledOutput: SupersampledOutput | null
+  exporting: ExportImages | null
 }
 
 export function createRendererImages(): RendererImages {
@@ -53,7 +77,8 @@ export function createRendererImages(): RendererImages {
     previewsDrawn: false,
     fillUsers: new Map(),
     decodedPreviewHashes: new Set(),
-    supersampledOutput: null
+    supersampledOutput: null,
+    exporting: null
   }
   return images
 }
