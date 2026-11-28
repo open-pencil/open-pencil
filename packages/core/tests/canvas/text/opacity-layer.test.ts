@@ -205,7 +205,7 @@ function exportedSize(format: 'PNG' | 'PDF', editing: boolean) {
   }
 }
 
-function inkedExtent(target: SkiaRenderer, props: Partial<SceneNode>, opacity: number) {
+function inkedAlphas(target: SkiaRenderer, props: Partial<SceneNode>, opacity: number) {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   graph.createNode('TEXT', page.id, { ...BOX, fills: [black], ...props, opacity })
@@ -228,23 +228,27 @@ function inkedExtent(target: SkiaRenderer, props: Partial<SceneNode>, opacity: n
         colorSpace: ck.ColorSpace.SRGB
       })
     )
-    const extent = { minX: SIZE, minY: SIZE, maxX: -1, maxY: -1, pixels: 0 }
-    for (let pixel = 0; pixel < SIZE * SIZE; pixel++) {
-      if (rgba[pixel * 4 + 3] === 0) {
-        continue
-      }
-      const x = pixel % SIZE
-      const y = Math.floor(pixel / SIZE)
-      extent.pixels++
-      extent.minX = Math.min(extent.minX, x)
-      extent.minY = Math.min(extent.minY, y)
-      extent.maxX = Math.max(extent.maxX, x)
-      extent.maxY = Math.max(extent.maxY, y)
-    }
-    return extent
+    return Uint8Array.from({ length: SIZE * SIZE }, (_, pixel) => rgba[pixel * 4 + 3])
   } finally {
     image.delete()
   }
+}
+
+function inkedExtent(target: SkiaRenderer, props: Partial<SceneNode>, opacity: number) {
+  const extent = { minX: SIZE, minY: SIZE, maxX: -1, maxY: -1, pixels: 0 }
+  for (const [pixel, alpha] of inkedAlphas(target, props, opacity).entries()) {
+    if (alpha === 0) {
+      continue
+    }
+    const x = pixel % SIZE
+    const y = Math.floor(pixel / SIZE)
+    extent.pixels++
+    extent.minX = Math.min(extent.minX, x)
+    extent.minY = Math.min(extent.minY, y)
+    extent.maxX = Math.max(extent.maxX, x)
+    extent.maxY = Math.max(extent.maxY, y)
+  }
+  return extent
 }
 
 function liveText(props: Partial<SceneNode>): Partial<SceneNode> {
@@ -361,9 +365,15 @@ describe('text ink', () => {
   })
 
   test.each(drawnCases)('keeps %s inside its opacity layer', (_, target, props) => {
-    const opaque = inkedExtent(target, props, 1)
-    expect(opaque.pixels).toBeGreaterThan(0)
-    expect(inkedExtent(target, props, 0.5)).toEqual(opaque)
+    const opaque = inkedAlphas(target, props, 1)
+    expect(opaque.some((alpha) => alpha > 0)).toBe(true)
+    const translucent = inkedAlphas(target, props, 0.5)
+    // Halved, a pixel of alpha 1 may round to nothing in Skia's 8-bit pipeline; every other inked pixel stays.
+    const lost = [...opaque.keys()].filter((pixel) => opaque[pixel] > 1 && translucent[pixel] === 0)
+    const gained = [...opaque.keys()].filter(
+      (pixel) => opaque[pixel] === 0 && translucent[pixel] > 0
+    )
+    expect({ lost, gained }).toEqual({ lost: [], gained: [] })
   })
 
   test.each(['PNG', 'PDF'] as const)(

@@ -1,0 +1,1 @@
+- PNG, JPG and WebP export is about two to three times faster with WebAssembly SIMD (#2421).
