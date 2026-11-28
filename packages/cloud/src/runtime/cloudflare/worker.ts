@@ -36,6 +36,7 @@ import {
   relayFor,
   relayRoute
 } from './relay'
+import { finishAfterResponse } from './response'
 import { assetSiteFiles } from './site'
 import { provideXMLParser } from './xml'
 
@@ -191,6 +192,7 @@ export function createCloudflareCloud(
       const prepared = await prepare(c.env)
       const services = cloudServices(prepared, c.env, c.executionCtx)
       const { config, database, email, transport, runInBackground } = services
+      let response: Response
       try {
         const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email, {
           runInBackground,
@@ -225,7 +227,7 @@ export function createCloudflareCloud(
           reportError: services.reporter,
           forwardedRequestId: cloudflareRayId
         })
-        return await createCloudServer(app, {
+        response = await createCloudServer(app, {
           site: assetSiteFiles(c.env.ASSETS),
           indexingPolicy: config.indexingPolicy,
           publicURL: config.publicURL,
@@ -234,9 +236,11 @@ export function createCloudflareCloud(
             : undefined,
           reportError: services.reporter
         }).fetch(c.req.raw)
-      } finally {
+      } catch (error) {
         services.finish()
+        throw error
       }
+      return finishAfterResponse(response, () => services.finish())
     })
 
   const worker: ExportedHandler<CloudflareCloudEnvironment> = {
