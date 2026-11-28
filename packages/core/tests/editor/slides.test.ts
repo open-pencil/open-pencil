@@ -405,20 +405,14 @@ test("Play moves a slide's layers through its build on the canvas, then lets go"
   editor.addLayerAnimations(boxes)
   editor.setLayerAnimations(boxes, (animation) => ({ ...animation, duration: 0.05 }))
   expect(editor.previewBuild(slide)).toBe(true)
-  // The second step waits for a click while presenting; the preview plays it after the first.
+  // Both start off the slide; the frames between are the player's, checked by its own tests.
   expect(editor.state.buildPreview?.slideId).toBe(slide)
-  expect(editor.state.buildPreview?.layers.get(boxes[1])?.opacity).toBe(0)
-  const seen = new Set<string>()
-  const marked = new Set<string>()
-  while (editor.state.buildPreview) {
-    for (const [id, frame] of editor.state.buildPreview.layers)
-      if (frame.opacity > 0 && frame.opacity < 1) seen.add(id)
-    // The Animate tab marks the step under way.
-    const animating = editor.state.buildPreview.animatingId
-    if (animating) marked.add(animating)
-    await Bun.sleep(10)
-  }
-  expect([...seen].sort()).toEqual([...boxes].sort())
-  expect([...marked].sort()).toEqual([...boxes].sort())
+  for (const id of boxes) expect(editor.state.buildPreview?.layers.get(id)?.opacity).toBe(0)
+  // The second step waits for a click while presenting; the preview plays it and lets go.
+  while (editor.state.buildPreview) await Bun.sleep(10)
+  expect(editor.state.buildPreview).toBeNull()
+
+  expect(editor.previewBuild(slide)).toBe(true)
+  editor.stopBuildPreview()
   expect(editor.state.buildPreview).toBeNull()
 })

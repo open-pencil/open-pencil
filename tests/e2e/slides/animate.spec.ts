@@ -67,7 +67,33 @@ test('Play runs the build on the canvas and turns into Stop while it plays', asy
   await expect(editor.page.getByTestId('animate-stop')).toBeVisible()
   await editor.page.getByTestId('animate-stop').click()
   await expect(editor.page.getByTestId('animate-play')).toBeVisible()
-  expect(
-    await editor.page.evaluate(() => window.openPencil?.getStore?.().state.buildPreview ?? null)
-  ).toBeNull()
+  expect(await deck.buildPreviewPlaying()).toBe(false)
+})
+
+test('ArrowUp and ArrowDown on a step move it earlier and later', async () => {
+  const [first] = await deck.open([1])
+  for (const name of ['One', 'Two', 'Three']) await deck.addAnimatedBox(first, name)
+  await deck.show(first)
+  await editor.page.getByTestId('properties-tab-animate').click()
+  const names = async () => (await deck.animations(first)).map((step) => step.name)
+
+  await steps().nth(2).locator('[data-property=animate-step-select]').focus()
+  await editor.page.keyboard.press('ArrowUp')
+  await expect.poll(names).toEqual(['One', 'Three', 'Two'])
+  // The step keeps the focus, so it moves on with the next press.
+  await editor.page.keyboard.press('ArrowUp')
+  await expect.poll(names).toEqual(['Three', 'One', 'Two'])
+  await editor.page.keyboard.press('ArrowUp')
+  await expect.poll(names).toEqual(['Three', 'One', 'Two'])
+  await editor.page.keyboard.press('ArrowDown')
+  await expect.poll(names).toEqual(['One', 'Three', 'Two'])
+})
+
+test('a layer selected before the tab opens has its step open', async () => {
+  const [first] = await deck.open([1])
+  const box = await deck.addAnimatedBox(first, 'Only')
+  await deck.show(first)
+  await deck.select([box])
+  await editor.page.getByTestId('properties-tab-animate').click()
+  await expect(steps().first().locator('[data-slot=animation-settings]')).toBeVisible()
 })

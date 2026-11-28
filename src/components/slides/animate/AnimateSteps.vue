@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 
 import { layerAnimationDirection, type LayerAnimation } from '@open-pencil/scene-graph/slides'
 import { useMessages } from '@open-pencil/vue/i18n'
@@ -48,9 +48,32 @@ const selectedId = computed(() => {
   const [only, ...rest] = store.state.selectedIds
   return rest.length === 0 ? only : undefined
 })
-watch(selectedId, (id) => {
-  if (id && steps.some((step) => step.id === id)) expandedId.value = id
-})
+// Immediately too, so a layer selected before the tab opened has its step open.
+watch(
+  selectedId,
+  (id) => {
+    if (id && steps.some((step) => step.id === id)) expandedId.value = id
+  },
+  { immediate: true }
+)
+
+const list = useTemplateRef('list')
+
+/**
+ * ArrowUp and ArrowDown on a step's row move it earlier or later, as dragging it does. The row
+ * moves in the page, which loses focus, so its button takes the focus back for the next press.
+ */
+async function onRowKey(event: KeyboardEvent, id: string, index: number) {
+  if (event.key === 'ArrowUp' && index > 0) store.moveLayerAnimation(id, index - 1)
+  else if (event.key === 'ArrowDown' && index < steps.length - 1)
+    store.moveLayerAnimation(id, index + 1)
+  else return
+  event.preventDefault()
+  await nextTick()
+  list.value
+    ?.querySelector<HTMLElement>(`[data-step-id="${id}"] [data-property="animate-step-select"]`)
+    ?.focus()
+}
 function toggle(id: string) {
   expandedId.value = expandedId.value === id ? null : id
 }
@@ -100,12 +123,13 @@ function dropPosition(id: string) {
       </IconButton>
     </template>
     <p v-if="steps.length === 0" :class="ui.empty()">{{ messages.noAnimations }}</p>
-    <ol v-else :class="ui.steps()">
+    <ol v-else ref="list" :class="ui.steps()">
       <li
         v-for="(step, index) in steps"
         :key="step.id"
         :ref="(element) => setupRow(element, step.id)"
         :class="ui.step()"
+        :data-step-id="step.id"
         :data-dragging="reorder.draggingId.value === step.id || undefined"
         :data-selected="selectedId === step.id || undefined"
         :data-playing="store.state.buildPreview?.animatingId === step.id || undefined"
@@ -159,7 +183,9 @@ function dropPosition(id: string) {
             type="button"
             :class="ui.stepLabel()"
             data-property="animate-step-select"
+            aria-keyshortcuts="ArrowUp ArrowDown"
             @click="store.select([step.id])"
+            @keydown="onRowKey($event, step.id, index)"
           >
             <span :class="ui.stepNumber()">{{ index + 1 }}</span>
             <span :class="ui.stepName()">{{ step.name }}</span>

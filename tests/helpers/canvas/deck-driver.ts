@@ -154,6 +154,11 @@ export function deckDriver(page: () => Page) {
       )
     },
 
+    /** Whether a slide's build is playing on the canvas, as the Animate tab's Play starts it. */
+    async buildPreviewPlaying(): Promise<boolean> {
+      return page().evaluate(() => Boolean(window.openPencil?.getStore?.().state.buildPreview))
+    },
+
     /** A slide's build in play order: each animated layer's name, style, and trigger. */
     async animations(slideId: string): Promise<{ name: string; style: string; trigger: string }[]> {
       return page().evaluate((slideId) => {

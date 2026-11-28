@@ -34,6 +34,25 @@ function opacity(player: ReturnType<typeof createSlidePlayer>, now: number, id: 
 }
 
 describe('presenting a deck', () => {
+  test('names the layer whose animation is under way, one after another in a chained step', () => {
+    const { graph, first, title, box } = deck()
+    graph.updateNode(title.id, { animation: { ...defaultLayerAnimation(0), duration: 0.5 } })
+    graph.updateNode(box.id, {
+      animation: { ...defaultLayerAnimation(1), trigger: 'AFTER_PREVIOUS', duration: 0.5 }
+    })
+    const player = createSlidePlayer(graph, [first.id])
+    player.start(0)
+    // The build waits for a click: nothing is under way.
+    expect(player.animatingAt(0.1)).toBeNull()
+    player.next(1)
+    expect(player.animatingAt(1.2)).toBe(title.id)
+    expect(opacity(player, 1.2, title.id)).toBeGreaterThan(0)
+    expect(opacity(player, 1.2, title.id)).toBeLessThan(1)
+    // The chained box takes over once the title has played.
+    expect(player.animatingAt(1.7)).toBe(box.id)
+    expect(player.animatingAt(2.5)).toBeNull()
+  })
+
   test("a slide's steps play one click at a time before the deck moves on", () => {
     const { graph, pageId, second, title, box } = deck()
     graph.updateNode(title.id, { animation: defaultLayerAnimation(0) })
