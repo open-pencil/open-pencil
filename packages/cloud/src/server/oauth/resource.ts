@@ -2,6 +2,7 @@ import {
   CLOUD_APP_ACCESS_TOKEN_PREFIX,
   CLOUD_TOKEN_SCOPES,
   cloudAPIResource,
+  cloudMCPResource,
   type CloudTokenScope
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -19,15 +20,20 @@ export function bearerAppToken(headers: Headers): string | null {
 }
 
 /**
- * The `WWW-Authenticate` challenge for the document API, as the OAuth provider builds it: without
- * a scope, a request lacking a valid token learns where to get one (RFC 9728 §5.1); with one, a
- * token lacking that scope learns what to ask the person for (RFC 6750 §3.1).
+ * The `WWW-Authenticate` challenge for the document API, or for `resource` when another of the
+ * server's resources answers, as the OAuth provider builds it: without a scope, a request lacking
+ * a valid token learns where to get one (RFC 9728 §5.1); with one, a token lacking that scope
+ * learns what to ask the person for (RFC 6750 §3.1).
  */
-export function resourceChallenge(publicURL: string, missingScope?: string): string | null {
+export function resourceChallenge(
+  publicURL: string,
+  missingScope?: string,
+  resource = cloudAPIResource(publicURL)
+): string | null {
   const error = missingScope
     ? createInsufficientScopeError([missingScope])
     : new APIError('UNAUTHORIZED')
-  const challenge = createResourceServerChallenge(error, cloudAPIResource(publicURL))
+  const challenge = createResourceServerChallenge(error, resource)
   return challenge ? new Headers(challenge.headers).get('WWW-Authenticate') : null
 }
 
@@ -76,10 +82,12 @@ export async function resolveAppAccessToken(
   // Bearer-only check does not take; the token endpoint binds one whenever the app sends a proof.
   if (stored.confirmation != null) return null
   if (new Date(stored.expiresAt).getTime() <= Date.now()) return null
-  // A token for another resource is not for the document API (RFC 8707). One whose request named
-  // none reaches this API, the only resource the server has.
+  // A token for another resource is not for this server (RFC 8707). Its two resources, the document
+  // API and the MCP endpoint, reach the same documents, and the MCP endpoint runs its tools
+  // through the API, so a token for either reaches both; one whose request named none does too.
   const resources = stored.resources ?? []
-  if (resources.length > 0 && !resources.includes(cloudAPIResource(publicURL))) return null
+  const served = new Set([cloudAPIResource(publicURL), cloudMCPResource(publicURL)])
+  if (resources.length > 0 && !resources.some((resource) => served.has(resource))) return null
   // The grant's workspace, kept as text by the provider, while the account still belongs to it.
   const member = await database
     .selectFrom('workspaceMember')

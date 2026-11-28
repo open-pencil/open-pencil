@@ -1,0 +1,1 @@
+- Cloud serves MCP at `/mcp` where connected apps are on, so ChatGPT, Claude, Grok, and other MCP clients can manage a workspace's documents and run OpenPencil's design tools on a document you have open, with their edits shown live as yours; apps can also connect with a client ID metadata document instead of registering.
