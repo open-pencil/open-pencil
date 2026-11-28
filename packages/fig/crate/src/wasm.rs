@@ -1,11 +1,11 @@
 //! Raw exports for WebAssembly hosts, with no binding generator: the host copies a file into
-//! memory from `alloc`, opens it, and reads results as typed arrays over the module's memory.
-//! One document and one expansion are held at a time.
+//! memory from `alloc`, opens it, and reads results as typed arrays or JSON over the module's
+//! memory. One document and the last result of each kind are held at a time.
 
 use std::cell::RefCell;
 
 use crate::Document;
-use crate::expand::Unresolved;
+use crate::expand::{Step, Unresolved};
 use crate::index::NONE;
 
 #[derive(Default)]
@@ -15,7 +15,9 @@ struct State {
     /// Per occurrence of the last expanded page: GUID session, GUID local, parent, flags.
     occurrences: Vec<u32>,
     unresolved: Unresolved,
-    placements: u32,
+    layers: u32,
+    /// The last `properties` call's values, one JSON object per line.
+    json: String,
 }
 
 thread_local! {
@@ -115,7 +117,11 @@ pub extern "C" fn expand_page(page: u32) -> i32 {
         }
         let count = expansion.occurrences.len() as i32;
         state.unresolved = expansion.unresolved;
-        state.placements = expansion.placements.len() as u32;
+        state.layers = expansion
+            .steps
+            .iter()
+            .filter(|step| matches!(step, Step::Layer(_)))
+            .count() as u32;
         state.occurrences = rows;
         count
     })
@@ -128,10 +134,10 @@ pub extern "C" fn occurrences() -> *const u32 {
     STATE.with_borrow(|state| state.occurrences.as_ptr())
 }
 
-/// How many property layers and derived entries the last expansion placed.
+/// How many layers the last expansion applied to its occurrences.
 #[unsafe(no_mangle)]
-pub extern "C" fn placements() -> u32 {
-    STATE.with_borrow(|state| state.placements)
+pub extern "C" fn layers() -> u32 {
+    STATE.with_borrow(|state| state.layers)
 }
 
 /// What the last expansion could not resolve, by `which`: unresolved property layers, derived
@@ -150,4 +156,62 @@ pub extern "C" fn unresolved(which: u32) -> u32 {
             _ => NONE,
         }
     })
+}
+
+/// Writes the field values of `count` occurrences of a page from `first` on as JSON, one object
+/// per line, for `json` to read, bytes as arrays of numbers. Returns
+/// how many it wrote, or -1 with `error` saying why.
+#[unsafe(no_mangle)]
+pub extern "C" fn properties(page: u32, first: u32, count: u32) -> i32 {
+    STATE.with_borrow_mut(|state| {
+        let State {
+            document,
+            json,
+            error,
+            ..
+        } = state;
+        json.clear();
+        let Some(document) = document else {
+            *error = String::from("no document is open");
+            return -1;
+        };
+        let Some(expansion) = document.expand_page(page as usize) else {
+            *error = format!("the document has no page {page}");
+            return -1;
+        };
+        let values = match document.properties(&expansion) {
+            Ok(values) => values,
+            Err(cause) => {
+                *error = cause.to_string();
+                return -1;
+            }
+        };
+        let end = (first as usize)
+            .saturating_add(count as usize)
+            .min(expansion.occurrences.len());
+        for occurrence in first as usize..end {
+            match values.of(occurrence as u32) {
+                Ok(value) => {
+                    // A record holds only floats JSON can write, so this cannot fail.
+                    json.push_str(&serde_json::to_string(&value).unwrap_or_default());
+                    json.push('\n');
+                }
+                Err(cause) => {
+                    *error = cause.to_string();
+                    return -1;
+                }
+            }
+        }
+        end.saturating_sub(first as usize) as i32
+    })
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn json() -> *const u8 {
+    STATE.with_borrow(|state| state.json.as_ptr())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn json_length() -> usize {
+    STATE.with_borrow(|state| state.json.len())
 }

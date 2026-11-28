@@ -56,7 +56,7 @@
     "build:wasm": "bun scripts/wasm.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "check:licenses": "cargo deny --manifest-path crate/Cargo.toml check licenses",
-    "check:rust": "cargo fmt --manifest-path crate/Cargo.toml --check && cargo clippy --manifest-path crate/Cargo.toml --target wasm32-unknown-unknown --profile wasm --features exports -- -D warnings && cargo clippy --manifest-path crate/Cargo.toml --profile wasm --all-targets -- -D warnings && cargo test --manifest-path crate/Cargo.toml",
+    "check:rust": "bun scripts/model.ts --check && cargo fmt --manifest-path crate/Cargo.toml --check && cargo clippy --manifest-path crate/Cargo.toml --target wasm32-unknown-unknown --profile wasm --features exports -- -D warnings && cargo clippy --manifest-path crate/Cargo.toml --profile wasm --all-targets -- -D warnings && cargo test --manifest-path crate/Cargo.toml",
     "prepack": "bun run build",
     "test": "bun run build:wasm && bun test tests",
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"

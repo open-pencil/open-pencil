@@ -71,7 +71,7 @@ jobs:
     name: Documentation
     needs: changes
     if: needs.changes.outputs.scope == 'docs'
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -91,7 +91,7 @@ jobs:
     name: Code quality
     needs: changes
     if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -154,7 +154,7 @@ jobs:
     name: Package integrity
     needs: changes
     if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -226,7 +226,7 @@ jobs:
     name: Component workshop
     needs: changes
     if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -290,7 +290,11 @@ jobs:
         with:
           persist-credentials: false
 
+      # The fig crate's unit tests open a fixture.
       - uses: ./.github/actions/setup/workspace
+        with:
+          lfs: 'true'
+          lfs-include: tests/fixtures/circle-text.fig
 
       # The runner's rustup installs the toolchain rust-toolchain.toml pins.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
@@ -388,7 +392,7 @@ jobs:
     name: Cloud package
     needs: changes
     if: needs.changes.outputs.scope == 'cloud'
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

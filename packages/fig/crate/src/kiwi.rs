@@ -1,5 +1,10 @@
-//! Kiwi's binary schema and a cursor over a message encoded with it. Nothing is decoded into
-//! values here: callers read the fields they need and the cursor skips the rest.
+//! Kiwi's binary schema and a cursor over a message encoded with it. Callers read the fields
+//! they need and the cursor skips the rest; [`from_message`] decodes a message into Rust types
+//! through serde.
+
+mod de;
+
+pub use de::{Error as DecodeError, from_message, from_message_where};
 
 /// A message, or a schema, ended early or holds a value its schema does not allow.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,6 +45,15 @@ pub struct Definition {
     pub fields: Vec<Field>,
     /// A message field's index plus one by its id; zero where no field has that id.
     by_id: Vec<u32>,
+}
+
+impl Definition {
+    /// A message field by its id on the wire, with its index; damaged when no field has it.
+    pub(crate) fn field_by_id(&self, id: u32) -> Result<(usize, &Field)> {
+        let index = self.by_id.get(id as usize).ok_or(Malformed)?;
+        let index = index.checked_sub(1).ok_or(Malformed)? as usize;
+        Ok((index, self.fields.get(index).ok_or(Malformed)?))
+    }
 }
 
 #[derive(Debug)]
@@ -200,6 +214,12 @@ const MAX_LOOKUP_ENTRIES: usize = 1 << 20;
 const MAX_DEPTH: u32 = 64;
 
 /// A cursor over an encoded message.
+/// Text as a TypeScript `TextDecoder` reads it: without one leading byte order mark, and with
+/// U+FFFD for bytes that are not UTF-8.
+pub(crate) fn text(bytes: &[u8]) -> std::borrow::Cow<'_, str> {
+    String::from_utf8_lossy(bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes))
+}
+
 pub struct Reader<'a> {
     data: &'a [u8],
     pub position: usize,
@@ -256,7 +276,7 @@ impl<'a> Reader<'a> {
     }
 
     #[inline]
-    fn varuint64(&mut self) -> Result<u64> {
+    pub fn varuint64(&mut self) -> Result<u64> {
         let mut shift = 0;
         let mut value = 0u64;
         loop {
@@ -363,10 +383,15 @@ impl<'a> Reader<'a> {
     }
 
     pub fn skip_field(&mut self, schema: &Schema, field: &Field) -> Result<()> {
-        if !field.is_array {
-            return self.skip(schema, field.ty);
+        self.skip_typed(schema, field.ty, field.is_array)
+    }
+
+    /// Skips a value of a type, an array of them where `is_array`.
+    pub fn skip_typed(&mut self, schema: &Schema, ty: i32, is_array: bool) -> Result<()> {
+        if !is_array {
+            return self.skip(schema, ty);
         }
-        if field.ty == BYTE {
+        if ty == BYTE {
             let length = self.varuint()? as usize;
             let end = self.position.checked_add(length).ok_or(Malformed)?;
             if end > self.data.len() {
@@ -381,7 +406,7 @@ impl<'a> Reader<'a> {
             return Err(Malformed);
         }
         for _ in 0..count {
-            self.skip(schema, field.ty)?;
+            self.skip(schema, ty)?;
         }
         Ok(())
     }
@@ -410,10 +435,9 @@ impl<'a> Reader<'a> {
             if id == 0 {
                 break Ok(());
             }
-            let index = *definition.by_id.get(id as usize).ok_or(Malformed)?;
-            let index = index.checked_sub(1).ok_or(Malformed)? as usize;
+            let (index, field) = definition.field_by_id(id)?;
             if !visit(self, index)? {
-                self.skip_field(schema, &definition.fields[index])?;
+                self.skip_field(schema, field)?;
             }
         };
         self.depth -= 1;
