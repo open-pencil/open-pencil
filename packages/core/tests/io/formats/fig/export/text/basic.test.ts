@@ -74,6 +74,7 @@ describe('text node export', () => {
 
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
+    await api.loadFontAsync({ family: 'Inter', style: 'Regular' })
     const text = api.createText()
     text.name = 'Truncated'
     text.characters = 'A long label'
