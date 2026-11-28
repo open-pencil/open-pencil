@@ -272,6 +272,7 @@ function resolveSyncedRunsInPlace(
   applySyncedModes(graph, target, updates)
   const copy = {
     id: target.id,
+    fills: updates.fills ?? target.fills,
     styleRuns: updates.styleRuns,
     componentScale: updates.componentScale ?? target.componentScale
   }

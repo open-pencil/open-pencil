@@ -1,7 +1,15 @@
-import { omit, pick } from 'es-toolkit/object'
-import { isEqual } from 'es-toolkit/predicate'
+import { omit, omitBy, pick } from 'es-toolkit/object'
+import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  SceneNode,
+  StyleRun,
+  TextRunBoundVariables
+} from '@open-pencil/scene-graph'
+import { copyFills } from '@open-pencil/scene-graph/copy'
+import { characterOverrides } from '@open-pencil/scene-graph/text'
+import { applyPaintColor, paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import type { EditorContext } from '#core/editor/types'
 import {
@@ -15,8 +23,101 @@ import {
 
 type NodeUpdate = (id: string, changes: Partial<SceneNode>) => void
 
+export interface SelectionVariableBindingState {
+  mixed: boolean
+  variableId?: string
+}
+
+function isFillBindingField(field: string): boolean {
+  return paintBindingTarget(field)?.list === 'fills'
+}
+
+function layerFillBindings(node: SceneNode): TextRunBoundVariables {
+  return Object.fromEntries(
+    Object.entries(node.boundVariables).filter(([key]) => isFillBindingField(key))
+  )
+}
+
+function readBoundVariable(
+  boundVariables: Partial<Record<string, string>> | undefined,
+  field: string
+): string | undefined {
+  return boundVariables?.[field]
+}
+
+function characterFillBinding(
+  node: SceneNode,
+  override: CharacterStyleOverride,
+  field: string
+): string | undefined {
+  if (override.fills !== undefined) return readBoundVariable(override.boundVariables, field)
+  return readBoundVariable(override.boundVariables, field) ?? node.boundVariables[field]
+}
+
 function styleKeys(changes: Partial<SceneNode>): TextStyleKey[] {
   return TEXT_STYLE_KEYS.filter((key) => Object.hasOwn(changes, key))
+}
+
+function nextFillRunEnd(
+  chars: ReturnType<typeof characterStyles>,
+  explicit: (CharacterStyleOverride | undefined)[],
+  start: number,
+  at: number
+): number {
+  const base = chars[at]
+  const baseOverride = explicit[start + at] ?? {}
+  let next = at + 1
+  while (next < chars.length) {
+    const candidateOverride = explicit[start + next] ?? {}
+    if (
+      !isEqual(chars[next].fills, base.fills) ||
+      (candidateOverride.fills !== undefined) !== (baseOverride.fills !== undefined) ||
+      !isEqual(candidateOverride.boundVariables, baseOverride.boundVariables)
+    ) {
+      break
+    }
+    next++
+  }
+  return next
+}
+
+function fillBindingPatch(
+  style: CharacterStyleOverride,
+  override: CharacterStyleOverride,
+  inheritedFillBindings: TextRunBoundVariables,
+  field: string,
+  targetIndex: number,
+  variableId: string | undefined,
+  color: Parameters<typeof applyPaintColor>[1] | undefined
+): CharacterStyleOverride {
+  const hasExplicitFills = override.fills !== undefined
+  const baseBound = override.boundVariables ?? {}
+  if (variableId && color) {
+    const fills = copyFills(style.fills ?? [])
+    const paint = fills.at(targetIndex)
+    if (!paint) return {}
+    applyPaintColor(paint, color)
+    return {
+      fills,
+      boundVariables: {
+        ...(hasExplicitFills ? undefined : inheritedFillBindings),
+        ...baseBound,
+        [field]: variableId
+      }
+    }
+  }
+  const sourceBound = hasExplicitFills ? baseBound : { ...inheritedFillBindings, ...baseBound }
+  const boundVariables = omitBy(sourceBound, (_, key) => key === field) as TextRunBoundVariables
+  if (!hasExplicitFills && readBoundVariable(inheritedFillBindings, field) !== undefined) {
+    return { fills: copyFills(style.fills ?? []), boundVariables }
+  }
+  if (
+    (hasExplicitFills || readBoundVariable(baseBound, field) !== undefined) &&
+    !isEqual(boundVariables, baseBound)
+  ) {
+    return { boundVariables }
+  }
+  return {}
 }
 
 /**
@@ -133,5 +234,105 @@ export function createTextSelectionStyle(
     return layerTextStyleChanges(node, changes)
   }
 
-  return { updateNode, updateNodeWithUndo, commitNodeUpdate, selectionStyle, layerChanges }
+  function selectionVariableBinding(
+    id: string,
+    field: string
+  ): SelectionVariableBindingState | null {
+    const range = selectedRange(id)
+    if (!range || !isFillBindingField(field)) return null
+    const node = ctx.graph.getNode(id)
+    if (!node) return null
+    const [start, end] = range
+    const overrides = characterOverrides(node.styleRuns, end)
+    const variableIds = new Set<string | undefined>()
+    for (let index = start; index < end; index++) {
+      variableIds.add(characterFillBinding(node, overrides[index] ?? {}, field))
+    }
+    if (variableIds.size > 1) return { mixed: true }
+    const [variableId] = variableIds
+    return { mixed: false, variableId }
+  }
+
+  function applyRangeFillBinding(
+    id: string,
+    field: string,
+    variableId: string | undefined,
+    updateWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
+  ): boolean {
+    const range = selectedRange(id)
+    const target = range ? paintBindingTarget(field) : null
+    if (!range || target?.list !== 'fills') return false
+    const node = ctx.graph.getNode(id)
+    if (!node) return true
+    const color = variableId ? ctx.graph.resolveColorVariableForNode(id, variableId) : undefined
+    if (variableId && !color) return true
+    const [start, end] = range
+    const chars = characterStyles(node, start, end)
+    const explicit = characterOverrides(node.styleRuns, end)
+    const inheritedFillBindings = layerFillBindings(node)
+    let styleRuns = node.styleRuns
+    let at = 0
+    while (at < chars.length) {
+      const next = nextFillRunEnd(chars, explicit, start, at)
+      const patch = fillBindingPatch(
+        chars[at],
+        explicit[start + at] ?? {},
+        inheritedFillBindings,
+        field,
+        target.index,
+        variableId,
+        color
+      )
+      if (!isEmptyObject(patch)) {
+        styleRuns = styleRunsWithPatch({ ...node, styleRuns }, start + at, start + next, patch)
+      }
+      at = next
+    }
+    if (isEqual(styleRuns, node.styleRuns)) return true
+    preview = null
+    runTextEditStep(() =>
+      updateWithUndo(id, { styleRuns }, variableId ? 'Bind variable' : 'Unbind variable')
+    )
+    return true
+  }
+
+  /**
+   * Applying a fill colour variable while characters are selected colours those characters and
+   * binds the variable on their `styleRuns` (leaving the layer's fills and variable bindings
+   * untouched), mirroring other panel fill edits while text is being edited.
+   */
+  function bindVariable(
+    id: string,
+    field: string,
+    variableId: string,
+    bind: (nodeId: string, path: string, variableId: string) => void,
+    updateWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
+  ) {
+    if (!applyRangeFillBinding(id, field, variableId, updateWithUndo)) {
+      bind(id, field, variableId)
+    }
+  }
+
+  /** Unbinds a fill colour variable on selected characters when characters are selected. */
+  function unbindVariable(
+    id: string,
+    field: string,
+    unbind: (nodeId: string, path: string) => void,
+    updateWithUndo: (id: string, changes: Partial<SceneNode>, label?: string) => void
+  ) {
+    if (!applyRangeFillBinding(id, field, undefined, updateWithUndo)) {
+      unbind(id, field)
+    }
+  }
+
+  return {
+    updateNode,
+    updateNodeWithUndo,
+    commitNodeUpdate,
+    selectionStyle,
+    selectionVariableBinding,
+    layerChanges,
+    bindVariable,
+    unbindVariable
+  }
 }

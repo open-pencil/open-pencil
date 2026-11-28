@@ -1,6 +1,7 @@
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { applyFontFeaturesToKiwi } from '../font/features'
 import { figmaStyleName, standardStyleNamer, type StyleNamer } from '../font/style'
@@ -35,6 +36,12 @@ function applyTextDecorationOverrideFields(
   }
 }
 
+function hasFillVariableBinding(style: CharacterStyleOverride): boolean {
+  return Object.keys(style.boundVariables ?? {}).some(
+    (field) => paintBindingTarget(field)?.list === 'fills'
+  )
+}
+
 function textStyleOverrideToKiwi(
   id: number,
   style: CharacterStyleOverride,
@@ -64,7 +71,9 @@ function textStyleOverrideToKiwi(
   applyTextDecorationOverrideFields(override, style, fillToKiwiPaint)
   if (style.textCase) override.textCase = style.textCase
   // An empty list stays: the range draws nothing, as Figma stores a range whose fills were removed.
-  if (style.fills) override.fillPaints = style.fills.map(fillToKiwiPaint)
+  const exportedFills =
+    style.fills ?? (hasFillVariableBinding(style) && node.fills.length > 0 ? node.fills : undefined)
+  if (exportedFills) override.fillPaints = exportedFills.map(fillToKiwiPaint)
   return override
 }
 

@@ -66,24 +66,32 @@ export function createOpenPencilBindingProvider<V>(
     return variables().filter((variable) => contains(variable.name, term))
   }
 
+  function readBinding(target: BindingTarget): { mixed: boolean; variableId?: string } {
+    const selection = editor.getSelectionVariableBinding(target.nodeId, target.path)
+    if (selection) return selection
+    return {
+      mixed: false,
+      variableId: editor.getNode(target.nodeId)?.boundVariables[target.path]
+    }
+  }
+
   function getBound(target: BindingTarget): Variable | undefined {
     void revision?.value
-    const variableId = editor.getNode(target.nodeId)?.boundVariables[target.path]
-    return variableId ? editor.getVariable(variableId) : undefined
+    const binding = readBinding(target)
+    return !binding.mixed && binding.variableId ? editor.getVariable(binding.variableId) : undefined
   }
 
   function getState(targets: BindingTarget[]): BindingState {
+    void revision?.value
     if (targets.length === 0) return 'unbound'
-    const variableIds = new Set(
-      targets.map(
-        (target) => editor.getNode(target.nodeId)?.boundVariables[target.path] ?? undefined
-      )
-    )
+    const bindings = targets.map((target) => ({ target, binding: readBinding(target) }))
+    if (bindings.some(({ binding }) => binding.mixed)) return 'mixed'
+    const variableIds = new Set(bindings.map(({ binding }) => binding.variableId))
     // Identity takes precedence: an explicit mixed edit can detach the selection.
     // edit-variable still requires every bound destination to prepare successfully.
     if (variableIds.size > 1) return 'mixed'
-    const unresolved = targets.some((target) => {
-      const id = editor.getNode(target.nodeId)?.boundVariables[target.path]
+    const unresolved = bindings.some(({ target, binding }) => {
+      const id = binding.variableId
       return (
         id !== undefined &&
         (resolveEffectiveBindingValue(editor, id, target) === undefined ||
@@ -92,10 +100,9 @@ export function createOpenPencilBindingProvider<V>(
     })
     if (unresolved) return 'unresolved'
     if (variableIds.has(undefined)) return 'unbound'
-    const values = targets.map((target) => {
-      const id = editor.getNode(target.nodeId)?.boundVariables[target.path]
-      return id ? options.resolve(editor, id, target) : undefined
-    })
+    const values = bindings.map(({ target, binding }) =>
+      binding.variableId ? options.resolve(editor, binding.variableId, target) : undefined
+    )
     if (values.some((value) => value === undefined)) return 'unresolved'
     return values.every((value) => isEqual(value, values[0])) ? 'bound' : 'mixed'
   }
@@ -105,7 +112,10 @@ export function createOpenPencilBindingProvider<V>(
     listVariables: variables,
     collectionName: (variable) => editor.getCollection(variable.collectionId)?.name,
     filterVariables,
-    getBindingId: (target) => editor.getNode(target.nodeId)?.boundVariables[target.path],
+    getBindingId: (target) => {
+      const binding = readBinding(target)
+      return binding.mixed ? undefined : binding.variableId
+    },
     getBound,
     getState,
     resolve: (variableId, target) => options.resolve(editor, variableId, target),
@@ -128,6 +138,9 @@ export function useOpenPencilBindingProvider<V>(
   options: OpenPencilBindingProviderOptions<V>
 ): BindingProvider<V> {
   const editor = useEditor()
-  const revision = useSceneComputed(() => editor.state.sceneVersion)
+  const revision = useSceneComputed(
+    () =>
+      `${editor.state.sceneVersion}:${editor.state.editingTextId ? editor.state.textSelectionVersion : -1}`
+  )
   return createOpenPencilBindingProvider(editor, options, revision)
 }

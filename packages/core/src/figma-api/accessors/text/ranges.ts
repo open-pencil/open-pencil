@@ -2,7 +2,6 @@ import type { TextListOptions } from '@figma/plugin-typings/plugin-api-standalon
 import { uniqBy } from 'es-toolkit/array'
 
 import type {
-  CharacterStyleOverride,
   HyperlinkTarget,
   SceneGraph,
   SceneNode,
@@ -99,7 +98,7 @@ export function fontNameStyle(
   start: number,
   value: unknown,
   property = 'value'
-): CharacterStyleOverride {
+): ReturnType<typeof fontNameInputStyle> {
   const fontName = parseFigma(fontNameSchema, value, method, property)
   return fontNameInputStyle(method, fontName, currentFont(node, start))
 }
