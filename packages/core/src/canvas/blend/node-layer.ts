@@ -4,12 +4,7 @@ import type { BlendMode, SceneGraph, SceneNode, VectorNetwork } from '@open-penc
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { backdropReach } from '#core/canvas/renderer/visual-bounds'
 
-import {
-  needsIsolatedBlendLayer,
-  restoreBlendedLayer,
-  saveBlendedLayer,
-  saveLayerOverBackdrop
-} from './modes'
+import { needsIsolatedBlendLayer, saveBlendedLayer, saveLayerOverBackdrop } from './modes'
 
 interface Blendable {
   visible: boolean
@@ -142,11 +137,12 @@ export function withNodeLayer(
   draw: () => void
 ): void {
   const depth = r.backdropFreeLayers.length
-  saveNodeLayer(r, canvas, graph, node, opacity, bounds)
+  const saveCount = canvas.getSaveCount()
   try {
+    saveNodeLayer(r, canvas, graph, node, opacity, bounds)
     draw()
-    restoreBlendedLayer(canvas)
   } finally {
+    canvas.restoreToCount(saveCount)
     r.backdropFreeLayers.length = depth
     r.opacityPaint.setAlphaf(1)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)

@@ -8,6 +8,7 @@ import { SceneGraph, type BlendMode, type Fill, type VectorNetwork } from '@open
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { restoreBlendedLayer, saveLayerOverBackdrop } from '#core/canvas/blend/modes'
+import { withNodeLayer } from '#core/canvas/blend/node-layer'
 
 const SIZE = 40
 const STRIPE = 4
@@ -431,7 +432,47 @@ describe('a render that throws inside a pass-through group with opacity', () => 
     } finally {
       shapes.mockRestore()
     }
-    renderer.surface.getCanvas().restoreToCount(1)
     expectNear(renderGroupRed(0.5, PASS_THROUGH_CASES[0].layers), MULTIPLY_AT_HALF)
+  })
+})
+
+describe('a pass-through layer that throws', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  passThroughGroup(0.5, PASS_THROUGH_CASES[0].layers)(graph, page.id)
+  const group = expectDefined(graph.getNode(page.childIds[0]), 'group')
+  const canvas = renderer.surface.getCanvas()
+
+  function expectLayerClosedAfter(failure: string, draw: () => void) {
+    const saveCount = canvas.getSaveCount()
+    const depth = renderer.backdropFreeLayers.length
+    expect(() => withNodeLayer(renderer, canvas, graph, group, 0.5, null, draw)).toThrow(failure)
+    expect(canvas.getSaveCount()).toBe(saveCount)
+    expect(renderer.backdropFreeLayers.length).toBe(depth)
+    expect(renderer.opacityPaint.getColor()[3]).toBe(1)
+  }
+
+  function expectNextRenderBlends() {
+    expectNear(renderGroupRed(0.5, PASS_THROUGH_CASES[0].layers), MULTIPLY_AT_HALF)
+  }
+
+  test('closes the saves its draw left open', () => {
+    expectLayerClosedAfter('draw failed', () => {
+      canvas.save()
+      throw new Error('draw failed')
+    })
+    expectNextRenderBlends()
+  })
+
+  test('undoes its setup when the layer fails to open', () => {
+    const blender = spyOn(renderer.opacityPaint, 'setBlender').mockImplementation(() => {
+      throw new Error('blender failed')
+    })
+    try {
+      expectLayerClosedAfter('blender failed', () => undefined)
+    } finally {
+      blender.mockRestore()
+    }
+    expectNextRenderBlends()
   })
 })

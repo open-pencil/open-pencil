@@ -346,12 +346,19 @@ const blendModes = {
 }
 
 function createCanvas() {
+  let saveCount = 1
   return {
-    save: mock(() => undefined),
-    restore: mock(() => undefined),
+    save: mock(() => saveCount++),
+    restore: mock(() => {
+      saveCount--
+    }),
+    getSaveCount: mock(() => saveCount),
+    restoreToCount: mock((count: number) => {
+      saveCount = Math.min(saveCount, count)
+    }),
     translate: mock(() => undefined),
     concat: mock(() => undefined),
-    saveLayer: mock(() => undefined),
+    saveLayer: mock(() => saveCount++),
     drawRRect: mock(() => undefined)
   }
 }
