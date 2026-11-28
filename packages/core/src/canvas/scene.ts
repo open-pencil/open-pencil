@@ -400,41 +400,43 @@ export function renderNode(
       if (layerBlur) {
         beginLayerBlur(r, canvas, graph, node, overlays, layerBlur, layerBounds)
       }
-
-      applyNodeTransforms(canvas, node, overlays)
-      renderLayerShadows(r, canvas, graph, node, 'behind')
-      // A frame or group's texture roughens what it and its children draw, not its shadows, and its
-      // noise grains the roughened result and its inner shadows, as in Figma. A shape does both itself.
-      const container = isLayerContainer(node)
-      const texture = container ? visibleTexture(node) : undefined
-      const drawContent = () => {
-        const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
-        try {
-          renderNodeContent(r, canvas, graph, node, overlays)
-          drawLayoutGrids(r, canvas, node)
-          renderChildren(
-            r,
-            canvas,
-            graph,
-            node,
-            overlays,
-            absX,
-            absY,
-            childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
-          )
-        } finally {
-          endTexture(canvas, textureSaves)
+      try {
+        applyNodeTransforms(canvas, node, overlays)
+        renderLayerShadows(r, canvas, graph, node, 'behind')
+        // A frame or group's texture roughens what it and its children draw, not its shadows, and
+        // its noise grains the roughened result and its inner shadows, as in Figma. A shape does
+        // both itself.
+        const container = isLayerContainer(node)
+        const texture = container ? visibleTexture(node) : undefined
+        const drawContent = () => {
+          const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
+          try {
+            renderNodeContent(r, canvas, graph, node, overlays)
+            drawLayoutGrids(r, canvas, node)
+            renderChildren(
+              r,
+              canvas,
+              graph,
+              node,
+              overlays,
+              absX,
+              absY,
+              childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
+            )
+          } finally {
+            endTexture(canvas, textureSaves)
+          }
+          renderLayerShadows(r, canvas, graph, node, 'front')
         }
-        renderLayerShadows(r, canvas, graph, node, 'front')
-      }
-      if (container) {
-        withNoiseEffects(r, canvas, node, graph, drawContent)
-      } else {
-        drawContent()
-      }
-
-      if (layerBlur) {
-        endLayerBlur(r, canvas)
+        if (container) {
+          withNoiseEffects(r, canvas, node, graph, drawContent)
+        } else {
+          drawContent()
+        }
+      } finally {
+        if (layerBlur) {
+          endLayerBlur(r, canvas)
+        }
       }
     }
     if (needsNodeLayer) {

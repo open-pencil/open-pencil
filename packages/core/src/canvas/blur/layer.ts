@@ -5,6 +5,7 @@ import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
+import { resetEffectLayerPaint } from '#core/canvas/renderer/paints'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { subtreeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 import { nodeOrientationMatrix } from '#core/geometry'
@@ -39,12 +40,6 @@ export function blurredContent(
 ): () => VisualBounds {
   const preview = overlays.rotationPreview
   return once(() => subtreeVisualBounds(graph, node, nodeOrientationMatrix(node, preview), preview))
-}
-
-function resetEffectLayerPaint(r: SkiaRenderer): void {
-  r.effectLayerPaint.setImageFilter(null)
-  r.effectLayerPaint.setColorFilter(null)
-  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 }
 
 export function beginLayerBlur(

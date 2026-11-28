@@ -3,13 +3,8 @@ import type { MaskType } from '@open-pencil/scene-graph'
 import { maskRuns } from '@open-pencil/scene-graph/masks'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
+import { resetEffectLayerPaint } from './renderer/paints'
 import type { SkiaRenderer } from './renderer/skia'
-
-function resetMaskPaint(r: SkiaRenderer): void {
-  r.effectLayerPaint.setImageFilter(null)
-  r.effectLayerPaint.setColorFilter(null)
-  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-}
 
 function unionBounds(bounds: Array<Rect | null>): Rect | null {
   let result: Rect | null = null
@@ -90,23 +85,23 @@ function drawMaskRun(
     ? r.ck.LTRBRect(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height)
     : undefined
   try {
-    resetMaskPaint(r)
+    resetEffectLayerPaint(r)
     canvas.save()
     canvas.saveLayer(r.effectLayerPaint, layerBounds)
     for (const id of masked) renderChild(id)
 
-    resetMaskPaint(r)
+    resetEffectLayerPaint(r)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.DstIn)
     canvas.saveLayer(r.effectLayerPaint, layerBounds)
     for (const mask of masks) {
       if (mask.type === 'LUMINANCE' && lumaFilter) {
-        resetMaskPaint(r)
+        resetEffectLayerPaint(r)
         r.effectLayerPaint.setColorFilter(lumaFilter)
         canvas.saveLayer(r.effectLayerPaint, layerBounds)
         renderMask(mask.id)
         // Skia's luma is that of the premultiplied color; Figma also scales it by the mask's
         // alpha, so a mask at half opacity shows a quarter of what it masks.
-        resetMaskPaint(r)
+        resetEffectLayerPaint(r)
         r.effectLayerPaint.setBlendMode(r.ck.BlendMode.DstIn)
         canvas.saveLayer(r.effectLayerPaint, layerBounds)
         renderMask(mask.id)
@@ -121,7 +116,7 @@ function drawMaskRun(
     canvas.restore()
     canvas.restore()
   } finally {
-    resetMaskPaint(r)
+    resetEffectLayerPaint(r)
     lumaFilter?.delete()
   }
 }
