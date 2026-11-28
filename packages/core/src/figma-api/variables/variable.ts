@@ -1,6 +1,9 @@
 import { uniq } from 'es-toolkit/array'
 
 import {
+  isHiddenFromPublishing,
+  isLibraryCollection,
+  isLibraryVariable,
   VARIABLE_SCOPES,
   type CodeSyntaxPlatform,
   type SceneGraph,
@@ -60,6 +63,13 @@ export function assertVariableName(
   if (taken) throw new Error(`in ${method}: duplicate variable name`)
 }
 
+/** Figma's plugin API refuses every edit to a library's variable or collection the file uses. */
+export function assertLocal(method: string, kind: string, library: boolean): void {
+  if (library) {
+    throw new Error(`in ${method}: Cannot edit a remote ${kind}`)
+  }
+}
+
 /** Stores one mode's value and shows it on the layers that use the variable. */
 export function writeVariableValue(
   graph: SceneGraph,
@@ -76,12 +86,15 @@ export function writeVariableValue(
 /** A variable as Figma's plugin API hands it out, reading and writing the document's. */
 export class FigmaVariable {
   readonly id: string
-  readonly remote = false
   readonly #graph: SceneGraph
 
   constructor(graph: SceneGraph, id: string) {
     this.#graph = graph
     this.id = id
+  }
+
+  get remote(): boolean {
+    return isLibraryVariable(this.#variable)
   }
 
   get #variable(): Variable {
@@ -90,9 +103,15 @@ export class FigmaVariable {
     return variable
   }
 
-  /** The variable, reported to the graph as about to change. */
-  get #changing(): Variable {
+  #editable(method: string): Variable {
     const variable = this.#variable
+    assertLocal(method, 'variable', isLibraryVariable(variable))
+    return variable
+  }
+
+  /** The variable, reported to the graph as about to change. */
+  #changing(method: string): Variable {
+    const variable = this.#editable(method)
     this.#graph.willChangeVariable(variable.id)
     return variable
   }
@@ -102,9 +121,9 @@ export class FigmaVariable {
   }
 
   set name(name: string) {
-    const variable = this.#variable
+    const variable = this.#editable('set_name')
     assertVariableName(this.#graph, 'set_name', name, variable.collectionId, variable.id)
-    this.#changing.name = name
+    this.#changing('set_name').name = name
   }
 
   get description(): string {
@@ -112,15 +131,15 @@ export class FigmaVariable {
   }
 
   set description(description: string) {
-    this.#changing.description = description
+    this.#changing('set_description').description = description
   }
 
   get hiddenFromPublishing(): boolean {
-    return this.#variable.hiddenFromPublishing
+    return isHiddenFromPublishing(this.#variable)
   }
 
   set hiddenFromPublishing(hidden: boolean) {
-    this.#changing.hiddenFromPublishing = hidden
+    this.#changing('set_hiddenFromPublishing').hiddenFromPublishing = hidden
   }
 
   get variableCollectionId(): string {
@@ -151,7 +170,7 @@ export class FigmaVariable {
 
   /** Scopes the plugin API cannot name stay, as the script never saw them. */
   set scopes(scopes: FigmaVariableScope[]) {
-    const variable = this.#changing
+    const variable = this.#changing('set_scopes')
     if (scopes.includes('ALL_SCOPES')) {
       delete variable.scopes
       return
@@ -165,19 +184,19 @@ export class FigmaVariable {
   }
 
   setVariableCodeSyntax(platform: CodeSyntaxPlatform, value: string): void {
-    const variable = this.#changing
+    const variable = this.#changing('setVariableCodeSyntax')
     variable.codeSyntax = { ...variable.codeSyntax, [platform]: value }
   }
 
   removeVariableCodeSyntax(platform: CodeSyntaxPlatform): void {
-    const variable = this.#changing
+    const variable = this.#changing('removeVariableCodeSyntax')
     const { [platform]: _removed, ...rest } = variable.codeSyntax ?? {}
     variable.codeSyntax = rest
   }
 
   /** Sets one mode's value; a reference that would make the variable read itself is ignored. */
   setValueForMode(modeId: string, newValue: FigmaVariableValue): void {
-    const variable = this.#variable
+    const variable = this.#editable('setValueForMode')
     const value = storedVariableValue(this.#graph, variable, modeId, newValue)
     if (value !== null) writeVariableValue(this.#graph, variable, modeId, value)
   }
@@ -200,7 +219,7 @@ export class FigmaVariable {
   }
 
   remove(): void {
-    this.#graph.removeVariable(this.#variable.id)
+    this.#graph.removeVariable(this.#editable('remove').id)
   }
 
   toJSON() {
@@ -217,7 +236,6 @@ export class FigmaVariable {
 /** A variable collection as Figma's plugin API hands it out. */
 export class FigmaVariableCollection {
   readonly id: string
-  readonly remote = false
   readonly isExtension = false
   readonly #graph: SceneGraph
 
@@ -232,13 +250,24 @@ export class FigmaVariableCollection {
     return collection
   }
 
+  get remote(): boolean {
+    return isLibraryCollection(this.#collection)
+  }
+
+  #editable(method: string): VariableCollection {
+    const collection = this.#collection
+    assertLocal(method, 'variable collection', isLibraryCollection(collection))
+    return collection
+  }
+
   get name(): string {
     return this.#collection.name
   }
 
   set name(name: string) {
-    this.#graph.willChangeCollection(this.id)
-    this.#collection.name = name
+    const collection = this.#editable('set_name')
+    this.#graph.willChangeCollection(collection.id)
+    collection.name = name
   }
 
   get hiddenFromPublishing(): boolean {
@@ -263,13 +292,13 @@ export class FigmaVariableCollection {
 
   /** Adds a mode that starts with every variable's default-mode value, as Figma does. */
   addMode(name: string): string {
-    const modeId = this.#graph.createMode(this.#collection.id, name)
+    const modeId = this.#graph.createMode(this.#editable('addMode').id, name)
     if (modeId === undefined) throw new Error('in addMode: Could not find variable collection')
     return modeId
   }
 
   renameMode(modeId: string, newName: string): void {
-    const collection = this.#collection
+    const collection = this.#editable('renameMode')
     if (!collection.modes.some((mode) => mode.modeId === modeId))
       throw new Error('in renameMode: Could not find mode')
     this.#graph.renameMode(collection.id, modeId, newName)
@@ -277,7 +306,7 @@ export class FigmaVariableCollection {
 
   /** Removes a mode; removing the default makes the next mode the default, as in Figma. */
   removeMode(modeId: string): void {
-    const collection = this.#collection
+    const collection = this.#editable('removeMode')
     if (!collection.modes.some((mode) => mode.modeId === modeId))
       throw new Error('in removeMode: Could not find mode')
     this.#graph.removeMode(collection.id, modeId)
@@ -285,7 +314,7 @@ export class FigmaVariableCollection {
   }
 
   remove(): void {
-    this.#graph.removeCollection(this.#collection.id)
+    this.#graph.removeCollection(this.#editable('remove').id)
   }
 
   toJSON() {

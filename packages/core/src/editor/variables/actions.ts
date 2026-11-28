@@ -1,3 +1,4 @@
+import { sortBy } from 'es-toolkit/array'
 import { omit, omitBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
@@ -168,6 +169,7 @@ export function createVariableActions(ctx: EditorContext) {
     const collection = ctx.graph.variableCollections.get(id)
     if (!collection) return
     const snapshot = structuredClone(collection)
+    const order = [...ctx.graph.variableCollections.keys()]
     const scope: BindingScope = { variables: snapshot.variableIds }
     const variables = snapshot.variableIds
       .map((vid) => ctx.graph.variables.get(vid))
@@ -182,11 +184,22 @@ export function createVariableActions(ctx: EditorContext) {
       },
       inverse: () => {
         ctx.graph.addCollection(snapshot)
+        placeCollections(order)
         for (const v of variables) ctx.graph.addVariable(v)
         refreshVariables(scope)
       }
     })
     refreshVariables(scope)
+  }
+
+  function placeCollections(order: readonly string[]) {
+    const collections = ctx.graph.variableCollections
+    const rank = (id: string) => (order.includes(id) ? order.indexOf(id) : order.length)
+    const placed = sortBy([...collections.values()], [(collection) => rank(collection.id)])
+    collections.clear()
+    for (const collection of placed) {
+      collections.set(collection.id, collection)
+    }
   }
 
   function addVariable(variable: Variable) {

@@ -4,21 +4,29 @@ const layerTreeTheme = {
   slots: {
     // No padding here: scrolled names would show through it beside the buttons pinned to the edge.
     viewport: 'h-full overflow-auto text-2xs',
-    row: 'group/row relative flex w-full cursor-pointer items-center gap-1 rounded border-none bg-panel text-start text-2xs text-surface hover:bg-hover',
+    row: 'group/row relative flex w-full cursor-pointer items-center gap-(--layer-row-gap) rounded border-none bg-panel text-start text-2xs text-surface hover:bg-hover',
     // Everything before the buttons, indented by depth. The indent is here and not on the row,
     // since a sticky part stays inside its row's padding and the buttons must reach the edge.
-    content: 'flex h-full min-w-0 flex-1 items-center gap-1',
+    content: 'flex h-full min-w-0 flex-1 items-center gap-(--layer-row-gap)',
     disclosure:
-      'flex w-4 shrink-0 cursor-pointer items-center justify-center text-current transition-transform',
-    disclosurePlaceholder: 'w-4 shrink-0',
-    icon: 'size-3 shrink-0',
-    label: 'flex min-w-0 flex-1 items-center gap-1.5',
+      'flex w-(--layer-row-disclosure) shrink-0 cursor-pointer items-center justify-center text-current transition-transform',
+    disclosurePlaceholder: 'w-(--layer-row-disclosure) shrink-0',
+    icon: 'size-(--layer-row-icon) shrink-0',
+    label: 'flex min-w-0 flex-1 items-center gap-(--layer-row-badge-gap)',
+    name: 'min-w-0 overflow-hidden whitespace-nowrap ltr:data-cut:mask-r-from-[calc(100%-var(--layer-row-name-fade))] rtl:data-cut:mask-l-from-[calc(100%-var(--layer-row-name-fade))]',
+    modeBadge: [
+      'relative flex shrink-0 items-center overflow-hidden rounded-full border-(length:--layer-row-badge-border) border-current/40 px-(--layer-row-badge-padding) text-(length:--layer-row-badge-text) leading-3.5',
+      focusStyles.ring
+    ],
+    modeFull: 'flex w-max shrink-0 items-center whitespace-nowrap',
+    moreModes: 'shrink-0 ps-1 opacity-70',
     // The issue mark and buttons stay at the panel's edge however far the rows scroll sideways.
     // While they show, they sit on the row's own background so a long name runs under them.
-    trailing: 'sticky inset-e-0 flex shrink-0 items-center gap-1 pe-1',
-    actions: 'flex shrink-0 items-center gap-0.5',
+    trailing:
+      'sticky inset-e-0 flex shrink-0 items-center gap-(--layer-row-gap) pe-(--layer-row-gap) [&_[data-issue-severity]]:size-(--layer-row-issue-mark)',
+    actions: 'flex shrink-0 items-center gap-(--layer-row-action-gap)',
     action: [
-      'flex size-4 items-center justify-center rounded text-current hover:bg-white/15',
+      'flex size-(--layer-row-action) items-center justify-center rounded text-current hover:bg-white/15',
       focusStyles.ring
     ],
     actionIcon: 'size-3',
@@ -58,6 +66,10 @@ const layerTreeTheme = {
       true: { disclosure: 'rotate-90 rtl:-rotate-90' },
       false: { disclosure: 'rotate-0' }
     },
+    compactModes: {
+      true: { modeFull: 'invisible absolute inset-e-0 top-0' },
+      false: {}
+    },
     trailingShown: {
       true: { trailing: 'bg-inherit' },
       false: { trailing: 'group-focus-within/row:bg-inherit group-hover/row:bg-inherit' }
@@ -65,7 +77,8 @@ const layerTreeTheme = {
     actionsVisible: {
       true: {},
       false: {
-        actions: 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100'
+        actions:
+          'pointer-events-none absolute inset-e-1 opacity-0 group-hover/row:pointer-events-auto group-hover/row:static group-hover/row:opacity-100 group-focus-within/row:pointer-events-auto group-focus-within/row:static group-focus-within/row:opacity-100'
       }
     },
     actionActive: {
@@ -115,7 +128,8 @@ const layerTreeTheme = {
     actionsVisible: true,
     trailingShown: true,
     actionActive: false,
-    childDropTarget: false
+    childDropTarget: false,
+    compactModes: false
   }
 }
 

@@ -1,4 +1,4 @@
-import { isEqual, pick } from 'es-toolkit'
+import { isEmptyObject, isEqual, pick } from 'es-toolkit'
 import { toRaw } from 'vue'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -15,9 +15,13 @@ import type {
   LayerSelectionMode
 } from '#vue/primitives/LayerTree/context'
 
-function explicitModeIds(node: SceneNode): string[] | undefined {
-  const ids = Object.values(node.variableModes)
-  return ids.length > 0 ? ids : undefined
+function explicitVariableModes(node: SceneNode): Record<string, string> | undefined {
+  return isEmptyObject(node.variableModes) ? undefined : { ...node.variableModes }
+}
+
+function layerVariableModes(node: SceneNode): Pick<LayerNode, 'modeIds' | 'variableModes'> {
+  const variableModes = explicitVariableModes(node)
+  return { variableModes, modeIds: variableModes && Object.values(variableModes) }
 }
 
 function shapeWithTextTypeOf(node: SceneNode): ShapeWithTextType | undefined {
@@ -61,7 +65,7 @@ function nodeToLayerNode(node: SceneNode): LayerNode {
     mask: node.isMask,
     visible: node.visible,
     locked: node.locked,
-    modeIds: explicitModeIds(node)
+    ...layerVariableModes(node)
   }
 }
 
@@ -130,7 +134,7 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
     target.mask !== source.isMask ||
     target.visible !== source.visible ||
     target.locked !== source.locked ||
-    !isEqual(target.modeIds, explicitModeIds(source))
+    !isEqual(target.variableModes, explicitVariableModes(source))
   if (!changed) return false
   target.name = source.name
   target.type = source.type
@@ -143,7 +147,7 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
   target.mask = source.isMask
   target.visible = source.visible
   target.locked = source.locked
-  target.modeIds = explicitModeIds(source)
+  Object.assign(target, layerVariableModes(source))
   return true
 }
 

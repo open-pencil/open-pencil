@@ -45,11 +45,16 @@ describe('layer tree model', () => {
     const model = buildLayerTreeModel(graph, pageId)
     const row = model.byId.get(frame.id)
     if (!row) throw new Error('Expected the frame in the model')
-    expect(row.modeIds).toBeUndefined()
+    expect([row.variableModes, row.modeIds]).toEqual([undefined, undefined])
 
     graph.updateNode(frame.id, { variableModes: { [theme.id]: dark } })
     expect(patchLayerNode(row, frame)).toBe(true)
-    expect(row.modeIds).toEqual([dark])
+    expect([row.variableModes, row.modeIds]).toEqual([{ [theme.id]: dark }, [dark]])
+    expect(patchLayerNode(row, frame)).toBe(false)
+
+    graph.updateNode(frame.id, { variableModes: {} })
+    expect(patchLayerNode(row, frame)).toBe(true)
+    expect([row.variableModes, row.modeIds]).toEqual([undefined, undefined])
   })
 
   test("carries a shape with text's kind, so its row draws the outline", () => {

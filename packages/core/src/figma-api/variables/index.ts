@@ -3,7 +3,12 @@ import type {
   VariableBindableEffectField
 } from '@figma/plugin-typings/plugin-api-standalone'
 
-import type { Effect, SceneGraph } from '@open-pencil/scene-graph'
+import {
+  isLibraryCollection,
+  isLibraryVariable,
+  type Effect,
+  type SceneGraph
+} from '@open-pencil/scene-graph'
 import {
   EFFECT_BINDING_PROPERTIES,
   effectBindableProperties,
@@ -18,7 +23,7 @@ import type { FigmaRectangleNode } from '#core/figma-api/node-types'
 type FigmaNodeEffect = FigmaRectangleNode['effects'][number]
 
 import { FIGMA_DEFAULT_VALUES, variableAlias, type FigmaVariableAlias } from './values'
-import { FigmaVariable, FigmaVariableCollection, assertVariableName } from './variable'
+import { FigmaVariable, FigmaVariableCollection, assertLocal, assertVariableName } from './variable'
 
 export { FigmaVariable, FigmaVariableCollection, writeVariableValue } from './variable'
 export type { FigmaComposedColor, FigmaVariableAlias, FigmaVariableValue } from './values'
@@ -82,6 +87,7 @@ export class FigmaVariablesAPI {
     const wanted = type === undefined ? undefined : assertType('getLocalVariables', type)
     return this.#graph
       .getLiveVariables()
+      .filter((variable) => !isLibraryVariable(variable))
       .filter((variable) => wanted === undefined || variable.type === wanted)
       .map((variable) => new FigmaVariable(this.#graph, variable.id))
   }
@@ -93,6 +99,7 @@ export class FigmaVariablesAPI {
   getLocalVariableCollections(): FigmaVariableCollection[] {
     return this.#graph
       .getLiveCollections()
+      .filter((collection) => !isLibraryCollection(collection))
       .map((collection) => new FigmaVariableCollection(this.#graph, collection.id))
   }
 
@@ -108,9 +115,11 @@ export class FigmaVariablesAPI {
   ): FigmaVariable {
     const type = assertType('createVariable', resolvedType)
     const collectionId = typeof collection === 'string' ? collection : collection.id
-    if (!this.#graph.variableCollections.has(collectionId)) {
+    const record = this.#graph.variableCollections.get(collectionId)
+    if (!record) {
       throw new Error('in createVariable: Could not find variable collection')
     }
+    assertLocal('createVariable', 'variable collection', isLibraryCollection(record))
     assertVariableName(this.#graph, 'createVariable', name, collectionId)
     const variable = this.#graph.createVariable(
       name,

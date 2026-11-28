@@ -6,28 +6,53 @@ import { remToPx } from '@/app/shell/root-font-size'
 // It is in rem so the rows follow the interface size; scroll math and the virtualizer take pixels.
 const ROW_HEIGHT_REM = 1.5
 const INDENT_REM = 1
-// Mirrors the `layer-tree` theme: a name follows the disclosure (w-4), a gap (gap-1), the icon
-// (size-3), and a gap; the end holds a gap, two buttons (size-4, gap-0.5), and padding (pe-1).
-const NAME_START_REM = 2.25
-const BUTTONS_REM = 2.625
-// A variable mode badge after a name: its gap (gap-1.5), its padding (px-1.5) and 1px border,
-// and its text (text-3xs). An issue mark adds its size (size-4) and a gap before the buttons.
-const BADGE_GAP_REM = 0.375
-const BADGE_PADDING_REM = 0.75
-const BADGE_BORDER_PX = 2
-const BADGE_TEXT_REM = 0.625
-const ISSUE_MARK_REM = 1.25
+
+const rowPartRem = {
+  '--layer-row-gap': 0.25,
+  '--layer-row-disclosure': 1,
+  '--layer-row-icon': 0.75,
+  '--layer-row-issue-mark': 1,
+  '--layer-row-action': 1,
+  '--layer-row-action-gap': 0.125,
+  '--layer-row-badge-gap': 0.375,
+  '--layer-row-badge-padding': 0.375,
+  '--layer-row-badge-text': 0.625,
+  '--layer-row-name-fade': 1.25
+} as const
+
+const BADGE_BORDER_PX = 1
+
+export const layerRowPartSizes: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(rowPartRem).map(([name, rem]) => [name, `${rem}rem`])),
+  '--layer-row-badge-border': `${BADGE_BORDER_PX}px`
+}
 
 /** The layer tree's row geometry in pixels at the current interface size. */
 export function useLayerTreeGeometry() {
   return {
     rowHeight: computed(() => remToPx(ROW_HEIGHT_REM)),
     indent: computed(() => remToPx(INDENT_REM)),
-    nameStart: computed(() => remToPx(NAME_START_REM)),
-    buttons: computed(() => remToPx(BUTTONS_REM)),
+    nameStart: computed(() =>
+      remToPx(
+        rowPartRem['--layer-row-disclosure'] +
+          rowPartRem['--layer-row-icon'] +
+          2 * rowPartRem['--layer-row-gap']
+      )
+    ),
+    /** After the trailing block's last part: its end padding and the row's gap before it. */
+    rowEnd: computed(() => remToPx(2 * rowPartRem['--layer-row-gap'])),
+    trailingGap: computed(() => remToPx(rowPartRem['--layer-row-gap'])),
+    issueMark: computed(() => remToPx(rowPartRem['--layer-row-issue-mark'])),
+    buttons: computed(() =>
+      remToPx(2 * rowPartRem['--layer-row-action'] + rowPartRem['--layer-row-action-gap'])
+    ),
     /** Space a variable mode badge takes besides its text. */
-    badge: computed(() => remToPx(BADGE_GAP_REM + BADGE_PADDING_REM) + BADGE_BORDER_PX),
-    badgeTextSize: computed(() => remToPx(BADGE_TEXT_REM)),
-    issueMark: computed(() => remToPx(ISSUE_MARK_REM))
+    badge: computed(
+      () =>
+        remToPx(rowPartRem['--layer-row-badge-gap'] + 2 * rowPartRem['--layer-row-badge-padding']) +
+        2 * BADGE_BORDER_PX
+    ),
+    badgeTextSize: computed(() => remToPx(rowPartRem['--layer-row-badge-text'])),
+    nameFadeWidth: computed(() => remToPx(rowPartRem['--layer-row-name-fade']))
   }
 }

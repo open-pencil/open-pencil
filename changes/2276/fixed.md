@@ -1,0 +1,1 @@
+- A layer that sets variable modes shows one compact mode badge that keeps the layer name whole, with every mode on hover, and names each mode from its own collection (#2276).
