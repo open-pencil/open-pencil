@@ -26,6 +26,10 @@ export function createVariableBindingActions(ctx: EditorContext) {
       boundVariables: { ...node.boundVariables },
       variableBindingScales: { ...node.variableBindingScales }
     }
+    const heldBefore = new Set(
+      Object.values(previous.boundVariables).filter((id) => ctx.graph.variables.has(id))
+    )
+    const stillHeldOrNeverHeld = (id: string) => ctx.graph.variables.has(id) || !heldBefore.has(id)
     if (isNumericVariableBindingField(path))
       Object.assign(previous, { [path]: node[path as keyof SceneNode] })
     // Binding a paint gives it its variable's color, which undo takes back from that paint alone.
@@ -63,7 +67,7 @@ export function createVariableBindingActions(ctx: EditorContext) {
         }
         const restored = structuredClone(previous)
         restored.boundVariables = Object.fromEntries(
-          Object.entries(restored.boundVariables).filter(([, id]) => ctx.graph.variables.has(id))
+          Object.entries(restored.boundVariables).filter(([, id]) => stillHeldOrNeverHeld(id))
         )
         restored.variableBindingScales = Object.fromEntries(
           Object.entries(restored.variableBindingScales).filter(

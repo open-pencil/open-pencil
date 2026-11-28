@@ -1,12 +1,14 @@
 import {
+  entryNamesVariable,
+  mergeVariableConsumptionMaps,
   variableConsumptionEntries,
   numericVariableAssignmentScales,
   VARIABLE_BINDING_FIELDS_INVERSE
 } from '#fig/node-change/variable/bindings'
 import { linearVariableExpression } from '#fig/node-change/variable/expression'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   bindingOverrideField,
   setInstanceOverride
@@ -25,7 +27,25 @@ export function occurrenceAssignmentScales(occurrence: InstanceOccurrence): Reco
   )
 }
 
+function keepEntryOfUnheldVariable(
+  graph: SceneGraph,
+  target: SceneNode,
+  field: string,
+  entry: VariableConsumptionEntry
+): void {
+  const variableId = target.boundVariables[field]
+  if (!variableId || graph.variables.has(variableId) || !entryNamesVariable(entry, variableId)) {
+    return
+  }
+  const raw = target.source.fig.rawNodeFields
+  Object.assign(
+    raw,
+    mergeVariableConsumptionMaps(raw, { parameterConsumptionMap: { entries: [entry] } })
+  )
+}
+
 export function recordVariableBindingClaims(
+  graph: SceneGraph,
   owner: SceneNode,
   target: SceneNode,
   patch: NodeChange
@@ -43,6 +63,7 @@ export function recordVariableBindingClaims(
       target.boundVariables[field] ?? null
     )
     setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')
+    keepEntryOfUnheldVariable(graph, target, field, entry)
   }
 }
 

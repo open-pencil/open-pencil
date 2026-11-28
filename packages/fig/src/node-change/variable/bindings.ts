@@ -9,12 +9,14 @@ import type {
   SceneNode,
   SceneGraph,
   TextBindableField,
-  TextBoundVariables
+  TextBoundVariables,
+  Variable,
+  VariableType
 } from '@open-pencil/scene-graph'
 import { boundNumberValue, isNumericVariableBindingField } from '@open-pencil/scene-graph/variables'
 
 import { cloneRecord } from '../clone'
-import { linearVariableExpression } from './expression'
+import { linearVariableExpression, visitVariableReferences } from './expression'
 import { mergeVariableModeMaps } from './maps'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
@@ -165,17 +167,80 @@ export function claimedVariableMaps(
   return { ...mergeVariableConsumptionMaps(layer, claim), ...mergeVariableModeMaps(layer, claim) }
 }
 
+const VARIABLE_TYPES = [
+  'COLOR',
+  'FLOAT',
+  'STRING',
+  'BOOLEAN'
+] as const satisfies readonly VariableType[]
+
+function isVariableType(type: string | undefined): type is VariableType {
+  return VARIABLE_TYPES.some((known) => known === type)
+}
+
+export function entryNamesVariable(entry: VariableConsumptionEntry, variableId: string): boolean {
+  let named = false
+  visitVariableReferences(entry.variableData, (reference) => {
+    named ||= reference.guid !== undefined && guidToString(reference.guid) === variableId
+  })
+  return named
+}
+
+function archivedVariableType(node: SceneNode, variableId: string): VariableType | undefined {
+  const types: Array<string | undefined> = []
+  const collect = (reference: { guid?: GUID }, data: { resolvedDataType?: string }) => {
+    if (reference.guid !== undefined && guidToString(reference.guid) === variableId) {
+      types.push(data.resolvedDataType)
+    }
+  }
+  for (const entry of variableConsumptionEntries(effectiveFigmaRawNodeFields(node))) {
+    visitVariableReferences(entry.variableData, collect)
+  }
+  return types.find(isVariableType)
+}
+
+function singleTypeOfField(field: string): VariableType | undefined {
+  if (isNumericVariableBindingField(field)) {
+    return 'FLOAT'
+  }
+  if (field === 'fontFamily') {
+    return 'STRING'
+  }
+  return undefined
+}
+
+function boundVariable(
+  node: SceneNode,
+  field: string,
+  variableId: string,
+  graph: SceneGraph
+): Pick<Variable, 'id' | 'type'> | undefined {
+  const held = graph.variables.get(variableId)
+  if (held) {
+    return held
+  }
+  const type = archivedVariableType(node, variableId) ?? singleTypeOfField(field)
+  return type && { id: variableId, type }
+}
+
 export function variableBindingEntry(
   field: string,
-  variableId: string | undefined,
+  node: SceneNode,
   graph: SceneGraph,
   ids?: Map<string, GUID>,
   multiplier = 1,
   expression = false
 ): VariableConsumptionEntry | undefined {
   const variableField = VARIABLE_BINDING_FIELDS[field]
-  if (!variableField) return undefined
-  return consumptionEntry(variableField, variableId, graph, ids, multiplier, expression)
+  if (!variableField) {
+    return undefined
+  }
+  const variableId = node.boundVariables[field]
+  if (!variableId) {
+    return { variableField }
+  }
+  const variable = boundVariable(node, field, variableId, graph)
+  return variable && consumptionEntry(variableField, variable, graph, ids, multiplier, expression)
 }
 
 /** Kiwi's field for each text field a range of characters binds, where Kiwi has one. */
@@ -200,8 +265,11 @@ export function textRunVariableEntries(
 ): VariableConsumptionEntry[] {
   return Object.entries(bound).flatMap(([field, variableId]) => {
     const variableField = (TEXT_RUN_BINDING_FIELDS as Partial<Record<string, string>>)[field]
-    if (!variableField || !variableId || !graph.variables.has(variableId)) return []
-    return [consumptionEntry(variableField, variableId, graph, ids)]
+    const variable = variableId ? graph.variables.get(variableId) : undefined
+    if (!variableField || !variable) {
+      return []
+    }
+    return [consumptionEntry(variableField, variable, graph, ids)]
   })
 }
 
@@ -236,20 +304,17 @@ export function variableAlias(
 
 function consumptionEntry(
   variableField: string,
-  variableId: string | undefined,
+  variable: Pick<Variable, 'id' | 'type'>,
   graph: SceneGraph,
   ids?: Map<string, GUID>,
   multiplier = 1,
   expression = false
 ): VariableConsumptionEntry {
-  if (!variableId) return { variableField }
-  const variable = graph.variables.get(variableId)
-  if (!variable) throw new Error(`Missing bound variable ${variableId}`)
   if (!Number.isFinite(multiplier)) throw new Error('Non-finite variable binding multiplier')
   const alias = {
     dataType: 'ALIAS',
     resolvedDataType: variable.type,
-    value: { alias: variableAlias(graph, variableId, ids) }
+    value: { alias: variableAlias(graph, variable.id, ids) }
   }
   // Figma's layer panel tests a variable bound to visibility with IS_TRUTHY, and writes a number
   // or boolean bound to text content as STRINGIFY.
@@ -306,7 +371,7 @@ export function overrideVariableBindingEntry(
     target.variableBindingScales[field] === undefined
       ? 1
       : target.variableBindingScales[field] / units
-  return variableBindingEntry(field, target.boundVariables[field], graph, ids, multiplier)
+  return variableBindingEntry(field, target, graph, ids, multiplier)
 }
 
 export function exportedVariableConsumptionEntries(
@@ -335,7 +400,7 @@ export function exportedVariableConsumptionEntries(
       (field === 'opacity' ? OPACITY_UNIT_PER_PERCENT : 1)
     const entry = variableBindingEntry(
       field,
-      node.boundVariables[field],
+      node,
       graph,
       ids,
       multiplier,

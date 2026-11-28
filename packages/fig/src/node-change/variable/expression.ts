@@ -64,11 +64,13 @@ function multiplyLinearValues(factors: VariableDataEntry[], depth: number): Line
 
 export function visitVariableReferences(
   data: VariableDataEntry | undefined,
-  visit: (reference: Reference) => void,
+  visit: (reference: Reference, data: VariableDataEntry) => void,
   depth = 0
 ): void {
   if (depth > MAX_EXPRESSION_DEPTH) throw new Error('Variable expression exceeds maximum depth')
-  if (data?.value?.alias) visit(data.value.alias)
+  if (data?.value?.alias) {
+    visit(data.value.alias, data)
+  }
   for (const argument of data?.value?.expressionValue?.expressionArguments ?? []) {
     visitVariableReferences(argument, visit, depth + 1)
   }
