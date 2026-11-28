@@ -44,7 +44,7 @@ function rangeFillAttrs(
   if (ctx.colors.to === 'display-p3') {
     return {
       fill: formatColor({ ...fill.color, a: 1 }, alpha, ctx.colors),
-      'fill-opacity': alpha < 1 ? undefined : cover
+      'fill-opacity': cover
     }
   }
   return {

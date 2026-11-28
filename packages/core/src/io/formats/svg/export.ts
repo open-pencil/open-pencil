@@ -19,7 +19,7 @@ import {
   nextDefId,
   drawnFills,
   resolveFill,
-  solidFillOpacity,
+  paintFillOpacity,
   svgStrokeAttrs,
   type GradientBox,
   type SVGExportContext
@@ -331,7 +331,7 @@ function fillAndStrokeElements(
       nodeShapeElements(
         node,
         paint,
-        solidFillOpacity(fill, ctx.colors),
+        paintFillOpacity(fill, ctx.colors),
         index === drawn.length - 1 ? strokeAttrs : {},
         ctx
       )
@@ -349,18 +349,18 @@ function fillAndStrokeElements(
 /** The paint CSS `color` sets, for a tinted icon path. */
 const CURRENT_COLOR = 'currentColor'
 
-/** A paint's SVG color and, for an sRGB solid, the `fill-opacity` beside it. */
+/** A paint's SVG color and the `fill-opacity` beside it, unless the color carries it. */
 function exportedFill(
   fill: Fill | undefined,
   node: SceneNode,
   ctx: SVGExportContext,
   box?: GradientBox
 ): { color: string | null; opacity: number | undefined } {
-  if (!fill) return { color: null, opacity: undefined }
-  return {
-    color: resolveFill(fill, node, ctx, box),
-    opacity: solidFillOpacity(fill, ctx.colors)
+  const color = fill ? resolveFill(fill, node, ctx, box) : null
+  if (!fill || color === null) {
+    return { color: null, opacity: undefined }
   }
+  return { color, opacity: paintFillOpacity(fill, ctx.colors) }
 }
 
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
@@ -417,7 +417,8 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const fillAttr = tintedFill ? CURRENT_COLOR : fill.color
   // `currentColor` has no alpha. Display P3 normally bakes solid opacity into the color, which a
   // tint throws away, so a tinted solid keeps `fill-opacity` in every color space.
-  const fillOpacity = ownFill ? solidFillOpacity(ownFill, ctx.colors, tintedFill) : fill.opacity
+  const fillOpacity =
+    ownFill && tintedFill ? paintFillOpacity(ownFill, ctx.colors, true) : fill.opacity
   const ownStrokes = svgStrokeAttrs(visibleStrokes, ctx.colors, node.strokeCap)
   const strokeAttrs =
     ownStrokes.stroke && tint.includes('stroke')
