@@ -2,9 +2,15 @@ import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 import { booleanOutlines } from './boolean/outline'
 import type { SVGExportContext } from './defs'
-import { nextDefId } from './defs'
+import { nextDefId, strokeReach, svgStrokeAttrs } from './defs'
 import { svg, svgElement, type SVGNode } from './node'
-import { boxOutlinePath, nodeOutlinePath, round, shapeWithTextOutlinePath } from './paths'
+import {
+  boxOutlinePath,
+  geometryBlobToSVGPath,
+  nodeOutlinePath,
+  round,
+  shapeWithTextOutlinePath
+} from './paths'
 import { outlineClips } from './regions'
 
 type Attrs = Record<string, string | number | undefined>
@@ -67,8 +73,7 @@ export function alignedStrokeElement(
     ctx.defs.push(svgElement('clipPath', { id: clipId }, clips))
   } else {
     // A box wide enough for the stroke, its mitred tips included, with the outline cut out of it.
-    // The doubled stroke mitres out to its weight times the miter limit.
-    const margin = stroke.weight * Math.max(2, node.strokeMiterLimit)
+    const margin = strokeReach(stroke, node)
     const left = round(-margin)
     const top = round(-margin)
     const right = round(node.width + margin)
@@ -109,4 +114,44 @@ export function alignedStrokeElement(
       [keptBy]: `url(#${clipId})`
     })
   ]
+}
+
+export function strokeGeometryElements(
+  node: SceneNode,
+  strokeAttrs: Attrs,
+  attrs: Attrs = {}
+): SVGNode[] {
+  return node.strokeGeometry.flatMap(({ commandsBlob, windingRule }) => {
+    const d = geometryBlobToSVGPath(commandsBlob)
+    if (!d) {
+      return []
+    }
+    const fill = {
+      fill: strokeAttrs.stroke,
+      'fill-opacity': strokeAttrs['stroke-opacity'],
+      'fill-rule': windingRule === 'EVENODD' ? 'evenodd' : undefined
+    }
+    return [svg('path', { d, ...fill, stroke: 'none', ...attrs })]
+  })
+}
+
+export function textStrokeElements(
+  node: SceneNode,
+  visibleStrokes: Stroke[],
+  ctx: SVGExportContext
+): SVGNode[] {
+  if (node.strokeGeometry.length === 0) {
+    return []
+  }
+  const strokeAttrs = svgStrokeAttrs(visibleStrokes, node, ctx)
+  if (!strokeAttrs.stroke) {
+    return []
+  }
+  const clippedToTextBox = visibleStrokes[0].align === 'INSIDE'
+  if (!clippedToTextBox) {
+    return strokeGeometryElements(node, strokeAttrs)
+  }
+  const clipId = nextDefId(ctx, 'clip')
+  ctx.defs.push(svg('clipPath', { id: clipId }, svg('path', { d: boxOutlinePath(node) })))
+  return strokeGeometryElements(node, strokeAttrs, { 'clip-path': `url(#${clipId})` })
 }

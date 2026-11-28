@@ -10,6 +10,7 @@ import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import { drawsStroke } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
+import { isPathTextWithStrokeGeometry } from '#core/canvas/strokes/dispatch'
 import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
@@ -21,18 +22,12 @@ import {
   resolveFill,
   solidFillOpacity,
   svgStrokeAttrs,
+  withDrawnStrokes,
   type GradientBox,
   type SVGExportContext
 } from './defs'
 import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
-import {
-  round,
-  geometryBlobToSVGPath,
-  makePolygonPoints,
-  roundedPolygonPath,
-  boxOutlinePath,
-  arcPath
-} from './paths'
+import { round, makePolygonPoints, roundedPolygonPath, boxOutlinePath, arcPath } from './paths'
 
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
@@ -59,7 +54,12 @@ import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
 import { shapeWithTextDetailElements, shapeWithTextElements } from './shape-with-text'
-import { alignedStroke, alignedStrokeElement } from './strokes'
+import {
+  alignedStroke,
+  alignedStrokeElement,
+  strokeGeometryElements,
+  textStrokeElements
+} from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
 
@@ -101,19 +101,7 @@ function vectorShapeElements(
   else if (network && filled?.traced && looseSegments(network).length > 0)
     appendAll(elements, openPathElements(node, network, common, looseSegments))
   if (stroked) {
-    for (const geo of node.strokeGeometry) {
-      const d = geometryBlobToSVGPath(geo.commandsBlob)
-      if (d) {
-        elements.push(
-          svg('path', {
-            d,
-            fill: strokeAttrs.stroke,
-            'fill-opacity': strokeAttrs['stroke-opacity'],
-            stroke: 'none'
-          })
-        )
-      }
-    }
+    appendAll(elements, strokeGeometryElements(node, strokeAttrs))
   }
   if (node.vectorNetwork)
     appendAll(elements, vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
@@ -392,9 +380,12 @@ function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): 
   return id
 }
 
-function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
+function drawNode(layer: SceneNode, ctx: SVGExportContext): SVGNode | null {
+  const node = withDrawnStrokes(layer, ctx.graph)
   const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
+
+  const visibleStrokes = node.strokes.filter((stroke) => drawsStroke(node, stroke))
 
   if (node.type === 'TEXT') {
     // A text's gradient spans its layer, as the canvas draws it, not just its characters' box.
@@ -405,11 +396,12 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
       'layer'
     )
     const text = renderTextNode(node, fill.color, ctx, fill.opacity)
-    return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
+    const strokes = textStrokeElements(node, visibleStrokes, ctx)
+    const drawn = isPathTextWithStrokeGeometry(node) ? [...strokes, text] : [text, ...strokes]
+    return svgElement('g', groupAttrs, withLayerEffects(drawn, effects, groupAttrs))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
-  const visibleStrokes = node.strokes.filter((stroke) => drawsStroke(node, stroke))
   const tint = ctx.tint?.(node) ?? []
   const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
   const fill = exportedFill(ownFill, node, ctx)
@@ -418,7 +410,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   // `currentColor` has no alpha. Display P3 normally bakes solid opacity into the color, which a
   // tint throws away, so a tinted solid keeps `fill-opacity` in every color space.
   const fillOpacity = ownFill ? solidFillOpacity(ownFill, ctx.colors, tintedFill) : fill.opacity
-  const ownStrokes = svgStrokeAttrs(visibleStrokes, ctx.colors, node.strokeCap)
+  const ownStrokes = svgStrokeAttrs(visibleStrokes, node, ctx)
   const strokeAttrs =
     ownStrokes.stroke && tint.includes('stroke')
       ? { ...ownStrokes, stroke: CURRENT_COLOR }
