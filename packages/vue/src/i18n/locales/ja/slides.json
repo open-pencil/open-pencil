@@ -79,7 +79,5 @@
   "afterPrevious": "前の後",
   "moveEarlier": "前へ移動",
   "moveLater": "後ろへ移動",
-  "pickSlide": "スライドを選択してアニメーションを付けます",
-  "presentFrames": "フレームをプレゼンテーション",
-  "presentFramesWithNotes": "発表者ビューでフレームをプレゼンテーション"
+  "pickSlide": "スライドを選択してアニメーションを付けます"
 }

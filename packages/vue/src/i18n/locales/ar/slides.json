@@ -79,7 +79,5 @@
   "afterPrevious": "بعد السابق",
   "moveEarlier": "نقل للأمام",
   "moveLater": "نقل للخلف",
-  "pickSlide": "حدد شريحة لتحريكها",
-  "presentFrames": "عرض الإطارات",
-  "presentFramesWithNotes": "عرض الإطارات مع عرض المقدّم"
+  "pickSlide": "حدد شريحة لتحريكها"
 }

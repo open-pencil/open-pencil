@@ -79,7 +79,5 @@
   "afterPrevious": "После предыдущей",
   "moveEarlier": "Раньше",
   "moveLater": "Позже",
-  "pickSlide": "Выберите слайд, чтобы анимировать его",
-  "presentFrames": "Показать фреймы",
-  "presentFramesWithNotes": "Показать фреймы в режиме докладчика"
+  "pickSlide": "Выберите слайд, чтобы анимировать его"
 }
