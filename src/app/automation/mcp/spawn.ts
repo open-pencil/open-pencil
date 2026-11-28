@@ -65,6 +65,12 @@ interface MCPLookup {
   available: boolean
   path: string | null
   searched: string[]
+  /**
+   * `LD_LIBRARY_PATH` with the AppImage mount entries removed, when the
+   * lookup found any to remove. Null outside an AppImage, or when the
+   * variable holds no mount entries.
+   */
+  ldLibraryPath?: string | null
 }
 // While no app is attached, the spawned server waits this long for a register
 // or reconnect before closing itself and removing its discovery file. This
@@ -261,20 +267,30 @@ async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServ
   // used as a safe fallback for open_document, save_document, or export tools.
   const mcpRoot = mcpRootDirectory.value.trim() || (await resolveTauriHomeDir())
   const resolved = resolvePlatformCommand(MCP_EXECUTABLE)
+  // The AppImage runtime prepends its mount directory to LD_LIBRARY_PATH, so
+  // a host binary the server's process tree runs loads the bundled
+  // libsystemd.so.0 instead of the host's and dies on a missing version
+  // (issue #2250). The lookup carries the value with the mount entries
+  // stripped; pass it through only when one was stripped, leaving other
+  // launches untouched.
+  const mcpEnv: Record<string, string> = {
+    PORT: String(AUTOMATION_HTTP_PORT),
+    OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
+    OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
+    OPENPENCIL_MCP_TCP: '1',
+    OPENPENCIL_MCP_ROOT: mcpRoot,
+    OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
+    // Killing the shell wrapper on Windows leaves the server it started running; the app's end
+    // of the pipe closes with it, and the server exits on that.
+    OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1',
+    OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
+    OPENPENCIL_MCP_SCOPE: mcpScope()
+  }
+  if (lookup.ldLibraryPath != null) {
+    mcpEnv.LD_LIBRARY_PATH = lookup.ldLibraryPath
+  }
   const command = Command.create(resolved.command, resolved.args, {
-    env: {
-      PORT: String(AUTOMATION_HTTP_PORT),
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
-      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
-      OPENPENCIL_MCP_TCP: '1',
-      OPENPENCIL_MCP_ROOT: mcpRoot,
-      OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
-      // Killing the shell wrapper on Windows leaves the server it started running; the app's end
-      // of the pipe closes with it, and the server exits on that.
-      OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1',
-      OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
-      OPENPENCIL_MCP_SCOPE: mcpScope()
-    }
+    env: mcpEnv
   })
 
   let startupStderr = ''

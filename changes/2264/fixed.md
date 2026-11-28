@@ -1,0 +1,1 @@
+- The Linux AppImage starts its MCP server instead of failing when a host binary the server spawns loads the AppImage's bundled libraries.

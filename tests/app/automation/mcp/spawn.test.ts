@@ -296,6 +296,12 @@ describe('Tauri MCP spawning', () => {
 
     expect(handle?.authToken).toBe('discovery-token')
     expect(calls.some((c) => c.cmd === 'plugin:shell|spawn')).toBe(true)
+    // With no AppImage mount entries to strip, the lookup carries no
+    // LD_LIBRARY_PATH and the spawn leaves the child's variable alone.
+    const spawnCall = calls.find((c) => c.cmd === 'plugin:shell|spawn')
+    const spawnEnv = (spawnCall?.args as { options?: { env?: Record<string, string> } } | undefined)
+      ?.options?.env
+    expect(spawnEnv).not.toHaveProperty('LD_LIBRARY_PATH')
     expect(
       calls.some(
         (c) =>
@@ -304,6 +310,77 @@ describe('Tauri MCP spawning', () => {
       )
     ).toBe(true)
     expect(calls.at(-1)).toEqual({ cmd: 'plugin:shell|kill', args: { cmd: 'killChild', pid: 77 } })
+  })
+
+  test('passes the lookup sanitized LD_LIBRARY_PATH to the spawned MCP server', async () => {
+    installTauriMockWindow()
+    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { platform: 'Linux x86_64' }
+    })
+
+    let healthChecks = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async () => {
+        healthChecks += 1
+        if (healthChecks === 1) return new Response('', { status: 404 })
+        return new Response(
+          JSON.stringify({
+            status: 'ok',
+            version: '0.0.0-test',
+            authRequired: true,
+            discoveryPath: DISCOVERY_PATH,
+            clientTokens: true
+          }),
+          { status: 200 }
+        )
+      })
+    )
+
+    const calls: Array<{ cmd: string; args: unknown }> = []
+    await mockTauriIPC((cmd, args) => {
+      calls.push({ cmd, args })
+      if (cmd === 'mcp_lookup')
+        return {
+          available: true,
+          path: '/mock/bin/openpencil-mcp-http',
+          searched: ['/mock/bin'],
+          // The AppImage mount entries are already stripped by the lookup;
+          // the spawn must hand this value to the child verbatim.
+          ldLibraryPath: '/usr/lib:/opt/lib'
+        }
+      if (cmd === 'plugin:shell|spawn') {
+        expect(args).toMatchObject({
+          program: 'openpencil-mcp-http',
+          args: [],
+          options: {
+            env: {
+              PORT: '7600',
+              LD_LIBRARY_PATH: '/usr/lib:/opt/lib'
+            }
+          }
+        })
+        return 77
+      }
+      const pathArg = (args as { path?: string })?.path
+      if (cmd === 'plugin:fs|exists') {
+        return pathArg === DISCOVERY_PATH
+      }
+      if (cmd === 'plugin:fs|read_text_file') {
+        if (pathArg === DISCOVERY_PATH) return new TextEncoder().encode(DISCOVERY_JSON)
+        return null
+      }
+      if (cmd === 'plugin:path|resolve_directory') {
+        return '/mock/home'
+      }
+      return null
+    })
+
+    const handle = await spawnMCPIfNeeded({ earlyExitMs: 5, healthPollMs: 5 })
+    expect(handle?.authToken).toBe('discovery-token')
+    expect(handle?.managed).toBe(true)
+    expect(calls.some((c) => c.cmd === 'plugin:shell|spawn')).toBe(true)
   })
 
   test('keeps waiting for a server that is slow to answer while its child runs', async () => {
