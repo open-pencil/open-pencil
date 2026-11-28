@@ -1,0 +1,1 @@
+- An instance created at another size than its component's scales the layers whose constraints scale, as resizing it afterwards does, instead of keeping them at the component's size.

@@ -1,6 +1,11 @@
 import type { NodeCloneMode } from '../copy'
 import type { SceneGraph } from '../graph'
 import {
+  computeConstrainedResizeChanges,
+  createResizeSnapshot,
+  type ResizeSnapshot
+} from '../resize'
+import {
   detachOwnedSlotContent,
   restoreOwnedSlotContent,
   type ParkedSlotContent
@@ -73,10 +78,46 @@ export function createInstance(
   const instance = graph.createNode('INSTANCE', parentId, { ...props, ...overrides, componentId })
 
   cloneChildrenWithMapping(graph, component.id, instance.id)
+  // The copies arrive at the component's size; an instance created at another one places them by
+  // their constraints, as resizing it afterwards does.
+  placeCopiedChildrenForSize(graph, component, instance)
   // A copy shows its bound paints in its own context, not as its component's paints hold them.
   applyBoundPaintColorsIn(graph, instance.id)
 
   return instance
+}
+
+/**
+ * Places a new instance's copies as its own size asks, from the size the component gave them.
+ * Cloning writes them in the component's coordinates, so an instance created straight at another
+ * size would otherwise keep every layer at the component's size and place, while resizing it to
+ * the same size scales them; Figma scales a copy's `scale` layers however it reaches that size.
+ */
+function placeCopiedChildrenForSize(
+  graph: SceneGraph,
+  component: SceneNode,
+  instance: SceneNode
+): void {
+  if (component.width === instance.width && component.height === instance.height) return
+  if (component.width <= 0 || component.height <= 0) return
+  const originals = new Map<string, ResizeSnapshot>()
+  const collect = (parentId: string): void => {
+    for (const childId of graph.nodes.get(parentId)?.childIds ?? []) {
+      const child = graph.nodes.get(childId)
+      if (!child) continue
+      originals.set(childId, createResizeSnapshot(child))
+      collect(childId)
+    }
+  }
+  collect(instance.id)
+  const changes = computeConstrainedResizeChanges(
+    graph,
+    instance.id,
+    { width: component.width, height: component.height },
+    { width: instance.width, height: instance.height },
+    originals
+  )
+  for (const [id, change] of changes) graph.updateNode(id, change)
 }
 
 export function populateInstanceChildren(
