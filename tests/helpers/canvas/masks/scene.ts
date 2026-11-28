@@ -48,6 +48,55 @@ export function createPatternFillScene(graph: SceneGraph, pageId: string): void 
   })
 }
 
+/** Pattern strokes on each side of a rectangle and on a line with arrowheads. */
+export function createPatternStrokeScene(graph: SceneGraph, pageId: string): void {
+  const source = graph.createNode('ELLIPSE', pageId, {
+    name: 'Pattern stroke source dot',
+    x: -1000,
+    y: -1000,
+    width: 12,
+    height: 12,
+    visible: false,
+    fills: [solid(0.89, 0.24, 0.2)]
+  })
+  const patternStroke = (align: 'INSIDE' | 'CENTER' | 'OUTSIDE', weight: number) => ({
+    type: 'PATTERN' as const,
+    sourceNodeId: source.id,
+    patternTileType: 'RECTANGULAR' as const,
+    patternSpacing: { x: 0, y: 0 },
+    horizontalAlignment: 'START' as const,
+    verticalAlignment: 'START' as const,
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    visible: true,
+    opacity: 1,
+    weight,
+    align
+  })
+
+  for (const [index, align] of (['INSIDE', 'CENTER', 'OUTSIDE'] as const).entries()) {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Pattern stroke ${align.toLowerCase()}`,
+      x: 60 + index * 170,
+      y: 70,
+      width: 120,
+      height: 90,
+      fills: [solid(1, 1, 1)],
+      strokeWeight: 16,
+      strokes: [patternStroke(align, 16)]
+    })
+  }
+  graph.createNode('LINE', pageId, {
+    name: 'Pattern stroke line',
+    x: 60,
+    y: 230,
+    width: 460,
+    height: 0,
+    strokeCap: 'TRIANGLE_FILLED',
+    strokeWeight: 12,
+    strokes: [patternStroke('CENTER', 12)]
+  })
+}
+
 /** An image tile fill beside a luminance mask stack and two consecutive masks. */
 export async function createLuminanceMaskScene(
   graph: SceneGraph,
@@ -249,6 +298,7 @@ export function createMaskEffectsScene(graph: SceneGraph, pageId: string): void 
 
 export const MASK_SCENES = {
   'pattern-fills': createPatternFillScene,
+  'pattern-strokes': createPatternStrokeScene,
   'luminance-masks': createLuminanceMaskScene,
   'mask-effects': createMaskEffectsScene
 }

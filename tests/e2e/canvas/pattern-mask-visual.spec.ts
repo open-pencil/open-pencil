@@ -16,6 +16,11 @@ test('pattern fills from source nodes', async () => {
   await expectCanvas('pattern-fills-from-source-nodes')
 })
 
+test('pattern strokes from source nodes', async () => {
+  await scenes.show('pattern-strokes')
+  await expectCanvas('pattern-strokes-from-source-nodes')
+})
+
 test('luminance masks and transformed tile fills', async () => {
   await scenes.show('luminance-masks')
   await expectCanvas('luminance-masks-and-transformed-tile-fills')

@@ -1,0 +1,1 @@
+- Strokes with a pattern paint draw the pattern instead of a solid black line (#2413).
