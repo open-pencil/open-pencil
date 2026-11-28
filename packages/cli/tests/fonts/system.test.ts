@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { copyFile, mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { delimiter, join } from 'node:path'
 
@@ -38,11 +38,20 @@ const HIRAGINO = [
   installed({ family: 'Hiragino Sans', style: 'W6', weight: 600 })
 ]
 
+/**
+ * A font folder with a collection, files that are not fonts, and a linked subfolder, as Linux
+ * font packages link theirs, whose own link back to the folder must not loop.
+ */
 async function fontFolder(): Promise<string> {
-  const folder = await mkdtemp(join(tmpdir(), 'open-pencil-system-fonts-'))
-  await mkdir(join(folder, 'nested'))
+  const root = await mkdtemp(join(tmpdir(), 'open-pencil-system-fonts-'))
+  const folder = join(root, 'fonts')
+  const linked = join(root, 'package')
+  await mkdir(folder)
+  await mkdir(linked)
   await copyFile(FONT_FIXTURES.interVariable, join(folder, 'InterVariable.ttf'))
-  await copyFile(FONT_FIXTURES.cjk, join(folder, 'nested', 'NotoSansCJK-Test.OTF'))
+  await copyFile(FONT_FIXTURES.cjk, join(linked, 'NotoSansCJK-Test.OTF'))
+  await symlink(linked, join(folder, 'nested'), 'dir')
+  await symlink(folder, join(linked, 'loop'), 'dir')
   await writeFile(
     join(folder, 'Pair.ttc'),
     await fontCollection([FONT_FIXTURES.interSemiBold, FONT_FIXTURES.naskh])
@@ -55,31 +64,49 @@ async function fontFolder(): Promise<string> {
 describe('systemFontDirectories', () => {
   test('lists the folders OPENPENCIL_FONT_DIRS names in place of the system ones', async () => {
     const env = { [FONT_DIRS_ENV]: ['/a', '', '/b'].join(delimiter) }
-    expect(await systemFontDirectories(env, 'linux', '/home/me')).toEqual(['/a', '/b'])
-    expect(await systemFontDirectories({ [FONT_DIRS_ENV]: '' }, 'darwin', '/Users/me')).toEqual([])
+    expect(await systemFontDirectories(env, 'linux', () => '/home/me')).toEqual(['/a', '/b'])
+    const none = { [FONT_DIRS_ENV]: '' }
+    expect(await systemFontDirectories(none, 'darwin', () => '/Users/me')).toEqual([])
   })
 
-  test('lists the XDG font folders on Linux', async () => {
+  test('lists the XDG font folders on Linux, taking an empty variable as unset', async () => {
     const env = { XDG_DATA_HOME: '/data', XDG_DATA_DIRS: '/usr/share:/opt/share' }
-    expect(await systemFontDirectories(env, 'linux', '/home/me')).toEqual([
+    expect(await systemFontDirectories(env, 'linux', () => '/home/me')).toEqual([
       '/home/me/.fonts',
       '/data/fonts',
       '/usr/share/fonts',
       '/opt/share/fonts'
     ])
+    const empty = { XDG_DATA_HOME: '', XDG_DATA_DIRS: '' }
+    expect(await systemFontDirectories(empty, 'linux', () => '/home/me')).toEqual([
+      '/home/me/.fonts',
+      '/home/me/.local/share/fonts',
+      '/usr/local/share/fonts',
+      '/usr/share/fonts'
+    ])
+  })
+
+  test('leaves out the user folders without a home folder', async () => {
+    expect(await systemFontDirectories({}, 'linux', () => null)).toEqual([
+      '/usr/local/share/fonts',
+      '/usr/share/fonts'
+    ])
   })
 
   test("lists the system's and the user's font folders on Windows", async () => {
     const env = { WINDIR: 'D:\\Windows', LOCALAPPDATA: 'C:\\Users\\me\\AppData\\Local' }
-    expect(await systemFontDirectories(env, 'win32', 'C:\\Users\\me')).toEqual([
-      join('D:\\Windows', 'Fonts'),
-      join('C:\\Users\\me\\AppData\\Local', 'Microsoft', 'Windows', 'Fonts')
+    expect(await systemFontDirectories(env, 'win32', () => 'C:\\Users\\me')).toEqual([
+      'D:\\Windows\\Fonts',
+      'C:\\Users\\me\\AppData\\Local\\Microsoft\\Windows\\Fonts'
+    ])
+    expect(await systemFontDirectories({ WINDIR: '' }, 'win32', () => null)).toEqual([
+      'C:\\Windows\\Fonts'
     ])
   })
 })
 
 describe('listInstalledFaces', () => {
-  test('describes each face of the font files in a folder and its subfolders', async () => {
+  test('describes each face of the font files in a folder and its linked subfolders', async () => {
     const faces = await listInstalledFaces([await fontFolder()])
     expect(
       faces.map(({ family, style, weight, weightAxis }) => ({ family, style, weight, weightAxis }))

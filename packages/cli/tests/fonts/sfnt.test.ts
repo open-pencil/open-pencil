@@ -54,10 +54,26 @@ describe('readSfntFaces', () => {
 
   test('reads no face from a file that is not a font', async () => {
     expect(await facesOf(await tempFile('short.ttf', new Uint8Array(6)))).toEqual([])
+    const woff = new Uint8Array(await readFile(FONT_FIXTURES.naskh))
+    woff.set(new TextEncoder().encode('wOFF'))
+    expect(await facesOf(await tempFile('renamed.ttf', woff))).toEqual([])
     const collection = new Uint8Array(12)
     collection.set(new TextEncoder().encode('ttcf'))
     new DataView(collection.buffer).setUint32(8, 3)
     expect(await facesOf(await tempFile('cut.ttc', collection))).toEqual([])
+  })
+
+  test('reads no face whose tables reach past the end of the file', async () => {
+    const font = new Uint8Array(await readFile(FONT_FIXTURES.naskh))
+    // The first table claims four gigabytes, which a buffer sized by it could not hold.
+    new DataView(font.buffer).setUint32(12 + 12, 0xffffffff)
+    expect(await facesOf(await tempFile('long.ttf', font))).toEqual([])
+  })
+
+  test('reads no face of a collection whose directory lies inside its header', async () => {
+    const collection = await fontCollection([FONT_FIXTURES.interSemiBold, FONT_FIXTURES.naskh])
+    new DataView(collection.buffer).setUint32(12, 0)
+    expect(await facesOf(await tempFile('overlap.ttc', collection))).toEqual([])
   })
 })
 
@@ -98,6 +114,23 @@ describe('standaloneFace', () => {
       family: 'Noto Naskh Arabic',
       style: 'Regular'
     })
+  })
+
+  test("keeps a collection's first face where it is, standing alone already", async () => {
+    const data = await fontCollection([FONT_FIXTURES.interSemiBold, FONT_FIXTURES.naskh])
+    const [first] = await facesOf(await tempFile('pair.ttc', data))
+    if (!first) throw new Error('the collection has a face')
+    const standalone = standaloneFace(new Uint8Array(data), first)
+    expect(standalone && fontFaceName(standalone.buffer)).toEqual({
+      family: 'Inter',
+      style: 'SemiBold'
+    })
+  })
+
+  test('refuses a face whose tables the moved directory would overwrite', () => {
+    const data = new Uint8Array(64)
+    const face: SfntFace = { index: 1, offset: 32, tables: [{ tag: 'name', offset: 8, length: 4 }] }
+    expect(standaloneFace(data, face)).toBeNull()
   })
 
   test('keeps a single font as it is', async () => {

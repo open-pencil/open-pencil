@@ -5,6 +5,8 @@ const OFFSET_TABLE_SIZE = 12
 const TABLE_RECORD_SIZE = 16
 /** A collection's face count is a 32-bit field; real collections hold a handful of faces. */
 const MAX_COLLECTION_FACES = 0xffff
+/** The versions a single font's table directory starts with: TrueType, CFF, and Apple's `true`. */
+const SFNT_VERSIONS = new Set([0x00010000, 0x4f54544f, 0x74727565])
 /** The tables a renderer draws outlines from; Apple's `hvgl` (PingFang on macOS 15) is not one. */
 const OUTLINE_TABLES = new Set(['glyf', 'CFF ', 'CFF2'])
 
@@ -34,13 +36,21 @@ async function readView(file: FileHandle, position: number, length: number) {
   return bytesRead === length ? new DataView(bytes.buffer) : null
 }
 
-async function readTableDirectory(file: FileHandle, offset: number): Promise<TableRecord[] | null> {
+/**
+ * The tables a face's directory lists, or `null` when it is not a font's directory or names a
+ * table beyond the end of the file, so no read later sizes a buffer by a length the file lacks.
+ */
+async function readTableDirectory(
+  file: FileHandle,
+  offset: number,
+  fileSize: number
+): Promise<TableRecord[] | null> {
   const header = await readView(file, offset, OFFSET_TABLE_SIZE)
-  if (!header) return null
+  if (!header || !SFNT_VERSIONS.has(header.getUint32(0))) return null
   const count = header.getUint16(4)
   const records = await readView(file, offset + OFFSET_TABLE_SIZE, count * TABLE_RECORD_SIZE)
   if (!records) return null
-  return Array.from({ length: count }, (_, i) => {
+  const tables = Array.from({ length: count }, (_, i) => {
     const record = i * TABLE_RECORD_SIZE
     return {
       tag: tagAt(records, record),
@@ -48,6 +58,7 @@ async function readTableDirectory(file: FileHandle, offset: number): Promise<Tab
       length: records.getUint32(record + 12)
     }
   })
+  return tables.every((table) => table.offset + table.length <= fileSize) ? tables : null
 }
 
 /**
@@ -57,17 +68,21 @@ async function readTableDirectory(file: FileHandle, offset: number): Promise<Tab
 export async function readSfntFaces(file: FileHandle): Promise<SfntFace[]> {
   const header = await readView(file, 0, OFFSET_TABLE_SIZE)
   if (!header) return []
+  const { size } = await file.stat()
   let offsets = [0]
   if (tagAt(header, 0) === COLLECTION_TAG) {
     const count = header.getUint32(8)
     if (count > MAX_COLLECTION_FACES) return []
     const list = await readView(file, OFFSET_TABLE_SIZE, count * 4)
     if (!list) return []
+    const headerEnd = OFFSET_TABLE_SIZE + count * 4
+    // A face's directory comes after the collection's header, never inside it.
     offsets = Array.from({ length: count }, (_, i) => list.getUint32(i * 4))
+    if (offsets.some((offset) => offset < headerEnd)) return []
   }
   const faces: SfntFace[] = []
   for (const [index, offset] of offsets.entries()) {
-    const tables = await readTableDirectory(file, offset)
+    const tables = await readTableDirectory(file, offset, size)
     if (tables) faces.push({ index, offset, tables })
   }
   return faces
@@ -122,6 +137,8 @@ export function standaloneFace(
   if (face.offset === 0) return data
   const size = OFFSET_TABLE_SIZE + face.tables.length * TABLE_RECORD_SIZE
   if (face.offset + size > data.byteLength) return null
+  // The directory written at the start must not land on a table the face reads.
+  if (face.tables.some((table) => table.offset < size)) return null
   const standalone = data.slice()
   standalone.copyWithin(0, face.offset, face.offset + size)
   return standalone

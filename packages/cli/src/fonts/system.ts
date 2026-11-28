@@ -1,6 +1,6 @@
-import { open, readdir, readFile } from 'node:fs/promises'
+import { open, readdir, readFile, realpath, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { delimiter, extname, join } from 'node:path'
+import { delimiter, extname, join, posix, win32 } from 'node:path'
 
 import { chunk, compact, uniq } from 'es-toolkit'
 
@@ -77,45 +77,72 @@ async function macOSFontAssetDirectories(): Promise<string[]> {
   const entries = await readdir(MACOS_FONT_ASSETS).catch(() => [])
   return entries
     .filter((entry) => entry.startsWith(MACOS_FONT_ASSET_PREFIX))
-    .map((entry) => join(MACOS_FONT_ASSETS, entry))
+    .map((entry) => posix.join(MACOS_FONT_ASSETS, entry))
+}
+
+/** The user's home folder, or none where the system cannot say, as in a container without one. */
+function homeFolder(): string | null {
+  try {
+    return homedir()
+  } catch {
+    return null
+  }
 }
 
 /** The folders a platform installs fonts in, or the ones `OPENPENCIL_FONT_DIRS` names. */
 export async function systemFontDirectories(
   env: NodeJS.ProcessEnv = process.env,
   platform: NodeJS.Platform = process.platform,
-  home = homedir()
+  home: () => string | null = homeFolder
 ): Promise<string[]> {
   const configured = env[FONT_DIRS_ENV]
   if (configured !== undefined) return compact(configured.split(delimiter))
+  // Read only when a platform folder needs it, and an empty variable counts as unset (XDG).
+  const user = home()
   if (platform === 'darwin') {
-    return [
+    return compact([
       '/System/Library/Fonts',
       '/Library/Fonts',
-      join(home, 'Library', 'Fonts'),
+      user && posix.join(user, 'Library', 'Fonts'),
       ...(await macOSFontAssetDirectories())
-    ]
+    ])
   }
   if (platform === 'win32') {
     return compact([
-      join(env.WINDIR ?? 'C:\\Windows', 'Fonts'),
-      env.LOCALAPPDATA && join(env.LOCALAPPDATA, 'Microsoft', 'Windows', 'Fonts')
+      win32.join(env.WINDIR || 'C:\\Windows', 'Fonts'),
+      env.LOCALAPPDATA && win32.join(env.LOCALAPPDATA, 'Microsoft', 'Windows', 'Fonts')
     ])
   }
-  const dataHome = env.XDG_DATA_HOME ?? join(home, '.local', 'share')
-  const dataDirs = (env.XDG_DATA_DIRS ?? '/usr/local/share:/usr/share').split(':')
-  return uniq([
-    join(home, '.fonts'),
-    ...[dataHome, ...compact(dataDirs)].map((dir) => join(dir, 'fonts'))
-  ])
+  const dataHome = env.XDG_DATA_HOME || (user && posix.join(user, '.local', 'share'))
+  const dataDirs = (env.XDG_DATA_DIRS || '/usr/local/share:/usr/share').split(':')
+  return uniq(
+    compact([
+      user && posix.join(user, '.fonts'),
+      ...compact([dataHome, ...dataDirs]).map((dir) => posix.join(dir, 'fonts'))
+    ])
+  )
 }
 
-async function fontFiles(directory: string): Promise<string[]> {
-  const entries = await readdir(directory, { recursive: true }).catch(() => [])
-  return entries
-    .filter((entry) => FONT_EXTENSIONS.has(extname(entry).toLowerCase()))
-    .map((entry) => join(directory, entry))
-    .sort()
+/**
+ * The font files in a folder and its subfolders, by path. Linked folders are followed, as Linux
+ * font packages often link theirs into `/usr/share/fonts`, and each folder is read once, so a
+ * link back up the tree ends.
+ */
+async function fontFiles(directory: string, visited = new Set<string>()): Promise<string[]> {
+  const real = await realpath(directory).catch(() => null)
+  if (!real || visited.has(real)) return []
+  visited.add(real)
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => [])
+  const files: string[] = []
+  for (const entry of entries.sort((a, b) => (a.name < b.name ? -1 : 1))) {
+    const path = join(directory, entry.name)
+    const isDirectory =
+      entry.isDirectory() ||
+      (entry.isSymbolicLink() && (await stat(path).catch(() => null))?.isDirectory() === true)
+    if (isDirectory) appendAll(files, await fontFiles(path, visited))
+    else if (FONT_EXTENSIONS.has(extname(entry.name).toLowerCase())) files.push(path)
+  }
+  return files
 }
 
 function weightAxisOf(subset: ArrayBuffer): [number, number] | null {
@@ -175,7 +202,10 @@ export async function readInstalledFaces(path: string): Promise<InstalledFace[]>
 
 /** Every face the font files in `directories` draw, in folder order and then by path. */
 export async function listInstalledFaces(directories: readonly string[]): Promise<InstalledFace[]> {
-  const paths = (await Promise.all(directories.map(fontFiles))).flat()
+  // One record of the folders read, so a folder linked from two places is listed once.
+  const visited = new Set<string>()
+  const paths: string[] = []
+  for (const directory of directories) appendAll(paths, await fontFiles(directory, visited))
   const faces: InstalledFace[] = []
   for (const batch of chunk(paths, SCAN_BATCH)) {
     appendAll(faces, (await Promise.all(batch.map(readInstalledFaces))).flat())
@@ -256,15 +286,23 @@ export function chooseInstalledFace(
 }
 
 function hasOnlyUndrawableFaces(faces: readonly InstalledFace[], family: string): boolean {
-  const { own, legacy } = familyFaces(faces, family)
-  const listed = [...own, ...legacy]
+  const listed = uniq([family, normalizeFontFamily(family)]).flatMap((name) => {
+    const { own, legacy } = familyFaces(faces, name)
+    return [...own, ...legacy]
+  })
   return listed.length > 0 && listed.every((face) => !face.drawable)
 }
 
 let installed: Promise<InstalledFace[]> | null = null
 
 function installedFaces(): Promise<InstalledFace[]> {
-  installed ??= systemFontDirectories().then(listInstalledFaces)
+  installed ??= systemFontDirectories()
+    .then(listInstalledFaces)
+    .catch((error: unknown) => {
+      // A listing that failed is tried again on the next font asked for.
+      installed = null
+      throw error
+    })
   return installed
 }
 
