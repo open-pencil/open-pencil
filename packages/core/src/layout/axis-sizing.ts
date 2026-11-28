@@ -73,12 +73,13 @@ export function setMainAxisSizing(
   axis: Axis,
   sizing: LayoutSizing,
   fixedValue: number,
-  grow: number
+  grow: number,
+  flexBasisUnit = 0
 ): void {
   if (grow > 0) {
     layoutNode.style.flexGrow = grow
     layoutNode.style.flexShrink = 1
-    layoutNode.style.flexBasis = 0
+    layoutNode.style.flexBasis = grow * flexBasisUnit
     return
   }
 
@@ -92,7 +93,7 @@ export function setMainAxisSizing(
     case 'FILL':
       layoutNode.style.flexGrow = 1
       layoutNode.style.flexShrink = 1
-      layoutNode.style.flexBasis = 0
+      layoutNode.style.flexBasis = flexBasisUnit
       break
   }
 }
