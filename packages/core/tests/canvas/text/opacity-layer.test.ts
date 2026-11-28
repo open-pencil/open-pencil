@@ -230,10 +230,14 @@ function inkedExtent(target: SkiaRenderer, props: Partial<SceneNode>, opacity: n
         colorSpace: ck.ColorSpace.SRGB
       })
     )
-    const extent = { minX: SIZE, minY: SIZE, maxX: -1, maxY: -1, pixels: 0 }
+    const extent = { minX: SIZE, minY: SIZE, maxX: -1, maxY: -1, pixels: 0, faintest: 0 }
     for (let pixel = 0; pixel < SIZE * SIZE; pixel++) {
-      if (rgba[pixel * 4 + 3] === 0) {
+      const alpha = rgba[pixel * 4 + 3]
+      if (alpha === 0) {
         continue
+      }
+      if (alpha === 1) {
+        extent.faintest++
       }
       const x = pixel % SIZE
       const y = Math.floor(pixel / SIZE)
@@ -365,9 +369,12 @@ describe('text ink', () => {
   test.each(drawnCases)('keeps %s inside its opacity layer', (_, target, props) => {
     const opaque = inkedExtent(target, props, 1)
     expect(opaque.pixels).toBeGreaterThan(0)
-    // At half opacity Skia's 8-bit pipeline rounds the faintest antialiased edge pixels to nothing.
     const translucent = inkedExtent(target, props, 0.5)
-    expect(omit(translucent, ['pixels'])).toEqual(omit(opaque, ['pixels']))
+    const bounds = ['pixels', 'faintest'] as const
+    expect(omit(translucent, bounds)).toEqual(omit(opaque, bounds))
+    // Halved, a pixel of alpha 1 may round to nothing in Skia's 8-bit pipeline; no other pixel may go.
+    expect(translucent.pixels).toBeLessThanOrEqual(opaque.pixels)
+    expect(translucent.pixels).toBeGreaterThanOrEqual(opaque.pixels - opaque.faintest)
   })
 
   test.each(['PNG', 'PDF'] as const)(

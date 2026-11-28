@@ -1,1 +1,1 @@
-- PNG, JPG and WebP export, thumbnails, and CLI and MCP images render two to four times faster with WebAssembly SIMD (#2421).
+- PNG, JPG and WebP export is about two to three times faster with WebAssembly SIMD (#2421).
