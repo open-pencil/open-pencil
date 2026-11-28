@@ -748,6 +748,14 @@ de:variables/types.timing
 de:panels/behaviours.transitionEasing
 pl:settings.importing
 pl:panels.gradient
+ar:variables/panel.numberedCollection
+de:variables/panel.numberedCollection
+es:variables/panel.numberedCollection
+fr:variables/panel.numberedCollection
+it:variables/panel.numberedCollection
+pl:variables/panel.numberedCollection
+pt-br:variables/panel.numberedCollection
+ru:variables/panel.numberedCollection
 pl:files.openURLSizeTablet
 pl:panels.colorProfileSRGB
 pl:panels.colorProfileDisplayP3

@@ -140,5 +140,6 @@ export const variablesMessageDefaults = {
   formulaIf: 'condition, then, otherwise',
   formulaText: 'number as text',
   formulaTruthy: 'value as true or false',
-  unsupportedExpression: params('OpenPencil can’t evaluate {name} yet. Saving keeps it as it is.')
+  unsupportedExpression: params('OpenPencil can’t evaluate {name} yet. Saving keeps it as it is.'),
+  numberedCollection: params('{name} ({number})')
 } as const

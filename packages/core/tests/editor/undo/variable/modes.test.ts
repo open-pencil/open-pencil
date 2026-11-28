@@ -53,4 +53,16 @@ describe('variable mode undo', () => {
     expect(restored?.defaultModeId).toBe('light')
     expect(restored?.modes.map((m) => m.modeId)).toEqual(['light', 'dark'])
   })
+
+  test('undoing a collection removal puts it back in its place among the others', () => {
+    const editor = createEditor()
+    const ids = ['Theme', 'Density', 'Theme'].map((name) => editor.graph.createCollection(name).id)
+    const order = () => [...editor.graph.variableCollections.keys()]
+
+    editor.removeCollection(ids[0])
+    expect(order()).toEqual(ids.slice(1))
+
+    editor.undo.undo()
+    expect(order()).toEqual(ids)
+  })
 })
