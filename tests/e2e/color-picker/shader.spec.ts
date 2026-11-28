@@ -206,3 +206,36 @@ test('dragging a stop moves the stop, not the effect it belongs to', async () =>
     .components
   expect(mesh.props.stops[1].position).toBeCloseTo(0.2, 1)
 })
+
+test('a stop dragged past its neighbour stays the one being dragged', async () => {
+  await shaderWith({
+    components: [
+      {
+        type: 'MeshGradient',
+        props: {
+          stops: [
+            { color: '#ff0000', position: 0 },
+            { color: '#00ff00', position: 0.5 },
+            { color: '#0000ff', position: 1 }
+          ]
+        }
+      }
+    ]
+  })
+  const handle = picker().getByRole('slider', { name: 'Gradient stop 1' })
+  const bar = picker().getByTestId('fill-picker-gradient-bar')
+  const [from, track] = await Promise.all([handle.boundingBox(), bar.boundingBox()])
+  if (!from || !track) throw new Error('Expected the gradient bar and its stop')
+  const y = from.y + from.height / 2
+  await editor.page.mouse.move(from.x + from.width / 2, y)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(track.x + track.width * 0.8, y, { steps: 12 })
+  await editor.page.mouse.up()
+  const preset = (await presetJSON()) as {
+    components: { props: { stops: { color: string; position: number }[] } }[]
+  }
+  const at = (color: string) =>
+    preset.components[0].props.stops.find((stop) => stop.color === color)?.position
+  expect(at('#ff0000')).toBeCloseTo(0.8, 1)
+  expect(at('#00ff00')).toBe(0.5)
+})

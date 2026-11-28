@@ -37,11 +37,16 @@ export function stopsFill(stops: readonly ShaderStop[]): Fill {
   }
 }
 
-/** The gradient fill's stops back as the shader's, in position order; opaque colors stay six-digit. */
+/**
+ * The gradient fill's stops back as the shader's; opaque colors stay six-digit. They keep the
+ * editor's order, which tracks a dragged stop by its place in the list, so a stop dragged past
+ * another stays the one being dragged; the library sorts them by position when it draws.
+ */
 export function fillStops(fill: Fill): ShaderStop[] {
-  return (fill.gradientStops ?? [])
-    .map((stop) => ({ color: colorToHex8(stop.color).toLowerCase(), position: stop.position }))
-    .sort((a, b) => a.position - b.position)
+  return (fill.gradientStops ?? []).map((stop) => ({
+    color: colorToHex8(stop.color).toLowerCase(),
+    position: stop.position
+  }))
 }
 
 /**

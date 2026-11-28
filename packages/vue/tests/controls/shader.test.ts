@@ -75,7 +75,7 @@ describe('shader color stops', () => {
     expect(glass?.props.find((prop) => prop.key === 'shape')).toMatchObject({ kind: 'other' })
   })
 
-  test('stops round-trip through the gradient fill the editor edits, in position order', () => {
+  test('stops round-trip through the gradient fill the editor edits, in the editor’s order', () => {
     const stops = [
       { color: '#7c3aed', position: 0.6 },
       { color: '#0f0f13', position: 0 },
@@ -84,11 +84,7 @@ describe('shader color stops', () => {
     const fill = stopsFill(stops)
     expect(fill.type).toBe('GRADIENT_LINEAR')
     expect(fill.gradientStops?.[2]?.color.a).toBeCloseTo(0.5, 2)
-    expect(fillStops(fill)).toEqual([
-      { color: '#0f0f13', position: 0 },
-      { color: '#7c3aed', position: 0.6 },
-      { color: '#e879f980', position: 1 }
-    ])
+    expect(fillStops(fill)).toEqual(stops)
   })
 
   test('a prop holds stops only as two or more color stops; new ones start from the colors', () => {
