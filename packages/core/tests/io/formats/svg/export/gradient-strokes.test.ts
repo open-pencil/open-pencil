@@ -155,6 +155,24 @@ describe('a gradient stroke exports as the gradient the canvas strokes with', ()
     ])
   })
 
+  test('as saved stroke geometry, keeps each outline winding rule as the canvas fills it', () => {
+    const svg = svgOf((graph, pageId) => [
+      graph.createNode('VECTOR', pageId, {
+        width: 10,
+        height: 10,
+        strokes: [RED_TO_BLUE],
+        strokeGeometry: [
+          { windingRule: 'EVENODD', commandsBlob: moveTo(1, 1) },
+          { windingRule: 'NONZERO', commandsBlob: moveTo(2, 2) }
+        ]
+      }).id
+    ])
+    expect(paths(svg).slice(-2)).toEqual([
+      '<path d="M1 1" fill="url(#grad0)" fill-rule="evenodd" stroke="none"/>',
+      '<path d="M2 2" fill="url(#grad0)" stroke="none"/>'
+    ])
+  })
+
   test('on text, its saved stroke geometry filled with the gradient over the glyphs', () => {
     const svg = svgOf((graph, pageId) => [
       graph.createNode('TEXT', pageId, {

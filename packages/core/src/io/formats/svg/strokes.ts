@@ -121,12 +121,16 @@ export function strokeGeometryElements(
   strokeAttrs: Attrs,
   attrs: Attrs = {}
 ): SVGNode[] {
-  return node.strokeGeometry.flatMap(({ commandsBlob }) => {
+  return node.strokeGeometry.flatMap(({ commandsBlob, windingRule }) => {
     const d = geometryBlobToSVGPath(commandsBlob)
     if (!d) {
       return []
     }
-    const fill = { fill: strokeAttrs.stroke, 'fill-opacity': strokeAttrs['stroke-opacity'] }
+    const fill = {
+      fill: strokeAttrs.stroke,
+      'fill-opacity': strokeAttrs['stroke-opacity'],
+      'fill-rule': windingRule === 'EVENODD' ? 'evenodd' : undefined
+    }
     return [svg('path', { d, ...fill, stroke: 'none', ...attrs })]
   })
 }
