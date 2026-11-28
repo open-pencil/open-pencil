@@ -1,0 +1,1 @@
+- Opening a large page full of images no longer fails with "The operation was timed out" while the canvas is still drawing it (#2424).
