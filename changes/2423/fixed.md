@@ -1,0 +1,1 @@
+- SVG export draws gradient and image strokes, and text strokes, as the canvas does (#2423).
