@@ -1,0 +1,1 @@
+- The CLI draws documents with the fonts installed on its machine, as the desktop app does; `OPENPENCIL_FONT_DIRS` chooses the folders it reads.
