@@ -254,8 +254,9 @@ export async function loadInstalledFont(
     if (hasOnlyUndrawableFaces(faces, family)) throw new UnsupportedFontFormatError(family, style)
     return null
   }
-  const standalone = standaloneFace(new Uint8Array(await readFile(face.path)), face.face)
-  return standalone?.buffer ?? null
+  // A font removed or locked since the folders were listed loads nothing, as a missing one does.
+  const data = await readFile(face.path).catch(() => null)
+  return data ? (standaloneFace(new Uint8Array(data), face.face)?.buffer ?? null) : null
 }
 
 let systemFontsInstalled = false

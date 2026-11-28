@@ -37,7 +37,7 @@ openpencil fonts --document-id tab-123 --page-id 0:1
 
 File mode checks all document pages using the CLI host's available fonts without downloading online fonts. Live mode reports the targeted app document/page, whose loaded fonts may differ from the CLI host. Faces are reported as `available`, `substituted`, or `unresolved`; JSON output includes `faithful`, `faces`, and `issues`.
 
-The CLI draws with the fonts installed on its machine, as the desktop app does, before bundled and online fonts: the system and user font folders on macOS, Windows, and Linux (`~/.fonts` and the `fonts` folder of each XDG data directory). Set `OPENPENCIL_FONT_DIRS` to a list of folders, separated as in `PATH`, to read fonts from those instead, or to an empty value to read none, so a CI export does not depend on the machine's fonts. Faces are matched by name, then by the weight and slant the font itself declares.
+Commands that read a document file draw with the fonts installed on the machine, as the desktop app does, before bundled and online fonts: the system and user font folders on macOS, Windows, and Linux (`~/.fonts` and the `fonts` folder of each XDG data directory). Set `OPENPENCIL_FONT_DIRS` to a list of folders, separated as in `PATH`, to read fonts from those instead, or to an empty value to read none, so a CI export does not depend on the machine's fonts. Faces are matched by name, then by the weight and slant the font itself declares.
 
 Use [export font policies](./exporting#font-substitution-policy) to warn about or reject substitutions during file-backed raster and PDF exports.
 
