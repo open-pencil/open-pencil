@@ -115,6 +115,7 @@
     "check:dockerfiles": "bun tools/checks/dockerfiles/src/index.ts",
     "check:vue": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p packages/vue/tsconfig.json && vue-tsc --noEmit -p packages/vue/example/tsconfig.json",
     "test": "OPENPENCIL_TEST_SERVER=app playwright test --project=openpencil --grep-invert @real-llm",
+    "test:production": "OPENPENCIL_TEST_SERVER=production playwright test",
     "test:storybook": "OPENPENCIL_TEST_SERVER=storybook playwright test --project=storybook-chromium",
     "test:real-llm": "OPENPENCIL_TEST_SERVER=app playwright test --project=openpencil --grep @real-llm",
     "test:update": "OPENPENCIL_TEST_SERVER=app playwright test --project=openpencil --update-snapshots",

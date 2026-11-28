@@ -81,6 +81,7 @@ Current commands:
 | Quick unit, parallel           | `bun run test:unit:quick`    |
 | Quick unit, per-file isolation | `bun run test:unit:isolated` |
 | App browser E2E                | `bun run test`               |
+| Production browser startup     | `bun run test:production`    |
 | Storybook browser              | `bun run test:storybook`     |
 | Figma acceptance               | `bun run test:figma`         |
 | Native WebView                 | `bun run test:native`        |
@@ -112,7 +113,9 @@ A few local results need a second look before they count:
 
 ## Server ownership and worktrees
 
-The canonical `playwright.config.ts` owns app, Figma and Storybook projects. The `test`, `test:update`, `test:real-llm` and `test:figma` scripts select only the app server; `test:storybook` selects Storybook on port `6017`. Direct Playwright commands start both servers by default. Set `OPENPENCIL_TEST_SERVER=app`, `storybook` or `all`; `--project` selects tests, not servers.
+The canonical `playwright.config.ts` owns app, Figma and Storybook projects. The `test`, `test:update`, `test:real-llm` and `test:figma` scripts select only the app server. The `test:storybook` script selects Storybook on port `6017`. Direct Playwright commands start both development servers by default. Choose servers with `OPENPENCIL_TEST_SERVER=app`, `storybook`, `production` or `all`. Use `--project` to select tests.
+
+`bun run test:production` builds the current checkout, starts Vite preview on the app test port, and runs the browser support gate spec. This covers startup failures reported only by built code, such as Vue's production component error codes.
 
 App tests start Vite from the current checkout and wait for its HTTP URL. Vite owns its MCP companion. Reuse is off by default and always off in CI. Default ports are app `1420` and MCP `7600`; concurrent worktrees need distinct free pairs:
 
