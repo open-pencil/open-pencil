@@ -1,8 +1,9 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
-import { mkdtemp } from 'node:fs/promises'
+import { copyFile, mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { FONT_FIXTURES } from '#cli-tests/helpers/fonts'
 import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
 import { runCLI } from '#cli-tests/helpers/run'
 
@@ -17,15 +18,11 @@ setDefaultTimeout(30_000)
 const GOLD = repoPath('tests/fixtures/gold-preview.fig')
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
-async function createUnresolvedFontFixture(): Promise<string> {
+async function createFontFixture(fontFamily: string): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'open-pencil-fonts-cli-'))
-  const path = join(directory, 'unresolved.fig')
+  const path = join(directory, 'fonts.fig')
   const graph = makeSceneGraph('Fonts')
-  graph.createNode('TEXT', firstPageId(graph), {
-    text: 'Hello',
-    fontFamily: 'Definitely Missing Font',
-    fontWeight: 400
-  })
+  graph.createNode('TEXT', firstPageId(graph), { text: 'Hello', fontFamily, fontWeight: 400 })
   const result = await io.writeDocument('fig', graph)
   await Bun.write(path, result.data as Uint8Array)
   return path
@@ -40,9 +37,25 @@ test('reports bundled fonts as available', async () => {
   expect(data.faces.every((face) => face.source === 'bundled')).toBe(true)
 })
 
+test('reports fonts installed in the folders OPENPENCIL_FONT_DIRS names', async () => {
+  const fixture = await createFontFixture('Noto Sans CJK SC')
+  const fonts = await mkdtemp(join(tmpdir(), 'open-pencil-installed-fonts-'))
+  await copyFile(FONT_FIXTURES.cjk, join(fonts, 'NotoSansCJK-Test.otf'))
+  const { stdout, stderr, exitCode } = await runCLI(['fonts', fixture, '--json'], {
+    env: { OPENPENCIL_FONT_DIRS: fonts }
+  })
+  expect(stderr).toBe('')
+  expect(exitCode).toBe(0)
+  const data: DocumentFontStatus = JSON.parse(stdout)
+  expect(data.faithful).toBe(true)
+  expect(data.faces.map(({ family, source }) => ({ family, source }))).toEqual([
+    { family: 'Noto Sans CJK SC', source: 'local' }
+  ])
+})
+
 heavy('fonts CLI', () => {
   test('reports unavailable fonts without network access', async () => {
-    const fixture = await createUnresolvedFontFixture()
+    const fixture = await createFontFixture('Definitely Missing Font')
     const { stdout, stderr, exitCode } = await runCLI(['fonts', fixture, '--json'])
     expect(stderr).toBe('')
     expect(exitCode).toBe(0)
