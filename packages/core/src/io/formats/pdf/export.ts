@@ -2,6 +2,7 @@ import type { PDFDocument } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
+import { withExportPatternTiles } from '#core/canvas/patterns/tiles'
 import { exportBounds, prepareSelectionRenderGraph } from '#core/io/formats/raster/render'
 import { extractExportGraph } from '#core/io/subgraph'
 
@@ -67,14 +68,19 @@ function drawPage(
   if (width <= 0 || height <= 0) return null
 
   // Layers draw by themselves, without the page behind them, clipped by the frames around them.
-  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: spec.nodeIds })
-  if (!extracted.pageId) return null
-  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, spec.nodeIds)
+  const { graph: exportGraph, pageId } = extractExportGraph(graph, {
+    scope: 'selection',
+    nodeIds: spec.nodeIds
+  })
+  if (!pageId) return null
+  prepareSelectionRenderGraph(graph, exportGraph, pageId, spec.nodeIds)
 
   const canvas = doc.beginPage(width, height)
   if (!canvas) throw new Error('The PDF document was closed before its pages were drawn')
   canvas.translate(-bounds.minX, -bounds.minY)
-  renderer.renderSceneToCanvas(canvas, extracted.graph, extracted.pageId)
+  withExportPatternTiles(renderer, exportGraph, () =>
+    renderer.renderSceneToCanvas(canvas, exportGraph, pageId)
+  )
   doc.endPage()
   return { label: spec.label, width, height }
 }

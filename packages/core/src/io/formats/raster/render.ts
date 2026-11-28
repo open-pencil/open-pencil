@@ -8,9 +8,14 @@ import { CORNER_FIELDS } from '@open-pencil/scene-graph/fields'
 import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import {
+  createPatternSourceLookup,
+  resolvedPatternSourceIds
+} from '@open-pencil/scene-graph/paints'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { SupersampledOutput } from '#core/canvas/images/state'
+import { withExportPatternTiles } from '#core/canvas/patterns/tiles'
 import { documentImageInfo } from '#core/canvas/renderer/colors'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
@@ -217,7 +222,9 @@ export function renderToSurface(
     setup(canvas)
     renderer.images.supersampledOutput =
       renderScale > 1 ? supersampledOutput(canvas, renderScale) : null
-    renderer.renderSceneToCanvas(canvas, graph, pageId)
+    withExportPatternTiles(renderer, graph, () =>
+      renderer.renderSceneToCanvas(canvas, graph, pageId)
+    )
     surface.flush()
 
     const highResImage = surface.makeImageSnapshot()
@@ -305,6 +312,7 @@ export function prepareSelectionRenderGraph(
   page.childIds = inPaintOrder(source, pageId, nodeIds).filter(
     (nodeId) => renderGraph.getNode(nodeId) !== undefined
   )
+  const tiled = tiledSourceIds(renderGraph)
   for (const [index, nodeId] of page.childIds.entries()) {
     const node = renderGraph.getNode(nodeId)
     const sourceNode = source.getNode(nodeId)
@@ -331,11 +339,47 @@ export function prepareSelectionRenderGraph(
       parent = clip
       parentWorld = world
     }
+    const layerParent = sourceNode.parentId ? source.getNode(sourceNode.parentId) : undefined
+    if (layerParent && source.closest(sourceNode.id, (ancestor) => tiled.has(ancestor.id))) {
+      const transform = relativeTo(parentWorld, getWorldMatrix(layerParent, source))
+      const standIn = emptyStandInForParent(renderGraph, parent, transform, layerParent, node)
+      parent.childIds =
+        parent === page ? withNodeAt(page.childIds, index, standIn.id) : [standIn.id]
+      continue
+    }
     node.parentId = parent.id
     if (parent !== page) parent.childIds = [node.id]
     applyWorldTransform(node, relativeTo(parentWorld, getWorldMatrix(sourceNode, source)))
   }
   renderGraph.clearAbsPosCache()
+}
+
+function tiledSourceIds(graph: SceneGraph): Set<string> {
+  const findSource = createPatternSourceLookup(graph)
+  return new Set(
+    Array.from(graph.getAllNodes()).flatMap((node) => resolvedPatternSourceIds(node, findSource))
+  )
+}
+
+function emptyStandInForParent(
+  renderGraph: SceneGraph,
+  parent: SceneNode,
+  transform: Mat3,
+  layerParent: SceneNode,
+  node: SceneNode
+): SceneNode {
+  const standIn = renderGraph.createNode('FRAME', parent.id, {
+    name: layerParent.name,
+    width: layerParent.width,
+    height: layerParent.height,
+    clipsContent: false,
+    fills: [],
+    strokes: [],
+    effects: []
+  })
+  applyWorldTransform(standIn, transform)
+  standIn.childIds = [node.id]
+  return standIn
 }
 
 /** The frames that clip `node`, outermost first. */

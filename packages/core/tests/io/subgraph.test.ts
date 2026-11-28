@@ -216,3 +216,125 @@ describe('export subgraph extraction', () => {
     expect(listsSymbolData?.symbolOverrides?.length).toBe(5)
   }, 15000)
 })
+
+describe('extracting an export', () => {
+  test('brings the layer a pattern paint tiles, from any page', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const sources = graph.addPage('Sources')
+    const holder = graph.createNode('FRAME', sources.id)
+    const source = graph.createNode('FRAME', holder.id)
+    const stripe = graph.createNode('LINE', source.id)
+    const target = graph.createNode('RECTANGLE', pageId, {
+      fills: [
+        {
+          type: 'PATTERN',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          sourceNodeId: source.id
+        }
+      ]
+    })
+    const copy = extractExportGraph(graph, { scope: 'selection', nodeIds: [target.id] }).graph
+    expect(copy.getNode(stripe.id)).toBeDefined()
+    expect(copy.getNode(holder.id)).toBeDefined()
+    expect(copy.getNode(sources.id)?.childIds).toEqual([holder.id])
+  })
+
+  test('brings every layer of a source that another source sits inside', () => {
+    for (const innerFirst of [true, false]) {
+      const graph = new SceneGraph()
+      const pageId = graph.getPages()[0].id
+      const outer = graph.createNode('FRAME', pageId, { x: 200 })
+      const inner = graph.createNode('FRAME', outer.id)
+      const innerMark = graph.createNode('LINE', inner.id)
+      const outerMark = graph.createNode('LINE', outer.id)
+      const pattern = (sourceNodeId: string) => ({
+        type: 'PATTERN' as const,
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        opacity: 1,
+        visible: true,
+        sourceNodeId
+      })
+      const order = innerFirst ? [inner, outer] : [outer, inner]
+      const targets = order.map((source) =>
+        graph.createNode('RECTANGLE', pageId, { fills: [pattern(source.id)] })
+      )
+      const nodeIds = targets.map((target) => target.id)
+      const copy = extractExportGraph(graph, { scope: 'selection', nodeIds }).graph
+      expect(copy.getNode(innerMark.id)).toBeDefined()
+      expect(copy.getNode(outerMark.id)).toBeDefined()
+    }
+  })
+
+  test("brings the layer a vector region's pattern fill tiles", () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const sources = graph.addPage('Sources')
+    const source = graph.createNode('FRAME', sources.id)
+    const straight = { x: 0, y: 0 }
+    const side = (start: number, end: number) => ({
+      start,
+      end,
+      tangentStart: straight,
+      tangentEnd: straight
+    })
+    const vector = graph.createNode('VECTOR', pageId, {
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 }
+        ],
+        segments: [side(0, 1), side(1, 2), side(2, 0)],
+        regions: [
+          {
+            windingRule: 'NONZERO',
+            loops: [[0, 1, 2]],
+            fills: [
+              {
+                type: 'PATTERN',
+                color: { r: 0, g: 0, b: 0, a: 1 },
+                opacity: 1,
+                visible: true,
+                sourceNodeId: source.id
+              }
+            ]
+          }
+        ]
+      }
+    })
+    const copy = extractExportGraph(graph, { scope: 'selection', nodeIds: [vector.id] }).graph
+    expect(copy.getNode(source.id)).toBeDefined()
+  })
+
+  test("brings the layer a text range's pattern fill tiles", () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const sources = graph.addPage('Sources')
+    const source = graph.createNode('FRAME', sources.id)
+    const text = graph.createNode('TEXT', pageId, {
+      text: 'ab',
+      styleRuns: [
+        {
+          start: 1,
+          length: 1,
+          style: {
+            fills: [
+              {
+                type: 'PATTERN',
+                color: { r: 0, g: 0, b: 0, a: 1 },
+                opacity: 1,
+                visible: true,
+                sourceNodeId: source.id
+              }
+            ]
+          }
+        }
+      ]
+    })
+    const copy = extractExportGraph(graph, { scope: 'selection', nodeIds: [text.id] }).graph
+    expect(copy.getNode(source.id)).toBeDefined()
+  })
+})

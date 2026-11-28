@@ -9,7 +9,7 @@ type EmittedGraphEventName = keyof SceneGraphEvents
 /** The renderer surface graph events invalidate; tests provide a double of just this. */
 export type GraphEventRenderer = Pick<
   SkiaRenderer,
-  'invalidateVectorPath' | 'invalidateNodePicture' | 'forgetNode'
+  'invalidateVectorPath' | 'invalidateNodePicture' | 'forgetNode' | 'redrawPatternTargetsAround'
 > & {
   tiledScene: Pick<SkiaRenderer['tiledScene'], 'invalidateNode' | 'invalidateStructure'>
 }
@@ -163,6 +163,9 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
     invalidateBooleanAncestors(graph, options.getRenderers(), parent)
     for (const renderer of options.getRenderers()) {
       renderer.invalidateNodePicture(nodeId)
+      if (parent) {
+        renderer.redrawPatternTargetsAround(parent)
+      }
       renderer.tiledScene.invalidateStructure(nodeId, parent)
     }
   }

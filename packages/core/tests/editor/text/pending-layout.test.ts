@@ -8,6 +8,7 @@ import { setTextMeasurer, sizeAutoResizingText } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import type { GraphEventRenderer } from '#core/editor/graph-events'
 import {
   createPendingTextLayout,
   type PendingLayoutRenderer
@@ -348,7 +349,7 @@ function editorSetup() {
     invalidateNode: noop,
     invalidateStructure: noop
   }
-  const renderer: Partial<SkiaRenderer> = {
+  const renderer: GraphEventRenderer & Partial<SkiaRenderer> = {
     tiledScene: tiledScene as SkiaRenderer['tiledScene'],
     forgetNode: noop,
     invalidateVectorPath: noop,
@@ -358,6 +359,7 @@ function editorSetup() {
     whenFontsLoaded: () => Promise.resolve(),
     syncFontGeneration: noop,
     invalidateNodePicture: noop,
+    redrawPatternTargetsAround: noop,
     redrawNode: noop
   }
   editor.setCanvasKit({} as Parameters<typeof editor.setCanvasKit>[0], renderer as SkiaRenderer)

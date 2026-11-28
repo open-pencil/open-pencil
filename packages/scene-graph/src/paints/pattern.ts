@@ -1,3 +1,4 @@
+import type { SceneGraph } from '../graph'
 import type { Rect, Vector } from '../primitives'
 import type { Fill, SceneNode } from '../types'
 
@@ -42,4 +43,56 @@ export function patternTileLayout(
   }
 
   return { rect: { x: 0, y: 0, width, height }, scale, positions }
+}
+
+function addPatternSourceIds(paints: readonly Fill[], ids: string[]) {
+  for (const paint of paints) {
+    if (paint.type === 'PATTERN' && paint.sourceNodeId) {
+      ids.push(paint.sourceNodeId)
+    }
+  }
+}
+
+function patternSourceIds(node: SceneNode): string[] {
+  const ids: string[] = []
+  addPatternSourceIds(node.fills, ids)
+  addPatternSourceIds(node.strokes, ids)
+  for (const region of node.vectorNetwork?.regions ?? []) {
+    addPatternSourceIds(region.fills ?? [], ids)
+  }
+  for (const run of node.styleRuns) {
+    addPatternSourceIds(run.style.fills ?? [], ids)
+  }
+  return ids
+}
+
+function indexBySourceId(graph: SceneGraph): Map<string, SceneNode> {
+  const index = new Map<string, SceneNode>()
+  for (const node of graph.getAllNodes()) {
+    if (node.source.id && !index.has(node.source.id)) {
+      index.set(node.source.id, node)
+    }
+  }
+  return index
+}
+
+export function createPatternSourceLookup(
+  graph: SceneGraph
+): (sourceId: string) => SceneNode | null {
+  let bySourceId: Map<string, SceneNode> | null = null
+  return (sourceId) => {
+    const direct = graph.getNode(sourceId)
+    if (direct) {
+      return direct
+    }
+    bySourceId ??= indexBySourceId(graph)
+    return bySourceId.get(sourceId) ?? null
+  }
+}
+
+export function resolvedPatternSourceIds(
+  node: SceneNode,
+  findSource: (sourceId: string) => SceneNode | null
+): string[] {
+  return patternSourceIds(node).flatMap((sourceId) => findSource(sourceId)?.id ?? [])
 }

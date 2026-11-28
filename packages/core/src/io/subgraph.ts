@@ -1,5 +1,9 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { copyImages } from '@open-pencil/scene-graph/images'
+import {
+  createPatternSourceLookup,
+  resolvedPatternSourceIds
+} from '@open-pencil/scene-graph/paints'
 import {
   copyVariableTables,
   layerDependencies,
@@ -116,13 +120,23 @@ function depthOf(source: SceneGraph, node: ReturnType<SceneGraph['getNode']>): n
   return depth
 }
 
-function collectDescendants(source: SceneGraph, id: string, out: Set<string>) {
-  if (out.has(id)) return
+function collectDescendants(
+  source: SceneGraph,
+  id: string,
+  out: Set<string>,
+  expanded: Set<string>
+) {
+  if (expanded.has(id)) {
+    return
+  }
+  expanded.add(id)
   out.add(id)
   const node = source.getNode(id)
-  if (!node) return
+  if (!node) {
+    return
+  }
   for (const childId of node.childIds) {
-    collectDescendants(source, childId, out)
+    collectDescendants(source, childId, out, expanded)
   }
 }
 
@@ -149,25 +163,46 @@ function resolveInstanceComponentId(source: SceneGraph, componentId: string): st
 function collectComponentDependencies(
   source: SceneGraph,
   ids: Set<string>,
+  expanded: Set<string>,
   { componentSets = false }: ExtractOptions = {}
 ) {
+  const findPatternSource = createPatternSourceLookup(source)
   let changed = true
   while (changed) {
     changed = false
     for (const id of Array.from(ids)) {
       const node = source.getNode(id)
-      if (node?.type !== 'INSTANCE' || !node.componentId) continue
-      const componentId = resolveInstanceComponentId(source, node.componentId)
-      const component = source.getNode(componentId)
-      const set = component?.parentId ? source.getNode(component.parentId) : undefined
-      const dependency = componentSets && set?.type === 'COMPONENT_SET' ? set.id : componentId
-      if (ids.has(dependency)) continue
-      const before = ids.size
-      collectAncestors(source, dependency, ids)
-      collectDescendants(source, dependency, ids)
-      changed ||= ids.size !== before
+      if (!node) {
+        continue
+      }
+      for (const dependency of nodeDependencies(source, node, componentSets, findPatternSource)) {
+        if (expanded.has(dependency)) {
+          continue
+        }
+        const before = ids.size
+        collectAncestors(source, dependency, ids)
+        collectDescendants(source, dependency, ids, expanded)
+        changed ||= ids.size !== before
+      }
     }
   }
+}
+
+function nodeDependencies(
+  source: SceneGraph,
+  node: SceneNode,
+  componentSets: boolean,
+  findPatternSource: (sourceId: string) => SceneNode | null
+): string[] {
+  const patterns = resolvedPatternSourceIds(node, findPatternSource)
+  if (node.type !== 'INSTANCE' || !node.componentId) {
+    return patterns
+  }
+  const componentId = resolveInstanceComponentId(source, node.componentId)
+  const component = source.getNode(componentId)
+  const set = component?.parentId ? source.getNode(component.parentId) : undefined
+  const dependency = componentSets && set?.type === 'COMPONENT_SET' ? set.id : componentId
+  return [dependency, ...patterns]
 }
 
 export function findPageId(source: SceneGraph, nodeId: string): string | null {
@@ -208,6 +243,7 @@ function collectSelectionIds(
   options: ExtractOptions = {}
 ): Set<string> {
   const ids = new Set<string>([source.rootId])
+  const expanded = new Set<string>()
   const pageIds = new Set<string>()
 
   for (const nodeId of nodeIds) {
@@ -218,21 +254,22 @@ function collectSelectionIds(
       const ancestor = source.getNode(ancestorId)
       if (ancestor?.type === 'CANVAS') pageIds.add(ancestorId)
     }
-    collectDescendants(source, nodeId, ids)
+    collectDescendants(source, nodeId, ids, expanded)
   }
 
   for (const pageId of pageIds) {
     ids.add(pageId)
   }
 
-  collectComponentDependencies(source, ids, options)
+  collectComponentDependencies(source, ids, expanded, options)
   return ids
 }
 
 function pageNodeIds(source: SceneGraph, pageId: string): Set<string> {
   const ids = new Set<string>([source.rootId])
-  collectDescendants(source, pageId, ids)
-  collectComponentDependencies(source, ids)
+  const expanded = new Set<string>()
+  collectDescendants(source, pageId, ids, expanded)
+  collectComponentDependencies(source, ids, expanded)
   return ids
 }
 

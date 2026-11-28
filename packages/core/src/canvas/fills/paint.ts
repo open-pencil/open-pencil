@@ -3,41 +3,30 @@ import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import { drawnImageHash, imageFillMatrix } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { patternTileLayout, type PatternTileLayout } from '@open-pencil/scene-graph/paints'
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import { hasImageAdjustments, makeAdjustedImageShader } from '#core/canvas/images/adjustments'
 import { previewEdge } from '#core/canvas/images/previews'
-import {
-  drawOffOutputGrid,
-  landsOnOutputPixels,
-  makeImageShader
-} from '#core/canvas/images/sampling'
+import { landsOnOutputPixels, makeImageShader } from '#core/canvas/images/sampling'
+import { applyPatternFill } from '#core/canvas/patterns/fill'
 import { drawnColor } from '#core/canvas/renderer/colors'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawOutline, makeShapeWithTextFillCut, withNodeOutline } from '#core/canvas/shapes'
 
 import { makeDiamondGradient } from './gradients/diamond'
 
-interface PaintFillsOptions {
-  readonly patternStack?: Set<string>
-}
-
 export function paintFills(
   r: SkiaRenderer,
   fills: readonly Fill[],
   node: SceneNode,
   graph: SceneGraph,
-  draw: (fill: Fill) => void,
-  options: PaintFillsOptions = {}
+  draw: (fill: Fill) => void
 ): void {
   for (const fill of fills) {
-    if (!fill.visible) continue
-    const applied = options.patternStack
-      ? applyFill(r, fill, node, graph, options.patternStack)
-      : r.applyFill(fill, node, graph)
-    if (!applied) continue
+    if (!fill.visible || !r.applyFill(fill, node, graph)) {
+      continue
+    }
     r.fillPaint.setAlphaf(fill.opacity)
     const blends = fill.blendMode !== undefined && fill.blendMode !== 'NORMAL'
     if (blends) setPaintBlendMode(r, r.fillPaint, fill.blendMode)
@@ -51,8 +40,7 @@ export function drawVectorMultiStyleFills(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  graph: SceneGraph,
-  patternStack?: Set<string>
+  graph: SceneGraph
 ): boolean {
   const network = node.type === 'VECTOR' ? node.vectorNetwork : null
   if (!network || !hasRegionFills(network)) return false
@@ -64,14 +52,7 @@ export function drawVectorMultiStyleFills(
 
   for (const [index, region] of regions.entries()) {
     const path = paths[index]
-    paintFills(
-      r,
-      region.fills ?? node.fills,
-      node,
-      graph,
-      () => canvas.drawPath(path, r.fillPaint),
-      { patternStack }
-    )
+    paintFills(r, region.fills ?? node.fills, node, graph, () => canvas.drawPath(path, r.fillPaint))
   }
   return true
 }
@@ -111,15 +92,26 @@ export function drawNodeFill(r: SkiaRenderer, canvas: Canvas, node: SceneNode, f
   }
 }
 
+function drawSourceFills(r: SkiaRenderer, canvas: Canvas, source: SceneNode, graph: SceneGraph) {
+  if (drawVectorMultiStyleFills(r, canvas, source, graph)) {
+    return
+  }
+  paintFills(r, source.fills, source, graph, (fill) => drawNodeFill(r, canvas, source, fill))
+  if (source.type === 'TEXT') {
+    r.drawTextOwnPaints(canvas, source, graph)
+  }
+}
+
 export function applyFill(
   r: SkiaRenderer,
   fill: Fill,
   node: SceneNode,
-  graph: SceneGraph,
-  patternStack = new Set<string>()
+  graph: SceneGraph
 ): boolean {
   clearFillShader(r)
-  if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, patternStack)) return true
+  if (fill.type === 'PATTERN' && applyPatternFill(r, fill, node, graph, drawSourceFills)) {
+    return true
+  }
   return setFillPaint(r, fill, node, graph, r.fillPaint)
 }
 
@@ -174,88 +166,6 @@ function setFillPaint(
     return true
   }
   return false
-}
-
-function recordPatternSource(
-  r: SkiaRenderer,
-  source: SceneNode,
-  graph: SceneGraph,
-  layout: PatternTileLayout,
-  patternStack: Set<string>
-) {
-  const bounds = r.ck.LTRBRect(0, 0, layout.rect.width, layout.rect.height)
-  const recorder = new r.ck.PictureRecorder()
-  const canvas = recorder.beginRecording(bounds)
-
-  for (const position of layout.positions) {
-    canvas.save()
-    canvas.translate(position.x, position.y)
-    canvas.scale(layout.scale, layout.scale)
-    if (!drawVectorMultiStyleFills(r, canvas, source, graph, patternStack)) {
-      paintFills(
-        r,
-        source.fills,
-        source,
-        graph,
-        (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
-        { patternStack }
-      )
-      if (source.type === 'TEXT') r.drawTextOwnPaints(canvas, source, graph)
-    }
-    canvas.restore()
-  }
-
-  const picture = recorder.finishRecordingAsPicture()
-  recorder.delete()
-  return picture
-}
-
-function resolvePatternSource(graph: SceneGraph, sourceId: string): SceneNode | null {
-  const direct = graph.getNode(sourceId)
-  if (direct) return direct
-  for (const node of graph.getAllNodes()) {
-    if (node.source.id === sourceId) return node
-  }
-  return null
-}
-
-function applyPatternFill(
-  r: SkiaRenderer,
-  fill: Fill,
-  node: SceneNode,
-  graph: SceneGraph,
-  patternStack: Set<string>
-): boolean {
-  const sourceId = fill.sourceNodeId
-  if (!sourceId || sourceId === node.id || sourceId === node.source.id) return false
-  const source = resolvePatternSource(graph, sourceId)
-  if (!source || source.width <= 0 || source.height <= 0) return false
-  if (patternStack.has(source.id)) return false
-
-  patternStack.add(source.id)
-  const layout = patternTileLayout(source, fill)
-  let picture
-  try {
-    picture = drawOffOutputGrid(r, () =>
-      recordPatternSource(r, source, graph, layout, patternStack)
-    )
-  } finally {
-    patternStack.delete(source.id)
-  }
-  const tile = layout.rect
-  const tileRect = r.ck.LTRBRect(tile.x, tile.y, tile.x + tile.width, tile.y + tile.height)
-  const shader = picture.makeShader(
-    r.ck.TileMode.Repeat,
-    r.ck.TileMode.Repeat,
-    r.ck.FilterMode.Linear,
-    undefined,
-    tileRect
-  )
-  r.fillPaint.setShader(shader)
-  r.fillPaintShaded = true
-  shader.delete()
-  picture.delete()
-  return true
 }
 
 /**

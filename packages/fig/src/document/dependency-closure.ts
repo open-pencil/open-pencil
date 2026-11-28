@@ -3,7 +3,11 @@ import { appendAll } from '@open-pencil/std/arrays'
 
 import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source-index'
 import { isComponentSetRecord } from '../node-change/convert'
-import { componentDependencies, slotContentDependencies } from './component/dependencies'
+import {
+  componentDependencies,
+  patternSourceDependencies,
+  slotContentDependencies
+} from './component/dependencies'
 import { createResourceResolver } from './resource-reference'
 import { styleDependencies } from './style-dependencies'
 
@@ -138,6 +142,9 @@ export function collectSceneDependencies(
     for (const component of components) componentReferences.add(component)
     const slotContent = slotContentDependencies(record)
     for (const content of slotContent) slotContentReferences.add(content)
+    const patternSources = [...patternSourceDependencies(record)].filter((source) =>
+      availableIds.has(source)
+    )
     // A page can hold more children than an engine takes arguments, so none are spread.
     for (const child of children.get(id) ?? []) {
       const childId = idOf(child)
@@ -147,7 +154,8 @@ export function collectSceneDependencies(
       setVariants(node),
       styleDependencies(record, resolveReference, availableIds),
       components,
-      slotContent
+      slotContent,
+      patternSources
     ])
       for (const dependencyId of dependency) pending.push(dependencyId)
   }

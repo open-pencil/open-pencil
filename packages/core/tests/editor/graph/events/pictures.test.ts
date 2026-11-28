@@ -12,6 +12,7 @@ function createRenderer() {
       paths.push(nodeId)
     },
     forgetNode: () => undefined,
+    redrawPatternTargetsAround: () => undefined,
     invalidateNodePicture: (nodeId: string) => {
       invalidated.push(nodeId)
     },
