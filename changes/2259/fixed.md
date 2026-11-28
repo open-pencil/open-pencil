@@ -1,0 +1,1 @@
+- Icon overrides set on a nested instance swap the icon inside it instead of falling back to the component's default icon.

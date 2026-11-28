@@ -166,7 +166,7 @@ function addIcons(
 }
 
 function collect(node: PenOverride, assets: Found) {
-  if (node.icon && (node.type === 'icon' || node.type === undefined)) {
+  if (node.icon && (node.type === 'icon' || node.type === 'ref' || node.type === undefined)) {
     const icons = possibleValues(node.icon, assets.doc)
     const weights = possibleWeights(node.weight, assets.doc)
     for (const weight of weights) assets.weights.add(weight)

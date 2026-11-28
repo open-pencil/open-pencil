@@ -265,4 +265,183 @@ describe('parsePenFile — icons in components', () => {
     expect(instanceMainComponent(graph, symbol)?.name).toBe('lucide/moon/16x16')
     expect(symbol.visible).toBe(false)
   })
+
+  // An icon an override sets on a nested instance belongs to the icon layer inside it, so
+  // each button of a theme switcher shows its swapped icon rather than the default (#2171).
+  test('swaps the icons descendants overrides set on nested icon-button instances', () => {
+    const iconButton: PenNode = {
+      id: 'IconButton',
+      type: 'frame',
+      reusable: true,
+      children: [
+        {
+          id: 'glyph',
+          type: 'icon',
+          library: 'lucide',
+          icon: 'plus',
+          width: 16,
+          height: 16,
+          fill: '#333333'
+        }
+      ]
+    }
+    const row: PenNode = {
+      id: 'Row',
+      type: 'frame',
+      reusable: true,
+      layout: 'horizontal',
+      children: [
+        { id: 'sun-button', type: 'ref', ref: 'IconButton' },
+        { id: 'moon-button', type: 'ref', ref: 'IconButton' },
+        { id: 'monitor-button', type: 'ref', ref: 'IconButton' },
+        { id: 'palette-button', type: 'ref', ref: 'IconButton' }
+      ]
+    }
+    const graph = parseDocument(
+      [
+        iconButton,
+        row,
+        {
+          id: 'switcher',
+          type: 'ref',
+          ref: 'Row',
+          descendants: {
+            'sun-button': { icon: 'sun' },
+            'moon-button': { icon: 'moon' },
+            'monitor-button': { icon: 'monitor' },
+            'palette-button': { icon: 'palette' }
+          }
+        }
+      ],
+      {},
+      { icons }
+    )
+    const glyphOf = (instanceId: string, index: number): SceneNode => {
+      const button = expectDefined(graph.getChildren(instanceId)[index], `button ${index}`)
+      return expectDefined(
+        graph.getChildren(button.id).find((node) => node.type === 'INSTANCE'),
+        `glyph in button ${index}`
+      )
+    }
+    for (const [index, icon] of [
+      [0, 'lucide/sun/16x16'],
+      [1, 'lucide/moon/16x16'],
+      [2, 'lucide/monitor/16x16'],
+      [3, 'lucide/palette/16x16']
+    ] as const) {
+      expect(instanceMainComponent(graph, glyphOf('switcher', index))?.name).toBe(icon)
+    }
+    // The component's own buttons still show its default icon.
+    expect(instanceMainComponent(graph, glyphOf('Row', 0))?.name).toBe('lucide/plus/16x16')
+  })
+
+  test('swaps the icons a further-out instance sets on nested icon-button instances', () => {
+    const iconButton: PenNode = {
+      id: 'IconButton',
+      type: 'frame',
+      reusable: true,
+      children: [
+        {
+          id: 'glyph',
+          type: 'icon',
+          library: 'lucide',
+          icon: 'plus',
+          width: 16,
+          height: 16
+        }
+      ]
+    }
+    const row: PenNode = {
+      id: 'Row',
+      type: 'frame',
+      reusable: true,
+      layout: 'horizontal',
+      children: [
+        { id: 'sun-button', type: 'ref', ref: 'IconButton' },
+        { id: 'moon-button', type: 'ref', ref: 'IconButton' }
+      ]
+    }
+    const sidebar: PenNode = {
+      id: 'Sidebar',
+      type: 'frame',
+      reusable: true,
+      children: [{ id: 'switcher', type: 'ref', ref: 'Row' }]
+    }
+    const graph = parseDocument(
+      [
+        iconButton,
+        row,
+        sidebar,
+        {
+          id: 'sidebar-inst',
+          type: 'ref',
+          ref: 'Sidebar',
+          descendants: {
+            'switcher/sun-button': { icon: 'sun' },
+            'switcher/moon-button': { icon: 'moon' }
+          }
+        }
+      ],
+      {},
+      { icons }
+    )
+    const switcher = expectDefined(graph.getChildren('sidebar-inst')[0], 'switcher copy')
+    for (const [index, icon] of [
+      [0, 'lucide/sun/16x16'],
+      [1, 'lucide/moon/16x16']
+    ] as const) {
+      const button = expectDefined(graph.getChildren(switcher.id)[index], `button ${index}`)
+      const glyph = expectDefined(
+        graph.getChildren(button.id).find((node) => node.type === 'INSTANCE'),
+        `glyph in button ${index}`
+      )
+      expect(instanceMainComponent(graph, glyph)?.name).toBe(icon)
+    }
+  })
+
+  test('swaps the icon a ref sets on its own icon-button instance', () => {
+    const iconButton: PenNode = {
+      id: 'IconButton',
+      type: 'frame',
+      reusable: true,
+      children: [
+        {
+          id: 'glyph',
+          type: 'icon',
+          library: 'lucide',
+          icon: 'plus',
+          width: 16,
+          height: 16
+        }
+      ]
+    }
+    const row: PenNode = {
+      id: 'Row',
+      type: 'frame',
+      reusable: true,
+      layout: 'horizontal',
+      children: [
+        { id: 'sun-button', type: 'ref', ref: 'IconButton', icon: 'sun' },
+        { id: 'moon-button', type: 'ref', ref: 'IconButton', icon: 'moon' }
+      ]
+    }
+    const graph = parseDocument(
+      [iconButton, row, { id: 'switcher', type: 'ref', ref: 'Row' }],
+      {},
+      { icons }
+    )
+    for (const [instanceId, index, icon] of [
+      ['Row', 0, 'lucide/sun/16x16'],
+      ['Row', 1, 'lucide/moon/16x16'],
+      ['switcher', 0, 'lucide/sun/16x16'],
+      ['switcher', 1, 'lucide/moon/16x16']
+    ] as const) {
+      const button = expectDefined(graph.getChildren(instanceId)[index], `button ${index}`)
+      const glyph = expectDefined(
+        graph.getChildren(button.id).find((node) => node.type === 'INSTANCE'),
+        `glyph in button ${index}`
+      )
+      expect(instanceMainComponent(graph, glyph)?.name).toBe(icon)
+    }
+  })
 })

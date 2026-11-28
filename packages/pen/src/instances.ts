@@ -226,6 +226,33 @@ function recordOwnFields(graph: SceneGraph, instance: SceneNode, ref: PenNode): 
   recordInstanceOverride(graph, instance.id, [...changed, ...fieldsSetBy(ref)])
 }
 
+/**
+ * An `icon`, `library`, or `weight` an override sets on a layer that is not itself an icon
+ * belongs to the icon layers it holds, as an icon-button instance's icon does. Apply it to
+ * each of those, as an override naming them would, so a nested instance's icon wins over its
+ * component's default instead of falling back to it (#2171).
+ */
+function applyIconToNestedIcons(build: Build, target: SceneNode, override: PenOverride): void {
+  const { graph, effective } = build
+  if (
+    override.icon === undefined &&
+    override.library === undefined &&
+    override.weight === undefined
+  ) {
+    return
+  }
+  if (effective.get(target.id)?.type === 'icon') return
+  const icon: PenOverride = {}
+  if (override.icon !== undefined) icon.icon = override.icon
+  if (override.library !== undefined) icon.library = override.library
+  if (override.weight !== undefined) icon.weight = override.weight
+  if (override.theme !== undefined) icon.theme = override.theme
+  for (const child of graph.getChildren(target.id)) {
+    if (effective.get(child.id)?.type !== 'icon') continue
+    overrideLayer(build, child, icon)
+  }
+}
+
 function overrideLayer(build: Build, target: SceneNode, override: PenOverride): void {
   const { graph, effective } = build
   const base = effective.get(target.id) ?? { type: 'frame', id: target.id }
@@ -245,6 +272,7 @@ function overrideLayer(build: Build, target: SceneNode, override: PenOverride): 
       build.replaced.add(target.id)
     }
   })
+  applyIconToNestedIcons(build, target, override)
 }
 
 /**
@@ -386,6 +414,10 @@ export function populateInstances(build: Build): void {
     populateInstanceChildren(graph, instance.id, component.id)
     recordOwnFields(graph, instance, ref)
     inheritCopyFields(build, instance, descendantThemes(build, instance, ref.descendants))
+    // An icon the ref sets on the instance itself, rather than on the icon layer inside it,
+    // belongs to that layer, as a descendants override's does; apply it before those
+    // overrides, so one naming the layer itself still wins.
+    applyIconToNestedIcons(build, instance, ref)
     applyDescendants(build, instance, ref.descendants, populate)
     // pen.dev draws a ref's own children in place of its component's, whether or not the
     // component declares a `slot`; like an override's children, they detach the instance.
