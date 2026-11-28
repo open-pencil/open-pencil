@@ -1,0 +1,1 @@
+- Pattern fills opened from `.fig` files tile everything their source layer draws, children and strokes included, also when the source sits on Figma's internal canvas or the layer is exported alone (#2425).
