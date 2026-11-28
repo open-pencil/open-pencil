@@ -18,7 +18,11 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import fillPickerTheme from '@/theme/fill-picker'
 
-const { fill } = defineProps<{ fill: Fill }>()
+const { fill, types = true } = defineProps<{
+  fill: Fill
+  /** Whether it offers the gradient's type; a shader's stops have no type of their own. */
+  types?: boolean
+}>()
 const emit = defineEmits<{ update: [fill: Fill] }>()
 const activeStop = defineModel<number>('activeStop')
 const panels = useMessages('panels')
@@ -43,7 +47,7 @@ function listStopClass(active: boolean) {
     v-slot="root"
   >
     <div>
-      <div class="mb-2 w-28">
+      <div v-if="types" class="mb-2 w-28">
         <AppSelect
           :model-value="root.subtype"
           :options="root.subtypes"
@@ -80,8 +84,11 @@ function listStopClass(active: boolean) {
       </GradientEditorBar>
 
       <div class="mb-2">
-        <div class="mb-1 flex items-center justify-between">
+        <div class="mb-1 flex items-center">
           <span class="text-2xs text-muted">{{ panels.stops }}</span>
+          <span class="ms-auto" />
+          <!-- Room for what the gradient belongs to, as a shader's way back to its own colors. -->
+          <slot name="actions" />
           <IconButton
             :label="panels.addStop"
             data-test-id="fill-picker-add-stop"

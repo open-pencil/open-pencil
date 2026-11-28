@@ -121,6 +121,8 @@
   "shaderNeedsWebGPU": "Dieser Browser hat kein WebGPU, daher zeigen Shader ihr gespeichertes Bild.",
   "stops": "Stopps",
   "addStop": "Stopp hinzufügen",
+  "addShaderStops": "Farbstopps verwenden",
+  "removeShaderStops": "Eigene Farben des Effekts verwenden",
   "alignLeft": "Links ausrichten",
   "alignCenter": "Zentrieren",
   "alignRight": "Rechts ausrichten",

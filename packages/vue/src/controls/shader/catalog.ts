@@ -8,7 +8,9 @@ export type ShaderPropControl = { key: string; label: string; group: string; def
   | { kind: 'checkbox' }
   | { kind: 'position' }
   | { kind: 'text' }
-  /** Gradient stops, shapes, uploads, and the like, edited in the preset's JSON. */
+  /** A gradient's color stops, edited as a gradient fill's are; set, they replace its group's colors. */
+  | { kind: 'stops' }
+  /** Shapes, uploads, lists, and the like, edited in the preset's JSON. */
   | { kind: 'other' }
 )
 
@@ -51,6 +53,7 @@ const plainUISchema = v.object({
   label: labelSchema,
   group: v.optional(v.string())
 })
+const stopsUISchema = v.object({ type: uiTypes('gradient-stops'), group: v.optional(v.string()) })
 const propMetadataSchema = v.object({
   ui: v.optional(v.unknown()),
   default: v.optional(v.unknown())
@@ -101,6 +104,9 @@ function control(key: string, metadata: unknown): ShaderPropControl | null {
       kind
     }
   }
+  const stops = v.safeParse(stopsUISchema, ui)
+  if (stops.success)
+    return { ...base, label: words(key), group: stops.output.group ?? '', kind: 'stops' }
   return { ...base, label: words(key), group: '', kind: 'other' }
 }
 
