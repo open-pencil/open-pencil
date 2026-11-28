@@ -7,6 +7,7 @@ import { createDocumentReader } from '#fig/document/read'
 import { indexRecords } from '#fig/instance-overrides/source-index'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('reads pages independently through one index with cross-page component expansion', () => {
@@ -136,4 +137,97 @@ test('reads a saved NaN or Infinity as a missing value, except where Figma saves
     opacity: 0.5
   })
   expect(card?.strokes.map((stroke) => stroke.weight)).toEqual([1])
+})
+
+test('reads an empty boolean group with NaN size and transform as a box of no size', async () => {
+  const nanTransform = {
+    m00: Number.NaN,
+    m01: Number.NaN,
+    m02: Number.NaN,
+    m10: Number.NaN,
+    m11: Number.NaN,
+    m12: Number.NaN
+  }
+  const records: NodeChange[] = [
+    { guid: guid(1), type: 'DOCUMENT', phase: 'CREATED' },
+    {
+      guid: guid(2),
+      type: 'CANVAS',
+      phase: 'CREATED',
+      parentIndex: { guid: guid(1), position: 'a' }
+    },
+    {
+      guid: guid(3),
+      type: 'SYMBOL',
+      phase: 'CREATED',
+      name: 'Badge',
+      parentIndex: { guid: guid(2), position: 'a' },
+      size: { x: 40, y: 30 },
+      transform: { m00: 1, m01: 0, m02: 10, m10: 0, m11: 1, m12: 20 }
+    },
+    {
+      guid: guid(4),
+      type: 'BOOLEAN_OPERATION',
+      phase: 'CREATED',
+      name: 'Empty',
+      parentIndex: { guid: guid(3), position: 'a' },
+      size: { x: Number.NaN, y: Number.NaN },
+      transform: nanTransform
+    },
+    {
+      guid: guid(5),
+      type: 'INSTANCE',
+      phase: 'CREATED',
+      name: 'Badge copy',
+      parentIndex: { guid: guid(2), position: 'b' },
+      size: { x: 40, y: 30 },
+      transform: { m00: 1, m01: 0, m02: 100, m10: 0, m11: 1, m12: 20 },
+      symbolData: { symbolID: guid(3) }
+    }
+  ]
+  const { graph } = materializeFigArchive(await figArchiveOf(records), {})
+  const empties = [...graph.nodes.values()].filter((node) => node.name === 'Empty')
+  expect(empties).toHaveLength(2)
+  for (const empty of empties) {
+    expect({
+      x: empty.x,
+      y: empty.y,
+      width: empty.width,
+      height: empty.height,
+      rotation: empty.rotation
+    }).toEqual({ x: 0, y: 0, width: 0, height: 0, rotation: 0 })
+  }
+})
+
+test('keeps the finite position of a layer whose transform has a NaN rotation', async () => {
+  const records: NodeChange[] = [
+    { guid: guid(1), type: 'DOCUMENT', phase: 'CREATED' },
+    {
+      guid: guid(2),
+      type: 'CANVAS',
+      phase: 'CREATED',
+      parentIndex: { guid: guid(1), position: 'a' }
+    },
+    {
+      guid: guid(3),
+      type: 'RECTANGLE',
+      phase: 'CREATED',
+      name: 'Tilted',
+      parentIndex: { guid: guid(2), position: 'a' },
+      size: { x: 40, y: 30 },
+      transform: { m00: Number.NaN, m01: Number.NaN, m02: 70, m10: Number.NaN, m11: 1, m12: 80 }
+    }
+  ]
+  const { graph } = materializeFigArchive(await figArchiveOf(records), {})
+  const tilted = expectDefined(
+    [...graph.nodes.values()].find((node) => node.name === 'Tilted'),
+    'tilted layer'
+  )
+  expect({
+    x: tilted.x,
+    y: tilted.y,
+    width: tilted.width,
+    height: tilted.height,
+    rotation: tilted.rotation
+  }).toEqual({ x: 70, y: 80, width: 40, height: 30, rotation: 0 })
 })

@@ -146,6 +146,31 @@ describe('content bounds', () => {
     close(computeContentBounds(graph, [frame.id]), { minX: 0, minY: 0, maxX: 100, maxY: 100 })
   })
 
+  test('leave out a page-level layer placed at NaN', () => {
+    const { graph, pageId } = emptyPage()
+    const kept = graph.createNode('RECTANGLE', pageId, { x: 100, y: 200, width: 50, height: 60 })
+    const broken = graph.createNode('RECTANGLE', pageId, { x: 0, y: 0, width: 10, height: 10 })
+    graph.updateNode(broken.id, { x: Number.NaN })
+
+    expect(computeContentBounds(graph, [kept.id, broken.id])).toEqual(plain)
+    expect(computeContentBounds(graph, [broken.id])).toBeNull()
+  })
+
+  test('keep the children of a container whose own size is NaN', () => {
+    const { graph, pageId } = emptyPage()
+    const frame = graph.createNode('FRAME', pageId, {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      clipsContent: false
+    })
+    graph.createNode('RECTANGLE', frame.id, { x: 100, y: 200, width: 50, height: 60 })
+    graph.updateNode(frame.id, { width: Number.NaN })
+
+    expect(computeContentBounds(graph, [frame.id])).toEqual(plain)
+  })
+
   test('nothing visible has no bounds', () => {
     const { graph } = emptyPage()
     expect(computeContentBounds(graph, [])).toBeNull()

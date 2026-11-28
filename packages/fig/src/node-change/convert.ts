@@ -254,20 +254,38 @@ export function mapArcData(data?: Partial<ArcData>): ArcData | null {
   }
 }
 
+const UNSIZED_LAYER_SIDE = 100
+
+function sizeAxis(value: number | undefined): number {
+  if (value === undefined) {
+    return UNSIZED_LAYER_SIDE
+  }
+  return Number.isFinite(value) ? value : 0
+}
+
+function finiteOrZero(value: number | undefined): number {
+  return value !== undefined && Number.isFinite(value) ? value : 0
+}
+
+function hasFiniteLinearPart(transform: NonNullable<NodeChange['transform']>): boolean {
+  return [transform.m00, transform.m01, transform.m10, transform.m11].every(Number.isFinite)
+}
+
 export function convertFigmaTransformProps(
   nc: NodeChange
 ): Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'> {
-  const width = nc.size?.x ?? 100
-  const height = nc.size?.y ?? 100
+  const width = sizeAxis(nc.size?.x)
+  const height = sizeAxis(nc.size?.y)
+  const transform = nc.transform
 
-  let x = nc.transform?.m02 ?? 0
-  let y = nc.transform?.m12 ?? 0
+  let x = finiteOrZero(transform?.m02)
+  let y = finiteOrZero(transform?.m12)
   let rotation = 0
   let flipX = false
   const type = mapNodeType(nc.type)
   // Documents and variables are not placed; every layer type is.
-  if (nc.transform && type !== 'DOCUMENT' && type !== 'VARIABLE') {
-    const t = nc.transform
+  if (transform && hasFiniteLinearPart(transform) && type !== 'DOCUMENT' && type !== 'VARIABLE') {
+    const t = transform
     const det = t.m00 * t.m11 - t.m01 * t.m10
     if (det < 0) flipX = true
     rotation = Math.atan2(t.m10, flipX ? t.m11 : t.m00) * (180 / Math.PI)
@@ -285,8 +303,8 @@ export function convertFigmaTransformProps(
       flipX,
       flipY: false
     })
-    x = t.m02 - placed[2]
-    y = t.m12 - placed[5]
+    x -= placed[2]
+    y -= placed[5]
   }
 
   return { x, y, width, height, rotation, flipX, flipY: false }

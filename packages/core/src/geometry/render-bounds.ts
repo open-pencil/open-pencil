@@ -38,6 +38,19 @@ import type { RotationPreview } from './types'
  */
 export type EffectReach = 'figma' | 'drawn'
 
+export function isFiniteVisualBounds(bounds: VisualBounds): boolean {
+  return (
+    Number.isFinite(bounds.minX) &&
+    Number.isFinite(bounds.minY) &&
+    Number.isFinite(bounds.maxX) &&
+    Number.isFinite(bounds.maxY)
+  )
+}
+
+function finiteOrNull(bounds: VisualBounds | null): VisualBounds | null {
+  return bounds && isFiniteVisualBounds(bounds) ? bounds : null
+}
+
 /**
  * What a subtree draws in each node's own axes, already measured: a walk with `drawn` reach takes
  * a child's from here, or measures it once and keeps it, and maps it into its parent's axes. A
@@ -425,7 +438,7 @@ function drawnSubtree(
 ): VisualBounds | null {
   const { reach } = options
   const own = ownPaint(node, reach)
-  let content = own && mapVisualBounds(matrix, own)
+  let content = finiteOrNull(own && mapVisualBounds(matrix, own))
   if (!(reach === 'drawn' && clipsChildren(node))) {
     const box = clipsChildren(node)
       ? mapVisualBounds(matrix, { minX: 0, minY: 0, maxX: node.width, maxY: node.height })
@@ -438,7 +451,7 @@ function drawnSubtree(
     }
   }
   const drawn = content && withEffects(node, content, matrix, reach)
-  return clipped(withBox(node, drawn, matrix, reach), clip)
+  return finiteOrNull(clipped(withBox(node, drawn, matrix, reach), clip))
 }
 
 function childSubtree(
@@ -466,7 +479,7 @@ function measuredSubtree(
     own = drawnSubtree(graph, node, Matrix.identity(), null, options)
     measured.set(node, own)
   }
-  return own && mapVisualBounds(matrix, own)
+  return finiteOrNull(own && mapVisualBounds(matrix, own))
 }
 
 /**
@@ -481,7 +494,7 @@ function withBox(
 ): VisualBounds | null {
   if (reach === 'drawn' || !PAINTING_CONTAINERS.has(node.type)) return bounds
   const box = mapVisualBounds(matrix, { minX: 0, minY: 0, maxX: node.width, maxY: node.height })
-  return unionVisualBounds(bounds, box)
+  return unionVisualBounds(bounds, finiteOrNull(box))
 }
 
 /**

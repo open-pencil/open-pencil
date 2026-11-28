@@ -1,0 +1,1 @@
+- A `.fig` file with an empty boolean group no longer opens as a blank canvas (#2374).

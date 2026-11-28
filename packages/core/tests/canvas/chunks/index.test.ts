@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { noise, texture } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { RenderChunkIndex } from '#core/canvas/renderer/chunks'
 
@@ -238,6 +239,66 @@ describe('render chunk spatial index', () => {
     expect(stats.chunksBuilt).toBe(1)
     expect(stats.maximumChunkNodes).toBe(21)
     expect(index.size()).toBe(1)
+    index.dispose()
+  })
+
+  test('keeps finding the layers beside one whose box is NaN', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'default page')
+    const box = { width: 50, height: 50 }
+    const left = graph.createNode('FRAME', page.id, { x: 0, y: 0, ...box })
+    const holder = graph.createNode('FRAME', page.id, { x: 100, y: 0, ...box })
+    graph.createNode('RECTANGLE', holder.id, { x: 10, y: 10, width: 10, height: 10 })
+    const broken = graph.createNode('BOOLEAN_OPERATION', holder.id, box)
+    const loose = graph.createNode('RECTANGLE', page.id, { x: 200, y: 0, ...box })
+    graph.updateNode(broken.id, { x: Number.NaN, y: Number.NaN, width: Number.NaN })
+    graph.updateNode(loose.id, { x: Number.NaN })
+
+    const { index } = RenderChunkIndex.build(graph, page.id)
+    const found = (minX: number) =>
+      index.search({ minX, minY: 0, maxX: minX + 50, maxY: 50 }).map((chunk) => chunk.nodeId)
+
+    expect(Object.values(index.bounds() ?? {}).every(Number.isFinite)).toBe(true)
+    expect(found(0)).toEqual([left.id])
+    expect(found(100)).toEqual([holder.id])
+    expect(index.getChunksForNode(loose.id)).toEqual([])
+
+    graph.updateNode(holder.id, { x: 120 })
+    index.updateNode(graph, holder.id)
+    expect(found(120)).toEqual([holder.id])
+    index.dispose()
+  })
+
+  test('keeps the last finite bounds of a layer that turns NaN after the build', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'default page')
+    const left = graph.createNode('FRAME', page.id, { x: 0, y: 0, width: 50, height: 50 })
+    const right = graph.createNode('FRAME', page.id, { x: 100, y: 0, width: 50, height: 50 })
+    const { index } = RenderChunkIndex.build(graph, page.id)
+
+    graph.updateNode(right.id, { x: Number.NaN })
+    expect(index.updateNode(graph, right.id)).toBe(0)
+
+    expect(index.bounds()).toEqual({ minX: 0, minY: 0, maxX: 150, maxY: 50 })
+    expect(index.search({ minX: 0, minY: 0, maxX: 50, maxY: 50 }).map((c) => c.nodeId)).toEqual([
+      left.id
+    ])
+    index.dispose()
+  })
+
+  test('leaves a NaN layer out when it rebuilds a split frame', () => {
+    const { graph, pageId } = graphWithNodes(1_000)
+    const frame = expectDefined(graph.getChildren(pageId)[0], 'frame')
+    const { index } = RenderChunkIndex.build(graph, pageId)
+    const broken = graph.createNode('RECTANGLE', frame.id, { x: 0, y: 0, width: 10, height: 10 })
+    graph.updateNode(broken.id, { y: Number.NaN })
+
+    const changed = index.rebuildFrom(graph, pageId, broken.id)
+
+    expect(changed?.added.map((chunk) => chunk.nodeId) ?? []).not.toContain(broken.id)
+    expect(index.getChunksForNode(broken.id)).toEqual([])
+    expect(Object.values(index.bounds() ?? {}).every(Number.isFinite)).toBe(true)
+    expect(index.search({ minX: 1_000, minY: -1, maxX: 1_010, maxY: 11 })).toHaveLength(2)
     index.dispose()
   })
 })
