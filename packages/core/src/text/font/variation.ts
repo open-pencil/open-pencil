@@ -106,6 +106,19 @@ export function fontFaceName(data: ArrayBuffer): FontFamilyStyle | null {
   return family ? { family, style: style ?? 'Regular' } : null
 }
 
+/**
+ * The family and style a font file names itself with in its legacy names alone, which group at
+ * most four styles per family: Windows lists a face beyond regular, bold, and italic under such
+ * a family of its own, as "Segoe UI Semibold" with the style "Regular".
+ */
+export function fontLegacyFaceName(data: ArrayBuffer): FontFamilyStyle | null {
+  const view = new DataView(data)
+  const name = sfntTable(view, 'name')
+  const family = name && fontName(view, name, FAMILY_NAME)
+  if (!name || !family) return null
+  return { family, style: fontName(view, name, SUBFAMILY_NAME) ?? 'Regular' }
+}
+
 /** A variation axis of a font: its tag, its range and default, and the name the font gives it. */
 export interface FontAxis {
   tag: string

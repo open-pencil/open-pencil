@@ -6,3 +6,10 @@ import { fontManager } from '@open-pencil/core/text'
  * it on with `setOnlineFontProviders`, stubs `setWebFontFetch`, and restores what it found.
  */
 fontManager.setOnlineFontProviders({})
+
+/**
+ * Nor does the CLI read the machine's installed fonts, in the tests or the CLI they run, so a
+ * document draws in the same fonts on every machine. A test that needs installed fonts names
+ * its own folders in `OPENPENCIL_FONT_DIRS`.
+ */
+process.env.OPENPENCIL_FONT_DIRS = ''

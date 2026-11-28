@@ -27,6 +27,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
 import type { RequestedPage } from '#cli/app/target'
+import { installSystemFonts } from '#cli/fonts/system'
 import { printError } from '#cli/format'
 
 /** The document formats the CLI reads and writes, with HTML read by the HTML engine. */
@@ -74,6 +75,7 @@ function documentImportReader(filePath: string) {
 }
 
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
+  installSystemFonts()
   const bytes = new Uint8Array(await readFile(filePath))
   // A format laid out as it is read places its layers by their text's size, which is measured
   // as an export draws it rather than estimated.
