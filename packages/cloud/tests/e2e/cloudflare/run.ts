@@ -40,6 +40,7 @@ mode = "self-hosted"
 public_url = "${environment.CLOUD_WORKER_URL}"
 indexing = "deny"
 trusted_origins = []
+agent_pairing = true
 
 [database]
 

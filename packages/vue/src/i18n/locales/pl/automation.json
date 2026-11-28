@@ -49,6 +49,18 @@
   "statusError": "Błąd",
   "localServer": "Serwer lokalny",
   "localServerDesktopOnly": "Lokalny serwer MCP działa z aplikacją desktopową OpenPencil. W przeglądarce użyj WebMCP poniżej.",
+  "agentPairing": "Agent w tej przeglądarce",
+  "agentPairingDescription": "Pozwól agentowi programistycznemu, takiemu jak Claude Code, Codex czy Cursor, projektować w OpenPencil w tej przeglądarce, bez konta. Pracuje na otwartych dokumentach, a ty obserwujesz jego pracę.",
+  "agentPairingConnect": "Połącz agenta",
+  "agentPairingDisconnect": "Rozłącz",
+  "agentPairingConnecting": "Łączenie…",
+  "agentPairingWaiting": "Czekam na twojego agenta",
+  "agentPairingWorking": "Twój agent pracuje w tej przeglądarce",
+  "agentPairingFailed": "OpenPencil Cloud odrzucił połączenie. Połącz ponownie.",
+  "agentPairingInstructions": "Wklej do swojego agenta",
+  "agentPairingClaudeCode": "Albo uruchom w terminalu, dla Claude Code",
+  "agentPairingConfig": "Albo dodaj do konfiguracji MCP, np. w Cursorze",
+  "agentPairingNote": "Każdy, kto ma to połączenie, może zmieniać projekty otwarte w tej przeglądarce. Wstrzymuje się, gdy OpenPencil jest zamknięty, i kończy się, gdy się rozłączysz. Zmiany w lokalnych projektach zostają na tym urządzeniu, dopóki ich nie zapiszesz; zmiany w dokumentach Cloud od razu widzą wszyscy, którzy w nich pracują.",
   "webmcpDescription": "Pozwól agentom przeglądarki korzystać z tego dokumentu bezpośrednio, bez lokalnego serwera MCP ani tokena Bearer. Ustawienia serwera lokalnego nie mają tu zastosowania.",
   "webmcpFailed": "Nie udało się uruchomić WebMCP",
   "browserAccess": "Dostęp agentów przeglądarki",
@@ -85,5 +97,6 @@
   "mcpFailureUnknown": "Nie udało się uruchomić serwera MCP",
   "mcpFailureUnknownHint": "Uruchom go ponownie lub sprawdź szczegóły techniczne poniżej.",
   "mcpFailureDetails": "Szczegóły",
-  "mcpFailureCopy": "Kopiuj szczegóły"
+  "mcpFailureCopy": "Kopiuj szczegóły",
+  "agentPairingSignIn": "Dodaj do agenta, dla Claude Code, a potem zaloguj się z niego i wybierz użycie bez konta"
 }

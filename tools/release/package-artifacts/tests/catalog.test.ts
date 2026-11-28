@@ -71,6 +71,20 @@ describe('orderPackagesByDependencies', () => {
 })
 
 describe('groupPackagesByDependencyLevel', () => {
+  test('builds a package after what it needs only to build', () => {
+    const levels = groupPackagesByDependencyLevel([
+      {
+        directory: 'packages/server',
+        manifest: { name: 'server', version: '1.0.0', devDependencies: { catalog: 'workspace:*' } }
+      },
+      pkg('catalog')
+    ])
+    expect(levels.map((level) => level.map(({ manifest }) => manifest.name))).toEqual([
+      ['catalog'],
+      ['server']
+    ])
+  })
+
   test('puts each package one level after its deepest internal dependency', () => {
     const levels = groupPackagesByDependencyLevel([
       pkg('cli', { app: 'workspace:*', base: 'workspace:*' }),

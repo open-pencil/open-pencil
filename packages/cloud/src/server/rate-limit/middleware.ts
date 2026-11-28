@@ -21,8 +21,13 @@ export type RateLimitPolicy = {
  */
 export type ResourceRateLimitPolicy = RateLimitPolicy & { actorLimit: number }
 
+/** A budget for what the server itself requests, with `siteLimit` capping it per address it asks. */
+export type SiteRateLimitPolicy = RateLimitPolicy & { siteLimit: number }
+
 export const CLOUD_RATE_LIMITS = {
   publicCapability: { namespace: 'public-capability', windowMs: 60_000, limit: 30 },
+  // What one address's paired agents call: an agent at work makes a call every second or so.
+  agentPairing: { namespace: 'agent-pairing', windowMs: 60_000, limit: 300 },
   // Everything one visitor reads of the community gallery, across its paths: a page of thumbnails
   // fits, made-up addresses do not each get a fresh budget.
   communityRead: { namespace: 'community-read', windowMs: 60_000, limit: 300 },
@@ -49,9 +54,17 @@ export const CLOUD_RATE_LIMITS = {
   authenticatedMutation: { namespace: 'authenticated-mutation', windowMs: 60_000, limit: 120 },
   servicesToken: { namespace: 'services-token', windowMs: 60_000, limit: 30 },
   billingToken: { namespace: 'billing-token', windowMs: 60_000, limit: 30 },
+  // Fetches of apps' metadata documents, for everyone together and per site that serves them.
+  clientMetadata: {
+    namespace: 'client-metadata',
+    windowMs: 60_000,
+    limit: 120,
+    siteLimit: 30
+  },
+  clientKeys: { namespace: 'client-keys', windowMs: 60_000, limit: 120, siteLimit: 30 },
   adminRead: { namespace: 'admin-read', windowMs: 60_000, limit: 300 },
   adminMutation: { namespace: 'admin-mutation', windowMs: 60_000, limit: 30 }
-} as const satisfies Record<string, RateLimitPolicy | ResourceRateLimitPolicy>
+} as const satisfies Record<string, RateLimitPolicy | ResourceRateLimitPolicy | SiteRateLimitPolicy>
 
 /**
  * The limiters routes mount for their own budget, each with which requests it counts. A general

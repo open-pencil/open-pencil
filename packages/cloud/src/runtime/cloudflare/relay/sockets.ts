@@ -1,10 +1,5 @@
 import { RELAY_CLOSE } from '#cloud/contract'
-import {
-  readRelayPeerState,
-  type CollaborationRelay,
-  type RelayConnection,
-  type RelaySocket
-} from '#cloud/server'
+import { readRelayPeerState, type CollaborationRelay, type RelayConnection } from '#cloud/server'
 
 /** What the relay's sockets need from the Durable Object that holds them. */
 export type RelaySocketHost = {
@@ -15,16 +10,20 @@ export type RelaySocketHost = {
 }
 
 /** A socket message's bytes; text is passed on as bytes for the relay to refuse. */
-function bytes(data: unknown): Uint8Array {
+export function bytes(data: unknown): Uint8Array {
   if (data instanceof ArrayBuffer) return new Uint8Array(data)
   return new TextEncoder().encode(typeof data === 'string' ? data : '')
 }
 
 /**
- * A hibernatable socket as the relay sees it. The peer's state rides on the socket as its
- * attachment, so a relay woken from hibernation can resume the peer.
+ * A hibernatable socket as a hub sees it. The peer's state rides on the socket as its
+ * attachment, so a hub woken from hibernation can resume the peer.
  */
-function relaySocket(socket: WebSocket): RelaySocket {
+export function hibernatableSocket(socket: WebSocket): {
+  send(data: Uint8Array): void
+  close(code: number, reason: string): void
+  remember(state: unknown): void
+} {
   // A closing socket throws on send and close, which would stop a broadcast to the others.
   const open = () => socket.readyState === WebSocket.OPEN
   return {
@@ -57,7 +56,7 @@ export function createRelaySockets(host: RelaySocketHost) {
         if (connections.has(socket)) continue
         const state = readRelayPeerState(socket.deserializeAttachment())
         // A socket the relay never admitted has no peer to resume, and its ticket is long due.
-        if (state) connections.set(socket, created.resume(relaySocket(socket), state))
+        if (state) connections.set(socket, created.resume(hibernatableSocket(socket), state))
         else socket.close(RELAY_CLOSE.unauthorized, 'Expected a collaboration ticket')
       }
       return created
@@ -79,7 +78,7 @@ export function createRelaySockets(host: RelaySocketHost) {
     const state = readRelayPeerState(socket.deserializeAttachment())
     if (!state) return null
     const woken = await open(state.authorization.documentId)
-    const connection = connections.get(socket) ?? woken.resume(relaySocket(socket), state)
+    const connection = connections.get(socket) ?? woken.resume(hibernatableSocket(socket), state)
     connections.set(socket, connection)
     return connection
   }
@@ -93,7 +92,7 @@ export function createRelaySockets(host: RelaySocketHost) {
 
     /** Connects a socket the object just accepted, which presents its ticket next. */
     accept(socket: WebSocket, woken: CollaborationRelay) {
-      connections.set(socket, woken.connect(relaySocket(socket)))
+      connections.set(socket, woken.connect(hibernatableSocket(socket)))
     },
 
     async message(socket: WebSocket, message: string | ArrayBuffer) {

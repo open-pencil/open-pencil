@@ -121,6 +121,8 @@
   "shaderNeedsWebGPU": "Ta przeglądarka nie obsługuje WebGPU, więc shadery pokazują zapisaną klatkę.",
   "stops": "Punkty",
   "addStop": "Dodaj punkt",
+  "addShaderStops": "Użyj punktów koloru",
+  "removeShaderStops": "Użyj kolorów efektu",
   "alignLeft": "Wyrównaj do lewej",
   "alignCenter": "Wyśrodkuj",
   "alignRight": "Wyrównaj do prawej",

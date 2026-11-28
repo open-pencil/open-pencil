@@ -13,6 +13,7 @@ import {
   applyCornerRadii,
   applyRing,
   applyFlexGap,
+  clipsOverflow,
   applyPadding,
   applyPositioning,
   fillsFromStyle,
@@ -125,8 +126,7 @@ function applyElementStyle(
 
   applyCornerRadii(node, style, element.layout?.box ?? node)
 
-  const overflow = pickStyle(style, 'overflow')
-  if (overflow === 'hidden' || overflow === 'clip') node.clipsContent = true
+  if (clipsOverflow(style)) node.clipsContent = true
 
   const alignSelf = parseCSSAlignSelf(pickStyle(style, 'align-self')) ?? 'AUTO'
   if (alignSelf !== 'AUTO') node.layoutAlignSelf = alignSelf

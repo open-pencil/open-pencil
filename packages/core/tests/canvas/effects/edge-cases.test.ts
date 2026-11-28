@@ -186,7 +186,9 @@ describe('Edge cases and bug fixes', () => {
       'text failed'
     )
 
-    expect(mockCalls(canvas.restore).length).toBe(1)
+    const opened = mockCalls(canvas.save).length + mockCalls(canvas.saveLayer).length
+    expect(opened).toBeGreaterThan(0)
+    expect(mockCalls(canvas.restore).length).toBe(opened)
     expect(r.effectLayerPaint.setColorFilter).toHaveBeenCalledWith(null)
     expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
   })

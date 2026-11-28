@@ -246,6 +246,8 @@ test('a gradient stop’s colour opens a picker beside this one, and one undo pu
   ])
   if (!outer || !stop) throw new Error('Missing pickers')
   expect(stop.x + stop.width).toBeLessThanOrEqual(outer.x)
+  // Their bottom edges line up, as Figma's do, whichever stop opened it.
+  expect(stop.y + stop.height).toBeCloseTo(outer.y + outer.height, 0)
 
   await dragSlider('color-slider-hue', 0.4)
   await expect.poll(async () => (await stops())[1].color).not.toEqual(before[1].color)

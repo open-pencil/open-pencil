@@ -144,6 +144,8 @@
   "shaderNeedsWebGPU": "此浏览器不支持 WebGPU，着色器显示已保存的帧。",
   "stops": "色标",
   "addStop": "添加色标",
+  "addShaderStops": "使用色标",
+  "removeShaderStops": "使用效果自身的颜色",
   "alignCenter": "居中对齐",
   "alignMiddle": "垂直居中",
   "clipContent": "裁剪内容",

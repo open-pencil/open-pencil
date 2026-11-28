@@ -5,12 +5,14 @@
 # Hyperdrive's.
 schema_version = 2
 
-# Staging is only for people the team approved: no editor or shared files without signing in.
+# Staging's Cloud documents are only for people the team approved. Its editor works without
+# signing in on files on the person's own device, so an agent can pair with it without an account.
 [deployment]
 mode = "official"
 public_url = "https://cloud-staging.openpencil.dev"
 indexing = "deny"
-local_editor = false
+local_editor = true
+agent_pairing = true
 
 # Any site may show documents shared by link and community documents in a frame.
 embedding = { enabled = true }

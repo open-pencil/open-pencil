@@ -10,7 +10,7 @@ import CloudPortalUnavailableView from '@/views/cloud/CloudPortalUnavailableView
 
 import { createCloudPortalRouter } from './router'
 
-// Entry for the pages a Cloud server shows on its own address (`cloud.html`): signing in,
+// Entry for the pages a Cloud server shows on its own address (`pages/cloud.html`): signing in,
 // approving the desktop app, account security, and the administrator console. The editor
 // never loads it; only the Cloud server serves this page.
 async function start(): Promise<void> {

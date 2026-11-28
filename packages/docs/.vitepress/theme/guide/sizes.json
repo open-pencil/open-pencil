@@ -55,6 +55,10 @@
     "width": 282,
     "height": 420
   },
+  "checking-designs/lint": {
+    "width": 935,
+    "height": 410
+  },
   "component-libraries/publish": {
     "width": 542,
     "height": 693
@@ -119,6 +123,10 @@
     "width": 1056,
     "height": 700
   },
+  "icons/picker": {
+    "width": 318,
+    "height": 402
+  },
   "layers-and-pages/panel": {
     "width": 326,
     "height": 368
@@ -130,6 +138,18 @@
   "pen-tool/drawing": {
     "width": 346,
     "height": 261
+  },
+  "responsive-card/narrow": {
+    "width": 239,
+    "height": 318
+  },
+  "responsive-card/parts": {
+    "width": 704,
+    "height": 380
+  },
+  "responsive-card/wide": {
+    "width": 394,
+    "height": 303
   },
   "selection-and-manipulation/click": {
     "width": 290,

@@ -1,9 +1,15 @@
-import { RELAY_CLOSE, type RelayServerFrame } from '#cloud/contract'
+import {
+  type AgentToolCall,
+  type AgentToolOutcome,
+  RELAY_CLOSE,
+  type RelayServerFrame
+} from '#cloud/contract'
 import { logCloud, loggedError } from '#cloud/server/logging'
 
 import { COLLAB_ACTIONS, MAX_COLLAB_MESSAGE_BYTES, RELAY_SERVER_PEER } from '@open-pencil/collab'
 import { DEADLINE_MS, SECOND_MS } from '@open-pencil/std/timing'
 
+import { createAgentToolCalls, mayHostTools, toolRequest } from './agent-tools'
 import type { RelayAuthorization } from './authorize'
 import { stampAwareness } from './awareness'
 import {
@@ -15,7 +21,7 @@ import {
   type RelaySocket
 } from './connection'
 import { openRoomLog } from './log'
-import type { CollaborationStateStore } from './persistence'
+import type { CollaborationRelayOptions, RelayErrorIds } from './options'
 import type { RelayPeerState } from './resume'
 import {
   answerAsServer,
@@ -55,57 +61,9 @@ const NOTHING_HELD = new Uint8Array([0])
 
 export type { RelayConnection, RelaySocket } from './connection'
 
-/**
- * What a relay failure names: the room's document, and the user whose message met it. A peer
- * that failed to be admitted names only the document a single-document relay serves.
- */
-export type RelayErrorIds = { documentId?: string; userId?: string }
-
 /** A verified ticket's document, and its person when they signed in rather than came as a guest. */
 function ticketIds({ documentId, principal }: RelayAuthorization): RelayErrorIds {
   return principal.kind === 'user' ? { documentId, userId: principal.userId } : { documentId }
-}
-
-export type CollaborationRelayOptions = {
-  authSecret: string
-  store: CollaborationStateStore
-  /**
-   * The one document this relay serves, for runtimes that run a relay per document; tickets for
-   * any other document are refused.
-   */
-  documentId?: string
-  /**
-   * The most one socket message may carry. An editor's larger frames arrive as fragments joined
-   * up to `maximumRoomBytes`; anyone else's frame must fit in one message.
-   */
-  maximumMessageBytes: number
-  /**
-   * The most a room's document may hold, and so the most one editor's update may carry:
-   * `MAX_COLLAB_MESSAGE_BYTES` unless the runtime holds rooms in less memory.
-   */
-  maximumRoomBytes?: number
-  maximumConnectionsPerRoom: number
-  /** The participant limit policy sets for a document, or null for none. */
-  maximumParticipants?: (documentId: string) => Promise<number | null>
-  /**
-   * The document's current collaboration epoch, which a restore advances; a ticket for an earlier
-   * room is turned away so nobody rejoins the document as it was.
-   */
-  currentRoomEpoch?: (documentId: string) => Promise<number | null>
-  /** How long after a change the room's document is saved. */
-  persistDelayMs?: number
-  /**
-   * How many logged updates, or how many of their bytes, a room saves before it writes a fresh
-   * snapshot in their place; a closing room always does.
-   */
-  compactAfterUpdates?: number
-  compactAfterBytes?: number
-  /** How long a room whose last save failed waits before saving again. */
-  persistRetryMs?: number
-  /** How long a socket may stay open without presenting a ticket. */
-  authTimeoutMs?: number
-  /** Told of each failure, with the document and, when one asked, the signed-in user. */
-  onError?: (message: string, error: unknown, ids?: RelayErrorIds) => void
 }
 
 /** Messages a viewer may send; their document writes never leave the relay. */
@@ -136,6 +94,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     MAX_COLLAB_MESSAGE_BYTES
   )
   const authTimeoutMs = options.authTimeoutMs ?? AUTH_TIMEOUT_MS
+  const agentTools = createAgentToolCalls<RelayPeer>({
+    timeoutMs: options.agentToolTimeoutMs,
+    mayHost: mayHostTools,
+    remember: (peer) => remember(peer)
+  })
   const report =
     options.onError ??
     ((message, error, ids) =>
@@ -294,6 +257,11 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     if (readOnly && !VIEWER_ACTIONS.has(namespace)) return
     // Only the server says the history or the comments changed.
     if (namespace === COLLAB_ACTIONS.versions || namespace === COLLAB_ACTIONS.comments) return
+    // Apps' tool calls pass between the relay and one editor, never from peer to peer.
+    if (namespace === COLLAB_ACTIONS.agentTools) {
+      if (target === RELAY_SERVER_PEER) agentTools.receive(peer, payload)
+      return
+    }
 
     let forwarded = payload
     if (namespace === COLLAB_ACTIONS.awareness) {
@@ -364,7 +332,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     peer.socket.remember?.({
       peerId: peer.id,
       authorization: peer.authorization,
-      presenceClients: [...peer.presenceClients]
+      presenceClients: [...peer.presenceClients],
+      toolHost: peer.toolHost
     })
   }
 
@@ -425,7 +394,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       id: crypto.randomUUID(),
       socket,
       authorization,
-      presenceClients: new Set()
+      presenceClients: new Set(),
+      toolHost: false
     }
     remember(peer)
     send(socket, {
@@ -474,6 +444,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   function depart(peer: RelayPeer) {
     const room = rooms.get(peer.authorization.roomId)
     if (!room?.peers.delete(peer.id)) return
+    agentTools.abandon((waiting) => waiting === peer)
     const content = room.content
     // A compaction it was asked for ends with it, so the next change asks another editor.
     if (content?.compactionAsked?.peerId === peer.id) content.compactionAsked = null
@@ -525,7 +496,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         id: saved.peerId,
         socket,
         authorization,
-        presenceClients: new Set(saved.presenceClients)
+        presenceClients: new Set(saved.presenceClients),
+        toolHost: saved.toolHost && mayHostTools({ authorization })
       }
       room.peers.set(peer.id, peer)
       const connection = openRelayConnection(socket, peer, connectionRelay)
@@ -547,6 +519,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         for (const peer of room.peers.values()) {
           peer.socket.close(RELAY_CLOSE.restored, 'The document was restored')
         }
+        agentTools.abandon((waiting) => room.peers.get(waiting.id) === waiting)
         room.peers.clear()
       }
     },
@@ -562,9 +535,32 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         for (const peer of room.peers.values()) {
           peer.socket.close(RELAY_CLOSE.unauthorized, 'The document was taken down')
         }
+        agentTools.abandon((waiting) => room.peers.get(waiting.id) === waiting)
         room.peers.clear()
         void leaveRoom(room)
       }
+    },
+
+    /**
+     * Runs a design tool an app called on the document through an editor of the person whose
+     * token made the call: the one of theirs that joined last among those that run tools.
+     */
+    callTool(documentId: string, userId: string, call: AgentToolCall): Promise<AgentToolOutcome> {
+      const hosts = [...rooms.values()]
+        .filter((room) => room.identity.documentId === documentId)
+        .flatMap((room) => [...room.peers.values()])
+        .filter(
+          (peer) =>
+            peer.toolHost &&
+            // A refreshed ticket may have lowered the permission it offered with.
+            mayHostTools(peer) &&
+            peer.authorization.principal.kind === 'user' &&
+            peer.authorization.principal.userId === userId &&
+            current(peer)
+        )
+      const host = hosts.at(-1)
+      if (!host) return Promise.resolve({ ok: false, failure: 'editor_not_open' })
+      return agentTools.call(host, toolRequest(call))
     },
 
     /** Tells everyone in a document's rooms that its version history changed. */
@@ -585,6 +581,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
           for (const peer of room.peers.values()) {
             peer.socket.close(1001, 'Server shutting down')
           }
+          agentTools.abandon((waiting) => room.peers.get(waiting.id) === waiting)
           room.peers.clear()
           await leaveRoom(room)
         })

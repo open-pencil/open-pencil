@@ -34,7 +34,8 @@ class ToolAnsweredError extends Error {
   }
 }
 
-function isToolError(result: unknown): boolean {
+/** Whether a tool answered with an error rather than throwing it. */
+export function isToolError(result: unknown): result is { error: unknown } {
   return typeof result === 'object' && result !== null && 'error' in result
 }
 

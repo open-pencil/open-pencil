@@ -1,0 +1,1 @@
+- Opening a web page keeps text beside an absolutely positioned overlay, such as a card's stretched link, on the line it took instead of wrapping it over the text below, and shows a video's poster (#2387).

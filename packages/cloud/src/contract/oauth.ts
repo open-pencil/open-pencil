@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { CLOUD_TOKEN_SCOPES, cloudTokenScopeSchema } from './account'
+import { agentPairingTokenSchema } from './agent-tools'
 
 /**
  * Apps people connect to their account through OAuth, such as ChatGPT, Claude, or Grok: a server
@@ -71,6 +72,33 @@ export const cloudAppConnectionsResponseSchema = v.object({
   connections: v.array(cloudAppConnectionSchema)
 })
 export const cloudAppConnectionRevokeSchema = v.object({ id: v.pipe(v.string(), v.uuid()) })
+
+/** Prefix on the code an agent exchanges for a pairing token, which no account stands behind. */
+export const CLOUD_AGENT_PAIRING_CODE_PREFIX = 'opgc_'
+
+/** The page that pairs an agent with this browser's editor, for a person without an account. */
+export const CLOUD_AGENT_PAIRING_PAGE = '/auth/pair'
+
+/** An authorization request as the pairing page shows it. */
+export const cloudAgentPairingRequestSchema = v.object({
+  app: appSchema,
+  /** The host the browser returns to with the answer. */
+  returnsTo: v.string()
+})
+export const cloudAgentPairingRequestResponseSchema = v.object({
+  request: cloudAgentPairingRequestSchema
+})
+export const cloudAgentPairingDecisionSchema = v.variant('decision', [
+  v.object({
+    decision: v.literal('allow'),
+    query: oauthQuerySchema,
+    /** The pairing token this browser made and its editor connects with. */
+    token: agentPairingTokenSchema
+  }),
+  v.object({ decision: v.literal('deny'), query: oauthQuerySchema })
+])
+export type CloudAgentPairingRequest = v.InferOutput<typeof cloudAgentPairingRequestSchema>
+export type CloudAgentPairingDecision = v.InferOutput<typeof cloudAgentPairingDecisionSchema>
 
 export type CloudOAuthRequest = v.InferOutput<typeof cloudOAuthRequestSchema>
 export type CloudOAuthDecision = v.InferOutput<typeof cloudOAuthDecisionSchema>

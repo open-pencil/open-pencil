@@ -1,4 +1,5 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin'
+import type { AgentToolCall, AgentToolOutcome } from '#cloud/contract'
 import type {
   CloudAuthAdapter,
   CloudIdentityResolver,
@@ -12,6 +13,7 @@ import { createCommunityService } from '#cloud/server/community'
 import { CloudConfigError, type CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
+import { createDocumentToolService, type CallDocumentTool } from '#cloud/server/documents/tools'
 import { createDocumentVersionService } from '#cloud/server/documents/versions'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import { reportCloudError, type CloudErrorReporter } from '#cloud/server/errors'
@@ -71,6 +73,16 @@ export type CloudServices = {
   onDocumentVersionsChanged?: (documentId: string) => void
   /** Tells a document's live rooms one of its comment threads changed, on this runtime's relay. */
   onDocumentCommentsChanged?: (documentId: string, threadId: string) => void
+  /**
+   * Runs a design tool an app called through an editor of its person that has the document open,
+   * on this runtime's relay; without one, every call answers that no editor has it open.
+   */
+  callDocumentTool?: CallDocumentTool
+  /**
+   * Runs a design tool in the editor tab an agent is paired with, on this runtime's pairing hub
+   * (`createAgentPairingHub`); without one, the server pairs no tabs.
+   */
+  callPairedTool?: (pairingId: string, call: AgentToolCall) => Promise<AgentToolOutcome>
   /**
    * Keeps work a request started running after its answer, as Workers' `waitUntil` does; without
    * it the work runs on its own, as Node lets it.
@@ -197,9 +209,15 @@ export function createAppServices(services: CloudServices) {
     adminRecipients: config.enrollmentAdminNotificationEmails,
     publicURL: config.publicURL
   })
+  const documentTools = createDocumentToolService({
+    database,
+    documents,
+    callTool: services.callDocumentTool
+  })
   return {
     workspaces,
     pictures,
+    documentTools,
     workspaceMembers,
     enrollment,
     policy,

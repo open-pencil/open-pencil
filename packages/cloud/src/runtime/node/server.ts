@@ -8,6 +8,7 @@ import {
   createLoggingErrorReporter,
   loadServicesSigningKey,
   createCloudAuthenticationRuntime,
+  createAgentPairingHub,
   createCollaborationRelay,
   createCollaborationStateStore,
   cleanupPassOptions,
@@ -21,6 +22,9 @@ import {
   type CloudErrorReporter,
   type CloudServerConfig
 } from '#cloud/server'
+import { fetchClientMetadataResource } from '@better-auth/cimd/node'
+
+import { MAX_COLLAB_MESSAGE_BYTES } from '@open-pencil/collab'
 
 import { migratedNodeCloudDatabase } from './bootstrap'
 import { loadNodeCloudServerConfig } from './config'
@@ -90,7 +94,8 @@ async function startConfiguredServer(
   } = createNodeTransactionalEmailRuntime(config, database)
   // The adapter that serves for as long as the server runs checks the schema once it starts.
   const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email, {
-    validateSchema: true
+    validateSchema: true,
+    fetchClientMetadata: fetchClientMetadataResource
   })
   const policy = createConfiguredCloudPolicy(config, database)
   // Cleanup sweeps may run longer than a request should, so they have a connection of their own
@@ -121,6 +126,13 @@ async function startConfiguredServer(
         }
       )
     : undefined
+  // Tabs of this server's editor pair with coding agents through it, where the deployment lets them.
+  const pairing = config.agentPairing
+    ? createAgentPairingHub({
+        maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
+        maximumAnswerBytes: MAX_COLLAB_MESSAGE_BYTES
+      })
+    : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
     store: createCollaborationStateStore(database, objects),
@@ -149,6 +161,8 @@ async function startConfiguredServer(
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
     onDocumentCommentsChanged: (documentId, threadId) =>
       relay.announceComments(documentId, threadId),
+    callDocumentTool: (documentId, userId, call) => relay.callTool(documentId, userId, call),
+    callPairedTool: pairing && ((pairingId, call) => pairing.call(pairingId, call)),
     reportError,
     forwardedRequestId: proxyRequestId
   })
@@ -178,7 +192,8 @@ async function startConfiguredServer(
   const relayListener = attachCollaborationRelay(
     server.http,
     relay,
-    config.technicalLimits.maximumCollaborationMessageBytes
+    config.technicalLimits.maximumCollaborationMessageBytes,
+    pairing
   )
   return {
     app,

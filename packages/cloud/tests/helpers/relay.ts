@@ -14,7 +14,9 @@ import {
   type CollaborationRelayOptions,
   type CollaborationRoomIdentity,
   type CollaborationStateStore,
+  type PairingSocket,
   type RelayConnection,
+  type RelayPeerState,
   type RelaySocket
 } from '#cloud/server'
 import { SignJWT } from 'jose'
@@ -62,6 +64,8 @@ export function guest(guestId: string, name = guestId): CollaborationPrincipal {
 export type TestRelayClient = {
   frames: RelayServerFrame[]
   closed: { code: number; reason: string } | null
+  /** What the relay last kept about the peer, as a resumed connection would read it. */
+  remembered: RelayPeerState | null
   connection: RelayConnection
   /** Sends the frame in one message, as a peer that never splits frames would. */
   send(frame: RelayClientFrame): void
@@ -78,6 +82,7 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
   const client: Omit<TestRelayClient, 'connection'> = {
     frames: [],
     closed: null,
+    remembered: null,
     received: 0,
     send(frame) {
       connection.receive(encodeRelayClientFrame(frame))
@@ -102,6 +107,9 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
       const assembled = assembler.push(data)
       const frame = assembled.type === 'frame' ? decodeRelayServerFrame(assembled.data) : null
       if (frame) client.frames.push(frame)
+    },
+    remember(state) {
+      client.remembered = state
     },
     close(code, reason) {
       if (client.closed) return
@@ -217,4 +225,9 @@ export function textOfSyncReply(reply: Uint8Array) {
   const update = decodeRoomUpdate(reply, { limit: MAX_COLLAB_MESSAGE_BYTES, compressed: true })
   if (update) Y.applyUpdateV2(document, update)
   return document.getText('t').toString()
+}
+
+/** A test client's socket as the agent pairing hub takes it, which keeps no relay peer state. */
+export function pairingSocket(socket: RelaySocket): PairingSocket {
+  return { send: (data) => socket.send(data), close: (code, reason) => socket.close(code, reason) }
 }

@@ -2,6 +2,9 @@ import { textOfSyncReply, textUpdate } from '#cloud-tests/helpers/relay'
 import {
   createRelayServerAssembler,
   decodeRelayServerFrame,
+  agentPairingId,
+  agentPairingURL,
+  cloudMCPResource,
   defaultRelayURL,
   RELAY_CLOSE,
   RELAY_HEARTBEAT,
@@ -11,12 +14,15 @@ import {
 } from '#cloud/contract'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createCollaborationTicketService, createDocumentSharingService } from '#cloud/server'
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import * as Y from 'yjs'
 
 import { COLLAB_ACTIONS, MAX_COLLAB_MESSAGE_BYTES, RELAY_SERVER_PEER } from '@open-pencil/collab'
+import { decodeAutomationMessage, encodeAutomationMessage } from '@open-pencil/collab/automation'
 
 // Checks a running Cloud Worker (see run.ts): the API, the editor, and the portal answer, and the relay's
-// Durable Object admits ticket holders, keeps the room, and saves it to PostgreSQL.
+// Durable Object admits ticket holders, keeps the room, and saves it to PostgreSQL, and an agent's
+// call through the MCP endpoint reaches the editor tab paired with it, through the pairing's object.
 const base = process.env.CLOUD_WORKER_URL ?? ''
 const databaseURL = process.env.DATABASE_URL ?? ''
 const authSecret = process.env.BETTER_AUTH_SECRET ?? ''
@@ -236,7 +242,55 @@ try {
 
   const scheduled = await fetch(`${base}/__scheduled?cron=${encodeURIComponent('*/5 * * * *')}`)
   check(scheduled.ok, `The scheduled run answered HTTP ${scheduled.status}`)
+  await checkAgentPairing(ticket.token)
   console.log('Cloud Worker checks passed')
 } finally {
   await database.destroy()
+}
+
+/**
+ * A tab paired with a token answers the agent's call through the pairing's object, and the
+ * pairing's address takes no document's ticket.
+ */
+async function checkAgentPairing(documentTicket: string) {
+  const token = `opg_${'7a'.repeat(32)}`
+  const url = agentPairingURL(base, await agentPairingId(token))
+  const stranger = await join(url, documentTicket)
+  await until(() => stranger.closed !== null, 'The pairing address admitted a document ticket')
+
+  const tab = await join(url, token)
+  check(tab.closed === null, `The pairing closed the tab: ${tab.closed?.reason}`)
+  const say = (payload: Uint8Array) =>
+    tab.send({
+      type: 'message',
+      namespace: COLLAB_ACTIONS.agentTools,
+      target: RELAY_SERVER_PEER,
+      payload
+    })
+  say(encodeAutomationMessage({ type: 'register' }))
+  const answered = new Set<string>()
+  const answering = setInterval(() => {
+    for (const frame of messages(tab, COLLAB_ACTIONS.agentTools)) {
+      const message = decodeAutomationMessage(frame.payload)
+      if (message?.type !== 'request' || answered.has(message.id)) continue
+      answered.add(message.id)
+      say(encodeAutomationMessage({ type: 'response', id: message.id, ok: true, result: 'ran' }))
+    }
+  }, 10)
+
+  const agent = new Client({ name: 'cloudflare-e2e', version: '0.0.0' })
+  try {
+    await agent.connect(
+      new StreamableHTTPClientTransport(new URL(cloudMCPResource(base)), {
+        requestInit: { headers: { Authorization: `Bearer ${token}` } }
+      })
+    )
+    const result = await agent.callTool({ name: 'get_page_tree', arguments: {} })
+    check(!result.isError, `The paired tool call failed: ${JSON.stringify(result.content)}`)
+    check(answered.size === 1, 'The paired tab did not get the call')
+  } finally {
+    clearInterval(answering)
+    await agent.close()
+    tab.close()
+  }
 }
