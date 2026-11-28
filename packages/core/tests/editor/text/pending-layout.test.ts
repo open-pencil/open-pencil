@@ -358,6 +358,7 @@ function editorSetup() {
     whenFontsLoaded: () => Promise.resolve(),
     syncFontGeneration: noop,
     invalidateNodePicture: noop,
+    redrawPatternTargetsAround: noop,
     redrawNode: noop
   }
   editor.setCanvasKit({} as Parameters<typeof editor.setCanvasKit>[0], renderer as SkiaRenderer)
