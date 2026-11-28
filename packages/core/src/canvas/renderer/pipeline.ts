@@ -158,6 +158,8 @@ export function renderFromEditorState(
     {
       playing: !editChrome,
       playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
+      // The Animate tab's Play moves the slide's layers through its build.
+      layerMotion: state.buildPreview?.layers,
       hoveredNodeId: editChrome ? state.hoveredNodeId : null,
       showPixelGrid: showsPixelGrid(profile, state),
       showSizeLabels: state.showSizeLabels,
@@ -201,7 +203,11 @@ export function renderFromEditorState(
 
 function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {
   return (
-    overlays.rotationPreview != null || overlays.nodeEditState != null || overlays.playing === true
+    overlays.rotationPreview != null ||
+    overlays.nodeEditState != null ||
+    overlays.playing === true ||
+    // A build playing on the canvas moves its layers every frame.
+    overlays.layerMotion != null
   )
 }
 

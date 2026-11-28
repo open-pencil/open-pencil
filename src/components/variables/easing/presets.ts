@@ -52,3 +52,14 @@ export function easingLabel(easing: Easing, messages: EasingMessages): string {
   )
   return preset ? messages[preset.message] : easingText(easing)
 }
+
+/**
+ * An easing as a field in the Design panel names it: a preset by its name, and a custom curve or
+ * spring as Custom bezier or Custom spring, its numbers left to the editor it opens.
+ */
+export function easingFieldName(easing: Easing, messages: EasingMessages): string {
+  const curve = listedCurve(easing)
+  if (curve === 'CUSTOM_CUBIC') return messages.customBezier
+  if (curve === 'CUSTOM_SPRING') return messages.customSpring
+  return easingLabel(easing, messages)
+}

@@ -1,0 +1,1 @@
+- Easing fields in the Design panel name a custom curve "Custom bezier" or "Custom spring" instead of printing its numbers, which the easing editor still shows.
