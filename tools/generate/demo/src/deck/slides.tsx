@@ -192,7 +192,7 @@ function stage({ vars }: Theme, player: Player, name: string, mode: DesignMode):
       h="hug"
       p={48}
       gap={28}
-      rounded={32}
+      rounded={vars.radius}
       bg={vars.raised}
     >
       <Text font="Inter" size={28} weight={600} color={vars.muted}>
@@ -472,7 +472,7 @@ async function numbers(deck: Deck, slide: SceneNode) {
   )
   const ids: string[] = []
   const figures = [
-    ['5', 'controls, each a real Reka UI component'],
+    ['6', 'controls, each a real Reka UI component'],
     ['1', 'Theme collection, in two modes'],
     ['0', 'mock-ups: every slide is the design itself']
   ]
