@@ -11,7 +11,7 @@ import type {
   VectorNetwork
 } from './types'
 
-export { cubicPoint } from './cubic'
+export { cubicExtrema, cubicPoint } from './cubic'
 
 export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180

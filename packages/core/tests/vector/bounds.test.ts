@@ -36,6 +36,19 @@ describe('computeAccurateBounds', () => {
     expect(bounds).toEqual({ x: 0, y: 0, width: 100, height: 50 })
   })
 
+  test('a NaN coordinate stays out of an otherwise finite axis', () => {
+    const bounds = computeAccurateBounds({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+        { x: Number.NaN, y: 50 }
+      ],
+      segments: [],
+      regions: []
+    })
+    expect(bounds).toEqual({ x: 0, y: 0, width: 100, height: 100 })
+  })
+
   test('bezier curve extrema extend bounds', () => {
     const bounds = computeAccurateBounds({
       vertices: [
