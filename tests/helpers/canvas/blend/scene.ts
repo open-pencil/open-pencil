@@ -115,3 +115,52 @@ export function createSoftLightScene(graph: SceneGraph, pageId: string): Vector[
     return { x: x + SWATCH / 2, y: 60 + SWATCH / 2 }
   })
 }
+
+/**
+ * A pass-through frame over a 50% grey backdrop, holding a grey layer that blends, as Figma drew
+ * it (live-measured): the layer's grey, its blend mode, the frame's opacity, and the result.
+ */
+export const PASS_THROUGH_SWATCHES: readonly {
+  grey: number
+  blendMode: 'MULTIPLY' | 'SCREEN'
+  opacity: number
+  figma: number
+}[] = [
+  { grey: 0.4, blendMode: 'MULTIPLY', opacity: 0.5, figma: 90 },
+  { grey: 0.4, blendMode: 'MULTIPLY', opacity: 0.7, figma: 75 },
+  { grey: 0.6, blendMode: 'SCREEN', opacity: 0.5, figma: 166 },
+  { grey: 0.6, blendMode: 'SCREEN', opacity: 0.7, figma: 181 }
+]
+
+/** Each swatch's backdrop and pass-through frame, in a row; returns their centres. */
+export function createPassThroughScene(graph: SceneGraph, pageId: string): Vector[] {
+  return PASS_THROUGH_SWATCHES.map(({ grey, blendMode, opacity }, index) => {
+    const x = 60 + index * SWATCH
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Backdrop ${index}`,
+      x,
+      y: 60,
+      width: SWATCH,
+      height: SWATCH,
+      fills: [solid(0.5, 0.5, 0.5)]
+    })
+    const frame = graph.createNode('FRAME', pageId, {
+      name: `Pass-through ${index}`,
+      x,
+      y: 60,
+      width: SWATCH,
+      height: SWATCH,
+      fills: [],
+      blendMode: 'PASS_THROUGH',
+      opacity
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: `${blendMode} ${index}`,
+      width: SWATCH,
+      height: SWATCH,
+      blendMode,
+      fills: [solid(grey, grey, grey)]
+    })
+    return { x: x + SWATCH / 2, y: 60 + SWATCH / 2 }
+  })
+}

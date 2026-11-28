@@ -4,6 +4,7 @@ import { linearSRGBMatrix } from '@open-pencil/scene-graph/color'
 import { UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
+import { resetEffectLayerPaint } from '#core/canvas/renderer/paints'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { defineShader } from '#core/canvas/sksl'
@@ -106,9 +107,7 @@ export function beginTexture(
         0
       )
     : displaced
-  // The paint is shared: a mask pass may have left it blending DstIn or filtering colour.
-  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-  r.effectLayerPaint.setColorFilter(null)
+  resetEffectLayerPaint(r)
   r.effectLayerPaint.setImageFilter(filter)
   canvas.saveLayer(
     r.effectLayerPaint,

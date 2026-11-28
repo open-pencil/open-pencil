@@ -108,6 +108,12 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   initializeSelectionPaintColors(r)
 }
 
+export function resetEffectLayerPaint(r: SkiaRenderer): void {
+  r.effectLayerPaint.setImageFilter(null)
+  r.effectLayerPaint.setColorFilter(null)
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+}
+
 /** Colors the long-lived paints drawn in the selection color; rerun when that color changes. */
 export function initializeSelectionPaintColors(r: SkiaRenderer): void {
   r.selectionPaint.setColor(r.selColor())

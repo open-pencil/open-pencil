@@ -7,6 +7,7 @@ export function blendDriver(page: () => Page) {
   const scenes = pageScene<typeof BlendScenes>(page, '/tests/helpers/canvas/blend/scene.ts')
   return {
     showLinear: () => scenes.build('createLinearBlendScene'),
-    showSoftLight: () => scenes.build('createSoftLightScene')
+    showSoftLight: () => scenes.build('createSoftLightScene'),
+    showPassThrough: () => scenes.build('createPassThroughScene')
   }
 }

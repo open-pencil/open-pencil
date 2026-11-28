@@ -1,0 +1,1 @@
+- Layers with a blend mode inside a pass-through group or frame with opacity now blend with what is under the group, as Figma does (#2426).

@@ -8,6 +8,7 @@ import { ResourceCache } from '#core/cache/resource'
 
 import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
 import { withNoiseEffects } from './noise/render'
+import { resetEffectLayerPaint } from './renderer/paints'
 import type { SkiaRenderer } from './renderer/skia'
 import { withLeafTexture } from './texture/render'
 
@@ -116,10 +117,7 @@ export function applyClippedBlur(
   shape: Path | null = null
 ): void {
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-  // Entry guard: reset shared paint to known state
-  r.effectLayerPaint.setImageFilter(null)
-  r.effectLayerPaint.setColorFilter(null)
-  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+  resetEffectLayerPaint(r)
 
   canvas.save()
   if (shape) canvas.clipPath(shape, r.ck.ClipOp.Intersect, true)
@@ -132,10 +130,7 @@ export function applyClippedBlur(
   })
   canvas.saveLayer(undefined, rect, filter, undefined, r.ck.TileMode.Clamp)
   canvas.restore()
-  // Exit guard: ensure shared paint is in clean state
-  r.effectLayerPaint.setImageFilter(null)
-  r.effectLayerPaint.setColorFilter(null)
-  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+  resetEffectLayerPaint(r)
   canvas.restore()
 }
 

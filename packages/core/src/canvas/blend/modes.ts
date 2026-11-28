@@ -2,11 +2,12 @@ import type { BlendMode as SkBlendMode, Canvas, CanvasKit, Paint } from '@open-p
 import type { BlendMode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { compiledBlender } from '#core/canvas/renderer/shaders'
+import { compiledBlender, keptBlender } from '#core/canvas/renderer/shaders'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { defineBlender, type NoUniforms, type SkslProgram } from '#core/canvas/sksl'
 import { ZOOM_MIN } from '#core/constants'
 
+import fadeOverBackdropSource from './fade-over-backdrop.sksl?raw'
 import plusDarkerSource from './plus-darker.sksl?raw'
 import plusLighterSource from './plus-lighter.sksl?raw'
 
@@ -17,6 +18,11 @@ const LINEAR_BLENDERS: Record<LinearBlendMode, SkslProgram<NoUniforms>> = {
   LINEAR_BURN: defineBlender('plus darker blender', plusDarkerSource),
   LINEAR_DODGE: defineBlender('plus lighter blender', plusLighterSource)
 }
+
+const FADE_OVER_BACKDROP = defineBlender<{ opacity: number }>(
+  'fade over backdrop blender',
+  fadeOverBackdropSource
+)
 
 function isLinearBlendMode(mode?: BlendMode): mode is LinearBlendMode {
   return mode === 'LINEAR_BURN' || mode === 'LINEAR_DODGE'
@@ -113,6 +119,33 @@ export function saveBlendedLayer(
     clipToLayerBounds(r, canvas, bounds)
   }
   canvas.saveLayer(paint, bounds)
+}
+
+export function saveLayerOverBackdrop(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  paint: Paint,
+  opacity: number,
+  bounds: Float32Array | null,
+  backdropReach = 0
+): void {
+  paint.setAlphaf(opacity)
+  // Mixed back by opacity rather than source-over, which would count a translucent backdrop twice.
+  paint.setBlender(keptBlender(r.ck, r.shaders, FADE_OVER_BACKDROP, { opacity }))
+  canvas.save()
+  const layerBounds = bounds && grownBounds(r, bounds, backdropReach)
+  if (layerBounds) {
+    clipToLayerBounds(r, canvas, layerBounds)
+  }
+  canvas.saveLayer(paint, layerBounds, null, r.ck.SaveLayerInitWithPrevious)
+}
+
+function grownBounds(r: SkiaRenderer, bounds: Float32Array, by: number): Float32Array {
+  if (by <= 0) {
+    return bounds
+  }
+  const [left, top, right, bottom] = bounds
+  return r.ck.LTRBRect(left - by, top - by, right + by, bottom + by)
 }
 
 export function restoreBlendedLayer(canvas: Canvas): void {

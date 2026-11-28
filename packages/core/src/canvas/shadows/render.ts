@@ -18,6 +18,7 @@ import {
 } from '#core/canvas/blend/modes'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { renderGlassLight, renderGlassRefraction } from '#core/canvas/glass/render'
+import { resetEffectLayerPaint } from '#core/canvas/renderer/paints'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { nodeOrientationMatrix } from '#core/geometry'
 import { fillsCastShadow, shadowSpread } from '#core/geometry/shadows'
@@ -41,12 +42,6 @@ import {
   silhouetteBounds,
   separateShadowChildren
 } from './silhouette'
-function resetEffectLayerPaint(r: SkiaRenderer): void {
-  r.effectLayerPaint.setImageFilter(null)
-  r.effectLayerPaint.setColorFilter(null)
-  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-}
-
 /**
  * `behind` draws drop shadows, background blur, and glass refraction, `inner` inner shadows and
  * glass light over fills. Noise wraps the whole content instead (`withNoiseEffects`).
