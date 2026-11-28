@@ -436,6 +436,8 @@
   "shaderNeedsWebGPU": "لا يدعم هذا المتصفح WebGPU، لذا تعرض المظلّلات إطارها المحفوظ.",
   "stops": "نقاط التوقف",
   "addStop": "إضافة نقطة توقف",
+  "addShaderStops": "استخدام نقاط الألوان",
+  "removeShaderStops": "استخدام ألوان التأثير نفسه",
   "alignCenter": "توسيط",
   "alignMiddle": "محاذاة للمنتصف",
   "clipContent": "قص المحتوى",

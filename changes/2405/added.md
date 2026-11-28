@@ -1,0 +1,1 @@
+- HTML import makes an element marked `data-op-instance` (and `data-op-variant` for a set) an instance of that component, with its text as overrides, where it draws what the component draws (#2405).

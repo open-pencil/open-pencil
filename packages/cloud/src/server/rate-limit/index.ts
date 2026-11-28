@@ -10,6 +10,7 @@ export {
   routeHasOwnBudget,
   routeParamResource,
   type RateLimitPolicy,
-  type ResourceRateLimitPolicy
+  type ResourceRateLimitPolicy,
+  type SiteRateLimitPolicy
 } from './middleware'
 export { PostgresRateLimitStore } from './postgres'

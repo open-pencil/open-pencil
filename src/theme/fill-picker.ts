@@ -10,7 +10,7 @@ const fillPickerTheme = {
       'absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-sm border-2 border-white/60 shadow-sm data-[dragging]:cursor-grabbing',
       focusStyles.ring
     ],
-    listStop: 'flex items-center gap-1 py-0.5',
+    listStop: 'flex items-center gap-0.5 py-0.5',
     adjustment: 'flex h-7 items-center gap-2',
     adjustmentLabel: 'w-20 shrink-0 truncate text-xs text-surface',
     adjustmentSlider: 'relative mx-1.75 flex h-3.5 flex-1 touch-none items-center select-none',

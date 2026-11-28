@@ -1,5 +1,6 @@
 export * from './account'
 export * from './locale'
+export * from './agent-tools'
 export * from './api'
 export * from './oauth'
 export {
@@ -155,6 +156,7 @@ export {
   documentPermissionSchema,
   imageUploadOfferSchema,
   objectUploadSchema,
+  documentKindSchema,
   documentSummarySchema,
   sharedDocumentSchema,
   type SharedDocument,

@@ -19,7 +19,8 @@ export function cloudDiscoveryFixture(origin = 'https://cloud.example.com'): Clo
       workspaces: true,
       collaboration: true,
       embedding: false,
-      apps: false
+      apps: false,
+      agents: false
     }
   }
 }

@@ -80,7 +80,5 @@
   "showAnimationSettings": "إظهار إعدادات الحركة",
   "hideAnimationSettings": "إخفاء إعدادات الحركة",
   "afterPrevious": "بعد السابق",
-  "pickSlide": "حدد شريحة لتحريكها",
-  "presentFrames": "عرض الإطارات",
-  "presentFramesWithNotes": "عرض الإطارات مع عرض المقدّم"
+  "pickSlide": "حدد شريحة لتحريكها"
 }

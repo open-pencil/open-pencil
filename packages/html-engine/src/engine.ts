@@ -4,28 +4,9 @@ import type { DesignResourceFetch } from '@open-pencil/dom-css'
 import { createMutex } from '@open-pencil/std/async'
 import { DEADLINE_MS, untilAborted } from '@open-pencil/std/timing'
 
+import { EXPORTS } from './exports'
 import { imageStandIn, rasterImageSize } from './images'
 import { captureSchema, requestsSchema, type HTMLEngineCapture } from './schema'
-
-/**
- * The module's exports: strings and bytes cross as (pointer, length), and results land in one
- * output buffer whose length the call returns.
- */
-const EXPORTS = [
-  'alloc',
-  'dealloc',
-  'output_ptr',
-  'fonts_reset',
-  'font_decode',
-  'font_add',
-  'font_generic',
-  'open',
-  'pump',
-  'provide',
-  'fail',
-  'restyle',
-  'capture'
-] as const
 
 type EngineExports = Record<(typeof EXPORTS)[number], (...args: number[]) => number> & {
   memory: WebAssembly.Memory

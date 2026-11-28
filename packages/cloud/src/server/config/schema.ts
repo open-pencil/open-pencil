@@ -81,6 +81,8 @@ const rawCloudServerConfigSchema = v.object({
   embeddingEnabled: v.optional(v.boolean(), false),
   /** The origins that may embed documents; any site when empty. */
   embeddingOrigins: v.optional(v.array(httpURLSchema), []),
+  /** The server's editor pairs a tab with a coding agent over MCP, without an account. */
+  agentPairing: v.optional(v.boolean(), false),
   authTrustedIPHeaders: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   authTrustedProxies: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),

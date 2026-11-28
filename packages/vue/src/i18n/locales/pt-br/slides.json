@@ -80,7 +80,5 @@
   "showAnimationSettings": "Mostrar ajustes da animação",
   "hideAnimationSettings": "Ocultar ajustes da animação",
   "afterPrevious": "Após a anterior",
-  "pickSlide": "Selecione um slide para animá-lo",
-  "presentFrames": "Apresentar quadros",
-  "presentFramesWithNotes": "Apresentar quadros com o modo do apresentador"
+  "pickSlide": "Selecione um slide para animá-lo"
 }

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { expandWithBoth } from '#fig-tests/helpers/fig-crate'
+import { expandWithBoth, readFieldsWithBoth } from '#fig-tests/helpers/fig-crate'
 
 import { runsHeavyTests } from '@open-pencil/test-support/heavy'
 import { readFixtureBytes } from '@open-pencil/test-support/paths'
@@ -15,6 +15,15 @@ test.if(runsHeavyTests)(
       expect({ id, difference }).toEqual({ id, difference: null })
       expect(missingComponents.crate).toBe(missingComponents.reader)
     }
+  },
+  600_000
+)
+
+test.if(runsHeavyTests)(
+  'the Rust reader reads every field of every layer of material3.fig as the TypeScript reader does without styles',
+  async () => {
+    for (const { id, differences } of await readFieldsWithBoth(readFixtureBytes('material3.fig')))
+      expect({ id, differences }).toEqual({ id, differences: [] })
   },
   600_000
 )

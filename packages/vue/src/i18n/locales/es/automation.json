@@ -49,6 +49,18 @@
   "statusError": "Error",
   "localServer": "Servidor local",
   "localServerDesktopOnly": "El servidor MCP local funciona con la app de escritorio de OpenPencil. En el navegador, usa WebMCP abajo.",
+  "agentPairing": "Agente en este navegador",
+  "agentPairingDescription": "Deja que un agente de programación como Claude Code, Codex o Cursor diseñe en OpenPencil en este navegador, sin cuenta. Trabaja en los documentos que tienes abiertos y tú lo ves trabajar.",
+  "agentPairingConnect": "Conectar un agente",
+  "agentPairingDisconnect": "Desconectar",
+  "agentPairingConnecting": "Conectando…",
+  "agentPairingWaiting": "Esperando a tu agente",
+  "agentPairingWorking": "Tu agente está trabajando en este navegador",
+  "agentPairingFailed": "OpenPencil Cloud rechazó la conexión. Vuelve a conectar.",
+  "agentPairingInstructions": "Pégalo en tu agente",
+  "agentPairingClaudeCode": "O ejecútalo en una terminal, para Claude Code",
+  "agentPairingConfig": "O añádelo a una configuración MCP, como en Cursor",
+  "agentPairingNote": "Cualquiera con esta conexión puede cambiar los diseños abiertos en este navegador. Se pausa mientras OpenPencil está cerrado y termina cuando te desconectas. Los cambios en diseños locales se quedan en este dispositivo hasta que los guardes; los cambios en documentos de Cloud llegan al instante a todos los que están en ellos.",
   "webmcpDescription": "Permite a los agentes del navegador usar este documento directamente, sin servidor MCP local ni token de portador. La configuración del servidor local no se aplica aquí.",
   "webmcpFailed": "WebMCP no pudo iniciarse",
   "browserAccess": "Acceso de agentes del navegador",
@@ -85,5 +97,6 @@
   "mcpFailureUnknown": "No se pudo iniciar el servidor MCP",
   "mcpFailureUnknownHint": "Vuelve a iniciarlo o revisa los detalles técnicos de abajo.",
   "mcpFailureDetails": "Detalles",
-  "mcpFailureCopy": "Copiar detalles"
+  "mcpFailureCopy": "Copiar detalles",
+  "agentPairingSignIn": "Añádelo a tu agente, para Claude Code; luego inicia sesión desde él y elige usarlo sin cuenta"
 }

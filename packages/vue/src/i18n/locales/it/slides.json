@@ -80,7 +80,5 @@
   "showAnimationSettings": "Mostra le impostazioni dell’animazione",
   "hideAnimationSettings": "Nascondi le impostazioni dell’animazione",
   "afterPrevious": "Dopo la precedente",
-  "pickSlide": "Seleziona una diapositiva per animarla",
-  "presentFrames": "Presenta i frame",
-  "presentFramesWithNotes": "Presenta i frame con la visualizzazione relatore"
+  "pickSlide": "Seleziona una diapositiva per animarla"
 }

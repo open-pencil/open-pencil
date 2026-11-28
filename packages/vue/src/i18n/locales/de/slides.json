@@ -80,7 +80,5 @@
   "showAnimationSettings": "Animationseinstellungen einblenden",
   "hideAnimationSettings": "Animationseinstellungen ausblenden",
   "afterPrevious": "Nach vorheriger",
-  "pickSlide": "Eine Folie auswählen, um sie zu animieren",
-  "presentFrames": "Frames präsentieren",
-  "presentFramesWithNotes": "Frames mit Referentenansicht präsentieren"
+  "pickSlide": "Eine Folie auswählen, um sie zu animieren"
 }

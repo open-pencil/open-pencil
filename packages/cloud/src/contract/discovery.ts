@@ -59,7 +59,12 @@ export const cloudCapabilitiesSchema = v.object({
    */
   embedding: v.optional(v.boolean(), false),
   /** Whether people may connect apps such as ChatGPT through OAuth; servers before it accept none. */
-  apps: v.optional(v.boolean(), false)
+  apps: v.optional(v.boolean(), false),
+  /**
+   * Whether the server's editor may pair a tab with a coding agent, without an account
+   * (`agent-pairing.ts`); servers before it pair none.
+   */
+  agents: v.optional(v.boolean(), false)
 })
 export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 

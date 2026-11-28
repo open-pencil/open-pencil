@@ -1,10 +1,12 @@
-// Builds a package's Rust crate into a WebAssembly module with Cargo's `wasm` profile, unless the
-// sources it was built from are unchanged: the crate, the workspace manifest and lockfile, and
-// the pinned toolchain. Their hash is written beside the module, so CI can restore both from a
-// cache and skip Cargo.
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { join, relative } from 'node:path'
+// Builds a package's Rust crate into a WebAssembly module with Cargo's `wasm` profile, then
+// shrinks it with Binaryen, unless the sources it was built from are unchanged: the crate, the
+// workspace manifest and lockfile, the pinned toolchain, and how it is optimized. Their hash is
+// written beside the module, so CI can restore both from a cache and skip Cargo.
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
+import binaryen from 'binaryen'
 import * as v from 'valibot'
 
 import { resolveWorkspaceRoot } from './workspace/root'
@@ -22,6 +24,117 @@ export interface WasmModule {
   output: string
   /** Cargo features the module is built with. */
   features?: readonly string[]
+  /**
+   * The exports its host calls; the others, such as wasm-bindgen's helpers in a crate's
+   * dependencies, are removed with the code only they reach. Every export is kept without it.
+   */
+  exports?: readonly string[]
+}
+
+/**
+ * The WebAssembly features rustc enables for `wasm32-unknown-unknown`, which Binaryen keeps the
+ * module to: it may use these and no others.
+ */
+const RUSTC_FEATURES =
+  binaryen.Features.MutableGlobals |
+  binaryen.Features.NontrappingFPToInt |
+  binaryen.Features.BulkMemory |
+  binaryen.Features.BulkMemoryOpt |
+  binaryen.Features.SignExt |
+  binaryen.Features.ReferenceTypes |
+  binaryen.Features.Multivalue |
+  binaryen.Features.CallIndirectOverlong
+
+const binaryenPackageSchema = v.object({ version: v.string() })
+
+/**
+ * How modules are optimized, for the sources hash: the Binaryen release and this file, which
+ * holds every setting `optimized` applies.
+ */
+async function optimizer(): Promise<string> {
+  const manifest = join(dirname(fileURLToPath(import.meta.resolve('binaryen'))), 'package.json')
+  const parsed = v.safeParse(
+    v.pipe(v.string(), v.parseJson(), binaryenPackageSchema),
+    await readFile(manifest, 'utf8')
+  )
+  if (!parsed.success) throw new Error('binaryen has no version')
+  const settings = new Bun.CryptoHasher('sha256')
+    .update(await readFile(fileURLToPath(import.meta.url)))
+    .digest('hex')
+  return `binaryen ${parsed.output.version} ${settings}`
+}
+
+/** Reads one unsigned LEB128 number from `bytes` at `at`. */
+function leb(bytes: Uint8Array, at: number): { value: number; next: number } {
+  let value = 0
+  let shift = 0
+  let next = at
+  for (;;) {
+    const byte = bytes[next++]
+    if (byte === undefined) throw new Error('A WebAssembly section header ends early')
+    value += (byte & 0x7f) * 2 ** shift
+    if (byte < 0x80) return { value, next }
+    shift += 7
+  }
+}
+
+/**
+ * The module without its custom sections: names, producers, and data only a binding generator
+ * reads, such as wasm-bindgen's, which the host never runs.
+ */
+function withoutCustomSections(bytes: Uint8Array): Uint8Array {
+  const kept: Uint8Array[] = [bytes.subarray(0, 8)]
+  let at = 8
+  while (at < bytes.length) {
+    const id = bytes[at]
+    const { value: size, next } = leb(bytes, at + 1)
+    const end = next + size
+    if (end > bytes.length) throw new Error('A WebAssembly section runs past the module')
+    if (id !== 0) kept.push(bytes.subarray(at, end))
+    at = end
+  }
+  const result = new Uint8Array(kept.reduce((total, part) => total + part.length, 0))
+  let offset = 0
+  for (const part of kept) {
+    result.set(part, offset)
+    offset += part.length
+  }
+  return result
+}
+
+/**
+ * The module as Binaryen shrinks it for size (`wasm-opt -Oz`), keeping only `exports`, without
+ * inlining: copies of small functions shrink a module but leave it larger once compressed, as a
+ * browser downloads it (fig's grew from 478 to 628 KB with gzip).
+ */
+function optimized(module: Uint8Array, exports: readonly string[] | undefined): Uint8Array {
+  const wasm = binaryen.readBinary(withoutCustomSections(module))
+  try {
+    // Optimizations may then use only what the module could already use.
+    wasm.setFeatures(RUSTC_FEATURES)
+    if (!wasm.validate())
+      throw new Error('The module uses WebAssembly features rustc does not enable')
+    if (exports) {
+      const names = Array.from(
+        { length: wasm.getNumExports() },
+        (_, at) => binaryen.getExportInfo(wasm.getExportByIndex(at)).name
+      )
+      const missing = exports.filter((name) => !names.includes(name))
+      if (missing.length) throw new Error(`The module does not export ${missing.join(', ')}`)
+      for (const name of names) if (!exports.includes(name)) wasm.removeExport(name)
+    }
+    binaryen.setOptimizeLevel(2)
+    binaryen.setShrinkLevel(2)
+    binaryen.setDebugInfo(false)
+    binaryen.setAlwaysInlineMaxSize(0)
+    binaryen.setFlexibleInlineMaxSize(0)
+    binaryen.setOneCallerInlineMaxSize(0)
+    wasm.optimize()
+    if (!wasm.validate()) throw new Error('Binaryen produced an invalid module')
+    return wasm.emitBinary()
+  } finally {
+    wasm.dispose()
+  }
 }
 
 async function cargo(cwd: string, args: string[]): Promise<string> {
@@ -40,12 +153,13 @@ async function targetDirectory(cwd: string): Promise<string> {
 
 /**
  * A hash of every file the module is built from, by path relative to the workspace root, and of
- * the features it is built with.
+ * how it is built: its features, its exports, and the optimizer.
  */
 async function sourcesHash(
   root: string,
   packageDir: string,
-  features: readonly string[]
+  features: readonly string[],
+  exports: readonly string[] | undefined
 ): Promise<string> {
   const files = [
     join(root, 'Cargo.toml'),
@@ -61,8 +175,9 @@ async function sourcesHash(
     .map((file) => ({ file, name: relative(root, file).replaceAll('\\', '/') }))
     .toSorted((a, b) => a.name.localeCompare(b.name))
   const hasher = new Bun.CryptoHasher('sha256')
-  // A module built without features keeps the hash it had before features were hashed.
-  if (features.length > 0) hasher.update(`features:${features.toSorted().join(',')}\0`)
+  hasher.update(`features:${features.toSorted().join(',')}\0`)
+  hasher.update(`exports:${exports ? exports.toSorted().join(',') : '*'}\0`)
+  hasher.update(`${await optimizer()}\0`)
   for (const { file, name } of sources) {
     hasher.update(name)
     hasher.update('\0')
@@ -86,14 +201,14 @@ async function builtHash(output: string, stamp: string): Promise<string | null> 
  * an error instead.
  */
 export async function buildWasmModule(
-  { packageDir, library, output: name, features = [] }: WasmModule,
+  { packageDir, library, output: name, features = [], exports }: WasmModule,
   { check = false } = {}
 ): Promise<void> {
   const output = join(packageDir, 'wasm', name)
   const stamp = `${output}.sha256`
   // The Cargo workspace shares the Bun workspace's root, with `Cargo.toml` and `Cargo.lock`.
   const root = await resolveWorkspaceRoot(packageDir)
-  const hash = await sourcesHash(root, packageDir, features)
+  const hash = await sourcesHash(root, packageDir, features, exports)
   if ((await builtHash(output, stamp)) === hash) {
     process.stdout.write(`${name} is up to date\n`)
     return
@@ -119,7 +234,8 @@ export async function buildWasmModule(
   ])
   await mkdir(join(packageDir, 'wasm'), { recursive: true })
   const target = await targetDirectory(packageDir)
-  await copyFile(join(target, TARGET, 'wasm', `${library}.wasm`), output)
+  const built = await readFile(join(target, TARGET, 'wasm', `${library}.wasm`))
+  await writeFile(output, optimized(new Uint8Array(built), exports))
   await writeFile(stamp, `${hash}\n`)
   process.stdout.write(`Built ${relative(root, output)}\n`)
 }

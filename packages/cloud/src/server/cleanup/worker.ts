@@ -25,6 +25,8 @@ export type CleanupResult = {
   documents: DocumentCleanupResult
   revisions: RevisionCompactionResult | null
   rateLimits: number
+  /** Agent pairing codes that expired unexchanged. */
+  pairingCodes: number
   storageLimits: StorageLimitNoticeResult | null
 }
 
@@ -33,6 +35,7 @@ export type CleanupServices = {
   uploads: UploadCleanupService
   revisions?: RevisionCompactionService
   rateLimits?: { cleanupExpired(before: Date): Promise<number> }
+  pairingCodes?: { cleanupExpired(now: Date): Promise<number> }
   /** Emails accounts whose storage became full; only where the server sends email. */
   storageLimits?: Pick<StorageLimitNoticeService, 'notifyStorageLimits'>
 }
@@ -71,11 +74,14 @@ export async function runCleanup(
   const rateLimits = cleanup.rateLimits
     ? await cleanup.rateLimits.cleanupExpired(new Date(Date.now() - 24 * 60 * 60_000))
     : 0
+  const pairingCodes = cleanup.pairingCodes
+    ? await cleanup.pairingCodes.cleanupExpired(new Date())
+    : 0
   // After documents, so storage they freed counts before anyone is told theirs is full.
   const storageLimits = cleanup.storageLimits
     ? await cleanup.storageLimits.notifyStorageLimits()
     : null
-  return { uploads, documents, revisions, rateLimits, storageLimits }
+  return { uploads, documents, revisions, rateLimits, pairingCodes, storageLimits }
 }
 
 export function startCleanupWorker(

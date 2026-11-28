@@ -8,8 +8,10 @@ import { readPackageManifest } from '../manifest/read'
 import type { PackageManifest, WorkspacePackage } from '../manifest/types'
 import { parseWorkspace } from './schema'
 
+/** What a package needs built before it: a build may run what it lists only for development. */
 const DEPENDENCY_FIELDS = [
   'dependencies',
+  'devDependencies',
   'peerDependencies',
   'optionalDependencies'
 ] as const satisfies ReadonlyArray<keyof PackageManifest>

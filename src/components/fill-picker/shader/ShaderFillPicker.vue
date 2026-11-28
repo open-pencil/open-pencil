@@ -95,6 +95,8 @@ function setType(index: number, type: string) {
 
 const reorder = useFlatReorderDrag({
   items: () => rows.value,
+  // An effect drags by its row; its settings below take their own drags, such as a stop's.
+  handle: '[data-slot="item-row"]',
   // Rows run top first, so a row's place counts from the end of the preset's list.
   onMove: (id, target) => {
     const from = Number(id)

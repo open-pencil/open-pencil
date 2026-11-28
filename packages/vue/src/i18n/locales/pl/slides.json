@@ -80,7 +80,5 @@
   "showAnimationSettings": "Pokaż ustawienia animacji",
   "hideAnimationSettings": "Ukryj ustawienia animacji",
   "afterPrevious": "Po poprzedniej",
-  "pickSlide": "Zaznacz slajd, aby go animować",
-  "presentFrames": "Prezentuj ramki",
-  "presentFramesWithNotes": "Prezentuj ramki w widoku prezentera"
+  "pickSlide": "Zaznacz slajd, aby go animować"
 }

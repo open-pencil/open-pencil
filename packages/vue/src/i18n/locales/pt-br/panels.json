@@ -412,6 +412,8 @@
   "shaderNeedsWebGPU": "Este navegador não tem WebGPU, então os shaders mostram o quadro salvo.",
   "stops": "Pontos",
   "addStop": "Adicionar ponto",
+  "addShaderStops": "Usar paradas de cor",
+  "removeShaderStops": "Usar as cores do efeito",
   "alignCenter": "Centralizar",
   "alignMiddle": "Alinhar ao meio",
   "clipContent": "Recortar conteúdo",

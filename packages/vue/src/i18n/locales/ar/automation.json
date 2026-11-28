@@ -27,6 +27,18 @@
   "mcpFailureCopy": "نسخ التفاصيل",
   "localServer": "الخادم المحلي",
   "localServerDesktopOnly": "يعمل خادم MCP المحلي مع تطبيق OpenPencil لسطح المكتب. في المتصفح، استخدم WebMCP أدناه.",
+  "agentPairing": "الوكيل في هذا المتصفح",
+  "agentPairingDescription": "دع وكيل برمجة مثل Claude Code أو Codex أو Cursor يصمم في OpenPencil في هذا المتصفح، دون حساب. يعمل على المستندات المفتوحة لديك، وتشاهده وهو يعمل.",
+  "agentPairingConnect": "ربط وكيل",
+  "agentPairingDisconnect": "قطع الاتصال",
+  "agentPairingConnecting": "جارٍ الاتصال…",
+  "agentPairingWaiting": "بانتظار وكيلك",
+  "agentPairingWorking": "وكيلك يعمل في هذا المتصفح",
+  "agentPairingFailed": "رفض OpenPencil Cloud الاتصال. اتصل مرة أخرى.",
+  "agentPairingInstructions": "الصقه في وكيلك",
+  "agentPairingClaudeCode": "أو شغّله في الطرفية، لـ Claude Code",
+  "agentPairingConfig": "أو أضفه إلى إعدادات MCP، كما في Cursor",
+  "agentPairingNote": "يمكن لأي شخص لديه هذا الاتصال تغيير التصاميم المفتوحة في هذا المتصفح. يتوقف مؤقتًا أثناء إغلاق OpenPencil وينتهي عند قطع الاتصال. تبقى تغييرات التصاميم المحلية على هذا الجهاز حتى تحفظها، وتصل تغييرات مستندات Cloud إلى كل من فيها فورًا.",
   "webmcpDescription": "اسمح لوكلاء المتصفح باستخدام هذا المستند مباشرةً، دون خادم MCP محلي أو رمز Bearer. لا تنطبق إعدادات الخادم المحلي هنا.",
   "browserAccess": "وصول وكلاء المتصفح",
   "accessOff": "إيقاف",
@@ -85,5 +97,6 @@
   "statusStarting": "بدء التشغيل",
   "statusRunning": "يعمل",
   "statusStopped": "متوقف",
-  "statusError": "خطأ"
+  "statusError": "خطأ",
+  "agentPairingSignIn": "أضفه إلى وكيلك، لـ Claude Code، ثم سجّل الدخول منه واختر الاستخدام دون حساب"
 }

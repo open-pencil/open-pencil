@@ -80,7 +80,5 @@
   "showAnimationSettings": "アニメーションの設定を表示",
   "hideAnimationSettings": "アニメーションの設定を隠す",
   "afterPrevious": "前の後",
-  "pickSlide": "スライドを選択してアニメーションを付けます",
-  "presentFrames": "フレームをプレゼンテーション",
-  "presentFramesWithNotes": "発表者ビューでフレームをプレゼンテーション"
+  "pickSlide": "スライドを選択してアニメーションを付けます"
 }

@@ -80,7 +80,5 @@
   "showAnimationSettings": "Показать настройки анимации",
   "hideAnimationSettings": "Скрыть настройки анимации",
   "afterPrevious": "После предыдущей",
-  "pickSlide": "Выберите слайд, чтобы анимировать его",
-  "presentFrames": "Показать фреймы",
-  "presentFramesWithNotes": "Показать фреймы в режиме докладчика"
+  "pickSlide": "Выберите слайд, чтобы анимировать его"
 }

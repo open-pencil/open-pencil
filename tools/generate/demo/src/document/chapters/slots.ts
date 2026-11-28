@@ -1,4 +1,5 @@
 import { Frame, Instance, Text, linearGradient, type TreeNode } from '@open-pencil/design-jsx'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { createSlotProperty, updateSlotProperty } from '@open-pencil/scene-graph/slots'
 
@@ -19,7 +20,7 @@ export interface Player {
 }
 
 /** A cover made of a gradient and an icon. */
-function iconCover({ vars }: Theme): TreeNode {
+export function iconCover({ vars }: Theme): TreeNode {
   return Frame({
     name: 'Cover',
     flex: 'row',
@@ -41,7 +42,7 @@ function iconCover({ vars }: Theme): TreeNode {
 }
 
 /** A cover made of type. */
-function typeCover({ vars }: Theme): TreeNode {
+export function typeCover({ vars }: Theme): TreeNode {
   return Frame({
     name: 'Cover',
     flex: 'col',
@@ -64,6 +65,42 @@ function typeCover({ vars }: Theme): TreeNode {
   })
 }
 
+/** Makes the Player main component's artwork a slot, so each instance brings its own cover. */
+export function makeArtworkSlot(graph: SceneGraph, componentId: string): Player {
+  const player: Player = { id: componentId, slotId: createComponentPropertyId() }
+  const artwork = graph.getChildren(componentId).find((child) => child.name === ARTWORK_NAME)
+  if (!artwork || !createSlotProperty(graph, artwork.id, player.slotId)) {
+    throw new Error('The player has no artwork frame to make a slot of')
+  }
+  updateSlotProperty(graph, componentId, player.slotId, {
+    description: 'The cover. Any layer goes here; the player keeps everything else.',
+    slotSettings: { minChildren: 1, maxChildren: 1, stretchChildOnInsert: true }
+  })
+  return player
+}
+
+/** An instance of the player with its own track and cover. */
+export async function coveredPlayer(
+  graph: SceneGraph,
+  parentId: string,
+  player: Player,
+  track: { title: string; artist: string; cover: TreeNode }
+): Promise<string> {
+  const instance = await renderTree(
+    graph,
+    Instance({
+      of: player.id,
+      properties: {
+        [PLAYER_PROPERTIES.title.name]: track.title,
+        [PLAYER_PROPERTIES.artist.name]: track.artist
+      }
+    }),
+    { parentId }
+  )
+  await fillSlot(graph, instance.id, player.slotId, track.cover)
+  return instance.id
+}
+
 /**
  * Slots: the Player main component, whose artwork is a slot, and instances that fill the slot
  * with their own layers.
@@ -73,7 +110,7 @@ export async function createSlotsChapter(
   parts: PlayerParts
 ): Promise<Player> {
   const { graph, theme } = context
-  const player: Player = { id: '', slotId: createComponentPropertyId() }
+  const player: Player = { id: '', slotId: '' }
   await layoutChapter(context, {
     chapter: CHAPTERS.slots,
     heading: {
@@ -97,33 +134,12 @@ export async function createSlotsChapter(
     },
     async fill(row) {
       const [component] = graph.getChildren(row.id)
-      player.id = component.id
-      const artwork = graph.getChildren(component.id).find((child) => child.name === ARTWORK_NAME)
-      if (!artwork || !createSlotProperty(graph, artwork.id, player.slotId)) {
-        throw new Error('The player has no artwork frame to make a slot of')
-      }
-      updateSlotProperty(graph, component.id, player.slotId, {
-        description: 'The cover. Any layer goes here; the player keeps everything else.',
-        slotSettings: { minChildren: 1, maxChildren: 1, stretchChildOnInsert: true }
-      })
+      Object.assign(player, makeArtworkSlot(graph, component.id))
       const covers: { title: string; artist: string; cover: TreeNode }[] = [
         { title: 'Side B', artist: 'The Tapes', cover: iconCover(theme) },
         { title: 'Lo-fi Hours', artist: 'Various', cover: typeCover(theme) }
       ]
-      for (const { title, artist, cover } of covers) {
-        const instance = await renderTree(
-          graph,
-          Instance({
-            of: component.id,
-            properties: {
-              [PLAYER_PROPERTIES.title.name]: title,
-              [PLAYER_PROPERTIES.artist.name]: artist
-            }
-          }),
-          { parentId: row.id }
-        )
-        await fillSlot(graph, instance.id, player.slotId, cover)
-      }
+      for (const track of covers) await coveredPlayer(graph, row.id, player, track)
     }
   })
   return player

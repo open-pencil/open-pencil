@@ -233,38 +233,6 @@ export function deckDriver(page: () => Page) {
       })
     },
 
-    /** Adds frames to a design's page at these x positions, selects the first `selected`, returns IDs. */
-    async addFrames(xs: readonly number[], selected: number): Promise<string[]> {
-      return page().evaluate(
-        ({ xs, selected }) => {
-          const store = window.openPencil?.getStore?.()
-          if (!store) throw new Error('OpenPencil store not initialized')
-          const pageId = store.state.currentPageId
-          const ids = xs.map(
-            (x, index) =>
-              store.graph.createNode('FRAME', pageId, {
-                name: `Frame ${index + 1}`,
-                x,
-                y: 0,
-                width: 400,
-                height: 300
-              }).id
-          )
-          store.select(ids.slice(0, selected))
-          return ids
-        },
-        { xs, selected }
-      )
-    },
-
-    /** Deletes layers, such as frames a test added to a design. */
-    async remove(ids: readonly string[]) {
-      await page().evaluate((ids) => {
-        const store = window.openPencil?.getStore?.()
-        for (const id of ids) store?.graph.deleteNode(id)
-      }, ids)
-    },
-
     /** Animates a new box out of `parentId` on a click, and returns its ID. */
     async addExitingBox(parentId: string): Promise<string> {
       return page().evaluate((parentId) => {

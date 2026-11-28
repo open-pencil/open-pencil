@@ -1,0 +1,1 @@
+- A gradient stop's colour picker opens beside the fill picker with their bottom edges aligned, as in Figma.

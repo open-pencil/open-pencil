@@ -424,6 +424,8 @@ export const panelMessageDefaults = {
   shaderNeedsWebGPU: 'This browser has no WebGPU, so shaders show their saved frame.',
   stops: 'Stops',
   addStop: 'Add stop',
+  addShaderStops: 'Use color stops',
+  removeShaderStops: 'Use the effect’s own colors',
 
   alignCenter: 'Align center',
   alignMiddle: 'Align middle',

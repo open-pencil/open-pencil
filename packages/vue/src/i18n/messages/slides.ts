@@ -83,7 +83,5 @@ export const slideMessageDefaults = {
   showAnimationSettings: 'Show animation settings',
   hideAnimationSettings: 'Hide animation settings',
   afterPrevious: 'After previous',
-  pickSlide: 'Select a slide to animate it',
-  presentFrames: 'Present frames',
-  presentFramesWithNotes: 'Present frames with presenter view'
+  pickSlide: 'Select a slide to animate it'
 } as const
