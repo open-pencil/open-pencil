@@ -1,0 +1,6 @@
+// src is the layer, a copy of dst drawn over, which Skia scales by the paint's alpha, `opacity`.
+uniform float opacity;
+
+half4 main(half4 src, half4 dst) {
+  return src + (1 - half(opacity)) * dst;
+}

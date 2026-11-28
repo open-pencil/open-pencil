@@ -11,7 +11,8 @@ import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { drawnLayerBlurReach, mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
-import { needsIsolatedBlendLayer, restoreBlendedLayer, saveBlendedLayer } from './blend/modes'
+import { needsIsolatedBlendLayer } from './blend/modes'
+import { withNodeLayer } from './blend/node-layer'
 import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { renderLeafWithEffects } from './effects'
@@ -394,62 +395,62 @@ export function renderNode(
           overlays.rotationPreview
         )
       : null
-  if (needsNodeLayer) {
-    r.opacityPaint.setAlphaf(opacity)
-    saveBlendedLayer(r, canvas, r.opacityPaint, node.blendMode, layerBounds)
-  }
+  const drawLayer = () => {
+    if (layerBlur) {
+      // Entry guard: reset shared paint to known state
+      r.effectLayerPaint.setImageFilter(null)
+      r.effectLayerPaint.setColorFilter(null)
+      r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-  if (layerBlur) {
-    // Entry guard: reset shared paint to known state
-    r.effectLayerPaint.setImageFilter(null)
-    r.effectLayerPaint.setColorFilter(null)
-    r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-
-    const content = blurredContent(graph, node, overlays)
-    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
-    canvas.saveLayer(r.effectLayerPaint, layerBounds)
-  }
-
-  applyNodeTransforms(canvas, node, overlays)
-  renderLayerShadows(r, canvas, graph, node, 'behind')
-  // A frame or group's texture roughens what it and its children draw, not its shadows, and its
-  // noise grains the roughened result and its inner shadows, as in Figma. A shape does both itself.
-  const container = isLayerContainer(node)
-  const texture = container ? visibleTexture(node) : undefined
-  const drawContent = () => {
-    const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
-    try {
-      renderNodeContent(r, canvas, graph, node, overlays)
-      drawLayoutGrids(r, canvas, node)
-      renderChildren(
-        r,
-        canvas,
-        graph,
-        node,
-        overlays,
-        absX,
-        absY,
-        childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
-      )
-    } finally {
-      endTexture(canvas, textureSaves)
+      const content = blurredContent(graph, node, overlays)
+      r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
+      canvas.saveLayer(r.effectLayerPaint, layerBounds)
     }
-    renderLayerShadows(r, canvas, graph, node, 'front')
-  }
-  if (container) withNoiseEffects(r, canvas, node, graph, drawContent)
-  else drawContent()
 
-  if (layerBlur) {
-    canvas.restore()
-    // Exit guard: ensure shared paint is in clean state
-    r.effectLayerPaint.setImageFilter(null)
-    r.effectLayerPaint.setColorFilter(null)
-    r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    applyNodeTransforms(canvas, node, overlays)
+    renderLayerShadows(r, canvas, graph, node, 'behind')
+    // A frame or group's texture roughens what it and its children draw, not its shadows, and its
+    // noise grains the roughened result and its inner shadows, as in Figma. A shape does both itself.
+    const container = isLayerContainer(node)
+    const texture = container ? visibleTexture(node) : undefined
+    const drawContent = () => {
+      const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
+      try {
+        renderNodeContent(r, canvas, graph, node, overlays)
+        drawLayoutGrids(r, canvas, node)
+        renderChildren(
+          r,
+          canvas,
+          graph,
+          node,
+          overlays,
+          absX,
+          absY,
+          childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
+        )
+      } finally {
+        endTexture(canvas, textureSaves)
+      }
+      renderLayerShadows(r, canvas, graph, node, 'front')
+    }
+    if (container) {
+      withNoiseEffects(r, canvas, node, graph, drawContent)
+    } else {
+      drawContent()
+    }
+
+    if (layerBlur) {
+      canvas.restore()
+      // Exit guard: ensure shared paint is in clean state
+      r.effectLayerPaint.setImageFilter(null)
+      r.effectLayerPaint.setColorFilter(null)
+      r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    }
   }
   if (needsNodeLayer) {
-    restoreBlendedLayer(canvas)
-    r.opacityPaint.setAlphaf(1)
-    r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    withNodeLayer(r, canvas, graph, node, opacity, layerBounds, drawLayer)
+  } else {
+    drawLayer()
   }
   canvas.restore()
 }

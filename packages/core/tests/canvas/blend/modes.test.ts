@@ -359,6 +359,7 @@ function createCanvas() {
 function createRenderer(overrides: Partial<SkiaRenderer> = {}) {
   return asRenderer({
     drawCounts: { nodes: 0, culled: 0 },
+    backdropFreeLayers: [],
     worldViewport: { x: -100, y: -100, w: 1000, h: 1000 },
     ck: {
       BlendMode: blendModes,

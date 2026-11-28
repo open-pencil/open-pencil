@@ -19,6 +19,7 @@ export interface CompiledShaders {
   programs: Map<SkslProgram, CompiledProgram>
   blenders: Map<SkslProgram, Blender>
   kept: Map<SkslProgram, KeptShader>
+  keptBlenders: Map<SkslProgram, ResourceCache<string, Blender>>
   /** Images programs read, such as a noise's cell levels, by what they were built from. */
   tiles: ResourceCache<string, Image>
 }
@@ -26,11 +27,14 @@ export interface CompiledShaders {
 /** Tiles kept at once; a document rarely uses more noise densities and seeds on one screen. */
 const KEPT_TILES = 8
 
+const KEPT_BLENDERS = 16
+
 export function createCompiledShaders(): CompiledShaders {
   return {
     programs: new Map(),
     blenders: new Map(),
     kept: new Map(),
+    keptBlenders: new Map(),
     tiles: new ResourceCache({ maxEntries: KEPT_TILES, dispose: (tile) => tile.delete() })
   }
 }
@@ -40,6 +44,8 @@ export function releaseCompiledShaders(shaders: CompiledShaders): void {
   for (const blender of shaders.blenders.values()) blender.delete()
   for (const { shader } of shaders.kept.values()) shader.delete()
   shaders.tiles.clear()
+  for (const blenders of shaders.keptBlenders.values()) blenders.clear()
+  shaders.keptBlenders.clear()
   shaders.programs.clear()
   shaders.blenders.clear()
   shaders.kept.clear()
@@ -90,6 +96,41 @@ export function keptShader<U extends object>(
   const shader = compiled.effect.makeShader(uniforms)
   shaders.kept.set(program, { key, shader })
   return shader
+}
+
+export function keptBlender<U extends object>(
+  ck: CanvasKit,
+  shaders: CompiledShaders,
+  program: SkslProgram<U>,
+  values: NoInfer<U>
+): Blender {
+  const compiled = compiledProgram(ck, shaders, program)
+  const uniforms = compiled.uniforms(values)
+  const blenders = programBlenders(shaders, program)
+  const key = uniforms.join(',')
+  const kept = blenders.get(key)
+  if (kept) {
+    return kept
+  }
+  const blender = compiled.effect.makeBlender(uniforms)
+  blenders.set(key, blender)
+  return blender
+}
+
+function programBlenders(
+  shaders: CompiledShaders,
+  program: SkslProgram
+): ResourceCache<string, Blender> {
+  const existing = shaders.keptBlenders.get(program)
+  if (existing) {
+    return existing
+  }
+  const created = new ResourceCache<string, Blender>({
+    maxEntries: KEPT_BLENDERS,
+    dispose: (blender) => blender.delete()
+  })
+  shaders.keptBlenders.set(program, created)
+  return created
 }
 
 /**
