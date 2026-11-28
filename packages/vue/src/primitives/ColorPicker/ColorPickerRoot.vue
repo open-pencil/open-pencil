@@ -78,7 +78,8 @@ const { open: popupOpen, portalActive } = useRetainedPopup(
 const trigger = useTemplateRef('trigger')
 /**
  * Opened from inside another picker, such as a gradient stop's colour, it is placed against that
- * picker, so it sits beside it rather than over it, as Figma's does.
+ * picker, so it sits beside it rather than over it, their bottom edges aligned, as Figma's does
+ * whichever stop opened it.
  */
 const enclosingPicker = shallowRef<Element>()
 let openColor: Color = { ...color }
@@ -124,7 +125,7 @@ const outside = pickerOutsideHandlers(() => keepOpen)
         :class="ui?.content"
         :side-offset="4"
         :reference="enclosingPicker"
-        :align="enclosingPicker ? 'start' : 'center'"
+        :align="enclosingPicker ? 'end' : 'center'"
         :side="side"
         data-picker-content
         @escape-key-down="onEscapeKeyDown"
