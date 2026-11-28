@@ -105,6 +105,7 @@
   "scopeFontFamily": "Famiglia di caratteri",
   "exportDesignTokens": "Esporta come design token",
   "importDesignTokens": "Importa design token",
+  "importDesignTokensFolder": "Importa cartella di design token",
   "libraryCollection": "Libreria",
   "libraryCollectionHint": "Copiata da una libreria. Le modifiche vengono salvate in questo file e si vedono in Figma.",
   "addedToLibraryCollection": "Aggiunta qui. Figma non mostra le variabili aggiunte alla raccolta di una libreria.",

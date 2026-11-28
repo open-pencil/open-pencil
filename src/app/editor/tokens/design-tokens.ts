@@ -71,7 +71,9 @@ async function readDesignTokenFiles(files: readonly File[]): Promise<DesignToken
   const sources: DesignTokenSourceFile[] = []
   for (const file of files) {
     const path = file.webkitRelativePath || file.name
-    if (/\.zip$/i.test(file.name)) {
+    // A zip picked on its own is a token archive; one sitting in a picked folder is
+    // incidental to it (e.g. an unrelated download) and must not abort the import.
+    if (/\.zip$/i.test(file.name) && !file.webkitRelativePath) {
       const archive = unzipSync(new Uint8Array(await file.arrayBuffer()), {
         filter: (entry) => isTokenFile(entry.name)
       })

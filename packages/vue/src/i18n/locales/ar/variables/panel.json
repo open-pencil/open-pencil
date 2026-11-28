@@ -105,6 +105,7 @@
   "scopeFontFamily": "عائلة الخط",
   "exportDesignTokens": "تصدير كرموز تصميم",
   "importDesignTokens": "استيراد رموز التصميم",
+  "importDesignTokensFolder": "استيراد مجلد رموز التصميم",
   "libraryCollection": "المكتبة",
   "libraryCollectionHint": "منسوخة من مكتبة. تُحفظ التعديلات في هذا الملف وتظهر في Figma.",
   "addedToLibraryCollection": "أُضيف هنا. لا يعرض Figma المتغيّرات المضافة إلى مجموعة مكتبة.",

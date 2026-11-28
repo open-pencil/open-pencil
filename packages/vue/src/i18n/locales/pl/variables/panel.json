@@ -105,6 +105,7 @@
   "scopeFontFamily": "Rodzina czcionek",
   "exportDesignTokens": "Eksportuj jako tokeny projektowe",
   "importDesignTokens": "Importuj tokeny projektowe",
+  "importDesignTokensFolder": "Importuj folder tokenów projektowych",
   "libraryCollection": "Biblioteka",
   "libraryCollectionHint": "Skopiowana z biblioteki. Zmiany są zapisywane w tym pliku i widoczne w Figmie.",
   "addedToLibraryCollection": "Dodana tutaj. Figma nie pokazuje zmiennych dodanych do kolekcji biblioteki.",
