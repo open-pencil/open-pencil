@@ -1,30 +1,25 @@
 import type { SceneGraph, Stroke } from '@open-pencil/scene-graph'
+import { polygonBlob } from '@open-pencil/test-support/geometry'
 
 import { solid } from '../paints'
 
 const FONT_SIZE = 60
 const WEIGHT = 3
 
-type Command = [number, ...number[]]
 type Edges = readonly [left: number, top: number, right: number, bottom: number]
 
-function blob(commands: Command[]): Uint8Array {
-  const view = new DataView(new ArrayBuffer(4))
-  return new Uint8Array(
-    commands.flatMap(([op, ...args]) => [
-      op,
-      ...args.flatMap((value) => {
-        view.setFloat32(0, value, true)
-        return [view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3)]
-      })
-    ])
-  )
+function contour([left, top, right, bottom]: Edges, reversed = false): Uint8Array {
+  const corners = [
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom }
+  ]
+  return polygonBlob(reversed ? corners.reverse() : corners)
 }
 
-function contour([left, top, right, bottom]: Edges, reversed = false): Command[] {
-  return reversed
-    ? [[1, left, top], [2, left, bottom], [2, right, bottom], [2, right, top], [0]]
-    : [[1, left, top], [2, right, top], [2, right, bottom], [2, left, bottom], [0]]
+function joined(contours: Uint8Array[]): Uint8Array {
+  return new Uint8Array(contours.flatMap((bytes) => [...bytes]))
 }
 
 function grow([left, top, right, bottom]: Edges, by: number): Edges {
@@ -32,16 +27,16 @@ function grow([left, top, right, bottom]: Edges, by: number): Edges {
 }
 
 /** The band Figma saves for a text stroke: `WEIGHT` to either side of an outline. */
-function band(edges: Edges): Command[] {
-  return [...contour(grow(edges, WEIGHT)), ...contour(grow(edges, -WEIGHT), true)]
+function band(edges: Edges): Uint8Array[] {
+  return [contour(grow(edges, WEIGHT)), contour(grow(edges, -WEIGHT), true)]
 }
 
 const BLOCK: Edges = [0, 0, 0.5, 0.7]
 const RING: Edges = [0, 0, 0.6, 0.7]
 const COUNTER: Edges = [0.15, 0.15, 0.45, 0.55]
 const GLYPHS = [
-  { x: 6, outlines: [BLOCK], commands: contour(BLOCK) },
-  { x: 48, outlines: [RING, COUNTER], commands: [...contour(RING), ...contour(COUNTER, true)] }
+  { x: 6, outlines: [BLOCK], outline: contour(BLOCK) },
+  { x: 48, outlines: [RING, COUNTER], outline: joined([contour(RING), contour(COUNTER, true)]) }
 ]
 
 /** Glyph outlines are in ems above the baseline; layer space runs down from the layer's top. */
@@ -83,7 +78,7 @@ export function createTextStrokeSideScene(graph: SceneGraph, pageId: string): vo
       fontSize: FONT_SIZE,
       fills: [solid(1, 0.83, 0.23)],
       derivedTextGlyphs: GLYPHS.map((glyph, character) => ({
-        commandsBlob: blob(glyph.commands),
+        commandsBlob: glyph.outline,
         x: glyph.x,
         y: baseline,
         fontSize: FONT_SIZE,
@@ -94,7 +89,7 @@ export function createTextStrokeSideScene(graph: SceneGraph, pageId: string): vo
       strokeGeometry: [
         {
           windingRule: 'NONZERO',
-          commandsBlob: blob(
+          commandsBlob: joined(
             GLYPHS.flatMap((glyph) =>
               glyph.outlines.flatMap((outline) => band(toLayer(outline, glyph.x, baseline)))
             )

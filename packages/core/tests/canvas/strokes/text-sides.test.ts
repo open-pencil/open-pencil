@@ -5,6 +5,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Fill, type Stroke } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { polygonBlob } from '@open-pencil/test-support/geometry'
 
 const ck = await getCanvasKit()
 const SIZE = 40
@@ -17,31 +18,26 @@ const RED = { r: 1, g: 0, b: 0, a: 1 }
 const BLACK = { r: 0, g: 0, b: 0, a: 1 }
 const GREY = { r: 0.25, g: 0.25, b: 0.25, a: 1 }
 
-type Command = [number, ...number[]]
-
 function solid(color: Color, opacity = 1): Fill {
   return { type: 'SOLID', color, opacity, visible: true }
 }
 
-function blob(commands: Command[]): Uint8Array {
-  const view = new DataView(new ArrayBuffer(4))
-  return new Uint8Array(
-    commands.flatMap(([op, ...args]) => [
-      op,
-      ...args.flatMap((value) => {
-        view.setFloat32(0, value, true)
-        return [view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3)]
-      })
-    ])
-  )
+function rectangle(left: number, top: number, right: number, bottom: number): Uint8Array {
+  return polygonBlob([
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom }
+  ])
 }
 
-function rectangle(left: number, top: number, right: number, bottom: number): Command[] {
-  return [[1, left, top], [2, right, top], [2, right, bottom], [2, left, bottom], [0]]
-}
-
-function reversedRectangle(left: number, top: number, right: number, bottom: number): Command[] {
-  return [[1, left, top], [2, left, bottom], [2, right, bottom], [2, right, top], [0]]
+function reversedRectangle(left: number, top: number, right: number, bottom: number): Uint8Array {
+  return polygonBlob([
+    { x: left, y: top },
+    { x: left, y: bottom },
+    { x: right, y: bottom },
+    { x: right, y: top }
+  ])
 }
 
 /** The band Figma saves for a text stroke: `WEIGHT` to either side of the glyph's outline. */
@@ -49,7 +45,7 @@ function centredBand(baselineShift: number): Uint8Array {
   const { left, right } = GLYPH
   const top = GLYPH.top + baselineShift
   const bottom = GLYPH.bottom + baselineShift
-  return blob([
+  return new Uint8Array([
     ...rectangle(left - WEIGHT, top - WEIGHT, right + WEIGHT, bottom + WEIGHT),
     ...reversedRectangle(left + WEIGHT, top + WEIGHT, right - WEIGHT, bottom - WEIGHT)
   ])
@@ -89,7 +85,7 @@ function renderStrokedGlyph(
     fills: [solid(RED)],
     derivedTextGlyphs: [
       {
-        commandsBlob: blob(rectangle(0, 0, glyphWidth, glyphHeight)),
+        commandsBlob: rectangle(0, 0, glyphWidth, glyphHeight),
         x: GLYPH.left,
         y: GLYPH.bottom + baselineShift,
         fontSize: FONT_SIZE,
