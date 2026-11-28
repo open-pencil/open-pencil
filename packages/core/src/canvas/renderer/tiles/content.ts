@@ -15,6 +15,11 @@ import {
   type PendingStructureChange
 } from './structure'
 
+interface ContentResets {
+  pageSwitched: () => void
+  tooManyStructureChanges: () => void
+}
+
 /**
  * The page the tiles show: its chunk index, the content generation the tiles were built for,
  * and the layer changes recorded since the last frame, applied to the index and the caches
@@ -86,21 +91,21 @@ export class TilePageContent {
 
   /**
    * Brings the index up to the frame: applies the recorded changes to the page it was built
-   * for, and builds it for `pageId` when there is none. `invalidate` drops every tile, as when
-   * the page changed or its structure changed too much to apply a subtree at a time.
+   * for, and builds it for `pageId` when there is none. Each reset drops every tile: when the
+   * page changed, or when its structure changed too much to apply a subtree at a time.
    */
   sync(
     graph: SceneGraph,
     pageId: string | null,
     contentGeneration: number,
-    invalidate: () => void
+    resets: ContentResets
   ): void {
     // Node changes arrive through invalidateNode() and structural ones through
     // invalidateStructure(), so a new content generation on its own is a redraw request (every
     // requestRender() bumps it) and the rendered tiles stay valid. Invalidations also arrive
     // without a new generation, as when an image preview decodes.
     if (this.chunkIndex && this.page === pageId && this.pendingStructure.length > 0) {
-      this.applyPendingStructure(graph, contentGeneration, invalidate)
+      this.applyPendingStructure(graph, contentGeneration, resets.tooManyStructureChanges)
     }
     if (
       this.chunkIndex &&
@@ -109,7 +114,7 @@ export class TilePageContent {
     ) {
       this.applyPendingInvalidations(graph, contentGeneration)
     }
-    if (this.chunkIndex && this.page !== pageId) invalidate()
+    if (this.chunkIndex && this.page !== pageId) resets.pageSwitched()
     // Without an index nothing can be shown, so a page that arrives mid-gesture builds its index
     // at once; its tiles then fill in under the moving budget rather than after the gesture.
     if (this.chunkIndex === null && pageId) {

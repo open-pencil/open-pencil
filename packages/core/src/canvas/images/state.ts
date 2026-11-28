@@ -35,6 +35,7 @@ export interface RendererImages {
   readonly fillUsers: Map<string, Set<string>>
   /** Images whose sharper preview has decoded since the last frame. */
   readonly decodedPreviewHashes: Set<string>
+  readonly decodedPreviewKeys: Set<string>
   supersampledOutput: SupersampledOutput | null
 }
 
@@ -45,14 +46,16 @@ export function createRendererImages(): RendererImages {
     memoryGraph: null,
     memoryPage: null,
     onPreviewReady: null,
-    previews: new ImagePreviewCache((hash) => {
+    previews: new ImagePreviewCache((hash, key) => {
       images.decodedPreviewHashes.add(hash)
+      images.decodedPreviewKeys.add(key)
       images.onPreviewReady?.(hash)
     }),
     detailScale: 1,
     previewsDrawn: false,
     fillUsers: new Map(),
     decodedPreviewHashes: new Set(),
+    decodedPreviewKeys: new Set(),
     supersampledOutput: null
   }
   return images

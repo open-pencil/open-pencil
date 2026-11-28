@@ -55,6 +55,11 @@ const TILE_OVERSCAN = 1
  * rebuilt once the content has been still for this long.
  */
 const BACKGROUND_QUIET_MS = 300
+
+function isVisibleJob(job: TileJob): boolean {
+  return job.priority !== 'overscan'
+}
+
 export interface TiledSceneFrameResult {
   /** Every visible tile exists at the current level. */
   covered: boolean
@@ -87,6 +92,10 @@ export class TiledSceneController {
    * out; a test reads it to prove a gesture rebuilt none.
    */
   visibleTilesRendered = 0
+  visibleTileProgress = 0
+  private readonly nodesRecordedThisPass = new Set<string>()
+  private readonly decodedPreviewKeys = new Set<string>()
+  private passFontGeneration: number | null = null
   private readonly now: () => number
   /** The dot grid the cached tiles were painted with, which a document kind change replaces. */
   private dotGrid: number | null = null
@@ -145,7 +154,7 @@ export class TiledSceneController {
    */
   invalidateStructure(nodeId?: string, parentId?: string | null): void {
     if (nodeId === undefined) {
-      this.invalidate()
+      this.redrawFromScratch()
       return
     }
     this.content.invalidateStructure(nodeId, parentId)
@@ -199,7 +208,7 @@ export class TiledSceneController {
     const { r, g, b, a } = renderer.pageColor
     const pageColor = `${r},${g},${b},${a}`
     if (renderer.pageDotGrid !== this.dotGrid || pageColor !== this.pageColor) {
-      this.invalidate()
+      this.redrawFromScratch()
       this.dotGrid = renderer.pageDotGrid
       this.pageColor = pageColor
     }
@@ -353,8 +362,15 @@ export class TiledSceneController {
     this.tileCache.clear()
   }
 
+  private redrawFromScratch(): void {
+    this.invalidate()
+    this.decodedPreviewKeys.clear()
+    this.startRecordingPass()
+  }
+
   destroy(): void {
     this.invalidate()
+    this.decodedPreviewKeys.clear()
     this.cancelledJobs = 0
     this.navigationGeneration = -1
     this.navigationActive = false
@@ -377,7 +393,10 @@ export class TiledSceneController {
     navigationGeneration: number
   ): void {
     this.cancelledJobs += this.scheduler.setGeneration(navigationGeneration, contentGeneration)
-    this.content.sync(graph, renderer.pageId, contentGeneration, () => this.invalidate())
+    this.content.sync(graph, renderer.pageId, contentGeneration, {
+      pageSwitched: () => this.redrawFromScratch(),
+      tooManyStructureChanges: () => this.invalidate()
+    })
   }
 
   /**
@@ -460,10 +479,7 @@ export class TiledSceneController {
     const startedAt = this.now()
     if (
       job.kind !== 'downsample' &&
-      !recordTilePictures(renderer, graph, index, this.pictureCache, job.key, {
-        now: this.now,
-        remainingMs
-      })
+      !this.recordPictures(renderer, graph, index, job, remainingMs)
     ) {
       return { renderMs: this.now() - startedAt, overBudget: false, deferred: true }
     }
@@ -484,11 +500,66 @@ export class TiledSceneController {
     }
     this.tileCache.takeWatchedEvictions()
     this.tileCache.install(tile, job.contentGeneration)
-    if (job.priority !== 'overscan') this.visibleTilesRendered++
-    if (job.priority === 'overscan' && this.tileCache.takeWatchedEvictions() > 0) {
+    if (isVisibleJob(job)) {
+      this.visibleTilesRendered++
+      this.visibleTileProgress++
+      this.startRecordingPass()
+    }
+    if (!isVisibleJob(job) && this.tileCache.takeWatchedEvictions() > 0) {
       this.backgroundSaturated = true
     }
     return tileJobResult(tile, TILE_FRAME_BUDGET_MS)
+  }
+
+  private recordPictures(
+    renderer: SkiaRenderer,
+    graph: SceneGraph,
+    index: RenderChunkIndex,
+    job: TileJob,
+    remainingMs: number
+  ): boolean {
+    this.startRecordingPassForNewFonts(renderer)
+    const nodesBefore = this.nodesRecordedThisPass.size
+    const complete = recordTilePictures(
+      renderer,
+      graph,
+      index,
+      this.pictureCache,
+      job.key,
+      { now: this.now, remainingMs },
+      (chunk) => {
+        if (isVisibleJob(job)) {
+          this.nodesRecordedThisPass.add(chunk.nodeId)
+        }
+      }
+    )
+    if (!complete && this.nodesRecordedThisPass.size > nodesBefore) {
+      this.visibleTileProgress++
+    }
+    return complete
+  }
+
+  private startRecordingPass(): void {
+    this.nodesRecordedThisPass.clear()
+  }
+
+  startRecordingPassForPreviews(previewKeys: ReadonlySet<string>): void {
+    const firstDecodes = [...previewKeys].filter((key) => !this.decodedPreviewKeys.has(key))
+    if (firstDecodes.length === 0) {
+      return
+    }
+    for (const key of firstDecodes) {
+      this.decodedPreviewKeys.add(key)
+    }
+    this.startRecordingPass()
+  }
+
+  private startRecordingPassForNewFonts(renderer: SkiaRenderer): void {
+    if (renderer.fontGeneration === this.passFontGeneration) {
+      return
+    }
+    this.passFontGeneration = renderer.fontGeneration
+    this.startRecordingPass()
   }
 
   /** Null when a child has gone since the job was planned; the next plan decides again. */

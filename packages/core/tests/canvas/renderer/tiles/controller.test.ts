@@ -11,6 +11,7 @@ import {
 } from '#core-tests/canvas/renderer/tiles/helpers'
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { TiledSceneController } from '#core/canvas/renderer/tiles'
 
@@ -294,6 +295,158 @@ describe('tile scheduling', () => {
       renderer.destroy()
     }
   })
+
+  test('counts each frame that records part of a visible tile as progress until it lands', () => {
+    const { graph, surface, renderer } = createGridScene(ck)
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
+    try {
+      const progressByFrame: number[] = []
+      let covered = false
+      while (!covered && progressByFrame.length < 300) {
+        covered = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0).covered
+        progressByFrame.push(controller.visibleTileProgress)
+      }
+      expect(covered).toBe(true)
+      expect(progressByFrame.length).toBeGreaterThan(3)
+      expect(progressByFrame).toEqual(progressByFrame.map((_, frame) => frame + 1))
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test.each([
+    {
+      change: 'layer edits',
+      edit: (controller: TiledSceneController, graph: SceneGraph, nodeIds: string[]) => {
+        for (const nodeId of nodeIds) {
+          controller.invalidateNode(nodeId, graph)
+        }
+      }
+    },
+    {
+      change: 'previews of the same images decoding again',
+      edit: (controller: TiledSceneController, graph: SceneGraph, nodeIds: string[]) => {
+        for (const nodeId of nodeIds) {
+          controller.invalidateNode(nodeId, graph)
+        }
+        controller.startRecordingPassForPreviews(new Set(['churned']))
+      }
+    },
+    {
+      change: 'structure changes too many to apply one subtree at a time',
+      edit: (controller: TiledSceneController, graph: SceneGraph, nodeIds: string[]) => {
+        for (const nodeId of nodeIds) {
+          controller.invalidateStructure(nodeId, graph.getNode(nodeId)?.parentId)
+        }
+      }
+    }
+  ])('does not count pictures re-recorded for $change every frame', ({ edit }) => {
+    const { graph, surface, renderer, pageId } = createGridScene(ck)
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
+    const nodeIds = graph.getChildren(pageId).map((node) => node.id)
+    try {
+      const progressByFrame: number[] = []
+      for (let frame = 0; frame < 100; frame++) {
+        edit(controller, graph, nodeIds)
+        const result = controller.renderFrame(renderer, surface.getCanvas(), graph, frame + 1, 0)
+        expect(result.covered).toBe(false)
+        progressByFrame.push(controller.visibleTileProgress)
+      }
+      expect(progressByFrame.at(-1)).toBe(progressByFrame[9])
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('keeps counting progress when new fonts make the open record its pictures again', () => {
+    const { graph, surface, renderer } = createGridScene(ck)
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
+    try {
+      const progressByFrame: number[] = []
+      let covered = false
+      while (!covered && progressByFrame.length < 300) {
+        if (progressByFrame.length === 2) {
+          renderer.fontGeneration++
+        }
+        covered = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0).covered
+        progressByFrame.push(controller.visibleTileProgress)
+      }
+      expect(covered).toBe(true)
+      expect(progressByFrame).toEqual(progressByFrame.map((_, frame) => frame + 1))
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test('keeps counting progress when decoded images make the open record its pictures again', () => {
+    const { graph, surface, renderer, pageId } = createGridScene(ck)
+    let time = 0
+    const controller = new TiledSceneController({ now: () => (time += 10) })
+    const nodeIds = graph.getChildren(pageId).map((node) => node.id)
+    try {
+      const progressByFrame: number[] = []
+      let covered = false
+      while (!covered && progressByFrame.length < 300) {
+        if (progressByFrame.length === 2) {
+          for (const nodeId of nodeIds) {
+            controller.invalidateNode(nodeId, graph)
+          }
+          controller.startRecordingPassForPreviews(new Set(['decoded']))
+        }
+        covered = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0).covered
+        progressByFrame.push(controller.visibleTileProgress)
+      }
+      expect(covered).toBe(true)
+      expect(progressByFrame).toEqual(progressByFrame.map((_, frame) => frame + 1))
+    } finally {
+      controller.destroy()
+      renderer.destroy()
+    }
+  })
+
+  test.each([
+    { secondDecode: 'at another size', secondKey: 'image:preview:512', keepsCounting: true },
+    { secondDecode: 'again at the same size', secondKey: 'image:preview:128', keepsCounting: false }
+  ])(
+    'after an image decodes, its preview decoding $secondDecode keeps progress counting: $keepsCounting',
+    ({ secondKey, keepsCounting }) => {
+      const { graph, surface, renderer, pageId } = createGridScene(ck)
+      let time = 0
+      const controller = new TiledSceneController({ now: () => (time += 10) })
+      const imageUsers = graph.getChildren(pageId).map((node) => node.id)
+      const decodeAtFrame = new Map([
+        [1, 'image:preview:128'],
+        [4, secondKey]
+      ])
+      try {
+        const progressByFrame: number[] = []
+        let covered = false
+        while (!covered && progressByFrame.length < 300) {
+          const decodedKey = decodeAtFrame.get(progressByFrame.length)
+          if (decodedKey) {
+            for (const nodeId of imageUsers) {
+              controller.invalidateNode(nodeId, graph)
+            }
+            controller.startRecordingPassForPreviews(new Set([decodedKey]))
+          }
+          covered = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 0).covered
+          progressByFrame.push(controller.visibleTileProgress)
+        }
+        expect(covered).toBe(true)
+        const countedEveryFrame = progressByFrame.every((progress, frame) => progress === frame + 1)
+        expect(countedEveryFrame).toBe(keepsCounting)
+      } finally {
+        controller.destroy()
+        renderer.destroy()
+      }
+    }
+  )
 
   test('renders the tile under the viewport centre first', () => {
     const { graph, renderer, pageId } = createGridScene(ck)

@@ -470,7 +470,9 @@ export class SkiaRenderer {
     for (const hash of this.images.decodedPreviewHashes) {
       for (const nodeId of this.images.fillUsers.get(hash) ?? []) this.redrawNode(nodeId, graph)
     }
+    this.tiledScene.startRecordingPassForPreviews(this.images.decodedPreviewKeys)
     this.images.decodedPreviewHashes.clear()
+    this.images.decodedPreviewKeys.clear()
   }
 
   /** Redraws the text that just gained its fonts; tiles keep everything else. */

@@ -72,8 +72,8 @@ export class ImagePreviewCache {
   private generation = 0
 
   constructor(
-    /** Called with the image's hash once one of its previews has decoded. */
-    private readonly ready: (hash: string) => void,
+    /** Called with the image's hash and the preview's key once one of its previews has decoded. */
+    private readonly ready: (hash: string, key: string) => void,
     maxBytes = PREVIEW_CACHE_BYTES
   ) {
     this.entries = new ResourceCache({
@@ -174,7 +174,7 @@ export class ImagePreviewCache {
           // Remember oversized results as failures instead of decoding them on every repaint.
           this.entries.set(job.key, { source: job.source })
         }
-        if (preview) this.ready(job.hash)
+        if (preview) this.ready(job.hash, job.key)
       }
     } finally {
       this.workers--
