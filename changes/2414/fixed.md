@@ -1,0 +1,1 @@
+- Inside and outside text strokes from .fig files stay on their side of the letters (#2414).

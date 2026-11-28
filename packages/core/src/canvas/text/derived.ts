@@ -152,24 +152,38 @@ function applyGlyphEmTransform(canvas: Canvas, glyph: DerivedTextGlyph, glyphY: 
   canvas.scale(glyph.fontSize, -glyph.fontSize)
 }
 
-/** The outline moved by the transform `applyGlyphEmTransform` applies to the canvas. */
+function glyphLayerMatrix(r: SkiaRenderer, glyph: DerivedTextGlyph, glyphY: number): number[] {
+  const { Matrix } = r.ck
+  return Matrix.multiply(
+    Matrix.translated(glyph.x, glyphY),
+    Matrix.scaled(glyph.scaleX ?? 1, glyph.scaleY ?? 1),
+    Matrix.rotated(-(glyph.rotation ?? 0)),
+    Matrix.scaled(glyph.fontSize, -glyph.fontSize)
+  )
+}
+
 function layerSpaceGlyphPath(
   r: SkiaRenderer,
   path: Path,
   glyph: DerivedTextGlyph,
   glyphY: number
 ): Path {
-  const { Matrix } = r.ck
   const builder = new r.ck.PathBuilder()
-  builder.addPath(
-    path,
-    Matrix.multiply(
-      Matrix.translated(glyph.x, glyphY),
-      Matrix.scaled(glyph.scaleX ?? 1, glyph.scaleY ?? 1),
-      Matrix.rotated(-(glyph.rotation ?? 0)),
-      Matrix.scaled(glyph.fontSize, -glyph.fontSize)
-    )
-  )
+  builder.addPath(path, glyphLayerMatrix(r, glyph, glyphY))
+  return builder.detachAndDelete()
+}
+
+export function savedGlyphsAtDrawnBaselines(r: SkiaRenderer, node: SceneNode): Path | null {
+  const glyphs = node.derivedTextGlyphs?.filter((glyph) => !glyph.emojiCodePoints)
+  if (!glyphs?.length) {
+    return null
+  }
+  const snapBaselines = !hasRotatedDerivedGlyphs(node)
+  const builder = new r.ck.PathBuilder()
+  for (const glyph of glyphs) {
+    const glyphY = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
+    builder.addPath(derivedGlyphPath(r, glyph.commandsBlob), glyphLayerMatrix(r, glyph, glyphY))
+  }
   return builder.detachAndDelete()
 }
 

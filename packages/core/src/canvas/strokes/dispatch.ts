@@ -22,6 +22,7 @@ import {
   withStrokeDash
 } from '#core/canvas/strokes/draw'
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
+import { savedGlyphsAtDrawnBaselines } from '#core/canvas/text/derived'
 import { vectorNetworkToCenterlinePath, vectorNetworkToPath } from '#core/vector'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
@@ -184,6 +185,14 @@ function drawNodeStroke(
   }
   if (node.type === 'VECTOR' && stroke.align !== 'CENTER') {
     drawFillSideStrokeGeometry(r, canvas, node, stroke, sc, sg)
+    return
+  }
+  const sidedTextStroke =
+    node.type === 'TEXT' && stroke.align !== 'CENTER' && !isPathTextWithStrokeGeometry(node)
+      ? glyphSideStrokeGeometry(r, node, stroke.align, sg)
+      : null
+  if (sidedTextStroke) {
+    drawVectorStrokeGeometry(r, canvas, sidedTextStroke, sc, stroke.opacity)
     return
   }
   if (stroke.align !== 'INSIDE') {
@@ -428,4 +437,34 @@ function drawFillSideStrokeGeometry(
   }
   drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
   canvas.restore()
+}
+
+// Figma saves a text stroke as a band centred on the glyph outlines whatever its align.
+function glyphSideStrokeGeometry(
+  r: SkiaRenderer,
+  node: SceneNode,
+  align: 'INSIDE' | 'OUTSIDE',
+  sg: Path[]
+): Path[] | null {
+  const key = `${node.id}|glyph-side|${align}`
+  const cached = r.nodePaths.strokeOutline.get(key)
+  if (cached) {
+    return cached
+  }
+  const glyphs = savedGlyphsAtDrawnBaselines(r, node)
+  if (!glyphs) {
+    return null
+  }
+  const op = align === 'OUTSIDE' ? r.ck.PathOp.Difference : r.ck.PathOp.Intersect
+  const sided = sg.map((band) => r.ck.Path.MakeFromOp(band, glyphs, op))
+  glyphs.delete()
+  const built = sided.filter((path): path is Path => path !== null)
+  if (built.length !== sided.length) {
+    for (const path of built) {
+      path.delete()
+    }
+    return null
+  }
+  r.nodePaths.store(r.nodePaths.strokeOutline, key, built)
+  return built
 }

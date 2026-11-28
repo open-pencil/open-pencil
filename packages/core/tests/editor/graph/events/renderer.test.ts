@@ -16,7 +16,8 @@ describe('graph event renderer invalidation', () => {
       // A vector's open corners are rounded by its corner radius.
       { cornerRadius: 24 },
       { fillGeometry: [] },
-      { strokeGeometry: [] }
+      { strokeGeometry: [] },
+      { derivedTextGlyphs: [] }
     ]) {
       expect(rendererInvalidationForChanges(changes, { preview: false }).geometryCache).toBe(true)
       expect(rendererInvalidationForChanges(changes, { preview: true }).geometryCache).toBe(true)
