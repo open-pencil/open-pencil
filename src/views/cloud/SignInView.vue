@@ -8,6 +8,7 @@ import type { CloudSocialProvider } from '@open-pencil/cloud/client'
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
 import { continuationPath, continuationURL, portalURL } from '@/app/cloud-portal/navigation'
+import { pairingPathFor, pairsAgents } from '@/app/cloud-portal/pairing'
 import PortalSignIn from '@/components/cloud-portal/auth/PortalSignIn.vue'
 
 const portal = usePortal()
@@ -30,6 +31,10 @@ const returnsTo = computed(() => {
     return 'editor'
   return null
 })
+/** Where an agent's sign-in goes on without an account, where the server allows that. */
+const withoutAccount = computed(() =>
+  pairsAgents(portal.discovery) ? pairingPathFor(redirect.value) : null
+)
 const error = ref<string | null>(callback(route.query))
 const submitting = ref(false)
 
@@ -119,6 +124,8 @@ function switchMode() {
     @provider="withProvider"
     @submit="submit"
     @forgot-password="router.push({ name: 'forgot-password', query: { redirect } })"
+    :without-account="withoutAccount !== null"
     @switch-mode="switchMode"
+    @without-account="withoutAccount && router.push(withoutAccount)"
   />
 </template>

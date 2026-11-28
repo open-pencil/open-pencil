@@ -9,6 +9,7 @@ import {
   type CloudServerConfig,
   type ObjectStore
 } from '#cloud/server'
+import { fetchClientMetadataResource } from '@better-auth/cimd/node'
 
 import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
@@ -36,7 +37,9 @@ export async function createNodeCloudApplication(
   })
   const objects = createS3ObjectStore(config)
   const { email, invitationOutbox } = createNodeTransactionalEmailRuntime(config, database)
-  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
+  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email, {
+    fetchClientMetadata: fetchClientMetadataResource
+  })
   const app = createCloudApp({
     config,
     database,

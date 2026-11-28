@@ -29,6 +29,9 @@ import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
+import PresentButton from '@/components/slides/present/PresentButton.vue'
+import PresentView from '@/components/slides/present/PresentView.vue'
+import SlideNotes from '@/components/slides/SlideNotes.vue'
 import StatusesDialog from '@/components/statuses/StatusesDialog.vue'
 import EditorToolbar from '@/components/toolbar/EditorToolbar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -109,6 +112,7 @@ function onResizeKeyHandled(event: KeyboardEvent) {
   if (isResizeKey(event)) finishResize()
 }
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
+const verticalSplitterStyles = tv(splitterTheme)({ direction: 'vertical' })
 /**
  * A canvas whose view hides the panels takes the whole window when it is the only one shown, in the
  * canvas-only layout; split view keeps the panels for the other panes.
@@ -129,6 +133,7 @@ const toolsStay = computed(() => {
  * canvas keeps its drawing surfaces and split views rather than starting new ones.
  */
 const showPanels = computed(() => store.state.showUI && !canvasAlone.value)
+const notesShown = computed(() => showPanels.value && resolveEditorProfile(store.state).filmstrip)
 /**
  * Reka (2.11) attaches a resize handle's arrow-key listener in an effect that runs before a
  * handle mounted into an existing splitter is in the document, and never again, so handles that
@@ -142,6 +147,16 @@ watch(
   (shown) => {
     handlesReady.value = false
     if (shown) void nextTick(() => (handlesReady.value = true))
+  },
+  { immediate: true }
+)
+// The notes strip comes and goes with a deck, not only with the panels, so its handle waits too.
+const notesHandleReady = ref(false)
+watch(
+  notesShown,
+  (shown) => {
+    notesHandleReady.value = false
+    if (shown) void nextTick(() => (notesHandleReady.value = true))
   },
   { immediate: true }
 )
@@ -188,31 +203,55 @@ const { pending: roomPending } = useRoomActions()
     </template>
     <!-- Let the canvas take the remainder; its cached default must not outlive sidebar changes. -->
     <SplitterPanel id="canvas" :order="1" :min-size="30" class="flex">
-      <div class="relative flex min-w-0 flex-1">
-        <CanvasSplitRoot />
-        <ActiveRoomOverlay />
-        <EditorToolbar v-if="showPanels || (toolsStay && !canvasAlone)" />
-        <template v-if="!showPanels">
-          <WorkspacePill
-            v-if="canvasAlone"
-            mode="preview"
-            :document-name="store.state.documentName"
-            :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"
-            @reset="store.resetPlay()"
-            @leave="store.stopPlay()"
-          />
-          <WorkspacePill
-            v-else
-            mode="collapsed"
-            :document-name="store.state.documentName"
-            :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
-            :chat-open="floatingChat"
-            @show-ui="store.state.showUI = true"
-            @toggle-chat="floatingChat = !floatingChat"
-          />
-          <FloatingChat v-if="!canvasAlone && floatingChat" @close="floatingChat = false" />
+      <!-- A deck keeps its speaker notes in a strip under the canvas, which a person can resize. -->
+      <SplitterGroup direction="vertical" auto-save-id="slide-notes-layout" class="flex-1">
+        <SplitterPanel id="stage" :order="0" :min-size="40" class="flex">
+          <div class="relative flex min-w-0 flex-1">
+            <CanvasSplitRoot />
+            <ActiveRoomOverlay />
+            <EditorToolbar v-if="showPanels || (toolsStay && !canvasAlone)" />
+            <template v-if="!showPanels">
+              <WorkspacePill
+                v-if="canvasAlone"
+                mode="preview"
+                :document-name="store.state.documentName"
+                :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"
+                @reset="store.resetPlay()"
+                @leave="store.stopPlay()"
+              />
+              <WorkspacePill
+                v-else
+                mode="collapsed"
+                :document-name="store.state.documentName"
+                :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
+                :chat-open="floatingChat"
+                @show-ui="store.state.showUI = true"
+                @toggle-chat="floatingChat = !floatingChat"
+              />
+              <FloatingChat v-if="!canvasAlone && floatingChat" @close="floatingChat = false" />
+            </template>
+          </div>
+        </SplitterPanel>
+        <template v-if="notesShown">
+          <SplitterResizeHandle
+            data-test-id="slide-notes-splitter-handle"
+            :disabled="!notesHandleReady"
+            :class="verticalSplitterStyles.handle()"
+          >
+            <div :class="verticalSplitterStyles.divider()" />
+          </SplitterResizeHandle>
+          <SplitterPanel
+            id="notes"
+            :order="1"
+            :default-size="16"
+            :min-size="8"
+            :max-size="50"
+            class="flex"
+          >
+            <SlideNotes />
+          </SplitterPanel>
         </template>
-      </div>
+      </SplitterGroup>
     </SplitterPanel>
     <template v-if="showPanels">
       <SplitterResizeHandle
@@ -234,6 +273,7 @@ const { pending: roomPending } = useRoomActions()
       >
         <div class="flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-1.5">
           <CollabPanel class="min-w-0 flex-1" />
+          <PresentButton />
           <IconButton
             :label="
               editor.startPreview({
@@ -274,6 +314,7 @@ const { pending: roomPending } = useRoomActions()
     </div>
   </div>
 
+  <PresentView v-if="store.state.presentation" />
   <VariablesDialog />
   <StatusesDialog />
   <CommentDeleteDialog />

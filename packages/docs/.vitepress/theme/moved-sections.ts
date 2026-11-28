@@ -20,6 +20,136 @@ const MOVED_SECTIONS: Record<string, Record<string, string>> = {
     'saving-files': '/user-guide/files#save',
     'round-trip-compatibility': '/user-guide/files#save'
   },
+  // Libraries became a page of their own, and behaviours a task on the Components page.
+  '/user-guide/components/': {
+    'component-libraries': '/user-guide/component-libraries',
+    'publish-a-library': '/user-guide/component-libraries#publish-a-library',
+    'enable-and-insert-library-assets': '/user-guide/component-libraries#use-a-library',
+    'review-and-accept-updates': '/user-guide/component-libraries#update-to-a-new-version',
+    'local-storage-and-offline-use': '/user-guide/component-libraries#where-libraries-live',
+    'saving-consumer-documents': '/user-guide/component-libraries#where-libraries-live',
+    'behaviours-and-preview': '/user-guide/components#make-a-component-work-like-a-control'
+  },
+  // The Context Menu page's actions moved to the pages of the tasks they belong to.
+  '/user-guide/selection-and-manipulation/': {
+    'copy-paste-as': '/user-guide/exporting#copy-into-another-app',
+    'clipboard-actions': '/user-guide/selection-and-manipulation#copy-paste-and-delete',
+    'copy-and-paste-properties': '/user-guide/selection-and-manipulation#copy-the-look-of-a-layer',
+    'z-order': '/user-guide/selection-and-manipulation#put-layers-in-front-or-behind',
+    grouping: '/user-guide/selection-and-manipulation#group-layers',
+    'component-actions': '/user-guide/components',
+    'visibility-lock': '/user-guide/selection-and-manipulation#hide-and-lock-layers',
+    'move-to-page': '/user-guide/layers-and-pages#work-with-pages'
+  },
+  // Sections renamed or merged when these pages were rewritten as tasks.
+  '/user-guide/ai-chat/': {
+    'supported-providers': '/user-guide/models-and-providers#providers',
+    setup: '/user-guide/ai-chat#set-up-the-ai',
+    'step-limit': '/user-guide/ai-chat#while-the-ai-works',
+    'tool-access': '/user-guide/ai-chat#choose-what-the-ai-can-do',
+    skills: '/user-guide/ai-chat#teach-the-ai-with-skills',
+    'saved-conversations': '/user-guide/ai-chat#long-conversations',
+    'what-it-can-do': '/user-guide/ai-chat#ask-for-a-design',
+    'visual-verification': '/user-guide/ai-chat#ask-for-a-design',
+    'design-reviews': '/user-guide/ai-chat#ask-for-a-review',
+    prompts: '/user-guide/ai-chat#change-the-ai-s-instructions',
+    'context-and-compaction': '/user-guide/ai-chat#long-conversations',
+    'messages-while-the-assistant-works': '/user-guide/ai-chat#while-the-ai-works',
+    'stopping-a-reply': '/user-guide/ai-chat#while-the-ai-works',
+    'undoing-the-assistant-s-edits': '/user-guide/ai-chat#undo-what-the-ai-did',
+    'following-the-assistant': '/user-guide/ai-chat#while-the-ai-works',
+    notifications: '/user-guide/ai-chat#get-notified',
+    'example-prompts': '/user-guide/ai-chat#ask-for-a-design',
+    tips: '/user-guide/ai-chat#ask-for-a-design'
+  },
+  '/user-guide/coding-agents/': {
+    'what-you-need': '/user-guide/coding-agents#set-up-an-agent',
+    'let-your-agent-set-itself-up': '/user-guide/coding-agents#set-up-an-agent',
+    'models-and-roles': '/user-guide/coding-agents#choose-the-model-and-mode'
+  },
+  '/user-guide/drawing-shapes/': {
+    'toolbar-tools': '/user-guide/drawing-shapes#draw-a-shape',
+    'shapes-flyout': '/user-guide/drawing-shapes#draw-a-shape',
+    'customizing-the-toolbar': '/user-guide/drawing-shapes#arrange-the-toolbar',
+    'constrained-drawing': '/user-guide/drawing-shapes#draw-a-shape',
+    'shape-properties': '/user-guide/drawing-shapes#color-a-shape',
+    fill: '/user-guide/drawing-shapes#color-a-shape',
+    stroke: '/user-guide/drawing-shapes#add-an-outline',
+    'corner-radius': '/user-guide/drawing-shapes#round-the-corners',
+    effects: '/user-guide/drawing-shapes#add-shadows-and-blurs',
+    'frames-and-sections': '/user-guide/drawing-shapes#draw-a-frame',
+    'keyboard-shortcuts': '/user-guide/drawing-shapes#draw-a-shape',
+    tips: '/user-guide/drawing-shapes#draw-a-shape'
+  },
+  '/user-guide/pen-tool/': {
+    activating: '/user-guide/pen-tool#draw-a-path',
+    'placing-points': '/user-guide/pen-tool#draw-a-path',
+    'closing-a-path': '/user-guide/pen-tool#draw-a-path',
+    'open-paths': '/user-guide/pen-tool#draw-a-path',
+    'vector-networks': '/user-guide/vector-edit',
+    pencil: '/user-guide/pen-tool#draw-freehand',
+    'keyboard-shortcuts': '/user-guide/pen-tool#draw-a-path',
+    tips: '/user-guide/pen-tool#draw-a-path'
+  },
+  '/user-guide/vector-edit/': {
+    'entering-the-mode': '/user-guide/vector-edit#edit-a-path',
+    'exiting-the-mode': '/user-guide/vector-edit#edit-a-path',
+    'what-changes-in-this-mode': '/user-guide/vector-edit#edit-a-path',
+    'basic-actions': '/user-guide/vector-edit#edit-a-path',
+    'move-an-anchor': '/user-guide/vector-edit#edit-a-path',
+    'edit-a-bezier-handle': '/user-guide/vector-edit#edit-a-path',
+    'select-and-move-a-segment': '/user-guide/vector-edit#edit-a-path',
+    'select-with-a-marquee': '/user-guide/vector-edit#edit-a-path',
+    'select-a-region': '/user-guide/vector-edit#edit-a-path',
+    'delete-anchors-and-segments': '/user-guide/vector-edit#add-and-delete-points',
+    'handle-drag-modifiers': '/user-guide/vector-edit#shape-a-curve',
+    'bend-override-by-dragging-an-anchor': '/user-guide/vector-edit#shape-a-curve',
+    'using-the-pen-tool-in-edit-mode': '/user-guide/vector-edit#add-and-delete-points',
+    'practical-workflow': '/user-guide/vector-edit#edit-a-path'
+  },
+  '/user-guide/text-editing/': {
+    'creating-text': '/user-guide/text-editing#add-text',
+    'inline-editing': '/user-guide/text-editing#change-text',
+    'cursor-navigation': '/user-guide/text-editing#change-text',
+    'text-selection': '/user-guide/text-editing#change-text',
+    'rich-text-formatting': '/user-guide/text-editing#style-text',
+    'editing-operations': '/user-guide/text-editing#change-text',
+    'font-picker': '/user-guide/text-editing#choose-a-font',
+    'font-weight': '/user-guide/text-editing#style-text',
+    'variable-fonts': '/user-guide/text-editing#fine-tune-a-variable-font',
+    'font-sources': '/user-guide/text-editing#choose-a-font',
+    'missing-fonts-and-substitutions': '/user-guide/text-editing#when-a-font-is-missing',
+    tips: '/user-guide/text-editing#style-text'
+  },
+  '/user-guide/models-and-providers/': {
+    'choosing-a-model': '/user-guide/models-and-providers#choose-a-model',
+    'keys-and-security': '/user-guide/models-and-providers#keep-your-keys-safe'
+  },
+  '/user-guide/checking-designs/': {
+    'lint-panel': '/user-guide/checking-designs#find-problems',
+    'fixing-issues': '/user-guide/checking-designs#fix-problems',
+    'canvas-markers': '/user-guide/checking-designs#see-problems-on-the-canvas',
+    'in-the-code-panel': '/user-guide/checking-designs#see-problems-in-the-code',
+    rules: '/user-guide/checking-designs#choose-the-rules'
+  },
+  '/user-guide/icons/': {
+    'inserting-an-icon': '/user-guide/icons#insert-an-icon',
+    'choosing-an-icon-set': '/user-guide/icons#choose-an-icon-set',
+    'the-icon-section': '/user-guide/icons#swap-or-recolor-an-icon',
+    'material-symbols': '/user-guide/icons#adjust-material-symbols',
+    'editing-an-icon-s-paths': '/user-guide/icons#edit-an-icon-s-paths'
+  },
+  '/user-guide/photos/': {
+    'filling-a-layer-with-a-photo': '/user-guide/photos#fill-a-layer-with-a-photo'
+  },
+  '/user-guide/collaboration/': {
+    'sharing-a-room': '/user-guide/collaboration#share-a-file',
+    'joining-a-room': '/user-guide/collaboration#join-a-shared-file',
+    'what-syncs': '/user-guide/collaboration#see-what-ai-agents-are-doing',
+    'follow-mode': '/user-guide/collaboration#follow-someone',
+    'how-it-works': '/user-guide/collaboration#where-the-file-lives',
+    tips: '/user-guide/collaboration#share-a-file'
+  },
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
     'connect-a-server': '/cloud/connect',

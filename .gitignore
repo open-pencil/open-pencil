@@ -93,6 +93,8 @@ packages/feedback/.dev.vars
 
 # OpenPencil Cloud local and build outputs
 packages/cloud/deploy/generated/
+# Written by its build from Core's tools (tools/generate/mcp-catalog).
+packages/cloud/src/server/mcp/design-tools.json
 packages/cloud/dist-standalone/
 dist-cloud/
 dist-metrics/
@@ -102,6 +104,7 @@ desktop/swift/*/.build/
 
 # Rust build output, and the HTML engine's WebAssembly module built from it
 /target
+packages/fig/wasm/
 packages/html-engine/wasm/
 
 # The release .deb a snap is packed from (packaging/snap/snapcraft.yaml)

@@ -23,6 +23,17 @@ Turn on **Share only the selection** in **Settings → MCP → Local server** to
 
 The server enforces this on every call it sends to the app, including `POST /rpc` and stdio clients, so a client cannot widen it. Restart the MCP server to apply the change. For a server you start yourself, set `OPENPENCIL_MCP_SCOPE=selection`; a stdio client can also set it to limit itself while the server shares the whole document.
 
+## Pair your agent with the browser editor {#agent-pairing}
+
+On a Cloud server that allows it, a coding agent can design in OpenPencil in your browser with nothing installed and no account:
+
+1. Add the server's `/mcp` address to your agent, for example `claude mcp add --transport http openpencil https://cloud.example.com/mcp`.
+2. Sign in from the agent, as with `/mcp` in Claude Code. In the browser, choose **Use without an account**, then **Allow**. OpenPencil opens beside it, paired with the agent.
+
+This takes a server that accepts [connected apps](/cloud/apps) too, and an agent that registers without a client secret, as command-line agents do. For any other agent, open **Settings → MCP → Agent in this browser** and choose **Connect an agent**: it gives a pairing token three ways, as instructions to paste into the agent, a `claude mcp add` command, and an `mcpServers` entry.
+
+The agent gets the design tools of the [MCP server](#tools) and can list, create, and switch the documents open in that browser; files and settings stay out of its reach. Designs stay on your device: save them, or sign in and use **Save to** to keep them in Cloud. The server carries the agent's calls and keeps no design. Closing OpenPencil pauses the agent until you open it again in that browser; **Disconnect** ends it. Anyone with the token can change what you have open, so treat it as a password.
+
 ## Browser-native WebMCP (experimental) {#webmcp}
 
 WebMCP is **off by default**. Open **Settings → MCP → WebMCP** and choose **Inspect** for read-only access or **Edit** to also allow scoped, undoable changes. **Off** unregisters all browser tools; changing modes revokes the previous registrations immediately. This preference is independent of local MCP authentication, tool switches, and outbound connections.
@@ -355,6 +366,18 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `list_statuses` | List the document's statuses and the sections, frames, components, and instances that show one, optionally only one status |
 | `set_status`    | Give a layer one of the document's statuses by name, or clear it                                                           |
+
+### Slides
+
+These are listed while a deck is open: `list_documents` reports each document's kind, and the tool list changes when a deck opens or closes.
+
+| Tool             | Description                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `get_deck`       | Outline the deck on the current page: sections, slides with numbers, notes, text, transitions, and animated layers |
+| `create_slides`  | Add empty slides after a slide or at the end, optionally as a new section                                           |
+| `move_slides`    | Move slides after another, to the start, or into a section of their own                                             |
+| `set_slides`     | Set speaker notes, skipping, and the transition, whose duration and easing may follow variables                     |
+| `set_animations` | Animate layers as steps of their slide's build, or stop animating them                                              |
 
 ### Navigation
 

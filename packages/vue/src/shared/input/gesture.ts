@@ -8,11 +8,11 @@ import { PINCH_SCALE_EXPONENT } from '#vue/shared/input/wheel'
 
 /**
  * Zooms on WebKit pinch gestures, which WebKit reports as gesture events instead of Ctrl+wheel.
- * It listens on the canvas's container, so pinches over layers laid on the canvas, such as
+ * The Linux desktop app replays WebKitGTK's touchpad pinches as the same events. It listens on the canvas's container, so pinches over layers laid on the canvas, such as
  * Preview's live controls and comment pins, zoom it too; they can forward wheel events, but not
  * gestures.
  */
-export function setupSafariGestureZoom(
+export function setupGestureZoom(
   canvasRef: Ref<HTMLCanvasElement | null>,
   editor: Editor,
   zoomSpeed: () => number = () => 1

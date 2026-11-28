@@ -1,4 +1,5 @@
 import type { EditorState, Tool } from '#core/editor/types'
+import type { PlayerScene } from '#core/present/player'
 
 /**
  * How much of a path vector edit mode may change, widest first: anything, or only the handles of
@@ -39,10 +40,14 @@ export interface EditorRestrictions {
 }
 
 /**
- * What a canvas pane shows: the design being edited, or the design running as a preview whose
- * controls respond to the pointer. Each pane has its own.
+ * What a canvas shows: the design being edited, the design running as a preview whose controls
+ * respond to the pointer, or a deck being presented, whose canvas draws what `scene` gives for the
+ * moment it draws. Each pane has its own.
  */
-export type CanvasView = { id: 'edit' } | { id: 'play'; revision: number }
+export type CanvasView =
+  | { id: 'edit' }
+  | { id: 'play'; revision: number }
+  | { id: 'present'; scene: () => PlayerScene }
 
 /**
  * How the editor behaves for a canvas, resolved from what the document is for and the view it
@@ -66,6 +71,8 @@ export interface EditorProfile {
   panels: boolean
   /** The view leaving this one returns to, as Escape does, or null when there is none. */
   leaveTo: CanvasView | null
+  /** What a presenting canvas draws in place of the page, at the moment it draws; null otherwise. */
+  presentation: (() => PlayerScene) | null
   /**
    * Whether the document can change: actions that edit it, undo, and the canvas's edit handles,
    * text editing, value scrubbing, guide editing, and layer drags.
@@ -105,6 +112,8 @@ export interface EditorProfile {
   lint: boolean
   /** Whether the canvas shows rulers, from which guides are dragged; a FigJam board has none. */
   rulers: boolean
+  /** Whether the document is a deck, worked on slide by slide from a filmstrip in place of pages. */
+  filmstrip: boolean
   /**
    * Whether the side panels start open: a design's do, while a board starts on the canvas alone,
    * as FigJam shows it, with the panels a click away.

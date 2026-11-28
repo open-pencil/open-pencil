@@ -1,5 +1,6 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { paintPageBackground } from '#core/canvas/page/background'
@@ -8,13 +9,38 @@ import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views/profile'
+import { stagedSlide } from '#core/editor/views/stage'
 import type { EditorProfile } from '#core/editor/views/types'
+import { worldRectToScreen } from '#core/geometry'
+import { drawPresentation } from '#core/present/draw'
 import { emitNavigationTrace } from '#core/profiler'
 
 import { documentSurfaceFor, presentDocumentSurface } from './document-surface'
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
+import { recordPicture } from './picture'
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 import { computeContentBounds } from './visual-bounds'
+
+/**
+ * Runs `fn` as an export or thumbnail sees the document: saved glyphs included, whatever is being
+ * edited. Its bounds and its drawing both take the text as it is saved, so neither crops the other;
+ * the edited text's picture is of its live layout, so it is dropped on the way in and out.
+ */
+export function withoutTextEdit<T>(
+  r: Pick<SkiaRenderer, 'editingTextId' | 'invalidateNodePicture'>,
+  fn: () => T
+): T {
+  const editing = r.editingTextId
+  if (!editing) return fn()
+  r.editingTextId = null
+  r.invalidateNodePicture(editing)
+  try {
+    return fn()
+  } finally {
+    r.editingTextId = editing
+    r.invalidateNodePicture(editing)
+  }
+}
 
 export function renderSceneToCanvas(
   r: Pick<
@@ -35,25 +61,20 @@ export function renderSceneToCanvas(
   r.nodePaths.releaseUncached()
   const prevViewport = r.worldViewport
   const previewMode = r.viewportImageRendering
-  const editing = r.editingTextId
   const colorSpace = r.documentColorSpace
   r.useDocumentColorSpace(graph.documentColorSpace)
   r.viewportImageRendering = false
-  // An export or thumbnail shows the document, saved glyphs included, whatever is being edited;
-  // the edited text's picture is of its live layout, so it is dropped on the way in and out.
-  r.editingTextId = null
-  if (editing) r.invalidateNodePicture(editing)
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
   try {
-    const pageNode = graph.getNode(pageId)
-    if (pageNode) {
-      for (const childId of pageNode.childIds) r.renderNode(canvas, graph, childId, {})
-    }
+    withoutTextEdit(r, () => {
+      const pageNode = graph.getNode(pageId)
+      if (pageNode) {
+        for (const childId of pageNode.childIds) r.renderNode(canvas, graph, childId, {})
+      }
+    })
   } finally {
     r.worldViewport = prevViewport
     r.viewportImageRendering = previewMode
-    r.editingTextId = editing
-    if (editing) r.invalidateNodePicture(editing)
     r.useDocumentColorSpace(colorSpace)
   }
 }
@@ -65,20 +86,11 @@ function showsPixelGrid(profile: EditorProfile, state: EditorState): boolean {
   return profile.editChrome && profile.pixelGrid && state.showPixelGrid !== false
 }
 
-export function renderFromEditorState(
-  r: SkiaRenderer,
-  state: EditorState,
-  graph: SceneGraph,
-  textEditor: unknown,
-  viewportWidth: number,
-  viewportHeight: number,
-  showRulers = true,
-  dpr = 1,
-  layer: RenderLayer = 'full',
-  interactive = false
-): void {
-  r.useDocumentColorSpace(graph.documentColorSpace)
-  r.recordPicturesIn(graph.documentColorSpace)
+/**
+ * Lets go of decoded images and recorded pictures when the canvas starts drawing another document,
+ * or another page of one shown with image previews.
+ */
+function syncImageMemory(r: SkiaRenderer, state: EditorState, graph: SceneGraph): void {
   const previewMode = r.images.previews.enabled && needsImagePreviews(graph)
   if (
     r.images.memoryGraph !== graph ||
@@ -97,6 +109,29 @@ export function renderFromEditorState(
     r.images.memoryPage = state.currentPageId
   }
   r.viewportImageRendering = previewMode
+}
+
+export function renderFromEditorState(
+  r: SkiaRenderer,
+  state: EditorState,
+  graph: SceneGraph,
+  textEditor: unknown,
+  viewportWidth: number,
+  viewportHeight: number,
+  showRulers = true,
+  dpr = 1,
+  layer: RenderLayer = 'full',
+  interactive = false
+): void {
+  const presentation = resolveEditorProfile(state).presentation
+  if (presentation) {
+    Object.assign(r, { dpr, viewportWidth, viewportHeight })
+    drawPresentation(r, graph, presentation())
+    return
+  }
+  r.useDocumentColorSpace(graph.documentColorSpace)
+  r.recordPicturesIn(graph.documentColorSpace)
+  syncImageMemory(r, state, graph)
   r.dpr = dpr
   r.panX = state.panX
   r.panY = state.panY
@@ -108,6 +143,7 @@ export function renderFromEditorState(
   r.setRulerTheme(state.rulerTheme ?? null)
   r.setSelectionTheme(state.selectionTheme)
   r.pageId = state.currentPageId
+  stageSlide(r, state, graph)
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
   const profile = resolveEditorProfile(state)
@@ -122,6 +158,8 @@ export function renderFromEditorState(
     {
       playing: !editChrome,
       playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
+      // The Animate tab's Play moves the slide's layers through its build.
+      layerMotion: state.buildPreview?.layers,
       hoveredNodeId: editChrome ? state.hoveredNodeId : null,
       showPixelGrid: showsPixelGrid(profile, state),
       showSizeLabels: state.showSizeLabels,
@@ -165,7 +203,11 @@ export function renderFromEditorState(
 
 function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {
   return (
-    overlays.rotationPreview != null || overlays.nodeEditState != null || overlays.playing === true
+    overlays.rotationPreview != null ||
+    overlays.nodeEditState != null ||
+    overlays.playing === true ||
+    // A build playing on the canvas moves its layers every frame.
+    overlays.layerMotion != null
   )
 }
 
@@ -252,6 +294,7 @@ function drawAboveScene(
 ): void {
   canvas.save()
   canvas.scale(r.dpr, r.dpr)
+  clipToStage(r, canvas, graph)
   r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
   r.statusLabels = []
   if (!overlays.playing) drawLabelPass(r, canvas, graph, selectedIds, overlays)
@@ -331,6 +374,7 @@ export function render(
     }
     sceneCanvas.save()
     sceneCanvas.scale(r.dpr, r.dpr)
+    clipToStage(r, sceneCanvas, graph)
 
     p.beginPhase('render:scene')
     if (layer === 'scene' && !requiresUncachedSceneRender) {
@@ -385,6 +429,19 @@ export function render(
     nodes: r.drawCounts.nodes,
     culledNodes: r.drawCounts.culled
   })
+}
+
+/** Takes the slide on the stage for the frame about to be drawn. */
+function stageSlide(r: SkiaRenderer, state: EditorState, graph: SceneGraph): void {
+  r.stagedSlideId = stagedSlide(graph, state)?.id ?? null
+}
+
+/** Leaves only the slide on the stage, if there is one, to what is drawn next. */
+function clipToStage(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
+  const slide = r.stagedSlideId ? graph.getNode(r.stagedSlideId) : undefined
+  if (!slide) return
+  const { x, y, width, height } = worldRectToScreen(r, getAxisAlignedWorldBounds(slide, graph))
+  canvas.clipRect(r.ck.XYWHRect(x, y, width, height), r.ck.ClipOp.Intersect, true)
 }
 
 function renderSceneContent(
@@ -449,7 +506,6 @@ function recordScenePicture(
   r.wholeScene.picture = null
   const prevViewport = r.worldViewport
   r.worldViewport = { x: -1e6, y: -1e6, w: 2e6, h: 2e6 }
-  const recorder = new r.ck.PictureRecorder()
   try {
     const pageNode = graph.getNode(r.pageId ?? graph.rootId)
     const sceneContentBounds = pageNode ? computeContentBounds(graph, pageNode.childIds) : null
@@ -468,20 +524,17 @@ function recordScenePicture(
       sceneBounds.x + sceneBounds.width + padding,
       sceneBounds.y + sceneBounds.height + padding
     )
-    const recCanvas = recorder.beginRecording(bounds)
-    if (pageNode) {
-      for (const childId of pageNode.childIds) {
+    r.wholeScene.picture = recordPicture(r, bounds, (recCanvas) => {
+      for (const childId of pageNode?.childIds ?? []) {
         r.renderNode(recCanvas, graph, childId, {})
       }
-    }
-    r.wholeScene.picture = recorder.finishRecordingAsPicture()
+    })
     r.wholeScene.version = sceneVersion
     r.wholeScene.fontGeneration = r.fontGeneration
     r.wholeScene.positionPreviewVersion = graph.positionPreviewVersion
     r.wholeScene.pageId = r.pageId
     canvas.drawPicture(r.wholeScene.picture)
   } finally {
-    recorder.delete()
     r.worldViewport = prevViewport
   }
 }

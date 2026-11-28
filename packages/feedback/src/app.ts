@@ -7,7 +7,6 @@ import { allowOpenPencilOrigins } from './http/cors'
 import { ingestRoutes } from './ingest/route'
 import { pingRoutes } from './ping/route'
 import { reportRoutes } from './reports/route'
-import { waitlistRoutes } from './waitlist/route'
 
 export type { FeedbackBindings, FeedbackEnv, FeedbackServices } from './env'
 
@@ -29,7 +28,6 @@ export function createFeedbackApp(services: FeedbackServices = defaultServices) 
       .route('/', pingRoutes(services))
       .route('/', reportRoutes(services))
       .route('/', ingestRoutes(services))
-      .route('/', waitlistRoutes(services))
       .route('/', adminRoutes(services))
   )
 }

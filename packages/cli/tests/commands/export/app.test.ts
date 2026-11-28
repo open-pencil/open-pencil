@@ -24,6 +24,7 @@ type RPCRequest = v.InferOutput<typeof rpcRequestSchema>
 const DOCUMENT: AutomationDocumentSummary = {
   id: 'tab-1',
   name: 'Statements',
+  kind: 'design',
   active: true,
   current_page_id: '0:1',
   current_page_name: 'Dashboard',

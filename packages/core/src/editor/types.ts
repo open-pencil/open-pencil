@@ -12,6 +12,7 @@ import type {
 import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import type { LayerFrame } from '@open-pencil/scene-graph/slides'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import type { HistoryChange, UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -83,6 +84,31 @@ export interface ShapeHandleHover {
   pointer: Vector
 }
 
+/** A slide's build playing on the canvas: the slide, and where its animating layers are now. */
+export interface BuildPreview {
+  slideId: string
+  layers: ReadonlyMap<string, LayerFrame>
+  /** The layer whose animation is under way, as the Animate tab marks its step. */
+  animatingId: string | null
+}
+
+/** Where a presentation is, for what shows around it: the presenter's view, the slide count. */
+export interface PresentationStatus {
+  /** Names this presentation, as a presenter's window looks for it. */
+  id: string
+  /** The slides presented, in order, skipped ones left out. */
+  slideIds: readonly string[]
+  /** The slide on show, by its place among them. */
+  index: number
+  /** How many steps of its build have played, of how many. */
+  played: number
+  steps: number
+  /** Whether a transition or a step is moving, as live islands wait for it to end. */
+  moving: boolean
+  /** When it started, in milliseconds since the epoch, for the presenter's timer. */
+  startedAt: number
+}
+
 export interface EditorSharedState {
   activeTool: Tool
   /** The kind the shape-with-text tool places: the one picked last, as in FigJam. */
@@ -109,6 +135,13 @@ export interface EditorSharedState {
   designIssues: DesignIssueOverlay | null
   /** The layer of the code element around the cursor in a code editor, shown in every pane. */
   codeFocusNodeId: string | null
+  /** The deck being presented, or null when none is. */
+  presentation: PresentationStatus | null
+  /**
+   * A slide's build playing on the canvas, as the Animate tab's Play shows it: where each of its
+   * animating layers is drawn at this moment. Null when none plays.
+   */
+  buildPreview: BuildPreview | null
   rulerTheme?: RulerTheme
   /** Selection chrome on the canvas, following the interface accent; the default blue when unset. */
   selectionTheme?: SelectionTheme
@@ -219,6 +252,8 @@ export interface EditorViewState {
   nodeEditState: NodeEditState | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
+  /** The slide on the stage in a deck's Slide view, or null while the whole deck shows. */
+  focusedSlideId: string | null
   /** What this canvas shows: the design being edited, or running as a preview. */
   canvasView: CanvasView
 }
@@ -296,6 +331,8 @@ export interface EditorEvents extends SceneGraphEvents {
   'rotation:preview-changed': (preview: RotationPreview | null) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
   'page:changed': (pageId: string, previousPageId: string) => void
+  /** A page switch finished, its layers loaded, including one to the page already current. */
+  'page:shown': (pageId: string) => void
   'guides:changed': (ownerId: string, guides: readonly CanvasGuide[]) => void
   'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
   'font:resolution-changed': (event: FontResolutionEvent, snapshot: FontResolutionSnapshot) => void

@@ -27,6 +27,7 @@ import { isCloudBinding } from '../documents/status'
 import { cloudConnection, cloudConnections, type CloudSessionState } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
 import { versionsChanged } from '../versions/history'
+import { serveRoomAgentTools } from './agent-tools'
 import { accountRoomIdentity } from './identity'
 import { onceOnServer, shareRoomUploads, uploadStoredDocument } from './upload'
 
@@ -282,6 +283,14 @@ export function openCloudDocumentRoom(
       upload: options.uploadNow ?? (() => uploadStoredDocument(store))
     })
     onScopeDispose(() => shared.stop())
+    // Apps the person connected run design tools through a tab where they edit, signed in.
+    if (canSave) {
+      const tools = serveRoomAgentTools(session.agentTools, {
+        store: () => store,
+        onPeerJoin: (handler) => session.onPeerJoin(handler)
+      })
+      onScopeDispose(() => tools.stop())
+    }
     return shared
   })
   if (!uploads) throw new Error('The room could not start')

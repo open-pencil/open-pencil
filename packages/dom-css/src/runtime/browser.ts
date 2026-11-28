@@ -1,7 +1,7 @@
 import { DEADLINE_MS } from '@open-pencil/std/timing'
 
 import { serializeHTML } from '../export/html'
-import { joinAdjacentText } from '../import/adjacent-text'
+import { joinAdjacentText } from '../import/text/adjacent'
 import type {
   CSSComputeOptions,
   CSSRuntime,
@@ -84,6 +84,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'color',
   'column-gap',
   'content',
+  'direction',
   'display',
   'fill',
   'fill-opacity',
@@ -511,6 +512,9 @@ async function copyComputedStyles(
     // The address the picture loaded from, its `srcset` choice and the page's base applied.
     if (domElement instanceof view.HTMLImageElement && domElement.currentSrc)
       images.push([designElement, domElement.currentSrc])
+    // A video shows its poster until it plays, resolved against the page's base as `src` is.
+    if (domElement instanceof view.HTMLVideoElement && domElement.poster)
+      images.push([designElement, domElement.poster])
     if (backgroundImageURLs(designElement).length > 0) backgrounds.push(designElement)
   }
   // After the styles are copied: reading layout switches transforms off for a moment.

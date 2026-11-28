@@ -423,3 +423,49 @@ describe('baselines as Figma saves and draws them', () => {
     })
   }
 })
+
+describe('horizontal alignment', () => {
+  const WIDTH = 300
+  const SENTENCE = 'The table is yours, the table is yours, the table is yours.'
+
+  /** Where each line's text starts and ends across the box. */
+  function lineEdges(props: Partial<SceneNode>): Array<[number, number]> {
+    const layout = layOut({ width: WIDTH, textAutoResize: 'HEIGHT', ...props })
+    const edges = layout
+      .getLineMetrics()
+      .map((line): [number, number] => [line.left, line.left + line.width])
+    layout.delete()
+    return edges
+  }
+
+  // Figma aligns to the side alignment names, whatever the direction the text reads in.
+  test.each(['LTR', 'RTL'] as const)('puts %s text against the side it names', (textDirection) => {
+    const [[left]] = lineEdges({ text: 'Hello', textDirection, textAlignHorizontal: 'LEFT' })
+    const [[, right]] = lineEdges({ text: 'Hello', textDirection, textAlignHorizontal: 'RIGHT' })
+    const [[start, end]] = lineEdges({
+      text: 'Hello',
+      textDirection,
+      textAlignHorizontal: 'CENTER'
+    })
+
+    expect(left).toBeCloseTo(0, 0)
+    expect(right).toBeCloseTo(WIDTH, 0)
+    expect(start).toBeCloseTo(WIDTH - end, 0)
+  })
+
+  test.each([
+    { textDirection: 'LTR', side: 'left' },
+    { textDirection: 'RTL', side: 'right' }
+  ] as const)(
+    'starts the last justified line of $textDirection text at the $side',
+    ({ textDirection, side }) => {
+      const lines = lineEdges({ text: SENTENCE, textDirection, textAlignHorizontal: 'JUSTIFIED' })
+      const [start, end] = expectDefined(lines.at(-1), 'last line')
+
+      expect(lines.length).toBeGreaterThan(1)
+      expect(lines[0][1] - lines[0][0]).toBeCloseTo(WIDTH, 0)
+      if (side === 'left') expect(start).toBeCloseTo(0, 0)
+      else expect(end).toBeCloseTo(WIDTH, 0)
+    }
+  )
+})

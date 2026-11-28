@@ -2,10 +2,22 @@ import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
 import type { SlideSettings } from './types'
 
+export * from './drop'
+export * from './motion'
+export * from './playback'
 export * from './types'
 
 /** Figma's slide: 1920 by 1080, with 240 between slides and 600 between the rows of a grid. */
 export const DEFAULT_SLIDE_SIZE = { width: 1920, height: 1080 } as const
+
+/** The sizes a deck offers its slides, by shape; any other size is a custom one. */
+export const SLIDE_SIZE_PRESETS = [
+  { id: 'wide', width: 1920, height: 1080 },
+  { id: 'standard', width: 1440, height: 1080 },
+  { id: 'square', width: 1080, height: 1080 },
+  { id: 'portrait', width: 1080, height: 1920 }
+] as const
+export type SlideSizePreset = (typeof SLIDE_SIZE_PRESETS)[number]
 const SLIDE_GAP = 240
 const ROW_GAP = 600
 const SLIDES_PER_LINE = 20
@@ -59,6 +71,14 @@ export function slideNumbers(graph: SceneGraph, pageId: string): Map<string, num
       .flat()
       .map((slide) => [slide.id, slideSettings(slide)?.skipped ? null : ++shown])
   )
+}
+
+/** Names a page's slides by their numbers, and a skipped one `-`, as Figma does. */
+export function renumberSlides(graph: SceneGraph, pageId: string): void {
+  for (const [id, number] of slideNumbers(graph, pageId)) {
+    const name = number === null ? '-' : String(number)
+    if (graph.getNode(id)?.name !== name) graph.updateNode(id, { name })
+  }
 }
 
 /** Adds the grid a deck's slides sit in to a page. */

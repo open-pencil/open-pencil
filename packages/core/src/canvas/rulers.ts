@@ -56,7 +56,8 @@ function drawHorizontalRulerTicks(
   canvas: Canvas,
   font: InstanceType<CanvasKit['Font']>,
   step: number,
-  selBounds: SelectionScreenBounds | null
+  selBounds: SelectionScreenBounds | null,
+  origin: number
 ): void {
   const R = RULER_SIZE
   const vw = r.viewportWidth
@@ -65,14 +66,15 @@ function drawHorizontalRulerTicks(
 
   canvas.save()
   canvas.clipRect(r.ck.LTRBRect(R, 0, vw, R), r.ck.ClipOp.Intersect, false)
-  const worldLeft = screenXToWorld(r, 0)
-  const worldRight = screenXToWorld(r, vw)
-  const startX = Math.floor(worldLeft / step) * step
+  // Ticks count from `origin`: the slide on the stage's corner, else the page's.
+  const left = screenXToWorld(r, 0) - origin
+  const right = screenXToWorld(r, vw) - origin
+  const startX = Math.floor(left / step) * step
 
   // Every tick is one line segment in a single draw; only the labels are drawn one by one.
   const ticks: number[] = []
-  for (let wx = startX; wx <= worldRight; wx += minorStep) {
-    const sx = worldXToScreen(r, wx)
+  for (let wx = startX; wx <= right; wx += minorStep) {
+    const sx = worldXToScreen(r, wx + origin)
     if (sx < R) continue
     const isMajor = Math.abs(wx % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
@@ -96,7 +98,8 @@ function drawVerticalRulerTicks(
   canvas: Canvas,
   font: InstanceType<CanvasKit['Font']>,
   step: number,
-  selBounds: SelectionScreenBounds | null
+  selBounds: SelectionScreenBounds | null,
+  origin: number
 ): void {
   const R = RULER_SIZE
   const vh = r.viewportHeight
@@ -105,13 +108,13 @@ function drawVerticalRulerTicks(
 
   canvas.save()
   canvas.clipRect(r.ck.LTRBRect(0, R, R, vh), r.ck.ClipOp.Intersect, false)
-  const worldTop = screenYToWorld(r, 0)
-  const worldBottom = screenYToWorld(r, vh)
-  const startY = Math.floor(worldTop / step) * step
+  const top = screenYToWorld(r, 0) - origin
+  const bottom = screenYToWorld(r, vh) - origin
+  const startY = Math.floor(top / step) * step
 
   const ticks: number[] = []
-  for (let wy = startY; wy <= worldBottom; wy += minorStep) {
-    const sy = worldYToScreen(r, wy)
+  for (let wy = startY; wy <= bottom; wy += minorStep) {
+    const sy = worldYToScreen(r, wy + origin)
     if (sy < R) continue
     const isMajor = Math.abs(wy % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
@@ -161,8 +164,11 @@ export function drawRulers(
   const selBounds =
     selNodes.length > 0 ? getSelectionScreenBounds(r, graph, selNodes, preview) : null
 
-  drawHorizontalRulerTicks(r, canvas, font, step, selBounds)
-  drawVerticalRulerTicks(r, canvas, font, step, selBounds)
+  // On the stage, as the Design panel's X and Y do, the rulers count from the slide's corner.
+  const slide = r.stagedSlideId ? graph.getNode(r.stagedSlideId) : undefined
+  const origin = slide ? graph.getAbsolutePosition(slide.id) : { x: 0, y: 0 }
+  drawHorizontalRulerTicks(r, canvas, font, step, selBounds, origin.x)
+  drawVerticalRulerTicks(r, canvas, font, step, selBounds, origin.y)
 
   if (selBounds) {
     r.rulerHlPaint.setColor(r.selColor(RULER_HIGHLIGHT_ALPHA))
@@ -174,8 +180,8 @@ export function drawRulers(
       canvas,
       font,
       [
-        rulerEdgeLabel(screenXToWorld(r, selBounds.sx1)),
-        rulerEdgeLabel(screenXToWorld(r, selBounds.sx2))
+        rulerEdgeLabel(screenXToWorld(r, selBounds.sx1) - origin.x),
+        rulerEdgeLabel(screenXToWorld(r, selBounds.sx2) - origin.x)
       ],
       [Math.max(R, selBounds.sx1), selBounds.sx2],
       'horizontal'
@@ -185,8 +191,8 @@ export function drawRulers(
       canvas,
       font,
       [
-        rulerEdgeLabel(screenYToWorld(r, selBounds.sy1)),
-        rulerEdgeLabel(screenYToWorld(r, selBounds.sy2))
+        rulerEdgeLabel(screenYToWorld(r, selBounds.sy1) - origin.y),
+        rulerEdgeLabel(screenYToWorld(r, selBounds.sy2) - origin.y)
       ],
       [Math.max(R, selBounds.sy1), selBounds.sy2],
       'vertical'

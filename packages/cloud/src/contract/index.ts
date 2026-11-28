@@ -1,5 +1,6 @@
 export * from './account'
 export * from './locale'
+export * from './agent-tools'
 export * from './api'
 export * from './oauth'
 export {
@@ -133,6 +134,8 @@ export {
   type CloudListing
 } from './discovery'
 export {
+  CLOUD_COVER_MAX_BYTES,
+  CLOUD_COVER_SIZE,
   CLOUD_DOCUMENT_DESCRIPTION_MAX_LENGTH,
   CLOUD_DOCUMENT_NAME_MAX_LENGTH,
   CLOUD_IMAGE_NAME_PATTERN,
@@ -153,6 +156,7 @@ export {
   documentPermissionSchema,
   imageUploadOfferSchema,
   objectUploadSchema,
+  documentKindSchema,
   documentSummarySchema,
   sharedDocumentSchema,
   type SharedDocument,

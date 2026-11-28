@@ -25,13 +25,24 @@ export interface FlatReorderItem {
 
 export interface UseFlatReorderDragOptions<TItem extends FlatReorderItem> {
   items: () => readonly TItem[]
-  onMove: (sourceId: string, targetIndex: number) => void
+  onMove?: (sourceId: string, targetIndex: number) => void
+  /**
+   * Dropping beside an item, for lists in groups, where the item says which group the drop joins
+   * and an unchanged index may still change it.
+   */
+  onPlace?: (sourceId: string, targetId: string, side: 'before' | 'after') => void
   /** Dropping onto the middle of an item, for lists where items can merge. */
   onCombine?: (sourceId: string, targetId: string) => void
   /** Which drops each target takes; by default before and after, never onto. */
   operations?: (sourceId: string, targetId: string) => FlatReorderOperations
   axis?: FlatReorderAxis
   getId?: (item: TItem) => string
+  /**
+   * The part of an item a drag starts from, by selector within it, for items that open settings
+   * of their own: without it a drag on a control inside, such as a gradient stop, would move the
+   * whole item in browsers that start a native drag from any part of it, as Safari does.
+   */
+  handle?: string
 }
 
 const REORDER_ONLY: FlatReorderOperations = { 'reorder-before': true, 'reorder-after': true }
@@ -68,10 +79,12 @@ function edgeForInstruction(
 export function useFlatReorderDrag<TItem extends FlatReorderItem>({
   items,
   onMove,
+  onPlace,
   onCombine,
   operations = () => REORDER_ONLY,
   axis = 'vertical',
-  getId = (item) => item.id
+  getId = (item) => item.id,
+  handle
 }: UseFlatReorderDragOptions<TItem>) {
   const draggingId = ref<string | null>(null)
   const instruction = ref<FlatReorderInstruction | null>(null)
@@ -99,6 +112,7 @@ export function useFlatReorderDrag<TItem extends FlatReorderItem>({
     const cleanup = combine(
       draggable({
         element,
+        dragHandle: (handle && element.querySelector(handle)) || undefined,
         getInitialData: () => ({ id }),
         onDragStart: () => {
           draggingId.value = id
@@ -157,6 +171,14 @@ export function useFlatReorderDrag<TItem extends FlatReorderItem>({
         onCombine?.(sourceId, targetId)
         return
       }
+      if (onPlace) {
+        onPlace(
+          sourceId,
+          targetId,
+          dropInstruction.operation === 'reorder-before' ? 'before' : 'after'
+        )
+        return
+      }
 
       const currentItems = items()
       const startIndex = currentItems.findIndex((item) => getId(item) === sourceId)
@@ -168,7 +190,7 @@ export function useFlatReorderDrag<TItem extends FlatReorderItem>({
         closestEdgeOfTarget: edgeForInstruction(dropInstruction, axis)
       })
 
-      if (targetIndex !== startIndex) onMove(sourceId, targetIndex)
+      if (targetIndex !== startIndex) onMove?.(sourceId, targetIndex)
     }
   })
 

@@ -118,7 +118,11 @@ export function solidFillOpacity(
   return alpha < 1 ? alpha : undefined
 }
 
-type GradientBox = 'bounding-box' | 'layer-box'
+/**
+ * Where a gradient is laid out: on the bounding box of what it paints, as a shape's is, or on the
+ * layer's box, as a text range's is, whose own box would be only its characters'.
+ */
+export type GradientBox = 'painted' | 'layer'
 
 function gradientPlacement(
   t: GradientTransform,
@@ -126,7 +130,7 @@ function gradientPlacement(
   box: GradientBox
 ): { gradientUnits: string; gradientTransform: string | undefined } {
   const toBox = invertGradientTransform(t)
-  if (box === 'bounding-box') {
+  if (box === 'painted') {
     return {
       gradientUnits: 'objectBoundingBox',
       gradientTransform: isIdentityGradientTransform(toBox)
@@ -407,7 +411,12 @@ function paintServer(def: { id: string; node: SVGNode } | null, ctx: SVGExportCo
   return `url(#${def.id})`
 }
 
-export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext): string | null {
+export function resolveFill(
+  fill: Fill,
+  node: SceneNode,
+  ctx: SVGExportContext,
+  box: GradientBox = 'painted'
+): string | null {
   if (!fill.visible) return null
 
   if (fill.type === 'SOLID') {
@@ -415,7 +424,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   }
 
   if (isGradientFill(fill.type)) {
-    const grad = paintServer(createGradientDef(fill, node, ctx, 'bounding-box'), ctx)
+    const grad = paintServer(createGradientDef(fill, node, ctx, box), ctx)
     if (grad) {
       return grad
     }
@@ -430,7 +439,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
 
 function resolveStroke(stroke: Stroke, node: SceneNode, ctx: SVGExportContext): string | null {
   if (isGradientFill(stroke.type) && stroke.gradientStops && stroke.gradientTransform) {
-    return paintServer(createGradientDef(stroke, node, ctx, 'layer-box'), ctx)
+    return paintServer(createGradientDef(stroke, node, ctx, 'layer'), ctx)
   }
   if (drawnImageHash(stroke)) {
     return paintServer(createImagePattern(stroke, node, ctx, strokeReach(stroke, node)), ctx)

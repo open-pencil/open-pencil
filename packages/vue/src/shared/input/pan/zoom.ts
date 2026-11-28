@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 
-import { setupSafariGestureZoom } from '#vue/shared/input/gesture'
+import { setupGestureZoom } from '#vue/shared/input/gesture'
 import type { DragState } from '#vue/shared/input/types'
 import { setupWheelPanZoom } from '#vue/shared/input/wheel'
 
@@ -150,5 +150,5 @@ export function setupPanZoom(
   useEventListener(canvasRef, 'touchend', onTouchEnd, { passive: false })
   useEventListener(canvasRef, 'touchcancel', onTouchEnd, { passive: false })
 
-  setupSafariGestureZoom(canvasRef, editor, zoomSpeed)
+  setupGestureZoom(canvasRef, editor, zoomSpeed)
 }

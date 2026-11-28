@@ -9,7 +9,6 @@ import {
   geometryBlobToSVGPath,
   nodeOutlinePath,
   round,
-  shapeWithTextDetailsPath,
   shapeWithTextOutlinePath
 } from './paths'
 import { outlineClips } from './regions'
@@ -115,22 +114,6 @@ export function alignedStrokeElement(
       [keptBy]: `url(#${clipId})`
     })
   ]
-}
-
-/**
- * A FigJam shape's inner lines, such as a database's front rim, stroked as the canvas strokes
- * them: at the stroke's own weight whatever its alignment, ending where the outline does.
- */
-export function shapeWithTextDetailElements(
-  node: SceneNode,
-  strokeAttrs: Attrs,
-  ctx: SVGExportContext
-): SVGNode[] {
-  const details = strokeAttrs.stroke ? shapeWithTextDetailsPath(node) : null
-  if (!details) return []
-  const clipId = nextDefId(ctx, 'clip')
-  ctx.defs.push(svg('clipPath', { id: clipId }, svg('path', { d: shapeWithTextOutlinePath(node) })))
-  return [svg('path', { d: details, fill: 'none', ...strokeAttrs, 'clip-path': `url(#${clipId})` })]
 }
 
 export function strokeGeometryElements(

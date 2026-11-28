@@ -65,3 +65,17 @@ const OS_NAMES: Record<string, string> = {
 
 /** The OS as people write it, from the lowercase name pings carry. */
 export const formatOS = (os: string) => OS_NAMES[os] ?? os.charAt(0).toUpperCase() + os.slice(1)
+
+const BYTE_UNITS = ['kilobyte', 'megabyte', 'gigabyte', 'terabyte'] as const
+
+/** A storage size in decimal units, as Cloud's plans state them: "1.2 GB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1000) return `${formatCount(bytes)} B`
+  const exponent = Math.min(BYTE_UNITS.length, Math.floor(Math.log10(bytes) / 3))
+  return new Intl.NumberFormat('en-US', {
+    style: 'unit',
+    unit: BYTE_UNITS[exponent - 1],
+    unitDisplay: 'short',
+    maximumFractionDigits: 1
+  }).format(bytes / 1000 ** exponent)
+}

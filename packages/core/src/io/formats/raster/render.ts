@@ -12,8 +12,6 @@ import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import type { SkiaRenderer } from '#core/canvas'
 import type { SupersampledOutput } from '#core/canvas/images/state'
 import { documentImageInfo } from '#core/canvas/renderer/colors'
-import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
-import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
@@ -73,17 +71,24 @@ export function exportBounds(
   if (!useAbsoluteBounds) {
     for (const id of nodeIds) {
       const node = graph.getNode(id)
-      if (node) bounds = unionVisualBounds(bounds, absoluteRenderBounds(graph, node))
+      // Null for a layer that draws nothing, hidden or transparent itself or in what holds it.
+      const drawn = node ? absoluteRenderBounds(graph, node) : null
+      if (!node || !drawn) continue
+      // A slide is its own page: the shadows that set it apart in the grid fall outside it.
+      bounds = unionVisualBounds(bounds, node.type === 'SLIDE' ? boxBounds(graph, node) : drawn)
     }
     return bounds
   }
   for (const id of nodeIds) {
     const node = graph.getNode(id)
-    if (!node?.visible) continue
-    const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
-    bounds = unionVisualBounds(bounds, { minX: x, minY: y, maxX: x + width, maxY: y + height })
+    if (node?.visible) bounds = unionVisualBounds(bounds, boxBounds(graph, node))
   }
   return bounds
+}
+
+function boxBounds(graph: SceneGraph, node: SceneNode): VisualBounds {
+  const { x, y, width, height } = getAxisAlignedWorldBounds(node, graph)
+  return { minX: x, minY: y, maxX: x + width, maxY: y + height }
 }
 
 /** The scale at which these layers' export bounds fit a square of `size` pixels. */
@@ -178,7 +183,8 @@ function supersampledOutput(canvas: Canvas, renderScale: number): SupersampledOu
   return { outputFromWorld: Matrix.multiply(outputFromRender, canvas.getTotalMatrix()) }
 }
 
-function renderToSurface(
+/** Draws onto a fresh raster surface and encodes it; for the raster modules here. */
+export function renderToSurface(
   ck: CanvasKit,
   renderer: SkiaRenderer,
   target: SurfaceTarget
@@ -383,6 +389,19 @@ export function renderNodesToImage(
   nodeIds: string[],
   options: RenderOptions
 ): Uint8Array<ArrayBuffer> | null {
+  return renderer.withoutTextEdit(() =>
+    drawNodesToImage(ck, renderer, graph, pageId, nodeIds, options)
+  )
+}
+
+function drawNodesToImage(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  options: RenderOptions
+): Uint8Array<ArrayBuffer> | null {
   if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
     throw new Error('Raster export selection must stay on a single page')
   }
@@ -417,97 +436,6 @@ export function renderNodesToImage(
     },
     trimTransparent: options.trimTransparent,
     colorSpace: options.colorSpace
-  })
-}
-
-export interface ThumbnailFrame {
-  /** The page content the thumbnail shows. */
-  bounds: VisualBounds
-  scale: number
-  /** The thumbnail's size in pixels. */
-  width: number
-  height: number
-}
-
-/**
- * How a thumbnail frames its page's content, always whole: `contain` is as large as the content
- * fits in `width` by `height`, and `letterbox` is exactly that size with the content centred on
- * the page colour, as Figma's file browser shows a file in its card.
- */
-export type ThumbnailFit = 'contain' | 'letterbox'
-
-/** The page region a thumbnail of `width` by `height` pixels shows, and its size. */
-export function thumbnailFrame(
-  graph: SceneGraph,
-  pageId: string,
-  width: number,
-  height: number,
-  fit: ThumbnailFit = 'contain'
-): ThumbnailFrame | null {
-  const page = graph.getNode(pageId)
-  if (!page || page.childIds.length === 0) return null
-
-  const bounds = computeContentBounds(graph, page.childIds)
-  if (!bounds) return null
-
-  const contentW = bounds.maxX - bounds.minX
-  const contentH = bounds.maxY - bounds.minY
-  if (contentW <= 0 || contentH <= 0) return null
-
-  const scale = Math.min(width / contentW, height / contentH)
-  if (fit === 'letterbox') {
-    const centerX = (bounds.minX + bounds.maxX) / 2
-    const centerY = (bounds.minY + bounds.maxY) / 2
-    const halfW = width / scale / 2
-    const halfH = height / scale / 2
-    return {
-      bounds: {
-        minX: centerX - halfW,
-        minY: centerY - halfH,
-        maxX: centerX + halfW,
-        maxY: centerY + halfH
-      },
-      scale,
-      width,
-      height
-    }
-  }
-
-  return {
-    bounds,
-    scale,
-    width: Math.max(1, Math.round(contentW * scale)),
-    height: Math.max(1, Math.round(contentH * scale))
-  }
-}
-
-export function renderThumbnail(
-  ck: CanvasKit,
-  renderer: SkiaRenderer,
-  graph: SceneGraph,
-  pageId: string,
-  width: number,
-  height: number,
-  fit: ThumbnailFit = 'contain'
-): Uint8Array<ArrayBuffer> | null {
-  const frame = thumbnailFrame(graph, pageId, width, height, fit)
-  if (!frame) return null
-  const { bounds, scale, width: pixelW, height: pixelH } = frame
-  // The page's own background, which the editor's page colour matches only while it is open.
-  const background = toExtendedSRGB(getPageColor(graph.getNode(pageId)), graph.documentColorSpace)
-
-  return renderToSurface(ck, renderer, {
-    graph,
-    pageId,
-    width: pixelW,
-    height: pixelH,
-    format: 'PNG',
-    quality: 100,
-    setup: (canvas) => {
-      canvas.clear(ck.Color4f(background.r, background.g, background.b, 1))
-      canvas.translate(-bounds.minX * scale, -bounds.minY * scale)
-      canvas.scale(scale, scale)
-    }
   })
 }
 

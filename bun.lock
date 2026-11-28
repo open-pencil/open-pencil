@@ -201,6 +201,10 @@
         "vite-plugin-pwa": "^1.3.0",
         "vue-tsc": "3.3.11",
         "webmcp-types": "^0.1.10",
+        "workbox-expiration": "^7.4.1",
+        "workbox-precaching": "^7.4.1",
+        "workbox-routing": "^7.4.1",
+        "workbox-strategies": "^7.4.1",
         "workbox-window": "^7.4.1",
         "ws": "^8.21.3",
       },
@@ -252,6 +256,7 @@
         "@aws-sdk/client-s3": "^3.1149.0",
         "@aws-sdk/s3-request-presigner": "^3.1149.0",
         "@better-auth/api-key": "1.7.27",
+        "@better-auth/cimd": "1.7.27",
         "@better-auth/core": "1.7.27",
         "@better-auth/oauth-provider": "1.7.27",
         "@better-auth/passkey": "1.7.27",
@@ -259,6 +264,7 @@
         "@hono/node-server": "^1.19.17",
         "@hono/standard-validator": "^0.4.1",
         "@internationalized/date": "^3.12.3",
+        "@modelcontextprotocol/server": "^2.0.0",
         "@nanostores/i18n": "^1.3.3",
         "@noble/hashes": "^2.4.0",
         "@open-pencil/collab": "workspace:*",
@@ -271,6 +277,7 @@
         "@orpc/contract": "2.0.0-beta.53",
         "@orpc/openapi": "2.0.0-beta.53",
         "@orpc/server": "2.0.0-beta.53",
+        "@valibot/to-json-schema": "^1.8.0",
         "@vue-email/components": "^0.0.21",
         "@vue-email/render": "^0.0.9",
         "@xmldom/xmldom": "^0.9.12",
@@ -304,6 +311,9 @@
       "devDependencies": {
         "@cloudflare/workers-types": "^5.20261011.1",
         "@electric-sql/pglite": "0.4.1",
+        "@modelcontextprotocol/client": "^2.0.0",
+        "@open-pencil/mcp": "workspace:*",
+        "@open-pencil/mcp-catalog-tools": "workspace:*",
         "@open-pencil/test-support": "workspace:*",
         "@types/bun": "^1.3.14",
         "@types/nodemailer": "^8.0.1",
@@ -566,7 +576,6 @@
       "version": "0.17.0",
       "dependencies": {
         "@internationalized/date": "^3.12.3",
-        "@open-pencil/cloud": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/std": "workspace:*",
@@ -675,6 +684,7 @@
         "@hono/node-server": "^1.19.17",
         "@modelcontextprotocol/server": "^2.0.0",
         "@noble/hashes": "^2.4.0",
+        "@open-pencil/collab": "workspace:*",
         "@open-pencil/core": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@open-pencil/std": "workspace:*",
@@ -747,6 +757,7 @@
       "dependencies": {
         "@noble/hashes": "^2.4.0",
         "@open-pencil/std": "workspace:*",
+        "bidi-js": "^1.1.0",
         "culori": "^4.0.2",
         "es-toolkit": "^1.52.0",
         "image-size": "^2.0.4",
@@ -960,6 +971,7 @@
       "name": "@open-pencil/cloud-examples-tools",
       "dependencies": {
         "@open-pencil/cloud": "workspace:*",
+        "@open-pencil/core": "workspace:*",
         "@open-pencil/demo-tools": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "es-toolkit": "^1.52.0",
@@ -1077,8 +1089,10 @@
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
+        "@open-pencil/vue": "workspace:*",
         "@playwright/test": "^1.63.0",
         "sharp": "0.34.5",
+        "yaml": "^2.9.0",
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
@@ -1098,6 +1112,21 @@
         "@types/bun": "^1.3.14",
         "@types/node": "^25.9.9",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
+      },
+    },
+    "tools/generate/mcp-catalog": {
+      "name": "@open-pencil/mcp-catalog-tools",
+      "version": "0.0.0",
+      "bin": {
+        "mcp-catalog": "./src/generate.ts",
+      },
+      "dependencies": {
+        "@open-pencil/core": "workspace:*",
+        "@open-pencil/mcp": "workspace:*",
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "dedent": "^1.7.2",
+        "es-toolkit": "^1.52.0",
+        "valibot": "^1.5.0",
       },
     },
     "tools/generate/mermaid-sources": {
@@ -1144,6 +1173,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@publint/pack": "^0.1.5",
+        "binaryen": "132.0.0",
         "pkg-types": "^2.3.1",
         "tinyexec": "^1.3.0",
         "valibot": "^1.5.0",
@@ -1472,6 +1502,8 @@
     "@babel/types": ["@babel/types@7.29.8", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg=="],
 
     "@better-auth/api-key": ["@better-auth/api-key@1.7.27", "", { "dependencies": { "zod": "^4.5.4" }, "peerDependencies": { "@better-auth/core": "^1.7.27", "@better-auth/utils": "^0.4.2 || ^0.5.0", "better-auth": "^1.7.27", "better-call": "~1.4.5" } }, "sha512-8YNUI3c3armRmFwMmbuR9JREtfabN2VNl+NaBBmoHHSm+eiEd3OnUuIoxQtoxpjolvZWrxu4X6HOkHLbEtCFHw=="],
+
+    "@better-auth/cimd": ["@better-auth/cimd@1.7.27", "", { "peerDependencies": { "@better-auth/core": "^1.7.27", "@better-auth/oauth-provider": "^1.7.27", "better-auth": "^1.7.27", "better-call": "~1.4.5" } }, "sha512-rmz/P5njGsSbWX6N+9SjgcqxCE5FWrlqqy146NL4sqMgV/xcm0Xk/RanHWO+HoPIpTuCd3+hFk6tifqewM+1GA=="],
 
     "@better-auth/core": ["@better-auth/core@1.7.27", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "zod": "^4.5.4" }, "peerDependencies": { "@better-auth/utils": "^0.4.2 || ^0.5.0", "@better-fetch/fetch": "1.3.3", "@opentelemetry/api": "^1.9.0", "better-call": "~1.4.5", "jose": "^6.1.0", "kysely": "^0.28.5 || ^0.29.0", "nanostores": "^1.0.1" }, "optionalPeers": ["@opentelemetry/api"] }, "sha512-g66vJqg82xUM6kIsY2Sb03UnbcIuFojUoe+tuBh7eyHOCgHXWBcoI/ZLEIUPo0DVTrCwFzZ9PUPoSxm6fmJXig=="],
 
@@ -2012,6 +2044,8 @@
     "@open-pencil/lint-tools": ["@open-pencil/lint-tools@workspace:tools/checks/lint"],
 
     "@open-pencil/mcp": ["@open-pencil/mcp@workspace:packages/mcp"],
+
+    "@open-pencil/mcp-catalog-tools": ["@open-pencil/mcp-catalog-tools@workspace:tools/generate/mcp-catalog"],
 
     "@open-pencil/mermaid": ["@open-pencil/mermaid@workspace:packages/mermaid"],
 
@@ -3257,9 +3291,13 @@
 
     "better-call": ["better-call@1.4.6", "", { "dependencies": { "@better-auth/utils": "^0.5.0", "@better-fetch/fetch": "^1.3.1", "rou3": "^0.9.1", "set-cookie-parser": "^3.1.2" }, "peerDependencies": { "zod": "^4.0.0" }, "optionalPeers": ["zod"] }, "sha512-tJ3lkMFeQProwiuZiQApwgVmYmBfXM4sAP7HxMsnAFtl4NWZhamG+RGoMNgHwGYkmcB+3eWyo3vgt4sWUUSdQA=="],
 
+    "bidi-js": ["bidi-js@1.1.0", "", { "dependencies": { "require-from-string": "^2.0.2" } }, "sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg=="],
+
     "bignumber.js": ["bignumber.js@9.3.1", "", {}, "sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ=="],
 
     "binary-extensions": ["binary-extensions@2.3.0", "", {}, "sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw=="],
+
+    "binaryen": ["binaryen@132.0.0", "", { "bin": { "wasm-as": "bin/wasm-as", "wasm2js": "bin/wasm2js", "wasm-dis": "bin/wasm-dis", "wasm-opt": "bin/wasm-opt", "wasm-merge": "bin/wasm-merge", "wasm-shell": "bin/wasm-shell", "wasm-reduce": "bin/wasm-reduce", "wasm-metadce": "bin/wasm-metadce", "wasm-ctor-eval": "bin/wasm-ctor-eval" } }, "sha512-4Usg7yEvwO3FMso3Oov6qkOOHSod1IEv+boKkh77kTljM+eNBouqCTbqWswGzbG+vDNO/b/v2C4gfEh1WgB9Lg=="],
 
     "bind-event-listener": ["bind-event-listener@3.0.0", "", {}, "sha512-PJvH288AWQhKs2v9zyfYdPzlPqf5bXbGMmhmUIY9x4dAUGIWgomO771oBQNwJnMQSnUIXhKu6sgzpBRXTlvb8Q=="],
 

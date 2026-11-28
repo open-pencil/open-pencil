@@ -5,6 +5,7 @@ import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { slideSettings } from '@open-pencil/scene-graph/slides'
 import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
@@ -131,7 +132,12 @@ export async function renderNodesToPPTX(
       stats
     }
 
-    if (root.type !== 'FRAME') {
+    // A deck's slide keeps its speaker notes, and one presenting skips stays as a hidden slide.
+    const settings = slideSettings(root)
+    if (settings?.notes) slide.addNotes(settings.notes)
+    if (settings?.skipped) slide.hidden = true
+
+    if (root.type !== 'FRAME' && root.type !== 'SLIDE') {
       // Non-frame root: export as a single image on its own slide.
       await addFallbackImage(ctx, root, root.opacity, `root node type ${root.type}`)
       continue
@@ -245,7 +251,8 @@ function rootRasterReason(root: SceneNode): string | null {
   // visible — rasterizing the whole slide for it would only cost editability.
   if (root.effects.some((e) => e.visible && e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW'))
     return 'blur effect'
-  const shadowReason = getShadowFallbackReason(root)
+  // A deck's slide wears its shadows only to stand out in the grid, so they are not its paint.
+  const shadowReason = root.type === 'SLIDE' ? null : getShadowFallbackReason(root)
   if (shadowReason) return shadowReason
   if (hasAsymmetricCorners(root)) return 'asymmetric corners'
   if (root.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
@@ -467,7 +474,8 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
   const baseFill = firstVisibleFill(node)
   return segs.map((seg) => {
     const s = seg.style ?? {}
-    const fill = s.fills?.find((f) => f.visible && f.type === 'SOLID') ?? baseFill
+    // A run's own fills replace the layer's: one whose fills are empty or hidden draws nothing.
+    const fill = s.fills ? (s.fills.find((f) => f.visible) ?? null) : baseFill
     const fontSize = s.fontSize ?? node.fontSize
     const weight = s.fontWeight ?? node.fontWeight
     const deco = s.textDecoration ?? node.textDecoration
@@ -479,7 +487,7 @@ function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGe
         bold: weight >= 600,
         italic: s.italic ?? node.italic,
         color: fill ? hex(fill.color) : '000000',
-        transparency: transparency(opacity * (fill ? fill.opacity * fill.color.a : 1)),
+        transparency: fill ? transparency(opacity * fill.opacity * fill.color.a) : 100,
         charSpacing: charSpacingPt(
           ctx,
           textLengthPixels(s.letterSpacing ?? node.letterSpacing, fontSize)

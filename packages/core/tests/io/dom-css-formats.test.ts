@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { toUint8Array } from 'js-base64'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -95,5 +95,42 @@ describe('Tailwind JSX export format', () => {
     expect(result).toMatchObject({ format: 'tailwind-jsx', extension: 'jsx' })
     expect(String(result.data)).toStartWith('<div data-name="Card" className="flex flex-col')
     expect(io.listExportFormats('page').map((format) => format.id)).toContain('tailwind-jsx')
+  })
+
+  test('draws a boolean operation as its combined shape', async () => {
+    const graph = new SceneGraph()
+    const red: Fill = {
+      type: 'SOLID',
+      color: { r: 1, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const blue: Fill = { ...red, color: { r: 0, g: 0, b: 1, a: 1 } }
+    const boolean = graph.createNode('BOOLEAN_OPERATION', graph.getPages()[0].id, {
+      width: 40,
+      height: 40,
+      booleanOperation: 'SUBTRACT',
+      fills: [red]
+    })
+    graph.createNode('RECTANGLE', boolean.id, { width: 40, height: 40, fills: [blue] })
+    graph.createNode('RECTANGLE', boolean.id, {
+      x: 10,
+      y: 10,
+      width: 20,
+      height: 20,
+      fills: [blue]
+    })
+    const result = await io.exportContent('tailwind-jsx', {
+      graph,
+      target: { scope: 'selection', nodeIds: [boolean.id] }
+    })
+
+    expect(String(result.data)).not.toMatch(/#0000ff/i)
+    expect(String(result.data).match(/<path /g)).toHaveLength(1)
+    expect(
+      String(result.data)
+        .match(/ d="([^"]*)"/)?.[1]
+        .match(/M/g)
+    ).toHaveLength(2)
   })
 })

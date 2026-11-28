@@ -254,10 +254,20 @@ sequenceDiagram
 
 The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
 document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
+It holds the document encoded, as V2 updates it merges and diffs, never as a `Y.Doc`: a document's
+structures take about ten times its encoded size in memory, which a room of a few megabytes would
+not have on Cloudflare. Encoded updates keep the content of what the document deleted, so once a
+room that deleted something has grown by a quarter, at least 1 MiB, since it was last compacted,
+or by half the room it had left below its limit, the relay asks the editor longest in it for its
+whole copy, with the sync request every peer already answers. An editor's copy has what it deleted
+collected; the relay adds whatever it holds that the copy lacks, deletions included, and takes the
+result when it is smaller. Each ask costs a few passes over the whole room, about a second of CPU
+for a 30 MB room, so a room that only grows, as an import does, is never asked.
 A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
 typical edit, rather than rewriting the room. Once the log reaches 500 updates, or both 4 MiB and a
-quarter of the snapshot, a fresh snapshot replaces it; a closing room writes one only when at least
-a quarter of its snapshot changed, since encoding a large document takes memory it may not have. Snapshots are files in the object store beside the
+quarter of the snapshot, or a compaction shrank the room, a fresh snapshot replaces it; a closing
+room writes one only when at least a quarter of its snapshot changed. Rooms are saved as V1
+updates, as they always were. Snapshots are files in the object store beside the
 documents' revisions, which a room's row names, so the database holds only the updates since the
 last one. A compaction records its file before writing it and points the room at it last, so a
 replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
@@ -274,8 +284,9 @@ which may not be lower. A larger frame, such as a big paste, the first editor's 
 document, or a newcomer's sync reply, travels as fragments in a row that the receiver joins again.
 The relay joins an editor's fragments up to the room's limit and holds viewers and peers not yet
 admitted to one message, so only an editor can make it buffer more. A room's document may hold at
-most 256 MiB, or 32 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an editor's
-update that would grow it past that is refused, while one that only deletes always goes through. A peer the relay turns away for good, for a
+most 256 MiB encoded, or 24 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an
+editor's update that would grow it past that is refused, while one that only deletes what the room
+holds always goes through, and frees the room once it is compacted. A peer the relay turns away for good, for a
 ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.
@@ -298,6 +309,51 @@ The relay enforces what the ticket allows: a viewer's document updates and sync 
 it, and presence updates are rewritten so others see the ticket's name and a `cloud` field with the
 verified identity and permission. A peer cannot claim presence clients another peer owns. Voice is
 not carried over the relay yet; the transport reports no media.
+
+### Apps' design tools
+
+The MCP endpoint at `/mcp` serves where `[oauth]` is on. It is stateless and holds no rights of its own: it
+answers a request without a valid token with a challenge naming its own protected resource
+metadata, and turns each tool call into a request to the document API with the caller's token, so
+every scope, workspace, and rate limit applies there unchanged. Its document tools are plain API
+calls. Its design tools are Core's, listed from `server/mcp/design-tools.json`, which the
+package's build writes from Core's tools before bundling, since the server holds no Core. The
+list keeps each tool's document kinds: unlike the local server, which lists the slide tools only
+while a deck is open, a stateless endpoint cannot tell clients their list changed, so it lists every
+tool and answers `422 wrong_document_kind` before any editor sees a call on another kind.
+
+The server has no editor to run them in, so `POST /api/documents/:id/tools/{read,write}` hands each
+call to the document's relay (`callDocumentTool`). The room's `agent-tools` channel carries the
+local MCP server's own messages (`@open-pencil/collab/automation`): a signed-in editor tab registers
+to run requests each time it joins; the relay hands the newest such tab of the person whose token
+made the call a `tool` request, as a local MCP server does, waits for that tab's response alone,
+and cancels the request after 30 seconds. The tab runs it as it runs the local server's, on the
+room's own document, showing the app as an agent and making the edit the person's own; it refuses
+any other command. With nobody's tab open the call answers `409 editor_not_open`, and the
+tool gives the model the document's link to pass on. Running tools on a graph the server decodes
+itself, without an open editor, is a later step.
+
+Where `deployment.agent_pairing` is on, a tab of the server's editor can pair with a coding agent
+without an account. The tab makes an `opg_` token, connects to `/api/agent-pairing/relay` with its
+SHA-256 as `?pairing=` and presents the token in its first frame; `createAgentPairingHub` holds
+the tab's socket and nothing else, and `/mcp` turns a call with that token into the request a
+local MCP server sends the app, to the tab that registered last: a `tool` request, or one of the
+document commands in `AGENT_PAIRING_COMMANDS`. The tab runs it through the app's own request
+handler, as it runs the local server's, and refuses files, settings, and code. A call with no tab to take it
+waits up to ten seconds for one to offer, since an agent may call while the editor its sign-in
+opened is still loading, then answers that the editor is not open. On Cloudflare a pairing's tabs
+meet on the relay object named `pairing:<id>`, tagged so the object tells them from collaboration
+peers when it wakes. Pairing tokens get the design tools
+and the editor's open documents, and their calls are limited per address. A browser keeps its
+pairing in local storage, and one of its windows serves it at a time under a Web Lock.
+
+An agent that signs in reaches the same pairing at `/auth/pair`, which the sign-in page offers as
+going on without an account. Better Auth's provider has checked the app, its return address, and
+PKCE before it signs the query that page starts from, but issues codes to accounts alone, so
+`createAgentPairingGrants` issues its own `opgc_` code and answers it ahead of Better Auth's token
+endpoint. The code's row holds the browser's token for a minute, encrypted with a key derived from
+the code, and an exchange deletes the row before checking anything, so a code works once. Only apps
+without a client secret pair, since nothing here checks one, and no account is ever made.
 
 ## Enrollment and administration
 
@@ -360,7 +416,7 @@ itself.
 
 The server shows its own pages on its public address: a welcome page, sign-in and sign-up, email
 verification, password reset, two-step sign-in, desktop sign-in approval, account pages (profile,
-sign-in and security, and sessions), and the administration console. They are a separate Vite entry, `cloud.html`, in the app project, so they
+sign-in and security, and sessions), and the administration console. They are a separate Vite entry, `pages/cloud.html`, in the app project, so they
 reuse the editor's components and theme without loading the editor. `bun run build:cloud` writes
 them to `dist-cloud/` beside the editor itself, which every Cloud server serves at its root. The
 editor never embeds these pages; when it needs them, for a social provider or a second sign-in
@@ -369,7 +425,7 @@ code. A verification link started in the editor lands on `/auth/verified`, which
 back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
-`cloud.html` at and below them with a fixed content security policy that runs only the site's own
+`pages/cloud.html` at and below them with a fixed content security policy that runs only the site's own
 scripts and Turnstile, and with `frame-ancestors 'none'`, so the approval page cannot be framed.
 The pages carry no inline script for it to allow: a build loads the boot splash's script from its
 own file. The desktop approval page never shows the code it
@@ -587,7 +643,11 @@ Services that decide entitlements, such as billing, write them through the inter
 the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
 `PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
 private transport of their own, and read an account's seats at
-`GET /api/internal/accounts/:userId/seats`. Every write carries an
+`GET /api/internal/accounts/:userId/seats`. The operator's dashboard reads the deployment's use at
+`GET /api/internal/usage/daily?start=&end=`, with the service token or the `[usage_report]` table's
+token, which reaches nothing else: per UTC day, sign-ups, active accounts (signed in or
+saved a revision), documents created, and revisions, with today's totals, as counts only; saves and
+active accounts are counted as they happen, since cleanup deletes old revisions and sign-ins. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.
@@ -731,6 +791,12 @@ and the same check serves the official service and self-hosted ones. Entitlement
 token is signed, so a plan change reaches the service within one token lifetime; asking Cloud on
 every request would have made model calls depend on Cloud's database. Entitlements are pushed to
 Cloud rather than read from billing, so documents keep opening when billing is down.
+
+**2026-11 · The relay holds rooms encoded.** A relay holding each room as a `Y.Doc` ran out of a
+Durable Object's 128 MB at rooms of about 15 MB, and was reset each time an editor rejoined. It
+merges and diffs encoded updates instead, which take about the memory of their result, and leaves
+collecting what a room deleted to an editor, whose copy of the document already did. Turning large
+rooms away was ruled out: some documents' only copy was their room.
 
 **2026-10 · On Cloudflare, a Durable Object per document runs the relay.** The relay holds a room's
 Yjs document and its peers in memory, which a stateless Worker can't, and keeping every epoch of a

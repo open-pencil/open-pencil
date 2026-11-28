@@ -13,7 +13,7 @@ import { usePopoverUI } from '@/components/ui/overlay/popover'
 import theme from '@/theme/variables/easing'
 
 import EasingEditor from './EasingEditor.vue'
-import { easingLabel } from './presets'
+import { easingFieldName, easingLabel } from './presets'
 import { easingThumbnail } from './thumbnail'
 
 /**
@@ -38,7 +38,10 @@ const ui = tv(theme)()
 const popover = usePopoverUI({ content: 'p-0' })
 const side = useInlineSide('start')
 const open = ref(false)
-const name = computed(() => easingLabel(easing, text.value))
+// The panel names a custom curve; the variable editor shows its numbers, as the table does.
+const name = computed(() =>
+  tone === 'panel' ? easingFieldName(easing, text.value) : easingLabel(easing, text.value)
+)
 const thumbnail = computed(() => easingThumbnail(easing))
 </script>
 

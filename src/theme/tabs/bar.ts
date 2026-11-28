@@ -9,7 +9,7 @@ const tabBarTheme = {
     list: 'flex h-full items-end',
     item: 'group/tab flex h-full max-w-48 min-w-24 items-center border-e border-border pe-3',
     trigger: [
-      'flex h-full min-w-0 cursor-pointer touch-manipulation items-center gap-1.5 px-3 text-2xs transition-colors select-none',
+      'flex h-full min-w-0 flex-1 cursor-pointer touch-manipulation items-center gap-1.5 px-3 text-2xs transition-colors select-none',
       focusStyles.ring
     ],
     icon: 'size-3 shrink-0 opacity-50',

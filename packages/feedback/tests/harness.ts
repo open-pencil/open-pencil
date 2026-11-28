@@ -51,12 +51,10 @@ export async function createTestService() {
 
   const fetchCalls: FetchCall[] = []
   const responses = new Map<string, (call: FetchCall) => Response>()
-  const sentEmails: EmailMessageBuilder[] = []
   let now = new Date('2026-10-12T09:00:00.000Z')
   const limiters = {
     ping: testLimiter(),
     ingest: testLimiter(),
-    waitlist: testLimiter(),
     report: testLimiter()
   }
 
@@ -75,19 +73,27 @@ export async function createTestService() {
     }),
     POSTHOG_HOST: 'https://eu.i.posthog.com',
     POSTHOG_KEY: 'phc_test',
-    TURNSTILE_SECRET: 'turnstile-secret',
-    TURNSTILE_HOSTNAMES: 'openpencil.dev,app.openpencil.dev',
-    EMAIL_FROM: 'hello@openpencil.dev',
     GITHUB_TOKEN: 'github-token',
     CLOUDFLARE_ANALYTICS_TOKEN: 'cloudflare-token',
     ACCESS_TEAM_DOMAIN: 'https://openpencil.cloudflareaccess.com',
     ACCESS_AUD: 'admin-audience',
     POSTHOG_PERSONAL_KEY: 'phx_test',
+    CLOUD_SERVICE_TOKEN: 'cloud-service-token',
+    // Cloud's Worker as its service binding reaches it: through the same outside world as the
+    // rest, so tests answer it with `respond` like any other request.
+    CLOUD: {
+      async fetch(input: RequestInfo | URL, init?: RequestInit) {
+        return services.fetch(input, init)
+      },
+      connect() {
+        throw new Error('The test Cloud binding has no sockets')
+      }
+    },
     // The built dashboard page as the asset binding serves it, at its file path only.
     ASSETS: {
       async fetch(input: RequestInfo | URL) {
         const { pathname } = new URL(input instanceof Request ? input.url : String(input))
-        if (pathname === '/admin/metrics.html')
+        if (pathname === '/admin/pages/metrics.html')
           return new Response('<!doctype html><title>Metrics</title>', {
             headers: { 'Content-Type': 'text/html' }
           })
@@ -99,16 +105,8 @@ export async function createTestService() {
     },
     PING_LIMITER: limiters.ping,
     INGEST_LIMITER: limiters.ingest,
-    WAITLIST_LIMITER: limiters.waitlist,
     REPORT_LIMITER: limiters.report,
-    REPORT_UPLOAD_SECRET: 'report-upload-secret',
-    EMAIL: {
-      async send(message: EmailMessageBuilder | EmailMessage) {
-        if (!('subject' in message)) throw new Error('Tests send composed emails only')
-        sentEmails.push(message)
-        return { messageId: `message-${sentEmails.length}` }
-      }
-    }
+    REPORT_UPLOAD_SECRET: 'report-upload-secret'
   }
 
   const services: FeedbackServices = {
@@ -149,7 +147,6 @@ export async function createTestService() {
     limiters,
     db: proxy.env.DB,
     fetchCalls,
-    sentEmails,
     /** Forgets every answer registered with `respond`, so one test's answers do not reach the next. */
     clearResponses() {
       responses.clear()

@@ -24,10 +24,12 @@ import {
 import { nodeChangeToProps } from '../node-change'
 import { generatedFrameCodec } from '../node-change/generated/codecs'
 import { readNodeChangePluginData } from '../node-change/plugin-data'
+import { linkSlideAnimations } from '../node-change/slides'
 import { applyDocumentEffectBindings } from './bindings/effects'
 import { applyDocumentLayoutBindings } from './bindings/layout'
 import { applyDocumentPaintBindings } from './bindings/paint'
 import type { BindingReferenceDiagnostic } from './bindings/references'
+import { applyDocumentTextStyleBindings } from './bindings/style'
 import { applyDocumentValueBindings } from './bindings/values'
 import { foldVariantPropertyCopies, type PropertyCopies } from './component/links'
 import { linkComponentPropertyValues, resolveVariantPropertyValues } from './component/values'
@@ -291,6 +293,8 @@ function materializeReaderInto(
     graph.isEntityIdTaken(sourceId) ? undefined : sourceId
   /** Generated frames whose records name other layers, linked once the pass has made them. */
   const linked: Array<{ node: SceneNode; record: NodeChange }> = []
+  /** Slides, whose records name the layers they animate. */
+  const slides: NodeChange[] = []
   const createShells = (occurrence: InstanceOccurrence, parentId: string): void => {
     if (occurrence.mainComponentId !== null) return
     const existingId = sources.get(occurrence.sourceId)
@@ -310,6 +314,7 @@ function materializeReaderInto(
     const codec = generatedFrameCodec(node.type)
     codec?.read(graph, node, occurrence.properties, blobs)
     if (codec?.link) linked.push({ node, record: occurrence.properties })
+    if (node.type === 'SLIDE') slides.push(occurrence.properties)
     for (const child of occurrence.children) createShells(child, node.id)
   }
   for (const page of pages) createShells(page, graph.rootId)
@@ -430,6 +435,7 @@ function materializeReaderInto(
   for (const { node, record } of linked) {
     generatedFrameCodec(node.type)?.link?.(graph, node, record, layerOf)
   }
+  for (const record of slides) linkSlideAnimations(graph, record, layerOf)
   // Layers and ranges name their styles by the styles' own IDs, which the records' GUIDs are,
   // so only links to other layers are renamed to the layers this page added.
   for (const node of graph.getAllNodes()) {
@@ -447,6 +453,7 @@ function materializeReaderInto(
   graph.preserveSourceMetadataDuring(() => {
     resolveVariantPropertyValues(graph, materialized)
     applyDocumentLayoutBindings(graph, savedSizeNodes, materialized, layoutScales)
+    applyDocumentTextStyleBindings(graph, materialized)
     applyDocumentPaintBindings(graph, materialized)
     applyDocumentEffectBindings(graph, materialized)
     applyDocumentValueBindings(graph, materialized)

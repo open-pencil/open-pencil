@@ -11,11 +11,12 @@ import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { drawnLayerBlurReach, mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
-import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend/modes'
+import { needsIsolatedBlendLayer, restoreBlendedLayer, saveBlendedLayer } from './blend/modes'
 import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { renderLeafWithEffects } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
+import { applyLayerMotion, heldBackByMotion, layerMotionOffset } from './layer-motion'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import { withNoiseEffects } from './noise/render'
@@ -41,7 +42,12 @@ import {
   forVisibleStrokes
 } from './strokes/draw'
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
-import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
+import {
+  drawTextEmoji,
+  drawTextOwnPaints,
+  hasOverflowPathTextPaint,
+  renderText
+} from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
 import { beginTexture, endTexture, visibleTexture } from './texture/render'
 
@@ -163,11 +169,12 @@ function renderMaskNodeContent(
   canvas.save()
   canvas.translate(node.x, node.y)
   // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
+  const opacity = applyLayerMotion(canvas, node, overlays) // as a presentation moves and fades it
   const blur = visibleLayerBlur(node)
-  const layered = node.opacity < 1 || blur !== undefined
+  const layered = opacity < 1 || blur !== undefined
   if (layered) {
     const world = () => worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview)
-    r.opacityPaint.setAlphaf(node.opacity)
+    r.opacityPaint.setAlphaf(opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     const content = blurredContent(graph, node, overlays)
     r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays, content) : null)
@@ -327,7 +334,7 @@ function nodeLayerBounds(
 
 /**
  * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
- * node-edit mode, or left to a live island while the canvas previews.
+ * node-edit mode, left to a live island while the canvas previews, or not yet on its slide.
  */
 function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays): boolean {
   if (
@@ -337,7 +344,11 @@ function drawsNode(graph: SceneGraph, node: SceneNode, overlays: RenderOverlays)
     fontManager.isNodeBlocked(graph, node.id)
   )
     return false
-  return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
+  return (
+    overlays.nodeEditState?.nodeId !== node.id &&
+    !overlays.playIslands?.has(node.id) &&
+    !heldBackByMotion(node, overlays)
+  )
 }
 
 /**
@@ -358,11 +369,10 @@ export function renderNode(
   const found = graph.getNode(nodeId)
   if (!found || !drawsNode(graph, found, overlays)) return
   const node = stickyPlaceholderNode(graph, found, r.stickyPlaceholder) ?? found
-
   r.drawCounts.nodes++
-
-  const absX = parentAbsX + node.x
-  const absY = parentAbsY + node.y
+  const moved = layerMotionOffset(node, overlays) // culled and placed where a presentation draws it
+  const absX = parentAbsX + node.x + moved.x
+  const absY = parentAbsY + node.y + moved.y
 
   if (isCulled(r, graph, node, absX, absY, frame, overlays.rotationPreview)) {
     r.drawCounts.culled++
@@ -371,8 +381,8 @@ export function renderNode(
 
   canvas.save()
   canvas.translate(node.x, node.y)
-
-  const needsNodeLayer = node.opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
+  const opacity = applyLayerMotion(canvas, node, overlays)
+  const needsNodeLayer = opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
   const layerBlur = visibleLayerBlur(node)
   const layerBounds =
     needsNodeLayer || layerBlur
@@ -385,9 +395,8 @@ export function renderNode(
         )
       : null
   if (needsNodeLayer) {
-    r.opacityPaint.setAlphaf(node.opacity)
-    setPaintBlendMode(r, r.opacityPaint, node.blendMode)
-    canvas.saveLayer(r.opacityPaint, layerBounds)
+    r.opacityPaint.setAlphaf(opacity)
+    saveBlendedLayer(r, canvas, r.opacityPaint, node.blendMode, layerBounds)
   }
 
   if (layerBlur) {
@@ -438,7 +447,7 @@ export function renderNode(
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
   }
   if (needsNodeLayer) {
-    canvas.restore()
+    restoreBlendedLayer(canvas)
     r.opacityPaint.setAlphaf(1)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
   }
@@ -575,7 +584,10 @@ export function paintShapeContent(
   if (!drawVectorMultiStyleFills(r, canvas, node, graph)) {
     drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, fill))
   }
-  if (node.type === 'TEXT') drawTextEmoji(r, canvas, node)
+  if (node.type === 'TEXT') {
+    drawTextOwnPaints(r, canvas, node, graph)
+    drawTextEmoji(r, canvas, node)
+  }
   afterFills?.()
   if (isolated) canvas.restore()
 

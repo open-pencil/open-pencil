@@ -20,6 +20,7 @@ describe('canvas view profiles', () => {
       live: null,
       panels: true,
       leaveTo: null,
+      presentation: null,
       edits: true,
       tools: null,
       pathEdits: 'all',
@@ -32,6 +33,7 @@ describe('canvas view profiles', () => {
       sectionTitles: 'fill',
       lint: true,
       rulers: true,
+      filmstrip: false,
       panelsOpen: true
     })
   })
@@ -46,6 +48,7 @@ describe('canvas view profiles', () => {
       live: { revision: 0 },
       panels: false,
       leaveTo: { id: 'edit' },
+      presentation: null,
       edits: true,
       tools: null,
       pathEdits: 'all',
@@ -58,6 +61,7 @@ describe('canvas view profiles', () => {
       sectionTitles: 'fill',
       lint: true,
       rulers: true,
+      filmstrip: false,
       panelsOpen: true
     })
   })

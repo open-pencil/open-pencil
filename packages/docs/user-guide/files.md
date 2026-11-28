@@ -6,7 +6,7 @@ description: Open documents and web pages, place files, and save your work.
 
 # Opening and Saving
 
-OpenPencil opens and saves `.fig` files, the same format Figma uses. It opens web pages and Pencil's `.pen` files too.
+OpenPencil opens and saves `.fig` files, the same format Figma uses. It opens web pages and pen.dev's `.pen` files too.
 
 ## Open a Document
 
@@ -49,3 +49,9 @@ Files in other formats, such as `.pen`, are saved as a new `.fig` file, and the 
 3. Choose **Smaller** or **Smallest**.
 
 Smaller files take longer to save. **Fast** saves the way Figma does, and Figma opens all three.
+
+## Recover Unsaved Work
+
+OpenPencil keeps a copy of documents you never saved to a file, even after you close their tabs. When it has one, Home offers **Recover unsaved work**: choose **Restore** to open the document, or **Discard** to delete the copy.
+
+The copies stay on this computer, in this browser or app, and don't replace saving. To stop keeping them, turn off **Automatically preserve unsaved work** in **Settings → General → Recovery**.

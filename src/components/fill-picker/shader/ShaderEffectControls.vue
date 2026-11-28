@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { colorToHexRaw, parseColor } from '@open-pencil/scene-graph/color'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShaderComponent } from '@open-pencil/scene-graph/shaders'
 import { provideColorSpace } from '@open-pencil/vue/controls/color-model'
-import type { ShaderEffect, ShaderPropControl } from '@open-pencil/vue/controls/shader'
+import {
+  fillStops,
+  seedStops,
+  shaderStops,
+  stopsFill,
+  type ShaderEffect,
+  type ShaderPropControl
+} from '@open-pencil/vue/controls/shader'
 import { useMessages } from '@open-pencil/vue/i18n'
 import { inputChecked } from '@open-pencil/vue/shared/dom-events'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
+import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
@@ -19,7 +28,8 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 /**
  * The settings of one effect of a shader, laid out as the properties panel lays out an effect's:
  * numbers two to a row, colors as color inputs, choices as selects, generated from the props the
- * `shaders` library describes. Props it has no control for are edited in the preset's JSON.
+ * `shaders` library describes, color stops as a gradient fill's. Props it has no control for are
+ * edited in the preset's JSON.
  */
 const { effect, component } = defineProps<{
   effect: ShaderEffect
@@ -33,9 +43,23 @@ provideColorSpace('srgb')
 /** A run of numbers, which pair up in a grid, or one other prop. */
 type Block = { key: string; numbers: ShaderPropControl[] } | ShaderPropControl
 
-/** The props in the library's order, with runs of numbers together. */
+/**
+ * Groups whose colors the effect's stops replace while it has them, as the library draws a
+ * gradient from its stops rather than its Color A and Color B once stops are set.
+ */
+const replacedGroups = computed(
+  () =>
+    new Set(
+      effect.props.flatMap((prop) =>
+        prop.kind === 'stops' && prop.group && shaderStops(value(prop)) ? [prop.group] : []
+      )
+    )
+)
+
+/** The props in the library's order, with runs of numbers together; replaced colors left out. */
 const blocks = computed(() =>
   effect.props.reduce<Block[]>((list, prop) => {
+    if (prop.kind === 'color' && replacedGroups.value.has(prop.group)) return list
     const last = list.at(-1)
     if (prop.kind !== 'range') list.push(prop)
     else if (last && 'numbers' in last) last.numbers.push(prop)
@@ -72,6 +96,15 @@ function setPosition(prop: ShaderPropControl, axis: 'x' | 'y', percent: number) 
   emit('set', prop.key, { x: x / 100, y: y / 100, [axis]: percent / 100 })
 }
 
+/** The effect's own colors, which its gradient is drawn from until it has stops. */
+const colors = computed(() =>
+  effect.props.flatMap((prop) => {
+    const current = value(prop)
+    return prop.kind === 'color' && typeof current === 'string' ? [current] : []
+  })
+)
+const activeStop = ref(0)
+
 function selectValue(prop: ShaderPropControl): string | number {
   const current = value(prop)
   return typeof current === 'string' || typeof current === 'number' ? current : ''
@@ -103,6 +136,36 @@ function selectValue(prop: ShaderPropControl): string | number {
           @update="emit('set', block.key, `#${colorToHexRaw($event)}`)"
         />
       </PanelFieldGroup>
+      <div v-else-if="block.kind === 'stops'" :data-property="`shader-${block.key}`">
+        <GradientEditor
+          v-if="shaderStops(value(block))"
+          v-model:active-stop="activeStop"
+          :fill="stopsFill(shaderStops(value(block)) ?? [])"
+          :types="false"
+          @update="emit('set', block.key, fillStops($event))"
+        >
+          <template #actions>
+            <IconButton
+              :label="panels.removeShaderStops"
+              data-test-id="shader-stops-remove"
+              @click="emit('set', block.key, undefined)"
+            >
+              <icon-lucide-minus class="size-3" />
+            </IconButton>
+          </template>
+        </GradientEditor>
+        <!-- Until it has stops, the effect draws its gradient from its own colors. -->
+        <div v-else class="flex items-center justify-between">
+          <span class="text-2xs text-muted">{{ panels.stops }}</span>
+          <IconButton
+            :label="panels.addShaderStops"
+            data-test-id="shader-stops-add"
+            @click="emit('set', block.key, seedStops(colors))"
+          >
+            <icon-lucide-plus class="size-3" />
+          </IconButton>
+        </div>
+      </div>
       <PanelFieldGroup v-else-if="block.kind === 'select'" :label="block.label">
         <AppSelect
           :model-value="selectValue(block)"

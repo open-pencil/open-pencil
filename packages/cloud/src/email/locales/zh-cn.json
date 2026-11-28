@@ -143,12 +143,5 @@
   "commentSomeone": "有人",
   "openComment": "打开评论",
   "commentSettings": "你会按通知设置收到这些邮件。可在{link}中更改。",
-  "commentSettingsLink": "账户设置",
-  "waitlistSubject": "确认你在 OpenPencil Cloud 候补名单中的位置",
-  "waitlistHeading": "确认你的邮箱",
-  "waitlistPreview": "只需点击一下，即可加入 OpenPencil Cloud 候补名单。",
-  "waitlist": "感谢你关注 OpenPencil Cloud。确认此地址即可加入候补名单。等 OpenPencil Cloud 为你准备就绪时，我们会给你发一封邮件，仅此一次。",
-  "waitlistAction": "加入候补名单",
-  "waitlistNote": "不是你本人报名的？忽略此邮件即可，该地址会在七天后删除；你也可以{link}。",
-  "waitlistLeave": "立即删除"
+  "commentSettingsLink": "账户设置"
 }

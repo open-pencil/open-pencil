@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { defaultSlideTransition, slideSettings } from '@open-pencil/scene-graph/slides'
+
 import { createDocumentGraph } from '#core/editor/document-settings'
 import { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 
 function deck(): FigmaAPI {
   const api = new FigmaAPI(createDocumentGraph('slides', 'light'))
@@ -75,5 +78,28 @@ describe('Slides in the Plugin API', () => {
     expect(() => slide.setSlideTransition({ ...transition, duration: 0 })).toThrow(
       'Too small: expected number to be >=0.01 at .duration'
     )
+  })
+
+  test('a transition following a variable reads as the variable now says', () => {
+    const api = deck()
+    const graph = graphOf(api)
+    const [[slide]] = api.getSlideGrid()
+    const motion = graph.createCollection('Motion')
+    const pace = graph.createVariable('Pace', 'TIMING', motion.id, 0.4)
+    const node = graph.getNode(slide.id)
+    const settings = node && slideSettings(node)
+    if (!settings) throw new Error('No slide')
+    graph.updateNode(slide.id, {
+      slide: {
+        ...settings,
+        transition: {
+          ...defaultSlideTransition(),
+          duration: 0.4,
+          durationVariableId: pace.id
+        }
+      }
+    })
+    pace.valuesByMode[motion.defaultModeId] = 1.5
+    expect(slide.getSlideTransition().duration).toBe(1.5)
   })
 })

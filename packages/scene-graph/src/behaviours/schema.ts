@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { easingSchema } from '../variables/schema'
+import { easingSchema, motionSpecSchema } from '../variables/schema'
 import { BEHAVIOUR_KINDS, hasInvalidState, type InteractionState } from './kinds'
 
 const booleanBindingSchema = v.object({
@@ -88,9 +88,6 @@ export type BehaviourNumberSettings = v.InferOutput<typeof numberSettingsSchema>
 export type BehaviourInteractionStates = v.InferOutput<typeof interactionStatesSchema>
 export type BehaviourTransition = v.InferOutput<typeof transitionSchema>
 
-/** A transition's duration or easing as a spec writes it: a value, or a variable by name or ID. */
-const variableReferenceSchema = v.object({ variable: v.string() })
-
 /**
  * A behaviour as scripts, tools, and JSX write it: component properties and slots by name, not
  * by id. Values are boolean or text values by their contract id; numbers are a slider's or
@@ -122,18 +119,8 @@ export const behaviourSpecSchema = v.object({
   states: v.optional(
     v.union([v.string(), v.object({ property: v.string(), ...interactionStateValues })])
   ),
-  /**
-   * Seconds or a TIMING variable; a CSS easing such as `ease-out` or `cubic-bezier(…)`, an easing
-   * name such as `GENTLE_SPRING`, an easing as stored, or an EASING variable.
-   */
-  transition: v.optional(
-    v.object({
-      duration: v.optional(
-        v.union([v.pipe(v.number(), v.finite(), v.minValue(0)), variableReferenceSchema])
-      ),
-      easing: v.optional(v.union([v.string(), variableReferenceSchema, easingSchema]))
-    })
-  )
+  /** How the control moves between states, as `motionSpecSchema` writes it. */
+  transition: v.optional(motionSpecSchema)
 })
 
 export type BehaviourSpec = v.InferOutput<typeof behaviourSpecSchema>

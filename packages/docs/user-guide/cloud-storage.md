@@ -1,4 +1,5 @@
 ---
+pageClass: guide
 title: Cloud Storage
 description: Keep documents and component libraries in your own S3-compatible bucket — AWS S3, Backblaze B2, Cloudflare R2, MinIO, and others.
 ---
@@ -66,7 +67,7 @@ Documents you have opened stay cached on the device for faster reopening, up to 
 
 ## Component Libraries
 
-The bucket can also hold component libraries. In **Assets → Manage libraries**, switch the source to **Storage** to publish and enable libraries there instead of on this device. Publishing uses conditional writes, so two people publishing the same library at once can't overwrite each other's revision. See [Components](./components#component-libraries) for publishing and updating libraries.
+The bucket can also hold component libraries. In **Assets → Manage libraries**, switch the source to **Storage** to publish and enable libraries there instead of on this device. Publishing uses conditional writes, so two people publishing the same library at once can't overwrite each other's revision. See [Component Libraries](./component-libraries) for publishing and updating libraries.
 
 ## What's in the Bucket
 

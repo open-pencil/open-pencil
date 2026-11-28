@@ -1,7 +1,8 @@
 import { useEventListener } from '@vueuse/core'
 
-import type { HorizontalScroller } from './history-swipe'
 import { startsHistorySwipe } from './history-swipe'
+import type { HorizontalScroller } from './history-swipe'
+import { useShellPinchGestures } from './pinch'
 
 function* scrollersUnder(event: WheelEvent): Generator<HorizontalScroller> {
   for (const target of event.composedPath()) {
@@ -19,10 +20,11 @@ function* scrollersUnder(event: WheelEvent): Generator<HorizontalScroller> {
 
 /**
  * Keeps the editor's wheel gestures in the editor: Ctrl or Cmd with the wheel zooms the
- * canvas rather than the page, and a sideways trackpad swipe never goes back or forward in
- * the browser's history.
+ * canvas rather than the page, a sideways trackpad swipe never goes back or forward in the
+ * browser's history, and a Linux desktop touchpad pinch zooms the canvas, not the whole page.
  */
 export function useEditorWheelGuard(): void {
+  useShellPinchGestures()
   useEventListener(
     document,
     'wheel',

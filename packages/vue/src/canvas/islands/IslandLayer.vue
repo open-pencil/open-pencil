@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computedAsync } from '@vueuse/core'
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 
 import {
   playIslandRoots,
@@ -9,11 +8,11 @@ import {
   type EditorState
 } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
-import { tokenStylesheet } from '@open-pencil/dom-css/export'
 
 import { useEditor } from '#vue/editor/context'
 
 import Island from './Island.vue'
+import { useIslandTokens } from './tokens'
 
 /**
  * The live islands of a previewing canvas pane, laid over the canvas at its pan and zoom. The
@@ -35,19 +34,7 @@ const placement = computed(() => drawn ?? view)
 const live = computed(() => resolveEditorProfile(view).live)
 const editor = useEditor()
 
-/**
- * The document's variables as custom properties, which the islands' `var()` references read in
- * the modes their layers set. Built once for every island while previewing; an island is a
- * shadow root, so the stylesheet's `:root` is its host.
- */
-const tokens = new CSSStyleSheet()
-const tokensCSS = computedAsync(async () => {
-  void editor.state.sceneVersion
-  if (!live.value) return ''
-  const { css } = await tokenStylesheet(editor.graph, { format: 'css' })
-  return css.replaceAll(':root', ':host')
-}, '')
-watch(tokensCSS, (css) => tokens.replaceSync(css), { immediate: true })
+const tokens = useIslandTokens(computed(() => live.value !== null))
 
 const islands = computed(() => {
   void editor.state.sceneVersion
@@ -84,7 +71,7 @@ function forwardWheel(event: WheelEvent) {
         :root-id="island.id"
         :revision="live.revision"
         :tokens="tokens"
-        class="pointer-events-auto absolute"
+        class="pointer-events-auto absolute w-max"
         :style="{ left: `${island.position.x}px`, top: `${island.position.y}px` }"
       />
     </div>

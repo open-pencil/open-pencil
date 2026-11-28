@@ -71,6 +71,20 @@ describe('pictures in imported HTML', () => {
     expect(requested.filter((path) => path === 'photo.png')).toHaveLength(1)
   })
 
+  test('fills a video with its poster, which a browser shows until it plays', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const { graph } = await readHTMLDocument(
+      '<video poster="logo.png" width="48" height="48" style="display:block;width:48px;height:48px"><source src="logo.mp4" type="video/mp4"></video>',
+      { readAsset: async (path) => (path === 'logo.png' ? png : null) }
+    )
+    const [video] = graph.getChildren(graph.getPages()[0].id)
+    const fill = video.fills[0]
+
+    expect(video).toMatchObject({ width: 48, height: 48 })
+    expect(fill?.type).toBe('IMAGE')
+    expect(fill?.imageHash && graph.images.get(fill.imageHash)).toEqual(png)
+  })
+
   test('fills a box with the pictures its background layers show, where CSS places them', async () => {
     const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
     const natural = imageHeader(png) ?? { width: 1, height: 1 }

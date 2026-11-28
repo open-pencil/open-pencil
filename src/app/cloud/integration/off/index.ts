@@ -27,6 +27,11 @@ export async function fetchOfficialTour(): Promise<Uint8Array | null> {
 /** Nothing opens from a Cloud link without Cloud. */
 export const openingCloudLink = computed(() => false)
 
+/** Agents pair with the editor through a Cloud server. */
+export function pairedWithAgent(): boolean {
+  return false
+}
+
 /** No account on OpenPencil Cloud without Cloud. */
 export const officialCloudSignedIn = computed(() => false)
 

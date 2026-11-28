@@ -15,7 +15,12 @@ export const COLLAB_ACTIONS = {
   /** From the server only: the document's version history changed, so open lists load it again. */
   versions: 'versions',
   /** From the server only: a comment thread changed; the payload is its ID as UTF-8. */
-  comments: 'comments'
+  comments: 'comments',
+  /**
+   * Between an editor and the server only: design tools apps run through the editor that has the
+   * document open.
+   */
+  agentTools: 'agent-tools'
 } as const
 
 /**
@@ -32,6 +37,14 @@ export const MAX_COLLAB_MESSAGE_BYTES = 256 * 1024 * 1024
  */
 export function encodeSyncReply(document: Y.Doc, stateVector: Uint8Array): Uint8Array {
   return deflateSync(Y.encodeStateAsUpdateV2(document, stateVector))
+}
+
+/**
+ * The sync reply for a peer with `stateVector`, from a document held as one encoded V2 update
+ * rather than a `Y.Doc`, as the Cloud relay holds rooms.
+ */
+export function encodeSyncReplyFromUpdate(update: Uint8Array, stateVector: Uint8Array): Uint8Array {
+  return deflateSync(Y.diffUpdateV2(update, stateVector))
 }
 
 /**

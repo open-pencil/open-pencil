@@ -1,7 +1,9 @@
+export { DESIGN_TOOLS_INSTRUCTIONS } from '#mcp/instructions'
 export { mcpClientToken } from './client-token'
 export * from './metadata'
-export { createToolDescriptors } from './manifest'
+export { createToolDescriptors, getMCPToolDefinitions } from './manifest'
 export { isToolEnabled, serializeDisabledTools } from './policy'
+export { toolInputSchema } from './schema'
 export {
   MCP_TOOL_SCOPES,
   SELECTION_SCOPE_TOOLS,

@@ -7,6 +7,7 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
+import { drawsStroke } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { isPathTextWithStrokeGeometry } from '#core/canvas/strokes/dispatch'
@@ -22,17 +23,11 @@ import {
   solidFillOpacity,
   svgStrokeAttrs,
   withDrawnStrokes,
+  type GradientBox,
   type SVGExportContext
 } from './defs'
 import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
-import {
-  round,
-  makePolygonPoints,
-  roundedPolygonPath,
-  boxOutlinePath,
-  arcPath,
-  shapeWithTextOutlinePath
-} from './paths'
+import { round, makePolygonPoints, roundedPolygonPath, boxOutlinePath, arcPath } from './paths'
 
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
@@ -58,10 +53,10 @@ import { renderMaskedChildren } from './masks'
 import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
+import { shapeWithTextDetailElements, shapeWithTextElements } from './shape-with-text'
 import {
   alignedStroke,
   alignedStrokeElement,
-  shapeWithTextDetailElements,
   strokeGeometryElements,
   textStrokeElements
 } from './strokes'
@@ -158,7 +153,7 @@ function nodeShapeElements(
 
     case 'LINE': {
       // Where the canvas strokes it: to one side of the line, with its caps inside its length.
-      const stroke = node.strokes.find((item) => item.visible)
+      const stroke = node.strokes.find((item) => drawsStroke(node, item))
       const {
         network,
         from: start,
@@ -219,22 +214,6 @@ function boxOutlineElement(
   // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
   const radius = round(Math.min(node.cornerRadius, node.width / 2, node.height / 2))
   return svg('rect', { width, height, rx: radius, ry: radius, ...attrs })
-}
-
-/**
- * A FigJam shape's outline, and its inner lines, such as a database's front rim, stroked as the
- * canvas strokes them: at the stroke's own weight, ending where the outline does.
- */
-function shapeWithTextElements(
-  node: SceneNode,
-  common: Record<string, string | number | undefined>,
-  strokeAttrs: Record<string, string | number | undefined>,
-  ctx: SVGExportContext
-): SVGNode[] {
-  return [
-    svg('path', { d: shapeWithTextOutlinePath(node), ...common }),
-    ...shapeWithTextDetailElements(node, strokeAttrs, ctx)
-  ]
 }
 
 // --- Main recursive renderer ---
@@ -362,11 +341,12 @@ const CURRENT_COLOR = 'currentColor'
 function exportedFill(
   fill: Fill | undefined,
   node: SceneNode,
-  ctx: SVGExportContext
+  ctx: SVGExportContext,
+  box?: GradientBox
 ): { color: string | null; opacity: number | undefined } {
   if (!fill) return { color: null, opacity: undefined }
   return {
-    color: resolveFill(fill, node, ctx),
+    color: resolveFill(fill, node, ctx, box),
     opacity: solidFillOpacity(fill, ctx.colors)
   }
 }
@@ -405,13 +385,15 @@ function drawNode(layer: SceneNode, ctx: SVGExportContext): SVGNode | null {
   const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
-  const visibleStrokes = node.strokes.filter((s) => s.visible)
+  const visibleStrokes = node.strokes.filter((stroke) => drawsStroke(node, stroke))
 
   if (node.type === 'TEXT') {
+    // A text's gradient spans its layer, as the canvas draws it, not just its characters' box.
     const fill = exportedFill(
       node.fills.find((f) => f.visible),
       node,
-      ctx
+      ctx,
+      'layer'
     )
     const text = renderTextNode(node, fill.color, ctx, fill.opacity)
     const strokes = textStrokeElements(node, visibleStrokes, ctx)
@@ -569,16 +551,13 @@ export function renderNodeSVGElement(
   graph: SceneGraph,
   node: SceneNode,
   {
-    idPrefix,
     colorSpace = graph.documentColorSpace,
-    tint
+    ...services
   }: Pick<SVGExportOptions, 'colorSpace'> &
-    Partial<Pick<SVGExportContext, 'tint'>> & {
-      idPrefix: string
-    }
+    Pick<SVGExportContext, 'idPrefix' | 'tint' | 'booleanOutlines'>
 ): SVGNode | null {
   const colors = { from: graph.documentColorSpace, to: colorSpace }
-  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, idPrefix, tint }
+  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colors, ...services }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
   // A straight line has no height or width, but its stroke still needs a viewport to draw in.

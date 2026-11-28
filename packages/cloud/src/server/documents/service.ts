@@ -90,7 +90,8 @@ export function createDocumentService(
         'storageObject.objectKey',
         'storageObject.byteSize',
         'storageObject.checksum',
-        'storageObject.contentType'
+        'storageObject.contentType',
+        'documentRevision.coverChecksum'
       ])
       .where('documentRevision.id', '=', document.currentRevisionId)
       .where('documentRevision.documentId', '=', documentId)
@@ -104,7 +105,8 @@ export function createDocumentService(
       checksum: revision.checksum,
       contentType: revision.contentType,
       download: await objects.createDownload({ key: revision.objectKey, expiresAt }),
-      images: await revisionImageDownloads(database, objects, revision.revisionId, expiresAt)
+      images: await revisionImageDownloads(database, objects, revision.revisionId, expiresAt),
+      cover: revision.coverChecksum
     }
   }
 
@@ -183,6 +185,17 @@ export function createDocumentService(
     /** Links for images a live room names, for a guest a share already let in. */
     imageLinksShared(documentId: string, checksums: string[]) {
       return imageLinksOf(documentId, checksums)
+    },
+
+    /**
+     * What a document is, without its file: also for one created through the API and not yet
+     * saved by an editor, which has no revision to download.
+     */
+    async summary(userId: string, documentId: string): Promise<DocumentSummary> {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      const row = access ? await getDocumentSummaryRow(database, documentId) : null
+      if (!row) throw new DocumentNotFoundError()
+      return documentSummary(row)
     },
 
     async download(userId: string, documentId: string): Promise<DocumentDownload> {

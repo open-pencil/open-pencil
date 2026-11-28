@@ -19,7 +19,11 @@ import {
 import { createAuthenticationEmailService } from '#cloud/server/auth'
 import { signInProviders } from '#cloud/server/auth/methods'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
-import { createOAuthRoutes, createOAuthService } from '#cloud/server/oauth'
+import {
+  createAgentPairingGrants,
+  createOAuthRoutes,
+  createOAuthService
+} from '#cloud/server/oauth'
 import { Hono } from 'hono'
 
 import type { createRequestChecks, createRequestResolvers } from './checks'
@@ -109,6 +113,15 @@ export function createAppRouters(
           secret: config.authSecret,
           steps: oauth.steps
         }),
+        pairing: services.callPairedTool
+          ? createAgentPairingGrants({
+              database,
+              publicURL: config.publicURL,
+              issuer: new URL('/api/auth', config.publicURL).href,
+              secret: config.authSecret
+            })
+          : undefined,
+        publicRateLimiter: limiters.agentPairingPageLimiter,
         serverMetadata: oauth.serverMetadata,
         requireActiveSession: checks.requireActiveSession,
         authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
@@ -117,6 +130,7 @@ export function createAppRouters(
   const shared = {
     collaboration: app.collaboration,
     documents: app.documents,
+    documentTools: app.documentTools,
     versions: app.versions,
     comments: app.comments,
     community: app.community,
@@ -136,8 +150,12 @@ export function createAppRouters(
   })
   const publicCloudAPI = createPublicCloudAPIRouter(shared)
   // Services such as billing authenticate with their own token, not a session.
-  const internalAPI = config.internalServiceToken
-    ? createInternalRoutes(createInternalService(database), config.internalServiceToken)
-    : new Hono()
+  const internalAPI =
+    config.internalServiceToken || config.usageReportToken
+      ? createInternalRoutes(createInternalService(database), {
+          serviceToken: config.internalServiceToken,
+          usageToken: config.usageReportToken
+        })
+      : new Hono()
   return { admin, account, accessTokens, appConnections, cloudAPI, publicCloudAPI, internalAPI }
 }

@@ -1,15 +1,17 @@
-import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { PILL_RADIUS } from '@open-pencil/scene-graph/corners'
 import {
   dimension,
   parseCSSAspectRatio,
   parseCSSNumber,
+  parseCSSShadows,
   splitCSSValue
 } from '@open-pencil/scene-graph/css'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 import { maxOf } from '@open-pencil/std/arrays'
 
-import type { DesignStyleDeclaration } from '../types'
-import { colorToFillFromCSS, pickStyle } from './css-values'
+import type { DesignElement, DesignStyleDeclaration } from '../types'
+import { anyCSSColor, colorToFillFromCSS, colorToStrokeFromCSS, pickStyle } from './css-values'
 
 function firstCSSNumber(style: DesignStyleDeclaration, ...properties: string[]): number | null {
   for (const property of properties) {
@@ -102,6 +104,12 @@ function paintedSides(style: DesignStyleDeclaration): BorderSide[] {
   return BORDER_SIDES.filter((side) => paints(style, side))
 }
 
+/** The property that colors the first side whose border is drawn. */
+export function firstStrokeProperty(style: DesignStyleDeclaration): string | null {
+  const side = paintedSides(style).at(0)
+  return side ? `border-${side}-color` : null
+}
+
 /** The color of the first side whose border is drawn, or the shorthand's. */
 export function firstStrokeColor(style: DesignStyleDeclaration) {
   const side = paintedSides(style).at(0)
@@ -127,9 +135,101 @@ export function strokeWeightFromStyle(style: DesignStyleDeclaration) {
 }
 
 /**
+ * Whether a shadow is a ring around its box, as a focus ring drawn with `box-shadow: 0 0 0 3px`
+ * is: outside it, with a spread and neither an offset nor a blur.
+ */
+export function isRing(effect: Effect): boolean {
+  const { type, offset, radius, spread } = effect
+  return type === 'DROP_SHADOW' && offset.x === 0 && offset.y === 0 && radius === 0 && spread > 0
+}
+
+/**
+ * The shadow of a box that is only a ring, which becomes its outside stroke when the box draws no
+ * border; none when it has other shadows, which an outside stroke would grow, as Figma casts a
+ * shadow from the strokes too.
+ */
+export function ringOf(shadows: readonly Effect[], bordered: boolean): Effect | null {
+  const [ring] = shadows
+  return shadows.length === 1 && isRing(ring) && !bordered ? ring : null
+}
+
+/** CSS's `medium` border width, which a border with a style and no width has. */
+const MEDIUM_BORDER = 3
+
+function borderWidth(style: DesignStyleDeclaration, side: BorderSide): number {
+  const width = sideValue(style, `border-${side}-width`, 'border-width', side)
+  return parseCSSNumber(width) ?? MEDIUM_BORDER
+}
+
+/**
+ * Whether the element's border paints nothing in any mode it was styled in: it has a style and a
+ * width, but is transparent in each, as `border border-transparent` keeps the room for a border
+ * another variant shows.
+ */
+export function hasInvisibleBorder(element: DesignElement, style: DesignStyleDeclaration): boolean {
+  const sides = paintedSides(style)
+  if (sides.length === 0) return false
+  const styles = [style, ...(element.modes ?? []).map((mode) => mode.computedStyle)]
+  return styles.every(
+    (each) =>
+      each !== undefined &&
+      sides.every((side) => {
+        const color = sideValue(each, `border-${side}-color`, 'border-color', side)
+        return anyCSSColor(color)?.a === 0
+      })
+  )
+}
+
+/** Whether the element draws a border in some mode it was styled in. */
+export function drawsBorder(element: DesignElement, style: DesignStyleDeclaration): boolean {
+  return hasBorder(style) && !hasInvisibleBorder(element, style)
+}
+
+/** Adds an invisible border's widths to the padding, as the room CSS gives it inside the box. */
+function padForBorder(node: SceneNode, style: DesignStyleDeclaration): void {
+  const sides = new Set(paintedSides(style))
+  const width = (side: BorderSide) => (sides.has(side) ? borderWidth(style, side) : 0)
+  node.paddingTop += width('top')
+  node.paddingRight += width('right')
+  node.paddingBottom += width('bottom')
+  node.paddingLeft += width('left')
+}
+
+/**
+ * Makes the one ring around a box without a border, as a focus ring is, its outside stroke,
+ * since Figma spreads a shadow only on a filled frame that clips; returns the shadows left.
+ */
+export function applyRing(node: SceneNode, shadows: Effect[], bordered: boolean): Effect[] {
+  const ring = ringOf(shadows, bordered)
+  if (!ring) return shadows
+  const { color, spread: weight } = ring
+  node.strokes = [
+    { type: 'SOLID', color, weight, opacity: color.a, visible: true, align: 'OUTSIDE' }
+  ]
+  return shadows.filter((shadow) => shadow !== ring)
+}
+
+/**
  * Whether the element has a border on any side: a side needs a style other than `none`, its CSS
  * default, or `hidden`, whatever its width and color.
  */
+/** Whether a box draws anything of its own: a background, a border, or a shadow. */
+export function paintsBox(style: DesignStyleDeclaration): boolean {
+  return (
+    fillsFromStyle(style, 'background-color').length > 0 ||
+    (pickStyle(style, 'background-image')?.trim() ?? 'none') !== 'none' ||
+    hasBorder(style) ||
+    parseCSSShadows(pickStyle(style, 'box-shadow'), 'srgb').length > 0
+  )
+}
+
+/** Whether a box clips what it holds: any overflow but `visible` does, on either axis. */
+export function clipsOverflow(style: DesignStyleDeclaration): boolean {
+  return ['overflow', 'overflow-x', 'overflow-y'].some((property) =>
+    splitCSSValue(pickStyle(style, property) ?? 'visible').some((part) => part !== 'visible')
+  )
+}
+
 export function hasBorder(style: DesignStyleDeclaration): boolean {
   return paintedSides(style).length > 0
 }
@@ -170,7 +270,9 @@ function cornerRadiusOf(value: string | undefined, box: Size | undefined): numbe
   if (percentage?.unit === '%' && box) {
     return (percentage.number / 100) * Math.min(box.width, box.height)
   }
-  return parseCSSNumber(first)
+  const radius = parseCSSNumber(first)
+  // CSS writes a fully round corner as an infinite radius, which computes to the largest float.
+  return radius === null ? null : Math.min(radius, PILL_RADIUS)
 }
 
 /** Corner radii, a percentage of `box`, the size the element was laid out at. */
@@ -324,4 +426,35 @@ export function applyPadding(node: SceneNode, style: DesignStyleDeclaration): vo
   node.paddingRight = paddingOf(style, 'right', 'inline')
   node.paddingBottom = paddingOf(style, 'bottom', 'block')
   node.paddingLeft = paddingOf(style, 'left', 'inline')
+}
+
+/**
+ * Draws the element's border as an inside stroke that takes room in layout, as a CSS border does,
+ * and returns whether it drew one. A border without a style is not drawn and takes no room; one
+ * transparent in every mode draws nothing and becomes the padding it takes; one a theme colors
+ * in another mode is kept while it is transparent.
+ */
+export function applyBorder(
+  node: SceneNode,
+  element: DesignElement,
+  style: DesignStyleDeclaration
+): boolean {
+  const bordered = drawsBorder(element, style)
+  if (hasBorder(style) && !bordered) padForBorder(node, style)
+  if (!bordered) return false
+  const strokes = colorToStrokeFromCSS(
+    firstStrokeColor(style),
+    strokeWeightFromStyle(style)?.toString(),
+    element.references !== undefined
+  )
+  if (strokes.length === 0) return true
+  const dashPattern = dashPatternFromCSS(style, strokes[0].weight)
+  if (dashPattern.length > 0) {
+    strokes[0].dashPattern = dashPattern
+    node.dashPattern = dashPattern
+  }
+  node.strokes = strokes
+  setBorderWeights(node, style, strokes[0])
+  node.strokesIncludedInLayout = true
+  return true
 }
