@@ -5,7 +5,7 @@ pub mod args;
 pub mod links;
 pub mod paths;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use tauri::{Emitter, Manager};
@@ -101,6 +101,80 @@ pub fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec
     queue_pending(app, files);
 }
 
+/// The design-document extensions the frontend opens (`io.findReader` plus the DOM
+/// documents `openFileFromPath` accepts). The command below allow-lists one such file
+/// and nothing else, so a caller cannot use it to reach an executable or a secret file.
+const OPENABLE_DOCUMENT_EXTENSIONS: [&str; 10] = [
+    "fig", "jam", "pen", "drawio", "dio", "mmd", "mermaid", "html", "htm", "xhtml",
+];
+
+fn is_openable_document(path: &Path) -> bool {
+    // draw.io embeds its diagram in PNG/SVG exports (`flow.drawio.png`); those are
+    // supported editable documents, not arbitrary images.
+    if path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            let lower = name.to_lowercase();
+            lower.ends_with(".drawio.png") || lower.ends_with(".drawio.svg")
+        })
+    {
+        return true;
+    }
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            OPENABLE_DOCUMENT_EXTENSIONS
+                .iter()
+                .any(|allowed| allowed.eq_ignore_ascii_case(extension))
+        })
+}
+
+/// Read the one design document the frontend was explicitly asked to open, natively.
+///
+/// Files handed to the executable are allow-listed by `queue_open_paths` before the
+/// frontend sees them, but a file automation names (`open_document`) or a recent file
+/// reaches the frontend with no such call, so a path the fs scope does not already
+/// cover is refused as a forbidden path. That includes every hidden folder:
+/// `requireLiteralLeadingDot` keeps `**` from matching a dot segment, so
+/// `%USERPROFILE%\.pencil\documents\…` never matches the read scope even though it
+/// sits under the user's home.
+///
+/// The read happens here, in the shell, instead of granting the webview access to
+/// the file: adding the path to the shared fs scope would also let the webview write
+/// it (the fs plugin uses the same scope for writes), reopening the hidden-file
+/// write path the desktop guidelines require to stay closed. This command only
+/// returns the bytes and never touches `fs_scope()`, so a file that was never opened
+/// stays refused for writing.
+///
+/// Only the editor window may call it: the updater webview owns no documents, so a
+/// script running in it must not reach document reads. The read runs on a blocking
+/// thread, since a document on a slow network share must not stall the desktop
+/// event loop, and the bytes cross IPC as a raw body rather than a JSON number
+/// array, so large documents do not pay decimal encoding and parsing per byte.
+#[tauri::command]
+pub async fn read_open_file(
+    webview: tauri::Webview,
+    path: String,
+) -> Result<tauri::ipc::Response, String> {
+    if webview.label() != "main" {
+        return Err("read_open_file is only available to the editor window".into());
+    }
+    let path = PathBuf::from(path);
+    if !is_openable_document(&path) {
+        return Err(format!(
+            "Only design documents can be opened: {}",
+            path.display()
+        ));
+    }
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        std::fs::read(&path).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// The scheme filter is load-bearing: on macOS the plugin forwards every
 /// `RunEvent::Opened` URL here, including the `file://` URLs of a double-clicked
 /// document, which `queue_open_paths` already handles.
@@ -168,5 +242,71 @@ fn queue_rooms<R: tauri::Runtime>(app: &tauri::AppHandle<R>, rooms: Vec<String>)
     let _ = app.emit("open-room-links", ());
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_focus();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn read_open_file_accepts_the_documents_the_frontend_opens() {
+        for name in [
+            "design.fig",
+            "board.jam",
+            "design.pen",
+            "diagram.drawio",
+            "diagram.dio",
+            "notes.mmd",
+            "notes.mermaid",
+            "page.html",
+            "page.htm",
+            "page.xhtml",
+        ] {
+            assert!(
+                is_openable_document(Path::new(name)),
+                "{name} should be openable"
+            );
+        }
+        // Case follows the filesystem: the frontend's check lowercases the name.
+        assert!(is_openable_document(Path::new("DESIGN.FIG")));
+        assert!(is_openable_document(Path::new(
+            "C:\\Users\\ada\\.pencil\\documents\\abc\\design.pen"
+        )));
+    }
+
+    #[test]
+    fn is_openable_document_accepts_drawio_exports() {
+        // A draw.io export embeds its diagram in the PNG/SVG, so the compound suffix
+        // names a supported document even though the final extension alone does not.
+        for name in ["flow.drawio.png", "flow.drawio.svg", "FLOW.DRAWIO.PNG"] {
+            assert!(
+                is_openable_document(Path::new(name)),
+                "{name} should be openable"
+            );
+        }
+    }
+
+    #[test]
+    fn read_open_file_refuses_anything_that_is_not_a_design_document() {
+        for name in [
+            "notes.txt",
+            "run.sh",
+            "run.exe",
+            "id_ed25519",
+            "settings.json",
+            ".bashrc",
+            "design",
+            "design.fig.bak",
+            // Plain images are not documents, even with a draw.io-looking name.
+            "photo.png",
+            "diagram.svg",
+            "flow.png",
+        ] {
+            assert!(
+                !is_openable_document(Path::new(name)),
+                "{name} should not be openable"
+            );
+        }
     }
 }

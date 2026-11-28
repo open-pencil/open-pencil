@@ -1,5 +1,5 @@
+import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
-import { readFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit/array'
 import { basename } from 'pathe'
@@ -127,7 +127,17 @@ export async function openDesignFileBatch<T>(
 
 export async function readTauriDesignFile(path: string): Promise<File> {
   assertSupportedDesignFile(path)
-  const bytes = await readFile(path)
+  // A file handed to the executable is allow-listed by the shell before the frontend
+  // sees it; one automation or recent files names was never shown to the shell, so a
+  // path the fs scope does not already cover is refused as a forbidden path. That
+  // includes every hidden folder: `requireLiteralLeadingDot` keeps `**` from matching
+  // a dot segment, so `%USERPROFILE%\.pencil\documents\…` never matches the read
+  // scope even though it sits under the user's home. The shell reads the one named
+  // file natively instead of granting the webview access to it: a scope grant would
+  // also let the webview write the file, reopening the hidden-file write path. The
+  // bytes arrive as an `ArrayBuffer` — the shell sends them as a raw IPC body, not
+  // a JSON number array.
+  const bytes = await invoke<ArrayBuffer>('read_open_file', { path })
   return new File([bytes], basename(path) || 'file.fig')
 }
 

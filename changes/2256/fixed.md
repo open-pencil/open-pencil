@@ -1,0 +1,1 @@
+- Fixed opening a file in a hidden folder, such as a pen.dev library under `.pencil`, from automation: the file now opens instead of being refused as a forbidden path.
