@@ -13,7 +13,7 @@ import { fontManager } from '#core/text/font/manager'
 
 import { needsIsolatedBlendLayer } from './blend/modes'
 import { withNodeLayer } from './blend/node-layer'
-import { blurredContent, layerBlurFilter } from './blur/layer'
+import { beginLayerBlur, blurredContent, endLayerBlur, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { renderLeafWithEffects } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
@@ -380,79 +380,71 @@ export function renderNode(
     return
   }
 
-  canvas.save()
-  canvas.translate(node.x, node.y)
-  const opacity = applyLayerMotion(canvas, node, overlays)
-  const needsNodeLayer = opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
-  const layerBlur = visibleLayerBlur(node)
-  const layerBounds =
-    needsNodeLayer || layerBlur
-      ? nodeLayerBounds(
-          r,
-          graph,
-          node,
-          () => worldMatrixIn(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview),
-          overlays.rotationPreview
-        )
-      : null
-  const drawLayer = () => {
-    if (layerBlur) {
-      // Entry guard: reset shared paint to known state
-      r.effectLayerPaint.setImageFilter(null)
-      r.effectLayerPaint.setColorFilter(null)
-      r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-
-      const content = blurredContent(graph, node, overlays)
-      r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
-      canvas.saveLayer(r.effectLayerPaint, layerBounds)
-    }
-
-    applyNodeTransforms(canvas, node, overlays)
-    renderLayerShadows(r, canvas, graph, node, 'behind')
-    // A frame or group's texture roughens what it and its children draw, not its shadows, and its
-    // noise grains the roughened result and its inner shadows, as in Figma. A shape does both itself.
-    const container = isLayerContainer(node)
-    const texture = container ? visibleTexture(node) : undefined
-    const drawContent = () => {
-      const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
-      try {
-        renderNodeContent(r, canvas, graph, node, overlays)
-        drawLayoutGrids(r, canvas, node)
-        renderChildren(
-          r,
-          canvas,
-          graph,
-          node,
-          overlays,
-          absX,
-          absY,
-          childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
-        )
-      } finally {
-        endTexture(canvas, textureSaves)
+  const entrySaves = canvas.save()
+  try {
+    canvas.translate(node.x, node.y)
+    const opacity = applyLayerMotion(canvas, node, overlays)
+    const needsNodeLayer = opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
+    const layerBlur = visibleLayerBlur(node)
+    const layerBounds =
+      needsNodeLayer || layerBlur
+        ? nodeLayerBounds(
+            r,
+            graph,
+            node,
+            () => worldMatrixIn(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview),
+            overlays.rotationPreview
+          )
+        : null
+    const drawLayer = () => {
+      if (layerBlur) {
+        beginLayerBlur(r, canvas, graph, node, overlays, layerBlur, layerBounds)
       }
-      renderLayerShadows(r, canvas, graph, node, 'front')
-    }
-    if (container) {
-      withNoiseEffects(r, canvas, node, graph, drawContent)
-    } else {
-      drawContent()
-    }
 
-    if (layerBlur) {
-      canvas.restore()
-      // Exit guard: ensure shared paint is in clean state
-      r.effectLayerPaint.setImageFilter(null)
-      r.effectLayerPaint.setColorFilter(null)
-      r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+      applyNodeTransforms(canvas, node, overlays)
+      renderLayerShadows(r, canvas, graph, node, 'behind')
+      // A frame or group's texture roughens what it and its children draw, not its shadows, and its
+      // noise grains the roughened result and its inner shadows, as in Figma. A shape does both itself.
+      const container = isLayerContainer(node)
+      const texture = container ? visibleTexture(node) : undefined
+      const drawContent = () => {
+        const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
+        try {
+          renderNodeContent(r, canvas, graph, node, overlays)
+          drawLayoutGrids(r, canvas, node)
+          renderChildren(
+            r,
+            canvas,
+            graph,
+            node,
+            overlays,
+            absX,
+            absY,
+            childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
+          )
+        } finally {
+          endTexture(canvas, textureSaves)
+        }
+        renderLayerShadows(r, canvas, graph, node, 'front')
+      }
+      if (container) {
+        withNoiseEffects(r, canvas, node, graph, drawContent)
+      } else {
+        drawContent()
+      }
+
+      if (layerBlur) {
+        endLayerBlur(r, canvas)
+      }
     }
+    if (needsNodeLayer) {
+      withNodeLayer(r, canvas, graph, node, opacity, layerBounds, drawLayer)
+    } else {
+      drawLayer()
+    }
+  } finally {
+    canvas.restoreToCount(entrySaves)
   }
-  if (needsNodeLayer) {
-    withNodeLayer(r, canvas, graph, node, opacity, layerBounds, drawLayer)
-  } else {
-    drawLayer()
-  }
-  canvas.restore()
 }
 
 function makeNodeRRect(r: SkiaRenderer, node: SceneNode, radius: number): Float32Array {

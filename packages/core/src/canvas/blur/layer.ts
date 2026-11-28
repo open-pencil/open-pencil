@@ -1,6 +1,6 @@
 import { once } from 'es-toolkit'
 
-import type { ImageFilter } from '@open-pencil/canvaskit'
+import type { Canvas, ImageFilter } from '@open-pencil/canvaskit'
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -39,4 +39,30 @@ export function blurredContent(
 ): () => VisualBounds {
   const preview = overlays.rotationPreview
   return once(() => subtreeVisualBounds(graph, node, nodeOrientationMatrix(node, preview), preview))
+}
+
+function resetEffectLayerPaint(r: SkiaRenderer): void {
+  r.effectLayerPaint.setImageFilter(null)
+  r.effectLayerPaint.setColorFilter(null)
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+}
+
+export function beginLayerBlur(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  node: SceneNode,
+  overlays: RenderOverlays,
+  blur: Effect,
+  bounds: Float32Array | null
+): void {
+  resetEffectLayerPaint(r)
+  const content = blurredContent(graph, node, overlays)
+  r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, blur, overlays, content))
+  canvas.saveLayer(r.effectLayerPaint, bounds)
+}
+
+export function endLayerBlur(r: SkiaRenderer, canvas: Canvas): void {
+  canvas.restore()
+  resetEffectLayerPaint(r)
 }

@@ -372,41 +372,43 @@ export function render(
       r.tiledScenePending = false
       r.tiledSceneCovered = true
     }
-    sceneCanvas.save()
-    sceneCanvas.scale(r.dpr, r.dpr)
-    clipToStage(r, sceneCanvas, graph)
+    const sceneSaves = sceneCanvas.save()
+    try {
+      sceneCanvas.scale(r.dpr, r.dpr)
+      clipToStage(r, sceneCanvas, graph)
 
-    p.beginPhase('render:scene')
-    if (layer === 'scene' && !requiresUncachedSceneRender) {
-      // The scene layer is tiles, idle or moving; the whole-scene picture serves one canvas.
-      const tiled = r.tiledScene.renderFrame(
-        r,
-        sceneCanvas,
-        graph,
-        sceneVersion,
-        r.navigationGeneration
-      )
-      r.tiledScenePending = tiled.pending
-      r.tiledSceneBackgroundPending = tiled.backgroundPending
-      r.tiledSceneCovered = tiled.covered
-      p.setScenePictureMode('hit', tiled.covered ? 'tiled' : 'tiled-fallback')
-    } else {
-      sceneCanvas.translate(r.panX, r.panY)
-      sceneCanvas.scale(r.zoom, r.zoom)
-      renderSceneContent(
-        r,
-        sceneCanvas,
-        graph,
-        overlays,
-        sceneVersion,
-        canUsePicture,
-        cacheMissReason,
-        requiresUncachedSceneRender
-      )
+      p.beginPhase('render:scene')
+      if (layer === 'scene' && !requiresUncachedSceneRender) {
+        // The scene layer is tiles, idle or moving; the whole-scene picture serves one canvas.
+        const tiled = r.tiledScene.renderFrame(
+          r,
+          sceneCanvas,
+          graph,
+          sceneVersion,
+          r.navigationGeneration
+        )
+        r.tiledScenePending = tiled.pending
+        r.tiledSceneBackgroundPending = tiled.backgroundPending
+        r.tiledSceneCovered = tiled.covered
+        p.setScenePictureMode('hit', tiled.covered ? 'tiled' : 'tiled-fallback')
+      } else {
+        sceneCanvas.translate(r.panX, r.panY)
+        sceneCanvas.scale(r.zoom, r.zoom)
+        renderSceneContent(
+          r,
+          sceneCanvas,
+          graph,
+          overlays,
+          sceneVersion,
+          canUsePicture,
+          cacheMissReason,
+          requiresUncachedSceneRender
+        )
+      }
+      p.endPhase('render:scene')
+    } finally {
+      sceneCanvas.restoreToCount(sceneSaves)
     }
-    p.endPhase('render:scene')
-
-    sceneCanvas.restore()
     if (documentSurface) presentDocumentSurface(canvas, documentSurface)
   }
 

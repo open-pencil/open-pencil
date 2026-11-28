@@ -18,6 +18,7 @@ function createCanvas() {
   return {
     save: mock(() => undefined),
     restore: mock(() => undefined),
+    restoreToCount: mock(() => undefined),
     translate: mock(() => undefined),
     concat: mock((_matrix: Mat3) => undefined),
     rotate: mock(() => undefined),

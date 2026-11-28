@@ -411,7 +411,7 @@ describe('background blur and pass-through opacity', () => {
 })
 
 describe('a render that throws inside a pass-through group with opacity', () => {
-  test('leaves later groups blending with the backdrop', () => {
+  test('closes its saves and leaves later groups blending with the backdrop', () => {
     let brokenId = ''
     const brokenGroup: Scene = (graph, pageId) => {
       brokenId = graph.createNode('RECTANGLE', halfPassThroughFrame(graph, pageId), {
@@ -427,12 +427,14 @@ describe('a render that throws inside a pass-through group with opacity', () => 
       }
       drawShape(canvas, node, graph)
     })
+    const canvas = renderer.surface.getCanvas()
+    const entrySaves = canvas.getSaveCount()
     try {
       expect(() => renderScene(brokenGroup, greyBackdrop())).toThrow('draw failed')
     } finally {
       shapes.mockRestore()
-      renderer.surface.getCanvas().restoreToCount(1)
     }
+    expect(canvas.getSaveCount()).toBe(entrySaves)
     expectNear(renderGroupRed(0.5, PASS_THROUGH_CASES[0].layers), MULTIPLY_AT_HALF)
   })
 })
