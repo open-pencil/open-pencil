@@ -144,6 +144,8 @@
   "shaderNeedsWebGPU": "В этом браузере нет WebGPU, поэтому шейдеры показывают сохранённый кадр.",
   "stops": "Точки",
   "addStop": "Добавить точку",
+  "addShaderStops": "Использовать опорные цвета",
+  "removeShaderStops": "Использовать цвета эффекта",
   "alignCenter": "По центру",
   "alignMiddle": "По середине",
   "clipContent": "Обрезать содержимое",

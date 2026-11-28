@@ -60,12 +60,13 @@ export function oauthTestApp(fixture: Fixture, publicURL: string) {
     resource: string
     cookie?: string
     redirect?: string
+    scope?: string
   }) {
     const query = new URLSearchParams({
       response_type: 'code',
       client_id: request.clientId,
       redirect_uri: request.redirect ?? OAUTH_CALLBACK,
-      scope: 'documents:read documents:write offline_access',
+      scope: request.scope ?? 'documents:read documents:write offline_access',
       state: 'kept',
       code_challenge: request.challenge,
       code_challenge_method: 'S256',

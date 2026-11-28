@@ -12,6 +12,7 @@ import type {
 import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import type { LayerFrame } from '@open-pencil/scene-graph/slides'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import type { HistoryChange, UndoEntry, UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -83,6 +84,14 @@ export interface ShapeHandleHover {
   pointer: Vector
 }
 
+/** A slide's build playing on the canvas: the slide, and where its animating layers are now. */
+export interface BuildPreview {
+  slideId: string
+  layers: ReadonlyMap<string, LayerFrame>
+  /** The layer whose animation is under way, as the Animate tab marks its step. */
+  animatingId: string | null
+}
+
 /** Where a presentation is, for what shows around it: the presenter's view, the slide count. */
 export interface PresentationStatus {
   /** Names this presentation, as a presenter's window looks for it. */
@@ -128,6 +137,11 @@ export interface EditorSharedState {
   codeFocusNodeId: string | null
   /** The deck being presented, or null when none is. */
   presentation: PresentationStatus | null
+  /**
+   * A slide's build playing on the canvas, as the Animate tab's Play shows it: where each of its
+   * animating layers is drawn at this moment. Null when none plays.
+   */
+  buildPreview: BuildPreview | null
   rulerTheme?: RulerTheme
   /** Selection chrome on the canvas, following the interface accent; the default blue when unset. */
   selectionTheme?: SelectionTheme

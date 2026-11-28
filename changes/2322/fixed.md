@@ -1,0 +1,1 @@
+- Ctrl+mouse-wheel zoom on Linux moves in small steps, as on Windows, instead of jumping several times per notch, in the desktop app and in browsers.

@@ -16,10 +16,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
 
-/**
- * Presents a deck from the slide on the stage or the one selected, or from its start; in a design,
- * presents the selected frames, or all of them, as slides.
- */
+/** Presents a deck from the slide on the stage or the one selected, or from its start. Decks only. */
 const store = useEditorStore()
 const deck = computed(() => resolveEditorProfile(store.state).filmstrip)
 const messages = useMessages('slides')
@@ -34,15 +31,14 @@ function currentSlide(): string | null {
 
 /** Presents with the presenter's window beside the deck. */
 function presentWithNotes() {
-  const started = deck.value ? store.present(currentSlide()) : store.presentFrames()
-  if (!started) return
+  if (!store.present(currentSlide())) return
   const presentation = store.state.presentation
   if (presentation) openPresenterWindow(presentation.id, messages.value.presenterView)
 }
 </script>
 
 <template>
-  <AppDropdownMenuRoot>
+  <AppDropdownMenuRoot v-if="deck">
     <DropdownMenuTrigger as-child>
       <IconButton :label="messages.present" data-test-id="slides-present">
         <icon-lucide-presentation class="size-3.5" />
@@ -50,32 +46,21 @@ function presentWithNotes() {
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent side="bottom" align="end" :side-offset="4" :class="menuUI.content()">
-        <template v-if="deck">
-          <DropdownMenuItem
-            :class="menuUI.item({ justify: 'start' })"
-            data-test-id="slides-present-current"
-            @select="store.present(currentSlide())"
-          >
-            <icon-lucide-presentation :class="menuUI.icon()" />
-            {{ messages.present }}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            :class="menuUI.item({ justify: 'start' })"
-            data-test-id="slides-present-start"
-            @select="store.present()"
-          >
-            <icon-lucide-skip-back :class="menuUI.icon()" />
-            {{ messages.presentFromStart }}
-          </DropdownMenuItem>
-        </template>
         <DropdownMenuItem
-          v-else
           :class="menuUI.item({ justify: 'start' })"
-          data-test-id="slides-present-frames"
-          @select="store.presentFrames()"
+          data-test-id="slides-present-current"
+          @select="store.present(currentSlide())"
         >
           <icon-lucide-presentation :class="menuUI.icon()" />
-          {{ messages.presentFrames }}
+          {{ messages.present }}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          :class="menuUI.item({ justify: 'start' })"
+          data-test-id="slides-present-start"
+          @select="store.present()"
+        >
+          <icon-lucide-skip-back :class="menuUI.icon()" />
+          {{ messages.presentFromStart }}
         </DropdownMenuItem>
         <DropdownMenuItem
           :class="menuUI.item({ justify: 'start' })"
@@ -83,7 +68,7 @@ function presentWithNotes() {
           @select="presentWithNotes"
         >
           <icon-lucide-notebook-text :class="menuUI.icon()" />
-          {{ deck ? messages.presentWithNotes : messages.presentFramesWithNotes }}
+          {{ messages.presentWithNotes }}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenuPortal>

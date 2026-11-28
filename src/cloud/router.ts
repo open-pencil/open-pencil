@@ -1,6 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { CLOUD_OAUTH_AUTHORIZE_PAGE, isCloudPortalPage } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_AGENT_PAIRING_PAGE,
+  CLOUD_OAUTH_AUTHORIZE_PAGE,
+  isCloudPortalPage
+} from '@open-pencil/cloud/contract'
 
 import type { PortalContext } from '@/app/cloud-portal/context'
 import {
@@ -9,6 +13,7 @@ import {
   CONFIRM_PAGE,
   TERMS_PAGE
 } from '@/app/cloud-portal/navigation'
+import { pairsAgents } from '@/app/cloud-portal/pairing'
 
 /**
  * The Cloud portal's pages, guarded by the portal's access rules (`portalDestination`). The
@@ -80,6 +85,13 @@ export function createCloudPortalRouter(context: PortalContext) {
         component: () => import('@/views/cloud/AuthorizeView.vue'),
         meta: { account: true },
         beforeEnter: () => (context.discovery.capabilities.apps ? true : PORTAL_HOME)
+      },
+      {
+        // The same request without an account: the agent pairs with this browser's editor instead.
+        path: CLOUD_AGENT_PAIRING_PAGE,
+        name: 'pair-agent',
+        component: () => import('@/views/cloud/PairAgentView.vue'),
+        beforeEnter: () => (pairsAgents(context.discovery) ? true : PORTAL_HOME)
       },
       {
         path: '/account/pending',

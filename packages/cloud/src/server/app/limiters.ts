@@ -1,3 +1,4 @@
+import { isAgentPairingToken } from '#cloud/contract'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import {
@@ -35,6 +36,25 @@ export function createAppRateLimiters(database: Kysely<CloudDatabase>, config: C
       // Guests refresh collaboration tickets on their own budget, `publicCollaborationLimiter`.
       skip: routeHasOwnBudget
     }),
+    // The pairing page and its answer, for people without an account.
+    agentPairingPageLimiter: publicLimiter(CLOUD_RATE_LIMITS.publicCapability, {
+      resource: () => 'agent-pairing-page'
+    }),
+    // An agent paired with an editor tab has no account to count it by.
+    agentPairingLimiter: createTrustedIPRateLimiter(
+      database,
+      config.authSecret,
+      CLOUD_RATE_LIMITS.agentPairing,
+      { trustedHeaders: config.authTrustedIPHeaders },
+      (context) => context.json({ error: { code: 'rate_limited' as const } }, 429),
+      {
+        resource: () => 'agent-pairing',
+        skip: (context) => {
+          const token = /^Bearer\s+(\S+)$/i.exec(context.req.header('authorization') ?? '')?.[1]
+          return !token || !isAgentPairingToken(token)
+        }
+      }
+    ),
     publicCollaborationLimiter: publicLimiter(CLOUD_RATE_LIMITS.collaborationTicket, {
       resource: (context) => context.req.path,
       route: true

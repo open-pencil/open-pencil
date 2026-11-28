@@ -163,6 +163,8 @@
   "shaderNeedsWebGPU": "Este navegador no tiene WebGPU, así que los shaders muestran su fotograma guardado.",
   "stops": "Paradas",
   "addStop": "Añadir parada",
+  "addShaderStops": "Usar paradas de color",
+  "removeShaderStops": "Usar los colores del efecto",
   "alignLeft": "Alinear a la izquierda",
   "alignCenter": "Centrar",
   "alignRight": "Alinear a la derecha",

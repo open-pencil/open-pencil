@@ -121,6 +121,8 @@
   "shaderNeedsWebGPU": "Questo browser non ha WebGPU, quindi gli shader mostrano il fotogramma salvato.",
   "stops": "Punti",
   "addStop": "Aggiungi punto",
+  "addShaderStops": "Usa punti colore",
+  "removeShaderStops": "Usa i colori dell’effetto",
   "alignLeft": "Allinea a sinistra",
   "alignCenter": "Centra",
   "alignRight": "Allinea a destra",

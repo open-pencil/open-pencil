@@ -8,6 +8,7 @@ import {
   createLoggingErrorReporter,
   loadServicesSigningKey,
   createCloudAuthenticationRuntime,
+  createAgentPairingHub,
   createCollaborationRelay,
   createCollaborationStateStore,
   cleanupPassOptions,
@@ -22,6 +23,8 @@ import {
   type CloudServerConfig
 } from '#cloud/server'
 import { fetchClientMetadataResource } from '@better-auth/cimd/node'
+
+import { MAX_COLLAB_MESSAGE_BYTES } from '@open-pencil/collab'
 
 import { migratedNodeCloudDatabase } from './bootstrap'
 import { loadNodeCloudServerConfig } from './config'
@@ -123,6 +126,13 @@ async function startConfiguredServer(
         }
       )
     : undefined
+  // Tabs of this server's editor pair with coding agents through it, where the deployment lets them.
+  const pairing = config.agentPairing
+    ? createAgentPairingHub({
+        maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
+        maximumAnswerBytes: MAX_COLLAB_MESSAGE_BYTES
+      })
+    : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
     store: createCollaborationStateStore(database, objects),
@@ -152,6 +162,7 @@ async function startConfiguredServer(
     onDocumentCommentsChanged: (documentId, threadId) =>
       relay.announceComments(documentId, threadId),
     callDocumentTool: (documentId, userId, call) => relay.callTool(documentId, userId, call),
+    callPairedTool: pairing && ((pairingId, call) => pairing.call(pairingId, call)),
     reportError,
     forwardedRequestId: proxyRequestId
   })
@@ -181,7 +192,8 @@ async function startConfiguredServer(
   const relayListener = attachCollaborationRelay(
     server.http,
     relay,
-    config.technicalLimits.maximumCollaborationMessageBytes
+    config.technicalLimits.maximumCollaborationMessageBytes,
+    pairing
   )
   return {
     app,

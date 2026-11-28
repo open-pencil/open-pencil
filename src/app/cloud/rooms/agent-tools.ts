@@ -17,12 +17,16 @@ import {
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/session'
 
-/** Runs a `tool` request on the tab's document and answers what the tool returned. */
+/** Runs a request on the tab's documents and answers what the command returned. */
 export type RunAgentTool = (
   store: EditorStore,
-  request: UnknownRecord,
+  command: string,
+  args: UnknownRecord,
   signal: AbortSignal
 ) => Promise<unknown>
+
+/** What a room's relay may ask: design tools, the way a local MCP server asks for them. */
+const TOOL_COMMANDS: ReadonlySet<string> = new Set(['tool'])
 
 let handleTool: ReturnType<typeof createAutomationToolHandler> | null = null
 
@@ -31,11 +35,11 @@ let handleTool: ReturnType<typeof createAutomationToolHandler> | null = null
  * is loaded: on the page the call names or the one on screen, showing the app as an agent at work,
  * its edits one undo step each. It works on the room's own document whatever the call names.
  */
-export const runAgentTool: RunAgentTool = async (store, request, signal) => {
+export const runAgentTool: RunAgentTool = async (store, _command, args, signal) => {
   handleTool ??= createAutomationToolHandler(makeFigmaFromStore)
-  const target = resolveAutomationTarget(store, { page_id: request.page_id })
+  const target = resolveAutomationTarget(store, { page_id: args.page_id })
   await prepareAutomationTarget(target, signal)
-  const response = await handleTool(target, stripAutomationTargetArgs(request), signal)
+  const response = await handleTool(target, stripAutomationTargetArgs(args), signal)
   const result = isRecord(response) ? response.result : response
   // A tool may answer with its error rather than throw it.
   if (isToolError(result)) throw new Error(errorMessage(result.error))
@@ -51,13 +55,17 @@ export const runAgentTool: RunAgentTool = async (store, request, signal) => {
 export function serveRoomAgentTools(
   [send, receive]: CollabAction,
   options: {
-    store: EditorStore
+    /** The tab a call works in: the room's own, or for a paired tab whichever is active. */
+    store: () => EditorStore
     /** Follows peers joining the room; returns the unsubscribe. */
     onPeerJoin: (handler: (peerId: string) => void) => () => void
+    /** The commands the tab runs, `tool` alone unless said otherwise; it refuses the rest. */
+    commands?: ReadonlySet<string>
     run?: RunAgentTool
   }
 ) {
   const run = options.run ?? runAgentTool
+  const commands = options.commands ?? TOOL_COMMANDS
   const answer = (message: AutomationMessage) =>
     send(encodeAutomationMessage(message), RELAY_SERVER_PEER)
   const calls = new Map<string, AbortController>()
@@ -65,13 +73,18 @@ export function serveRoomAgentTools(
   /** Aborted once the tab stops serving the room. */
   const serving = new AbortController()
 
-  async function runInTurn(id: string, request: UnknownRecord, controller: AbortController) {
+  async function runInTurn(
+    id: string,
+    command: string,
+    args: UnknownRecord,
+    controller: AbortController
+  ) {
     try {
       if (serving.signal.aborted) return
       // A call cancelled while it waited for its turn stops here, unanswered, like one cancelled
       // while it ran.
       controller.signal.throwIfAborted()
-      const result = await run(options.store, request, controller.signal)
+      const result = await run(options.store(), command, args, controller.signal)
       if (!controller.signal.aborted) answer({ type: 'response', id, ok: true, result })
     } catch (error) {
       if (controller.signal.aborted) return
@@ -90,15 +103,15 @@ export function serveRoomAgentTools(
     }
     if (message?.type !== 'request') return
     const { id, command, args } = message
-    // The relay sends tool calls alone: the rest of what a local MCP server may ask, such as
-    // opening files or running code, stays the local server's.
-    if (command !== 'tool' || !isRecord(args)) {
+    // The rest of what a local MCP server may ask, such as opening files or running code, stays
+    // the local server's.
+    if (!commands.has(command) || !isRecord(args)) {
       answer({ type: 'response', id, ok: false, error: `Unknown command: ${command}` })
       return
     }
     const controller = new AbortController()
     calls.set(id, controller)
-    turn = turn.then(() => runInTurn(id, args, controller))
+    turn = turn.then(() => runInTurn(id, command, args, controller))
   })
 
   // Each time the tab reaches the relay, and now in case it already has; until it has, the

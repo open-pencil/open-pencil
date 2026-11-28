@@ -1,6 +1,6 @@
 //! Reads Figma `.fig` files: the canvas inside the archive, its Kiwi message indexed without
-//! decoding it, and pages with their instances expanded into occurrences that refer to the
-//! records they place.
+//! decoding it, pages with their instances expanded into occurrences that refer to the records
+//! they place, and the field values each occurrence ends up with.
 //!
 //! This follows the TypeScript reader in OpenPencil's `packages/fig/src/document/` and
 //! `packages/fig/src/instance-overrides/`, which stays the reference: `packages/fig/tests/crate/`
@@ -11,7 +11,11 @@
 //! let document = open_pencil_fig::Document::open(&file)?;
 //! for page in 0..document.index.pages.len() {
 //!     let expansion = document.expand_page(page).expect("the page exists");
-//!     println!("page {page}: {} layers", expansion.occurrences.len());
+//!     let values = document.properties(&expansion)?;
+//!     for layer in 0..expansion.occurrences.len() as u32 {
+//!         let fields = values.of(layer)?;
+//!         println!("{:?}", fields.name);
+//!     }
 //! }
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
@@ -20,6 +24,8 @@ pub mod container;
 pub mod expand;
 pub mod index;
 pub mod kiwi;
+pub mod model;
+pub mod properties;
 #[cfg(all(target_arch = "wasm32", feature = "exports"))]
 mod wasm;
 
@@ -27,6 +33,7 @@ pub use container::{Canvas, Kind};
 pub use expand::Expansion;
 pub use index::Index;
 pub use kiwi::Schema;
+pub use properties::Properties;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
@@ -49,6 +56,8 @@ pub enum Error {
     Message,
     /// A record that is its own ancestor.
     ParentCycle,
+    /// An expansion of another document, or an occurrence past an expansion's end.
+    NoOccurrence,
 }
 
 impl core::fmt::Display for Error {
@@ -63,6 +72,7 @@ impl core::fmt::Display for Error {
             Error::Schema(name) => write!(f, "the schema lacks {name}"),
             Error::Message => f.write_str("the message does not match its schema"),
             Error::ParentCycle => f.write_str("a layer is its own ancestor"),
+            Error::NoOccurrence => f.write_str("no such occurrence in this document's expansion"),
         }
     }
 }
@@ -98,5 +108,36 @@ impl Document {
     /// Expands the page at `page` in saved page order.
     pub fn expand_page(&self, page: usize) -> Option<Expansion<'_>> {
         Some(Expansion::page(&self.index, *self.index.pages.get(page)?))
+    }
+
+    /// The field values of an expanded page's occurrences.
+    pub fn properties<'a>(&'a self, expansion: &'a Expansion<'a>) -> Result<Properties<'a>> {
+        // Records are found by position, which only this document's expansions share.
+        if !core::ptr::eq(expansion.index(), &self.index) {
+            return Err(Error::NoOccurrence);
+        }
+        Properties::new(expansion, &self.index, &self.schema, &self.message)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const FILE: &[u8] = include_bytes!("../../../../tests/fixtures/circle-text.fig");
+
+    #[test]
+    fn refuses_occurrences_it_does_not_have() {
+        let document = Document::open(FILE).unwrap();
+        let other = Document::open(FILE).unwrap();
+        let expansion = document.expand_page(0).unwrap();
+        assert_eq!(
+            other.properties(&expansion).err(),
+            Some(Error::NoOccurrence)
+        );
+        let values = document.properties(&expansion).unwrap();
+        let count = expansion.occurrences.len() as u32;
+        assert!(values.of(count - 1).is_ok());
+        assert_eq!(values.of(count).err(), Some(Error::NoOccurrence));
     }
 }

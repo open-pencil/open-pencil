@@ -163,6 +163,8 @@
   "shaderNeedsWebGPU": "このブラウザーは WebGPU に対応していないため、シェーダーは保存されたフレームを表示します。",
   "stops": "カラーピッカーの分岐点",
   "addStop": "分岐点を追加",
+  "addShaderStops": "カラーストップを使う",
+  "removeShaderStops": "エフェクト自身の色を使う",
   "alignLeft": "左揃え",
   "alignCenter": "中央揃え",
   "alignRight": "右揃え",
