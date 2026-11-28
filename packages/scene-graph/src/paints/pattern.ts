@@ -60,6 +60,9 @@ function patternSourceIds(node: SceneNode): string[] {
   for (const region of node.vectorNetwork?.regions ?? []) {
     addPatternSourceIds(region.fills ?? [], ids)
   }
+  for (const run of node.styleRuns) {
+    addPatternSourceIds(run.style.fills ?? [], ids)
+  }
   return ids
 }
 

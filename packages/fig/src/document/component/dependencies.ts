@@ -92,6 +92,9 @@ export function patternSourceDependencies(node: NodeChange): ReadonlySet<string>
     for (const region of vectorStyleTable(source)) {
       addPatternSources(region.fillPaints, dependencies)
     }
+    for (const range of source.textData?.styleOverrideTable ?? []) {
+      addPatternSources(range.fillPaints, dependencies)
+    }
   })
   return dependencies
 }

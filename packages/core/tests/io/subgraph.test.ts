@@ -308,4 +308,33 @@ describe('extracting an export', () => {
     const copy = extractExportGraph(graph, { scope: 'selection', nodeIds: [vector.id] }).graph
     expect(copy.getNode(source.id)).toBeDefined()
   })
+
+  test("brings the layer a text range's pattern fill tiles", () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const sources = graph.addPage('Sources')
+    const source = graph.createNode('FRAME', sources.id)
+    const text = graph.createNode('TEXT', pageId, {
+      text: 'ab',
+      styleRuns: [
+        {
+          start: 1,
+          length: 1,
+          style: {
+            fills: [
+              {
+                type: 'PATTERN',
+                color: { r: 0, g: 0, b: 0, a: 1 },
+                opacity: 1,
+                visible: true,
+                sourceNodeId: source.id
+              }
+            ]
+          }
+        }
+      ]
+    })
+    const copy = extractExportGraph(graph, { scope: 'selection', nodeIds: [text.id] }).graph
+    expect(copy.getNode(source.id)).toBeDefined()
+  })
 })

@@ -220,6 +220,14 @@ test('reaches the layer a pattern paint tiles, wherever it is kept', () => {
     {
       type: 'VECTOR',
       vectorData: { styleOverrideTable: [{ styleID: 1, fillPaints: [patternPaint(5)] }] }
+    },
+    {
+      type: 'TEXT',
+      textData: {
+        characters: 'ab',
+        characterStyleIDs: [0, 1],
+        styleOverrideTable: [{ styleID: 1, fillPaints: [patternPaint(5)] }]
+      }
     }
   ] as Partial<NodeChange>[]) {
     const changes = patternDocument(target)
