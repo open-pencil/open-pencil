@@ -18,6 +18,7 @@ import {
 
 function installed(face: Partial<InstalledFace> & Pick<InstalledFace, 'family' | 'style'>) {
   return {
+    legacy: null,
     instances: [],
     weight: 400,
     italic: false,
@@ -89,6 +90,9 @@ describe('listInstalledFaces', () => {
       { family: 'Noto Sans CJK SC', style: 'Regular', weight: 400, weightAxis: null }
     ])
     expect(faces[0]?.instances).toContain('SemiBold')
+    // Inter's SemiBold names a legacy family of its own, as Windows lists it.
+    expect(faces[1]?.legacy).toEqual({ family: 'Inter SemiBold', style: 'Regular' })
+    expect(faces[0]?.legacy).toBeNull()
   })
 })
 
@@ -121,12 +125,49 @@ describe('chooseInstalledFace', () => {
   })
 })
 
+describe('chooseInstalledFace with legacy family names', () => {
+  /** Segoe UI as Windows installs it: faces beyond regular and bold name legacy families. */
+  const SEGOE = [
+    installed({ family: 'Segoe UI', style: 'Regular' }),
+    installed({
+      family: 'Segoe UI',
+      style: 'Semibold',
+      weight: 600,
+      legacy: { family: 'Segoe UI Semibold', style: 'Regular' }
+    }),
+    installed({
+      family: 'Segoe UI',
+      style: 'Semibold Italic',
+      weight: 600,
+      italic: true,
+      legacy: { family: 'Segoe UI Semibold', style: 'Italic' }
+    })
+  ]
+
+  test('finds a face under the family Windows lists it in', () => {
+    expect(chooseInstalledFace(SEGOE, 'Segoe UI Semibold', 'Regular')?.style).toBe('Semibold')
+    expect(chooseInstalledFace(SEGOE, 'Segoe UI Semibold', 'Italic')?.style).toBe('Semibold Italic')
+    expect(chooseInstalledFace(SEGOE, 'Segoe UI Semibold', 'Semibold')?.style).toBe('Semibold')
+  })
+
+  test('still finds the face under the family its font names', () => {
+    expect(chooseInstalledFace(SEGOE, 'Segoe UI', 'Semibold')?.style).toBe('Semibold')
+    expect(chooseInstalledFace(SEGOE, 'Segoe UI', 'Regular')?.style).toBe('Regular')
+  })
+})
+
 describe('loadInstalledFont', () => {
   test("returns a collection face's data standing alone", async () => {
     const faces = await listInstalledFaces([await fontFolder()])
     const data = await loadInstalledFont(faces, 'Noto Naskh Arabic', 'Regular')
     expect(data && fontFaceName(data)).toEqual({ family: 'Noto Naskh Arabic', style: 'Regular' })
     expect(await loadInstalledFont(faces, 'Hiragino Sans', 'Regular')).toBeNull()
+  })
+
+  test('loads a face by the legacy family Windows lists it under', async () => {
+    const faces = await listInstalledFaces([await fontFolder()])
+    const data = await loadInstalledFont(faces, 'Inter SemiBold', 'Regular')
+    expect(data && fontFaceName(data)).toEqual({ family: 'Inter', style: 'SemiBold' })
   })
 
   test('reports a family whose installed faces cannot be drawn', async () => {

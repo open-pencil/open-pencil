@@ -7,12 +7,14 @@ import { chunk, compact, uniq } from 'es-toolkit'
 import {
   fontAxes,
   fontFaceName,
+  fontLegacyFaceName,
   fontManager,
   fontTableView,
   namedInstances,
   UnsupportedFontFormatError
 } from '@open-pencil/core/text'
 import {
+  type FontFamilyStyle,
   namesWeight,
   namesWidth,
   normalizeFontFamily,
@@ -53,6 +55,11 @@ const MAC_STYLE_ITALIC = 1 << 1
 export interface InstalledFace {
   family: string
   style: string
+  /**
+   * The family and style of the face's legacy names, when they name another family: Windows
+   * lists a face beyond regular, bold, and italic under it, as "Segoe UI Semibold" "Regular".
+   */
+  legacy: FontFamilyStyle | null
   /** A variable font's named instances, each a face of its own. */
   instances: string[]
   weight: number
@@ -124,12 +131,14 @@ function uint16At(table: DataView | null, offset: number, fallback: number): num
 function describeFace(path: string, face: SfntFace, subset: ArrayBuffer): InstalledFace | null {
   const names = fontFaceName(subset)
   if (!names) return null
+  const legacy = fontLegacyFaceName(subset)
   const os2 = fontTableView(subset, 'OS/2')
   const selection = uint16At(os2, OS2_SELECTION, 0)
   const macStyle = uint16At(fontTableView(subset, 'head'), HEAD_MAC_STYLE, 0)
   return {
     family: names.family,
     style: names.style,
+    legacy: legacy && legacy.family !== names.family ? legacy : null,
     instances: namedInstances(subset).map((instance) => instance.name),
     weight: uint16At(os2, OS2_WEIGHT, 400),
     italic:
@@ -189,11 +198,17 @@ function chooseFace(faces: InstalledFace[], weight: number, italic: boolean) {
   )
 }
 
-function namedFace(faces: InstalledFace[], style: string): InstalledFace | undefined {
+function ownNames(face: InstalledFace): string[] {
+  return [face.style, ...face.instances]
+}
+
+function namedFace(
+  faces: InstalledFace[],
+  style: string,
+  names: (face: InstalledFace) => string[] = ownNames
+): InstalledFace | undefined {
   const wanted = styleSpelling(style)
-  const named = faces.find((face) =>
-    [face.style, ...face.instances].some((name) => styleSpelling(name) === wanted)
-  )
+  const named = faces.find((face) => names(face).some((name) => styleSpelling(name) === wanted))
   // A face named apart from its weight ("Book", "Condensed Bold") is that face or none.
   if (named || !namesWeight(style)) return named
   const { weight, italic } = parseFontStyle(style)
@@ -206,11 +221,24 @@ function namedFace(faces: InstalledFace[], style: string): InstalledFace | undef
   )
 }
 
+function isFamily(name: string, wanted: string): boolean {
+  return name.toLowerCase() === wanted.toLowerCase()
+}
+
+/** The faces of `family`: those whose font names it, else those whose legacy names name it. */
+function familyFaces(faces: readonly InstalledFace[], family: string) {
+  const own = faces.filter((face) => isFamily(face.family, family))
+  const legacy = faces.filter((face) => face.legacy && isFamily(face.legacy.family, family))
+  return { own, legacy }
+}
+
 /**
  * The installed face for a family and style, as the desktop app picks it: a face or named
  * instance of that name, else, for a style that only names a weight and slant, the face of that
  * weight and slant, preferring normal width, or a variable face whose weight axis reaches it.
  * Weights come from the font's own `OS/2` table, so Hiragino Sans' `W3` is 300, not `Regular`.
+ * A family Windows lists apart, such as "Segoe UI Semibold", finds its faces by their legacy
+ * names, its style among them ("Regular").
  */
 export function chooseInstalledFace(
   faces: readonly InstalledFace[],
@@ -218,17 +246,18 @@ export function chooseInstalledFace(
   style: string
 ): InstalledFace | undefined {
   for (const name of uniq([family, normalizeFontFamily(family)])) {
-    const wanted = name.toLowerCase()
-    const listed = faces.filter((face) => face.family.toLowerCase() === wanted)
-    const found = namedFace(listed, style)
+    const { own, legacy } = familyFaces(faces, name)
+    const found =
+      namedFace(own, style) ??
+      namedFace(legacy, style, (face) => [face.legacy?.style ?? '', ...ownNames(face)])
     if (found) return found
   }
   return undefined
 }
 
 function hasOnlyUndrawableFaces(faces: readonly InstalledFace[], family: string): boolean {
-  const wanted = family.toLowerCase()
-  const listed = faces.filter((face) => face.family.toLowerCase() === wanted)
+  const { own, legacy } = familyFaces(faces, family)
+  const listed = [...own, ...legacy]
   return listed.length > 0 && listed.every((face) => !face.drawable)
 }
 
