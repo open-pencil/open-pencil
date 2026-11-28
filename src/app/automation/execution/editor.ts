@@ -1,4 +1,4 @@
-import type { RecordEditOptions } from '@open-pencil/core'
+import type { DocumentChange, RecordEditOptions } from '@open-pencil/core'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import { graphOf } from '@open-pencil/core/figma-api'
 
@@ -57,7 +57,7 @@ interface AgentEditOptions {
 
 /**
  * Runs an agent's edit as one undo step of what it wrote and the layout that follows, with no
- * wait between them. Loading the fonts its page draws text in and laying it out again come after
+ * wait between them. Loading fonts for the text it changed and laying it out again come after
  * the step closes: they are presentation, and what anyone else changes while fonts load must not
  * land in the agent's step. A font that fails to load leaves the edit standing.
  */
@@ -67,17 +67,33 @@ export async function recordAgentEdit<T>(
   run: () => T | Promise<T>,
   { isLive, signal, afterStep }: AgentEditOptions = {}
 ): Promise<T> {
-  const { result, relayout } = await store.recordEditAsync(options, async () => {
-    const edited = await store.runMutationWithLayout(run, options.pageId)
-    // Cancelled while it ran, such as by an MCP timeout during a download: nothing is committed.
-    signal?.throwIfAborted()
-    return edited
-  })
+  const graph = store.graph
+  const recorded: { change?: DocumentChange } = {}
+  const { result, relayout } = await store.recordEditAsync(
+    {
+      ...options,
+      onRecorded(change) {
+        recorded.change = change
+        options.onRecorded?.(change)
+      }
+    },
+    async () => {
+      const edited = await store.runMutationWithLayout(run, options.pageId)
+      // Cancelled while it ran, such as by an MCP timeout during a download: nothing is committed.
+      signal?.throwIfAborted()
+      return edited
+    }
+  )
   await afterStep?.()
+  if (!recorded.change || store.graph !== graph || isLive?.() === false) return result
+  const { created, updated } = recorded.change
+  const textIds = [...created, ...updated]
+    .map(({ id }) => id)
+    .filter((id) => graph.getNode(id)?.type === 'TEXT')
+  if (textIds.length === 0) return result
   try {
-    const page = store.graph.getNode(options.pageId)
-    const loaded = page && (await ensureGraphFonts(store.graph, page.childIds, store.renderer))
-    if (loaded && isLive?.() !== false) {
+    const loaded = await ensureGraphFonts(graph, textIds, store.renderer)
+    if (loaded && store.graph === graph && isLive?.() !== false) {
       relayout()
       store.requestRender()
     }
