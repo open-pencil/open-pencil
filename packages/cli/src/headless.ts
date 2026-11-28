@@ -21,13 +21,14 @@ import { writeFileAtomic } from '@open-pencil/core/node/fs'
 import {
   installTextInkMeasurer,
   prepareGraphFonts,
+  type DocumentFontFaceStatus,
   type DocumentFontStatus
 } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
 import type { RequestedPage } from '#cli/app/target'
-import { printError } from '#cli/format'
+import { printError, warn } from '#cli/format'
 
 /** The document formats the CLI reads and writes, with HTML read by the HTML engine. */
 export const CLI_IO_FORMATS = [...BUILTIN_IO_FORMATS, headlessHTMLReader]
@@ -243,7 +244,43 @@ export async function editDocument<T>(graph: SceneGraph, edit: () => T | Promise
   })
   const textIds = [...impact.changedNodeIds].filter((id) => graph.getNode(id)?.type === 'TEXT')
   if (textIds.length === 0) return result
-  await prepareGraphFonts(graph, textIds)
+  const widthsBefore = new Map<string, number>()
+  for (const id of textIds) {
+    const node = graph.getNode(id)
+    if (node) widthsBefore.set(id, node.width)
+  }
+  const status = await prepareGraphFonts(graph, textIds)
   for (const id of textIds) sizeAutoResizingText(graph, id)
+  warnResizedWithSubstitutedFonts(graph, textIds, widthsBefore, status)
   return result
+}
+
+/**
+ * Warns for text an edit re-measured in a fallback font: the width it saves is the
+ * substitute's, not its own font's, so the layout it came from no longer holds. Only text
+ * whose width actually changed is named, so an edit that measures the same in the fallback
+ * stays quiet.
+ */
+function warnResizedWithSubstitutedFonts(
+  graph: SceneGraph,
+  textIds: readonly string[],
+  widthsBefore: ReadonlyMap<string, number>,
+  status: DocumentFontStatus
+): void {
+  if (status.faithful) return
+  const substitutedByNode = new Map<string, DocumentFontFaceStatus>()
+  for (const face of status.issues)
+    for (const nodeId of face.nodeIds) substitutedByNode.set(nodeId, face)
+  for (const id of textIds) {
+    const face = substitutedByNode.get(id)
+    const before = widthsBefore.get(id)
+    const node = graph.getNode(id)
+    if (!face || before === undefined || !node || node.width === before) continue
+    const substitute = face.substituteFamily ? ` in "${face.substituteFamily}"` : ''
+    console.error(
+      warn(
+        `Font substitution: "${face.family}" is unavailable, so "${node.name}" was re-measured${substitute} and its width changed from ${before} to ${node.width}. The saved size is the fallback's, not the font's.`
+      )
+    )
+  }
 }

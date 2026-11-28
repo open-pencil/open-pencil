@@ -1,0 +1,1 @@
+- Headless edits warn when a text is re-measured in a fallback font and its width changes, instead of silently saving the substitute's size.
